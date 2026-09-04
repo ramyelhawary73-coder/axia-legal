@@ -12,14 +12,16 @@ The application exposes password login only. Public self-signup is intentionally
 - `organization_members` maps authenticated users to one or more tenants.
 - roles: `owner`, `admin`, `lawyer`, `staff`, `trainee`, `viewer`.
 - direct membership writes are disabled from browser roles in Phase 1B.
-- `create_organization(name, slug)` is the only browser-accessible organization onboarding mutation and creates the first `owner` membership atomically.
+- a signed-in user may create an organization only with `created_by = auth.uid()` under RLS.
+- an internal non-API trigger atomically adds the creator as the first `owner` membership.
 
 ## RLS model
 
 - profile: current user only.
-- organization: member read; owner/admin limited column update.
-- organization membership: same-organization read only.
+- organization: member read; owner/admin limited column update; authenticated self-owned insert only.
+- organization membership: same-organization read only; no direct browser mutation.
 - no anonymous application-table access.
+- membership/role helper functions live in a private schema rather than the exposed API schema.
 
 ## Deferred deliberately
 
