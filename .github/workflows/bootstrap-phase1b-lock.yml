@@ -1,0 +1,52 @@
+name: Bootstrap Phase 1B lockfile
+
+on:
+  push:
+    branches:
+      - feat/axia-legal-security-foundation
+
+permissions:
+  contents: write
+
+jobs:
+  lockfile-and-quality:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Refresh package lock
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Commit package lock if changed
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "package-lock.json unchanged"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add package-lock.json
+            git commit -m "chore: lock Phase 1B dependencies"
+            git push origin HEAD:feat/axia-legal-security-foundation
+          fi
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build

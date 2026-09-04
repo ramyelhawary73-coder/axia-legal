@@ -1,24 +1,27 @@
-# AXIA Legal — Security Boundaries (Phase 1A)
+# AXIA Legal — Security Boundaries
 
 ## Hard rules
 
-1. Never expose Supabase service-role keys, database passwords, access tokens, or AI provider secrets to browser code.
-2. Browser code may later use only project URL plus a publishable/anon-class key, with authorization enforced by RLS and server-side guards.
-3. Tenant isolation and Matter ACL enforcement must be implemented before real client data is accepted.
-4. No confidential matter document may be sent to a free/public AI tier by default.
-5. RAJIH retrieval must never search across tenants or unauthorized matters.
-6. Database schema changes must be migration-driven and separately reviewed.
+1. Never expose Supabase secret/service-role keys, database passwords, access tokens, or AI provider secrets to browser code.
+2. Browser and SSR clients use only the project URL plus a publishable key; authorization is enforced by RLS and verified Auth claims.
+3. Never use `getSession()` as an authorization decision on the server. Protected routes use verified `getClaims()`.
+4. Tenant isolation is database-enforced. UI filtering is never an authorization boundary.
+5. No confidential matter document may be sent to a free/public AI tier by default.
+6. RAJIH retrieval must never search across tenants or unauthorized matters.
+7. Database schema changes are migration-driven and separately reviewed.
 
-## Phase 1A guarantees
+## Phase 1B guarantees
 
-- no database migration
-- no Auth change
-- no RLS change
-- no Storage change
-- no AI provider integration
-- no real customer data
-- `.env.example` contains variable names only
+- `profiles`, `organizations`, and `organization_members` are the only application tables introduced.
+- RLS is enabled and forced on every Phase 1B application table.
+- `anon` receives no table access.
+- authenticated users can read only their own profile and organizations where they are members.
+- direct browser mutation of organization membership is disabled.
+- new organizations are created only through an authenticated `security definer` function that atomically creates the owner membership.
+- self-service signup is not exposed by the application.
+- no Storage change and no business/client/case data are introduced.
+- no service-role/secret key is required by the application.
 
-## Future security gate
+## Matter ACL contract for later phases
 
-Phase 1B must define organization membership, roles, matter access, RLS policies, auditability, and secure Auth/session behavior before implementing business modules.
+Every future matter-owned record must carry both `organization_id` and a matter authorization boundary. Organization membership alone is not sufficient to access a confidential matter. Matter-level permissions must be enforced by RLS before any real matter data is accepted.
