@@ -14,10 +14,11 @@
 
 - `profiles`, `organizations`, and `organization_members` are the only application tables introduced.
 - RLS is enabled and forced on every Phase 1B application table.
-- `anon` receives no table access.
+- `anon` receives no application-table access.
 - authenticated users can read only their own profile and organizations where they are members.
 - direct browser mutation of organization membership is disabled.
-- new organizations are created only through an authenticated `security definer` function that atomically creates the owner membership.
+- organization creation is permitted only when `created_by = auth.uid()` under RLS; an internal non-API trigger atomically grants the creator the `owner` membership.
+- membership/role helper functions live outside the exposed API schema.
 - self-service signup is not exposed by the application.
 - no Storage change and no business/client/case data are introduced.
 - no service-role/secret key is required by the application.
