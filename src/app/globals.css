@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+:root {
+  --axia-bg: #071018;
+  --axia-panel: #0a141e;
+  --axia-text: #f3f7fa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--axia-bg);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 75% 0%, rgba(34, 211, 238, 0.08), transparent 28rem),
+    var(--axia-bg);
+  font-family: Arial, "Noto Sans Arabic", sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(103, 232, 249, 0.28);
+}
