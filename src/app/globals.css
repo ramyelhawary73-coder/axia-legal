@@ -1,9 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --axia-bg: #071018;
-  --axia-panel: #0a141e;
-  --axia-text: #f3f7fa;
+  --axia-bg: #070d18;
+  --axia-panel: #0d1726;
+  --axia-card: #111d30;
+  --axia-card-hover: #15243c;
+  --axia-gold: #c59b27;
+  --axia-gold-light: #e5b842;
+  --axia-gold-dim: rgba(197, 155, 39, 0.15);
+  --axia-text: #f1f5f9;
+  --axia-muted: #94a3b8;
 }
 
 * {
@@ -12,15 +18,17 @@
 
 html {
   background: var(--axia-bg);
+  color-scheme: dark;
 }
 
 body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(circle at 75% 0%, rgba(34, 211, 238, 0.08), transparent 28rem),
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(197, 155, 39, 0.07), transparent),
+    radial-gradient(circle at 90% 10%, rgba(30, 58, 138, 0.18), transparent 35rem),
     var(--axia-bg);
-  font-family: Arial, "Noto Sans Arabic", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Arabic", sans-serif;
   text-rendering: optimizeLegibility;
 }
 
@@ -32,5 +40,26 @@ select {
 }
 
 ::selection {
-  background: rgba(103, 232, 249, 0.28);
+  background: rgba(197, 155, 39, 0.35);
+  color: #fff;
 }
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(13, 23, 38, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(197, 155, 39, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(197, 155, 39, 0.45);
+}
+
