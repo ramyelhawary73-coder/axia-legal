@@ -3,15 +3,9 @@
 import { useState } from "react";
 import { 
   Gavel, 
-  Calendar, 
   Clock, 
-  MapPin, 
-  User, 
   CheckCircle2, 
-  AlertCircle, 
   Plus, 
-  Filter, 
-  FileText,
   Building2,
   X
 } from "lucide-react";

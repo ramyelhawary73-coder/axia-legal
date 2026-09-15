@@ -5,14 +5,8 @@ import {
   FileText, 
   Download, 
   Upload, 
-  Plus, 
   Search, 
-  Filter, 
-  CheckCircle2, 
-  Clock, 
-  FileCheck,
-  Building2,
-  FolderOpen
+  FileCheck
 } from "lucide-react";
 import { mockDocuments } from "@/lib/mock-legal-data";
 import { LegalDocument } from "@/types/legal";

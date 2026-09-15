@@ -3,22 +3,12 @@
 import { useState } from "react";
 import { 
   Search, 
-  Filter, 
   Plus, 
   Briefcase, 
-  Scale, 
-  Calendar, 
-  FileText, 
-  DollarSign, 
-  User, 
-  Building2, 
-  ChevronLeft,
-  X,
-  CheckCircle2,
-  Clock
+  X
 } from "lucide-react";
 import { mockMatters } from "@/lib/mock-legal-data";
-import { Matter, CourtCategory, MatterStage } from "@/types/legal";
+import { Matter, CourtCategory } from "@/types/legal";
 
 interface MattersViewProps {
   selectedMatterId?: string | null;
@@ -48,7 +38,7 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
   const [newClientName, setNewClientName] = useState("");
   const [newClientRole, setNewClientRole] = useState<Matter["clientRole"]>("مدعي");
   const [newOpponentName, setNewOpponentName] = useState("");
-  const [newAssignedLawyer, setNewAssignedLawyer] = useState("د. رامي الهواري (محام بالنقض)");
+  const [newAssignedLawyer] = useState("د. رامي الهواري (محام بالنقض)");
   const [newNextHearingDate, setNewNextHearingDate] = useState("2026-10-12");
   const [newAgreedFees, setNewAgreedFees] = useState("١٠٠,٠٠٠ ج.م");
 

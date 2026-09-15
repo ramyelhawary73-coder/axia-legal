@@ -8,14 +8,11 @@ import {
   AlertTriangle, 
   Briefcase, 
   Users, 
-  FileText, 
   Clock, 
   ArrowUpRight, 
   Sparkles,
   ChevronLeft,
-  CheckCircle2,
-  Building2,
-  DollarSign
+  CheckCircle2
 } from "lucide-react";
 import { mockMatters, mockHearings, mockTasks, mockClients } from "@/lib/mock-legal-data";
 import { NavigationTab } from "@/types/legal";

@@ -1,11 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Users, Award, Briefcase, GraduationCap, Plus, Mail, Phone } from "lucide-react";
+import { Users, Plus } from "lucide-react";
 import { mockTeam } from "@/lib/mock-legal-data";
 
 export function TeamView() {
-  const [team, setTeam] = useState(mockTeam);
+  const [team] = useState(mockTeam);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const handleAddMember = () => {
+    setNotice("سيتم فتح نافذة قيد مستشار أو محام جديد في سجل المكتب");
+    setTimeout(() => setNotice(null), 3000);
+  };
 
   return (
     <div className="space-y-7 p-6 sm:p-8 lg:p-10">
@@ -24,15 +30,19 @@ export function TeamView() {
         </div>
 
         <button
-          onClick={() => {
-            alert("نموذج إضافة مستشار قانوني أو محام متدرب جديد");
-          }}
+          onClick={handleAddMember}
           className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--axia-gold)] to-[#a77e16] px-4 py-2.5 text-xs font-bold text-slate-950 shadow-md transition hover:brightness-110"
         >
           <Plus className="size-4" />
           <span>ضم محامٍ جديد للمكتب</span>
         </button>
       </div>
+
+      {notice && (
+        <div className="rounded-xl border border-[var(--axia-gold-light)]/30 bg-[var(--axia-gold)]/10 p-3 text-xs text-[var(--axia-gold-light)]">
+          {notice}
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {team.map((member) => (

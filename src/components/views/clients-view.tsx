@@ -12,7 +12,6 @@ import {
   Plus, 
   Search, 
   ShieldCheck, 
-  CreditCard,
   X
 } from "lucide-react";
 import { mockClients } from "@/lib/mock-legal-data";

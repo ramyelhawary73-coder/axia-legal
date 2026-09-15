@@ -7,10 +7,6 @@ import {
   Clock, 
   Receipt, 
   Plus, 
-  Download, 
-  Building2, 
-  CheckCircle2, 
-  Search,
   X
 } from "lucide-react";
 import { mockFinances } from "@/lib/mock-legal-data";

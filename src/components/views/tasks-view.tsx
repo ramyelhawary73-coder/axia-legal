@@ -2,16 +2,11 @@
 
 import { useState } from "react";
 import { 
-  CheckSquare, 
   AlertTriangle, 
   Clock, 
   CheckCircle2, 
   Plus, 
-  Search, 
-  User, 
-  Building2, 
-  X,
-  FileCheck
+  X
 } from "lucide-react";
 import { mockTasks } from "@/lib/mock-legal-data";
 import { LegalTask } from "@/types/legal";

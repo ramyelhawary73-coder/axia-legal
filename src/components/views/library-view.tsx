@@ -5,19 +5,14 @@ import {
   BookOpen, 
   Search, 
   Scale, 
-  FileText, 
-  Bookmark, 
-  Share2, 
   Copy, 
-  Check, 
-  Filter,
-  ExternalLink
+  Check 
 } from "lucide-react";
 import { mockPrecedents } from "@/lib/mock-legal-data";
 import { PrecedentArticle } from "@/types/legal";
 
 export function LibraryView() {
-  const [precedents, setPrecedents] = useState<PrecedentArticle[]>(mockPrecedents);
+  const [precedents] = useState<PrecedentArticle[]>(mockPrecedents);
   const [search, setSearch] = useState("");
   const [circuitFilter, setCircuitFilter] = useState("all");
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -127,7 +122,7 @@ export function LibraryView() {
 
             {/* Principle text */}
             <p className="mt-4 text-xs sm:text-sm leading-relaxed text-slate-100 font-serif">
-              "{item.principle}"
+              &quot;{item.principle}&quot;
             </p>
 
             {/* Referenced Articles */}

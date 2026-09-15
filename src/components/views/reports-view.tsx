@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, TrendingUp, PieChart, CheckCircle2, Scale, Calendar, Users } from "lucide-react";
+import { BarChart3, CheckCircle2 } from "lucide-react";
 
 export function ReportsView() {
   return (

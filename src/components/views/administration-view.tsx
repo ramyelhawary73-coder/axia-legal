@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, Shield, Key, Database, Building2, UserCheck, Save, Check } from "lucide-react";
+import { Settings, Database, Save, Check } from "lucide-react";
 
 export function AdministrationView() {
   const [firmName, setFirmName] = useState("مكتب د. رامي الهواري للاستشارات القانونية والتحكيم الدولي");

@@ -6,7 +6,6 @@ import {
   Gavel, 
   Users, 
   Briefcase, 
-  Calendar, 
   CheckSquare, 
   FileText, 
   DollarSign, 
@@ -19,7 +18,7 @@ import {
   Menu, 
   X,
   Shield,
-  ChevronDown
+  type LucideIcon
 } from "lucide-react";
 import { NavigationTab } from "@/types/legal";
 
@@ -29,7 +28,7 @@ interface AppShellProps {
   children: React.ReactNode;
 }
 
-const navItems: { id: NavigationTab; labelAr: string; labelEn: string; icon: any; badge?: string }[] = [
+const navItems: { id: NavigationTab; labelAr: string; labelEn: string; icon: LucideIcon; badge?: string }[] = [
   { id: "overview", labelAr: "نظرة عامة", labelEn: "Overview", icon: Scale },
   { id: "matters", labelAr: "القضايا والملفات", labelEn: "Matters & Dossiers", icon: Briefcase, badge: "٥" },
   { id: "hearings", labelAr: "الجلسات والتقويم", labelEn: "Hearings & Roll", icon: Gavel, badge: "اليوم" },
