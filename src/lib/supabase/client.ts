@@ -9,9 +9,17 @@ export function getSupabaseBrowserClient(): SupabaseClient {
   const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url || !publishableKey) {
-    throw new Error(
-      "Supabase browser configuration is missing. Set only NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in the deployment environment.",
+    console.warn(
+      "[AXIA Legal] Supabase environment variables missing (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY). Using fallback client stub.",
     );
+    browserClient = createClient("https://placeholder.supabase.co", "placeholder-key", {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
+    return browserClient;
   }
 
   browserClient = createClient(url, publishableKey, {
