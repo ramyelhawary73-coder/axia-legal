@@ -18,6 +18,8 @@ import {
   Menu, 
   X,
   Shield,
+  PanelRightClose,
+  PanelRightOpen,
   type LucideIcon
 } from "lucide-react";
 import { NavigationTab } from "@/types/legal";
@@ -45,14 +47,15 @@ const navItems: { id: NavigationTab; labelAr: string; labelEn: string; icon: Luc
 
 export function AppShell({ activeTab, onNavigate, children }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[var(--axia-bg)] text-[var(--axia-text)]">
+    <div className="h-screen w-full flex flex-col overflow-hidden bg-[var(--axia-bg)] text-[var(--axia-text)]">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a121e]/95 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-[1700px] items-center justify-between px-4 sm:px-6 lg:px-8">
+      <header className="shrink-0 z-40 border-b border-white/10 bg-[#0a121e]/95 backdrop-blur-md">
+        <div className="mx-auto flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-8">
           {/* Brand & Mobile Hamburger */}
           <div className="flex items-center gap-4">
             <button
@@ -161,20 +164,31 @@ export function AppShell({ activeTab, onNavigate, children }: AppShellProps) {
       </header>
 
       {/* Main Container */}
-      <div className="mx-auto flex max-w-[1700px]">
+      <div className="flex flex-1 overflow-hidden w-full">
         {/* Sidebar Navigation (Desktop) */}
-        <aside className="hidden w-72 shrink-0 border-l border-white/10 bg-[#0a1320] p-4 lg:block min-h-[calc(100vh-64px)]">
-          <div className="mb-4 px-3 py-2 rounded-xl bg-[var(--axia-gold)]/5 border border-[var(--axia-gold)]/20">
-            <div className="flex items-center gap-2 text-xs font-bold text-[var(--axia-gold-light)]">
-              <Shield className="size-3.5" />
-              <span>النسخة الاحترافية للمحاماة</span>
-            </div>
-            <p className="text-[10px] text-slate-400 mt-1">
-              جدول المحاكم المصرية · مبادئ النقض
-            </p>
+        <aside 
+          className={`hidden shrink-0 border-l border-white/10 bg-[#0a1320] transition-all duration-300 ease-in-out lg:flex flex-col ${
+            isSidebarCollapsed ? "w-20" : "w-72"
+          }`}
+        >
+          {/* Header & Toggle */}
+          <div className="flex items-center justify-between p-4 border-b border-white/5">
+            {!isSidebarCollapsed && (
+              <div className="flex items-center gap-2 text-xs font-bold text-[var(--axia-gold-light)]">
+                <Shield className="size-4 shrink-0" />
+                <span className="truncate">النسخة الاحترافية للمحاماة</span>
+              </div>
+            )}
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors mx-auto"
+              title={isSidebarCollapsed ? "توسيع القائمة" : "طي القائمة"}
+            >
+              {isSidebarCollapsed ? <PanelRightOpen className="size-5" /> : <PanelRightClose className="size-5" />}
+            </button>
           </div>
 
-          <nav className="space-y-1">
+          <nav className="flex-1 overflow-y-auto space-y-1.5 p-3 custom-scrollbar">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -184,7 +198,10 @@ export function AppShell({ activeTab, onNavigate, children }: AppShellProps) {
                 <button
                   key={item.id}
                   onClick={() => onNavigate(item.id)}
-                  className={`w-full flex items-center justify-between rounded-xl px-3 py-2.5 text-right transition ${
+                  title={isSidebarCollapsed ? `${item.labelAr} - ${item.labelEn}` : undefined}
+                  className={`w-full flex items-center rounded-xl transition-all relative ${
+                    isSidebarCollapsed ? "justify-center p-3" : "justify-between px-3 py-2.5"
+                  } ${
                     isActive
                       ? "bg-gradient-to-r from-[var(--axia-gold)]/20 to-[var(--axia-gold)]/5 text-white font-bold border border-[var(--axia-gold)]/30 shadow-sm"
                       : isRajih
@@ -192,21 +209,23 @@ export function AppShell({ activeTab, onNavigate, children }: AppShellProps) {
                       : "text-slate-400 hover:bg-white/5 hover:text-white"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className={`size-4.5 shrink-0 ${
+                  <div className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-3"}`}>
+                    <Icon className={`size-5 shrink-0 ${
                       isActive 
                         ? "text-[var(--axia-gold-light)]" 
                         : isRajih
                         ? "text-amber-400"
                         : "text-slate-400"
                     }`} />
-                    <div>
-                      <span className="block text-xs font-medium">{item.labelAr}</span>
-                      <span className="block text-[10px] opacity-60 font-sans">{item.labelEn}</span>
-                    </div>
+                    {!isSidebarCollapsed && (
+                      <div className="text-right">
+                        <span className="block text-xs font-medium">{item.labelAr}</span>
+                        <span className="block text-[10px] opacity-60 font-sans">{item.labelEn}</span>
+                      </div>
+                    )}
                   </div>
 
-                  {item.badge && (
+                  {!isSidebarCollapsed && item.badge && (
                     <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${
                       item.badge === "اليوم"
                         ? "bg-amber-400 text-slate-950 animate-pulse"
@@ -218,6 +237,10 @@ export function AppShell({ activeTab, onNavigate, children }: AppShellProps) {
                     }`}>
                       {item.badge}
                     </span>
+                  )}
+                  
+                  {isSidebarCollapsed && item.badge && (
+                     <div className="absolute left-2 w-2 h-2 rounded-full bg-amber-400 border border-black"></div>
                   )}
                 </button>
               );
@@ -284,8 +307,10 @@ export function AppShell({ activeTab, onNavigate, children }: AppShellProps) {
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 min-w-0">
-          {children}
+        <main className="flex-1 min-w-0 overflow-y-auto relative z-0 scroll-smooth">
+          <div className="mx-auto max-w-[1700px]">
+            {children}
+          </div>
         </main>
       </div>
     </div>

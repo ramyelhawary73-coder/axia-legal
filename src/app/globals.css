@@ -22,7 +22,8 @@ html {
 }
 
 body {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   margin: 0;
   background:
     radial-gradient(ellipse 80% 50% at 50% -20%, rgba(197, 155, 39, 0.07), transparent),
