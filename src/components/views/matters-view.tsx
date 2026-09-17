@@ -6,7 +6,6 @@ import {
   Plus, 
   Briefcase, 
   X,
-  Filter,
   ArrowUpRight,
   ChevronDown
 } from "lucide-react";

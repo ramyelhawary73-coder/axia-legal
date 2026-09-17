@@ -11,10 +11,7 @@ import {
   Clock, 
   ArrowUpRight, 
   Sparkles,
-  ChevronLeft,
-  CheckCircle2,
-  ChevronDown,
-  MoreHorizontal
+  ChevronLeft
 } from "lucide-react";
 import { mockMatters, mockHearings, mockTasks, mockClients } from "@/lib/mock-legal-data";
 import { NavigationTab } from "@/types/legal";
@@ -26,14 +23,9 @@ interface OverviewViewProps {
 
 export function OverviewView({ onNavigate, onOpenMatter }: OverviewViewProps) {
   const [quickDecisionInput, setQuickDecisionInput] = useState<{ [id: string]: string }>({});
-  const [savedDecisions, setSavedDecisions] = useState<{ [id: string]: string }>({});
 
   const handleSaveDecision = (hearingId: string) => {
     if (quickDecisionInput[hearingId]) {
-      setSavedDecisions((prev) => ({
-        ...prev,
-        [hearingId]: quickDecisionInput[hearingId],
-      }));
       setQuickDecisionInput((prev) => ({ ...prev, [hearingId]: "" }));
     }
   };
