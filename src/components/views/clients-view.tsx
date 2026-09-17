@@ -12,7 +12,8 @@ import {
   Plus, 
   Search, 
   ShieldCheck, 
-  X
+  X,
+  ChevronDown
 } from "lucide-react";
 import { mockClients } from "@/lib/mock-legal-data";
 import { Client } from "@/types/legal";
@@ -69,265 +70,275 @@ export function ClientsView() {
   });
 
   return (
-    <div className="space-y-7 p-6 sm:p-8 lg:p-10">
+    <div className="flex flex-col h-full max-w-[1400px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-[var(--border)] shrink-0">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-[var(--axia-gold-light)]">
-            <Users className="size-4" />
-            <span>سجل الموكلين والشركات</span>
-          </div>
-          <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
-            إدارة الموكلين والتوكيلات الرسمية
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--text)]">
+            سجل الموكلين والشركات
           </h1>
-          <p className="mt-1 text-xs text-slate-400">
-            أرشيف التوكيلات القضائية، أرقام السجلات التجارية، والمتابعة المالية
+          <p className="mt-1 text-xs text-[var(--text-muted)] flex items-center gap-1.5">
+            <Users className="size-3.5" />
+            إدارة الموكلين، أرشيف التوكيلات الرسمية، والمتابعة المالية
           </p>
         </div>
 
-        <button
-          onClick={() => setIsNewClientOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--axia-gold)] to-[#a77e16] px-4 py-2.5 text-xs font-bold text-slate-950 shadow-md transition hover:brightness-110"
-        >
-          <Plus className="size-4" />
-          <span>إضافة موكل / شركة جديدة</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsNewClientOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-md bg-[var(--text)] px-3 py-1.5 text-xs font-medium text-[var(--bg)] shadow-sm hover:opacity-90 transition-opacity"
+          >
+            <Plus className="size-3.5" />
+            <span>إضافة موكل جديد</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="grid gap-3 rounded-2xl border border-white/10 bg-[#0d1726] p-4 sm:grid-cols-3">
-        <div className="relative sm:col-span-2">
-          <Search className="absolute right-3.5 top-3 size-4 text-slate-400" />
+      <div className="flex flex-wrap items-center gap-3 py-3 shrink-0">
+        <div className="relative flex-1 min-w-[250px] max-w-sm">
+          <Search className="absolute right-2.5 top-1.5 size-3.5 text-[var(--text-muted)]" />
           <input
             type="text"
-            placeholder="بحث بالاسم، رقم الهاتف، أو رقم التوكيل الرسمي..."
+            placeholder="بحث بالاسم، رقم الهاتف، أو التوكيل..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/25 pr-10 pl-4 py-2 text-xs text-white placeholder:text-slate-500 focus:border-[var(--axia-gold)] focus:outline-none"
+            className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
           />
         </div>
 
-        <div>
+        <div className="relative">
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs text-slate-200 focus:border-[var(--axia-gold)] focus:outline-none"
+            className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
           >
-            <option value="all">كافة التصنيفات (شركات وأفراد)</option>
-            <option value="شركة / مؤسسة">شركات ومؤسسات تجارية</option>
-            <option value="فرد / شخص طبيعي">أفراد وأشخاص طبيعيين</option>
+            <option value="all">كافة التصنيفات</option>
+            <option value="شركة / مؤسسة">شركات ومؤسسات</option>
+            <option value="فرد / شخص طبيعي">أفراد</option>
           </select>
+          <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
         </div>
       </div>
 
-      {/* Clients Cards Grid */}
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {filteredClients.map((client) => (
-          <div
-            key={client.id}
-            className="flex flex-col justify-between rounded-2xl border border-white/10 bg-[#0d1726] p-5 shadow-lg transition hover:border-[var(--axia-gold)]/40 hover:bg-[#111e33]"
-          >
-            <div>
-              {/* Header */}
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <div className="grid size-9 place-items-center rounded-xl bg-white/5 border border-white/10 text-[var(--axia-gold-light)]">
-                    {client.type === "شركة / مؤسسة" ? (
-                      <Building2 className="size-4" />
-                    ) : (
-                      <User className="size-4" />
-                    )}
-                  </div>
-                  <div>
-                    <span className="rounded bg-slate-800 px-2 py-0.5 text-[10px] font-semibold text-slate-300">
-                      {client.type}
-                    </span>
-                  </div>
-                </div>
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-300">
-                  <ShieldCheck className="size-3" />
-                  توكيل ساري
-                </span>
-              </div>
-
-              {/* Client Name */}
-              <h3 className="mt-3 text-sm font-bold text-white leading-snug">
-                {client.name}
-              </h3>
-              <p className="mt-1 text-[11px] text-slate-400 font-mono">
-                {client.nationalIdOrCr}
-              </p>
-
-              {/* Power of Attorney (التوكيل الرسمي) */}
-              <div className="mt-4 rounded-xl border border-[var(--axia-gold-dim)] bg-[var(--axia-gold)]/5 p-3 text-xs space-y-1.5">
-                <div className="flex items-center gap-1.5 text-[var(--axia-gold-light)] font-bold text-[11px]">
-                  <FileCheck className="size-3.5" />
-                  <span>بيانات التوكيل الرسمي:</span>
-                </div>
-                <p className="text-white font-medium text-[11px]">{client.poaNumber}</p>
-                <p className="text-slate-400 text-[10px]">{client.poaOffice}</p>
-              </div>
-
-              {/* Contact Info */}
-              <div className="mt-3 space-y-1.5 text-xs text-slate-300">
-                <div className="flex items-center gap-2">
-                  <Phone className="size-3.5 text-slate-400" />
-                  <span dir="ltr" className="font-mono text-left">{client.phone}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="size-3.5 text-slate-400" />
-                  <span className="truncate">{client.email}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="size-3.5 text-slate-400" />
-                  <span className="truncate text-slate-400 text-[11px]">{client.address}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Financial Ledger Mini Summary */}
-            <div className="mt-5 border-t border-white/10 pt-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">القضايا النشطة:</span>
-                <span className="font-bold text-white">{client.activeMattersCount} قضايا</span>
-              </div>
-              <div className="mt-1 flex items-center justify-between text-xs">
-                <span className="text-slate-400">المسدد / المتبقي:</span>
-                <span className="text-[11px]">
-                  <span className="text-emerald-400 font-semibold">{client.totalPaid}</span>
-                  <span className="text-slate-500 mx-1">/</span>
-                  <span className="text-amber-400 font-semibold">{client.balanceDue}</span>
-                </span>
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* Clients Table */}
+      <div className="flex-1 overflow-hidden flex flex-col rounded-xl border border-[var(--border)] bg-[var(--panel)] shadow-sm">
+        <div className="overflow-x-auto flex-1">
+          <table className="w-full text-right text-[11px]">
+            <thead className="sticky top-0 bg-[var(--panel)] z-10 shadow-[0_1px_0_var(--border)]">
+              <tr className="text-[var(--text-muted)] uppercase tracking-wider text-[10px]">
+                <th className="px-4 py-2 font-medium w-[25%]">اسم الموكل / النوع</th>
+                <th className="px-4 py-2 font-medium w-[20%]">بيانات التواصل</th>
+                <th className="px-4 py-2 font-medium w-[25%]">بيانات التوكيل الرسمي</th>
+                <th className="px-4 py-2 font-medium w-[15%]">القضايا النشطة</th>
+                <th className="px-4 py-2 font-medium w-[15%]">الموقف المالي (مسدد / متبقي)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {filteredClients.map((client) => (
+                <tr 
+                  key={client.id} 
+                  className="hover:bg-[var(--accent)] transition-colors group cursor-default"
+                >
+                  <td className="px-4 py-3 align-top">
+                    <div className="flex items-start gap-2.5">
+                      <div className="grid size-7 shrink-0 place-items-center rounded-md bg-[var(--bg)] border border-[var(--border)] text-[var(--text-muted)]">
+                        {client.type === "شركة / مؤسسة" ? <Building2 className="size-3.5" /> : <User className="size-3.5" />}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-[var(--text)] text-xs mb-0.5">{client.name}</div>
+                        <div className="text-[10px] text-[var(--text-muted)] font-mono">{client.nationalIdOrCr}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 text-[var(--text)]">
+                        <Phone className="size-3 text-[var(--text-muted)]" />
+                        <span dir="ltr" className="font-mono text-left">{client.phone}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[var(--text)]">
+                        <Mail className="size-3 text-[var(--text-muted)]" />
+                        <span className="truncate">{client.email}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                        <MapPin className="size-3" />
+                        <span className="truncate text-[10px]">{client.address}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="flex items-center gap-1.5 mb-1 text-[var(--text)] font-medium">
+                      <FileCheck className="size-3 text-[var(--gold)]" />
+                      {client.poaNumber}
+                    </div>
+                    <div className="text-[10px] text-[var(--text-muted)] mr-4.5 mb-1">{client.poaOffice}</div>
+                    <div className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-600 dark:text-emerald-400 mr-4.5 border border-emerald-500/20">
+                      <ShieldCheck className="size-2.5" />
+                      توكيل ساري
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[var(--bg)] border border-[var(--border)] text-[10px] font-bold text-[var(--text)]">
+                      {client.activeMattersCount}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="space-y-1 text-[10px]">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[var(--text-muted)]">المسدد:</span>
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">{client.totalPaid}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[var(--text-muted)]">المتبقي:</span>
+                        <span className="font-semibold text-amber-600 dark:text-amber-400">{client.balanceDue}</span>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredClients.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-[var(--text-muted)] text-xs">
+                    لا يوجد موكلين مطابقين للبحث.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="border-t border-[var(--border)] bg-[var(--bg)]/30 px-4 py-2 text-[10px] text-[var(--text-muted)]">
+          إجمالي الموكلين: {filteredClients.length}
+        </div>
       </div>
 
       {/* New Client Modal */}
       {isNewClientOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-[var(--axia-gold-dim)] bg-[#0d1726] p-6 lg:p-8 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--panel-glass)] backdrop-blur-xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
             <button
               onClick={() => setIsNewClientOpen(false)}
-              className="absolute left-6 top-6 grid size-8 place-items-center rounded-full bg-white/10 text-slate-300 hover:bg-white/20 hover:text-white"
+              className="absolute left-4 top-4 grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
             >
               <X className="size-4" />
             </button>
 
-            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--axia-gold-light)]">
-              <Plus className="size-4" />
-              <span>إدراج موكل جديد في المنظومة</span>
+            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
+              <Plus className="size-4 text-[var(--text)]" />
+              <span>إدراج موكل جديد</span>
             </div>
             
-            <h2 className="mt-1 text-xl font-bold text-white">تسجيل بيانات موكل / شركة</h2>
+            <h2 className="text-xl font-bold text-[var(--text)] border-b border-[var(--border)] pb-4">تسجيل بيانات موكل / شركة</h2>
             
-            <form onSubmit={handleCreateClient} className="mt-6 space-y-4 text-xs">
+            <form onSubmit={handleCreateClient} className="mt-4 space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 mb-1 font-semibold">اسم الموكل أو المنشأة</label>
+                <label className="block text-[var(--text-muted)] mb-1 font-medium">اسم الموكل أو المنشأة</label>
                 <input
                   type="text"
                   required
                   placeholder="مثال: شركة القاهرة للتطوير والاستثمار العقاري"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                 />
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">نوع الكيان</label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value as Client["type"])}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
-                  >
-                    <option value="شركة / مؤسسة">شركة / مؤسسة تجارية</option>
-                    <option value="فرد / شخص طبيعي">فرد / شخص طبيعي</option>
-                  </select>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">نوع الكيان</label>
+                  <div className="relative">
+                    <select
+                      value={type}
+                      onChange={(e) => setType(e.target.value as Client["type"])}
+                      className="appearance-none w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                    >
+                      <option value="شركة / مؤسسة">شركة / مؤسسة تجارية</option>
+                      <option value="فرد / شخص طبيعي">فرد / شخص طبيعي</option>
+                    </select>
+                    <ChevronDown className="absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)] pointer-events-none" />
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">رقم السجل التجاري أو الرقم القومي</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم السجل التجاري / الرقم القومي</label>
                   <input
                     type="text"
                     placeholder="س.ت: ٥٤٨١٢٣ أو الرقم القومي"
                     value={nationalIdOrCr}
                     onChange={(e) => setNationalIdOrCr(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">رقم الهاتف والتواصل</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم الهاتف والتواصل</label>
                   <input
                     type="text"
                     required
                     placeholder="+20 100 000 0000"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">البريد الإلكتروني</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">البريد الإلكتروني</label>
                   <input
                     type="email"
                     placeholder="legal@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">رقم التوكيل الرسمي وحرفه</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم التوكيل الرسمي وحرفه</label>
                   <input
                     type="text"
                     placeholder="مثال: ٥٤١ / ب لسنة ٢٠٢٥ عام قضايا"
                     value={poaNumber}
                     onChange={(e) => setPoaNumber(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">مكتب التوثيق (الشهر العقاري)</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">مكتب التوثيق (الشهر العقاري)</label>
                   <input
                     type="text"
                     placeholder="مثال: توثيق قصر النيل المطور"
                     value={poaOffice}
                     onChange={(e) => setPoaOffice(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-300 mb-1 font-semibold">العنوان والمقر القانوني</label>
+                <label className="block text-[var(--text-muted)] mb-1 font-medium">العنوان والمقر القانوني</label>
                 <input
                   type="text"
                   placeholder="العنوان التفصيلي"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                 />
               </div>
 
-              <div className="pt-3 flex justify-end gap-3">
+              <div className="pt-4 mt-4 border-t border-[var(--border)] flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsNewClientOpen(false)}
-                  className="rounded-xl bg-white/10 px-4 py-2 font-medium text-white hover:bg-white/15"
+                  className="rounded-md border border-[var(--border)] bg-[var(--panel)] px-4 py-2 font-medium text-[var(--text)] hover:bg-[var(--accent)] transition-colors"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-gradient-to-r from-[var(--axia-gold)] to-[#a77e16] px-5 py-2 font-bold text-slate-950 hover:brightness-110"
+                  className="rounded-md bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] hover:opacity-90 transition-opacity"
                 >
                   حفظ الموكل
                 </button>

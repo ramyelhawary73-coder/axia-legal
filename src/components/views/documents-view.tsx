@@ -6,7 +6,9 @@ import {
   Download, 
   Upload, 
   Search, 
-  FileCheck
+  FileCheck,
+  ChevronDown,
+  X
 } from "lucide-react";
 import { mockDocuments } from "@/lib/mock-legal-data";
 import { LegalDocument } from "@/types/legal";
@@ -27,23 +29,20 @@ export function DocumentsView() {
   });
 
   return (
-    <div className="space-y-7 p-6 sm:p-8 lg:p-10">
+    <div className="flex flex-col h-full max-w-[1400px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-[var(--border)] shrink-0">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-cyan-300">
-            <FileText className="size-4" />
-            <span>المستندات والعقود ومذكرات الدفاع</span>
-          </div>
-          <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
-            الأرشيف القانوني والعقود وصحف الدعاوى
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--text)]">
+            الأرشيف القانوني والعقود
           </h1>
-          <p className="mt-1 text-xs text-slate-400">
-            حفظ إلكتروني موثق، تدقيق بنود العقود والاتفاقيات، ومراجعة صياغة المذكرات
+          <p className="mt-1 text-xs text-[var(--text-muted)] flex items-center gap-1.5">
+            <FileText className="size-3.5" />
+            حفظ إلكتروني، مذكرات الدفاع، وأحكام قضائية
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => {
               const newDoc: LegalDocument = {
@@ -58,135 +57,166 @@ export function DocumentsView() {
               };
               setDocs([newDoc, ...docs]);
             }}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-600 px-4 py-2.5 text-xs font-bold text-slate-950 shadow-md transition hover:brightness-110"
+            className="inline-flex items-center gap-1.5 rounded-md bg-[var(--text)] px-3 py-1.5 text-xs font-medium text-[var(--bg)] shadow-sm hover:opacity-90 transition-opacity"
           >
-            <Upload className="size-4" />
-            <span>رفع مستند / عقد جديد</span>
+            <Upload className="size-3.5" />
+            <span>رفع مستند / عقد</span>
           </button>
         </div>
       </div>
 
       {/* Filter and Search */}
-      <div className="grid gap-3 rounded-2xl border border-white/10 bg-[#0d1726] p-4 sm:grid-cols-3">
-        <div className="relative sm:col-span-2">
-          <Search className="absolute right-3.5 top-3 size-4 text-slate-400" />
+      <div className="flex flex-wrap items-center gap-3 py-3 shrink-0">
+        <div className="relative flex-1 min-w-[250px] max-w-sm">
+          <Search className="absolute right-2.5 top-1.5 size-3.5 text-[var(--text-muted)]" />
           <input
             type="text"
-            placeholder="بحث في المستندات، اسم العقد، الموكل، أو رقم القضية..."
+            placeholder="بحث باسم المستند، الموكل، رقم القضية..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/25 pr-10 pl-4 py-2 text-xs text-white placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+            className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
           />
         </div>
 
-        <div>
+        <div className="relative">
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs text-slate-200 focus:border-cyan-400 focus:outline-none"
+            className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
           >
-            <option value="all">كافة أنواع الوثائق</option>
+            <option value="all">كافة المستندات</option>
             <option value="مذكرة دفاع">مذكرات الدفاع</option>
-            <option value="صحيفة دعوى">صحف الدعاوى والطعون</option>
+            <option value="صحيفة دعوى">صحف الدعاوى</option>
             <option value="عقد واتفاقية">عقود واتفاقيات</option>
-            <option value="حكم قضائي">أحكام قضائية وتقارير خبراء</option>
+            <option value="حكم قضائي">أحكام قضائية</option>
           </select>
+          <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
         </div>
       </div>
 
-      {/* Documents Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {filteredDocs.map((doc) => (
-          <div
-            key={doc.id}
-            className="rounded-2xl border border-white/10 bg-[#0d1726] p-5 shadow-lg hover:border-cyan-400/40 hover:bg-[#111e33] transition"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3">
-                <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-cyan-400/10 text-cyan-300 border border-cyan-400/20">
-                  <FileText className="size-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="rounded bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-cyan-300">
-                      {doc.type}
-                    </span>
-                    <span className="text-[11px] text-slate-400">{doc.date}</span>
-                  </div>
-                  <h3 className="mt-2 text-sm font-bold text-white leading-snug">
-                    {doc.title}
-                  </h3>
-                  <div className="mt-2 space-y-1 text-xs text-slate-300">
-                    <p>الموكل: <strong className="text-white">{doc.clientName}</strong></p>
+      {/* Documents Table */}
+      <div className="flex-1 overflow-hidden flex flex-col rounded-xl border border-[var(--border)] bg-[var(--panel)] shadow-sm">
+        <div className="overflow-x-auto flex-1">
+          <table className="w-full text-right text-[11px]">
+            <thead className="sticky top-0 bg-[var(--panel)] z-10 shadow-[0_1px_0_var(--border)]">
+              <tr className="text-[var(--text-muted)] uppercase tracking-wider text-[10px]">
+                <th className="px-4 py-2 font-medium w-[30%]">اسم المستند / التاريخ</th>
+                <th className="px-4 py-2 font-medium w-[20%]">نوع المستند</th>
+                <th className="px-4 py-2 font-medium w-[20%]">الموكل / القضية</th>
+                <th className="px-4 py-2 font-medium w-[15%]">الحالة / الحجم</th>
+                <th className="px-4 py-2 font-medium w-[15%] text-center">الإجراء</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {filteredDocs.map((doc) => (
+                <tr key={doc.id} className="hover:bg-[var(--accent)] transition-colors group cursor-default">
+                  <td className="px-4 py-3 align-top">
+                    <div className="flex items-start gap-2.5">
+                      <div className="grid size-7 shrink-0 place-items-center rounded-md bg-[var(--bg)] border border-[var(--border)] text-[var(--text-muted)]">
+                        <FileText className="size-3.5" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-[var(--text)] text-xs mb-0.5 line-clamp-1" title={doc.title}>{doc.title}</div>
+                        <div className="text-[10px] text-[var(--text-muted)]">{doc.date}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top text-[var(--text)] font-medium">
+                    {doc.type}
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="font-semibold text-[var(--text)] mb-0.5">{doc.clientName}</div>
                     {doc.caseNumber && (
-                      <p className="text-[11px] text-[var(--axia-gold-light)] font-medium">
-                        القضية: {doc.caseNumber}
-                      </p>
+                      <div className="text-[10px] text-[var(--text-muted)]">{doc.caseNumber}</div>
                     )}
-                  </div>
-                </div>
-              </div>
-
-              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold shrink-0 ${
-                doc.status === "نهائي معتمد"
-                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                  : doc.status === "موقع رسمياً"
-                  ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                  : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-              }`}>
-                {doc.status}
-              </span>
-            </div>
-
-            <div className="mt-5 border-t border-white/10 pt-3 flex items-center justify-between text-xs">
-              <span className="text-slate-400">{doc.fileSize}</span>
-              <button
-                onClick={() => setSelectedDoc(doc)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-slate-200 hover:bg-cyan-500 hover:text-slate-950 transition font-semibold"
-              >
-                <Download className="size-3.5" />
-                <span>معاينة وتحميل</span>
-              </button>
-            </div>
-          </div>
-        ))}
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="mb-1.5">
+                      <span className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-medium border ${
+                        doc.status === "نهائي معتمد"
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                          : doc.status === "موقع رسمياً"
+                          ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
+                          : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                      }`}>
+                        {doc.status}
+                      </span>
+                    </div>
+                    <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">{doc.fileSize}</div>
+                  </td>
+                  <td className="px-4 py-3 align-top text-center">
+                    <button
+                      onClick={() => setSelectedDoc(doc)}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-[var(--text)] hover:bg-[var(--accent)] transition-colors opacity-0 group-hover:opacity-100 mx-auto"
+                    >
+                      <Download className="size-3.5" />
+                      <span>معاينة</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {filteredDocs.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-[var(--text-muted)] text-xs">
+                    لا يوجد مستندات مطابقة للبحث.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="border-t border-[var(--border)] bg-[var(--bg)]/30 px-4 py-2 text-[10px] text-[var(--text-muted)]">
+          إجمالي المستندات: {filteredDocs.length}
+        </div>
       </div>
 
       {/* Preview Modal */}
       {selectedDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-cyan-400/30 bg-[#0d1726] p-6 lg:p-8 shadow-2xl">
-            <div className="flex items-center gap-2 text-xs font-semibold text-cyan-300">
-              <FileCheck className="size-4" />
-              <span>معاينة الوثيقة القانونية المعتمدة</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--panel-glass)] backdrop-blur-xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
+            <button
+              onClick={() => setSelectedDoc(null)}
+              className="absolute left-4 top-4 grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
+            >
+              <X className="size-4" />
+            </button>
+
+            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
+              <FileCheck className="size-3.5" />
+              <span>معاينة الوثيقة المعتمدة</span>
             </div>
             
-            <h2 className="mt-2 text-xl font-bold text-white">{selectedDoc.title}</h2>
-            <p className="mt-1 text-xs text-slate-400">{selectedDoc.clientName} · {selectedDoc.date}</p>
+            <h2 className="text-xl font-bold text-[var(--text)] border-b border-[var(--border)] pb-4">{selectedDoc.title}</h2>
+            <div className="mt-3 flex items-center justify-between text-xs text-[var(--text-muted)]">
+              <span>الموكل: {selectedDoc.clientName}</span>
+              <span>التاريخ: {selectedDoc.date}</span>
+            </div>
 
-            <div className="mt-6 rounded-2xl border border-white/10 bg-black/30 p-5 text-xs text-slate-300 leading-relaxed font-mono">
-              <p className="font-bold text-center text-white mb-3 text-sm">
+            <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg)] p-6 text-xs text-[var(--text)] leading-relaxed font-mono overflow-y-auto max-h-[40vh] shadow-inner">
+              <p className="font-bold text-center mb-6 text-sm">
                 باسم الشعب — محكمة استئناف عالي القاهرة
               </p>
-              <p>
+              <p className="text-justify leading-loose">
                 بناءً على طلب الموكل المقيد برقم {selectedDoc.caseNumber || "عقد رسمي موثق"}، وبصفتنا وكلاء عنه بموجب التوكيل الرسمي المودع بملف الدعوى، نتشرف بعرض دفاعنا الماثل تأسيساً على القواعد القانونية والمبادئ المستقرة لمحكمة النقض المصرية...
               </p>
-              <div className="mt-4 border-t border-white/10 pt-3 text-[11px] text-slate-400">
-                الحالة: <span className="text-emerald-300 font-semibold">{selectedDoc.status}</span> · الحجم: {selectedDoc.fileSize}
+              <div className="mt-8 border-t border-[var(--border)] border-dashed pt-4 flex items-center justify-between text-[11px] text-[var(--text-muted)]">
+                <div>الحالة: <span className="font-semibold text-[var(--text)]">{selectedDoc.status}</span></div>
+                <div>الحجم: {selectedDoc.fileSize}</div>
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex justify-end gap-2 border-t border-[var(--border)] pt-4">
               <button
                 onClick={() => setSelectedDoc(null)}
-                className="rounded-xl bg-white/10 px-4 py-2 text-xs font-semibold text-white hover:bg-white/15"
+                className="rounded-md border border-[var(--border)] bg-[var(--panel)] px-4 py-2 font-medium text-[var(--text)] hover:bg-[var(--accent)] transition-colors text-xs"
               >
-                إغلاق المعاينة
+                إغلاق
               </button>
               <button
                 onClick={() => setSelectedDoc(null)}
-                className="rounded-xl bg-cyan-400 px-5 py-2 text-xs font-bold text-slate-950 hover:brightness-110"
+                className="rounded-md bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] hover:opacity-90 transition-opacity text-xs inline-flex items-center gap-1.5"
               >
+                <Download className="size-3.5" />
                 تنزيل الملف (PDF)
               </button>
             </div>

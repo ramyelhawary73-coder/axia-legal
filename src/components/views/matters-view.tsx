@@ -5,7 +5,10 @@ import {
   Search, 
   Plus, 
   Briefcase, 
-  X
+  X,
+  Filter,
+  ArrowUpRight,
+  ChevronDown
 } from "lucide-react";
 import { mockMatters } from "@/lib/mock-legal-data";
 import { Matter, CourtCategory } from "@/types/legal";
@@ -87,227 +90,241 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
   });
 
   return (
-    <div className="space-y-7 p-6 sm:p-8 lg:p-10">
-      {/* Header with quick creation */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-6">
+    <div className="flex flex-col h-full max-w-[1400px] mx-auto">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-[var(--border)] shrink-0">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-[var(--axia-gold-light)]">
-            <Briefcase className="size-4" />
-            <span>إدارة الملفات والقضايا المتداولة</span>
-          </div>
-          <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
-            سجل القضايا والمنازعات القضائية
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--text)]">
+            سجل القضايا والمنازعات
           </h1>
-          <p className="mt-1 text-xs text-slate-400">
-            إدارة متكاملة لصحف الدعاوى، المذكرات، قرارات الدوائر، والمتابعة الإجرائية
+          <p className="mt-1 text-xs text-[var(--text-muted)] flex items-center gap-1.5">
+            <Briefcase className="size-3.5" />
+            إدارة متكاملة لصحف الدعاوى، المذكرات، ومتابعة الإجراءات
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setIsNewMatterOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--axia-gold)] to-[#a77e16] px-4 py-2.5 text-xs font-bold text-slate-950 shadow-md transition hover:brightness-110 active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-md bg-[var(--text)] px-3 py-1.5 text-xs font-medium text-[var(--bg)] shadow-sm hover:opacity-90 transition-opacity"
           >
-            <Plus className="size-4" />
+            <Plus className="size-3.5" />
             <span>قيد قضية جديدة</span>
           </button>
         </div>
       </div>
 
-      {/* Filters Bar */}
-      <div className="grid gap-3 rounded-2xl border border-white/10 bg-[#0d1726] p-4 lg:grid-cols-4">
-        <div className="relative lg:col-span-2">
-          <Search className="absolute right-3.5 top-3 size-4 text-slate-400" />
+      {/* Filters Bar - High Density */}
+      <div className="flex flex-wrap items-center gap-3 py-3 shrink-0">
+        <div className="relative flex-1 min-w-[250px] max-w-sm">
+          <Search className="absolute right-2.5 top-1.5 size-3.5 text-[var(--text-muted)]" />
           <input
             type="text"
-            placeholder="بحث برقم القضية، المحكمة، اسم الموكل، أو الخصم..."
+            placeholder="بحث برقم القضية، الموكل، الخصم..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/25 pr-10 pl-4 py-2 text-xs text-white placeholder:text-slate-500 focus:border-[var(--axia-gold)] focus:outline-none"
+            className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
           />
         </div>
 
-        <div>
+        <div className="relative">
           <select
             value={courtFilter}
             onChange={(e) => setCourtFilter(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs text-slate-200 focus:border-[var(--axia-gold)] focus:outline-none"
+            className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
           >
-            <option value="all">كافة المحاكم والجهات القضائية</option>
+            <option value="all">كافة المحاكم والجهات</option>
             <option value="محكمة النقض">محكمة النقض</option>
             <option value="المحكمة الاقتصادية">المحكمة الاقتصادية</option>
-            <option value="مجلس الدولة (القضاء الإداري)">مجلس الدولة (القضاء الإداري)</option>
+            <option value="مجلس الدولة (القضاء الإداري)">مجلس الدولة</option>
             <option value="استئناف عالي">استئناف عالي</option>
             <option value="ابتدائية كلي">ابتدائية كلي</option>
           </select>
+          <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
         </div>
 
-        <div>
+        <div className="relative">
           <select
             value={stageFilter}
             onChange={(e) => setStageFilter(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-black/25 px-3 py-2 text-xs text-slate-200 focus:border-[var(--axia-gold)] focus:outline-none"
+            className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
           >
             <option value="all">كافة مراحل الدعوى</option>
-            <option value="متداولة">متداولة بالجلسات</option>
+            <option value="متداولة">متداولة</option>
             <option value="حجز للحكم">محجوزة للحكم</option>
-            <option value="مؤجلة لتقديم مستندات">مؤجلة للمستندات والمذكرات</option>
+            <option value="مؤجلة لتقديم مستندات">مؤجلة للمستندات</option>
             <option value="طعن بالنقض">طعن بالنقض</option>
           </select>
+          <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
         </div>
       </div>
 
-      {/* Matters Cards / Grid */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {filteredMatters.map((matter) => (
-          <div
-            key={matter.id}
-            className="group relative flex flex-col justify-between rounded-2xl border border-white/10 bg-[#0d1726] p-5 shadow-lg transition hover:border-[var(--axia-gold)]/40 hover:bg-[#111e33]"
-          >
-            <div>
-              {/* Header Badges */}
-              <div className="flex items-center justify-between gap-2">
-                <span className="rounded-lg border border-[var(--axia-gold-dim)] bg-[var(--axia-gold)]/10 px-2.5 py-1 text-xs font-bold text-[var(--axia-gold-light)]">
-                  {matter.caseNumber}
-                </span>
-                <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                  matter.stage === "حجز للحكم"
-                    ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-                    : matter.stage === "متداولة"
-                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                    : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                }`}>
-                  {matter.stage}
-                </span>
-              </div>
-
-              {/* Title & Subject */}
-              <h3 className="mt-3 text-sm font-bold text-white group-hover:text-[var(--axia-gold-light)] transition">
-                {matter.title}
-              </h3>
-
-              {/* Court & Circuit */}
-              <div className="mt-2 text-xs text-slate-300">
-                <span className="font-semibold text-slate-200">{matter.court}</span> · <span>{matter.circuit}</span>
-              </div>
-
-              {/* Parties */}
-              <div className="mt-4 rounded-xl border border-white/5 bg-black/25 p-3 text-xs space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400">الموكل:</span>
-                  <span className="font-semibold text-white truncate max-w-[170px]">{matter.clientName}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400">صفة الموكل:</span>
-                  <span className="rounded bg-cyan-950 px-1.5 py-0.5 text-[10px] text-cyan-300">{matter.clientRole}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400">الخصم:</span>
-                  <span className="text-slate-300 truncate max-w-[170px]">{matter.opponentName}</span>
-                </div>
-              </div>
-
-              {/* Next Hearing & Goal */}
-              <div className="mt-4 border-t border-white/10 pt-3">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">الجلسة القادمة:</span>
-                  <span className="font-bold text-amber-300">{matter.nextHearingDate}</span>
-                </div>
-                <p className="mt-1 text-[11px] text-slate-400 line-clamp-2">
-                  <strong>المطلوب:</strong> {matter.nextHearingGoal}
-                </p>
-              </div>
-            </div>
-
-            {/* Bottom Actions & Lawyer */}
-            <div className="mt-5 border-t border-white/10 pt-3 flex items-center justify-between">
-              <span className="text-[11px] text-slate-400">
-                المحامي: <strong className="text-slate-300">{matter.assignedLawyer.split(" ")[0]} {matter.assignedLawyer.split(" ")[1]}</strong>
-              </span>
-              <button
-                onClick={() => setActiveMatter(matter)}
-                className="rounded-lg border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white hover:bg-[var(--axia-gold)] hover:text-slate-950 transition"
-              >
-                فتح الملف بالكامل
-              </button>
-            </div>
-          </div>
-        ))}
+      {/* Matters Table - Replaces chunky cards with a clean, high-density Mac-like list */}
+      <div className="flex-1 overflow-hidden flex flex-col rounded-xl border border-[var(--border)] bg-[var(--panel)] shadow-sm">
+        <div className="overflow-x-auto flex-1">
+          <table className="w-full text-right text-[11px]">
+            <thead className="sticky top-0 bg-[var(--panel)] z-10 shadow-[0_1px_0_var(--border)]">
+              <tr className="text-[var(--text-muted)] uppercase tracking-wider text-[10px]">
+                <th className="px-4 py-2 font-medium w-[15%]">رقم القضية</th>
+                <th className="px-4 py-2 font-medium w-[25%]">الموضوع والمحكمة</th>
+                <th className="px-4 py-2 font-medium w-[20%]">الأطراف (موكل / خصم)</th>
+                <th className="px-4 py-2 font-medium w-[15%]">الجلسة القادمة</th>
+                <th className="px-4 py-2 font-medium w-[10%]">الحالة</th>
+                <th className="px-4 py-2 font-medium w-[10%]">المحامي</th>
+                <th className="px-4 py-2 font-medium w-[5%] text-center">الإجراء</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--border)]">
+              {filteredMatters.map((matter) => (
+                <tr 
+                  key={matter.id} 
+                  className="hover:bg-[var(--accent)] transition-colors group cursor-default"
+                  onDoubleClick={() => setActiveMatter(matter)}
+                >
+                  <td className="px-4 py-3 align-top">
+                    <div className="font-semibold text-[var(--text)]">{matter.caseNumber}</div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="font-medium text-[var(--text)] mb-0.5 line-clamp-1" title={matter.title}>{matter.title}</div>
+                    <div className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
+                      <span className="font-semibold">{matter.court}</span>
+                      <span>·</span>
+                      <span>{matter.circuit}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="font-medium text-[var(--text)] flex items-center justify-between mb-0.5">
+                      <span className="truncate pr-1">{matter.clientName}</span>
+                      <span className="shrink-0 bg-[var(--text)]/10 text-[var(--text)] px-1 py-0.5 rounded text-[8px]">{matter.clientRole}</span>
+                    </div>
+                    <div className="text-[10px] text-[var(--text-muted)] truncate" title={matter.opponentName}>
+                      ضد: {matter.opponentName}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="font-semibold text-[var(--text)] mb-0.5">{matter.nextHearingDate}</div>
+                    <div className="text-[9px] text-[var(--text-muted)] line-clamp-1" title={matter.nextHearingGoal}>
+                      {matter.nextHearingGoal}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <span className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-medium border ${
+                      matter.stage === "حجز للحكم"
+                        ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+                        : matter.stage === "متداولة"
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                        : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                    }`}>
+                      {matter.stage}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 align-top text-[10px] text-[var(--text-muted)]">
+                     {matter.assignedLawyer.split(" ")[0]} {matter.assignedLawyer.split(" ")[1]}
+                  </td>
+                  <td className="px-4 py-3 align-top text-center">
+                    <button
+                      onClick={() => setActiveMatter(matter)}
+                      className="p-1 rounded-md text-[var(--text-muted)] hover:bg-[var(--border)] hover:text-[var(--text)] transition-colors opacity-0 group-hover:opacity-100 mx-auto"
+                      title="فتح الملف"
+                    >
+                      <ArrowUpRight className="size-4" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {filteredMatters.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-[var(--text-muted)] text-xs">
+                    لا توجد قضايا مطابقة للبحث.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="border-t border-[var(--border)] bg-[var(--bg)]/30 px-4 py-2 text-[10px] text-[var(--text-muted)] flex justify-between">
+          <span>إجمالي الملفات: {filteredMatters.length}</span>
+          <span>انقر نقراً مزدوجاً لفتح الملف</span>
+        </div>
       </div>
 
       {/* Dossier Modal / View details */}
       {activeMatter && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="relative max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-3xl border border-[var(--axia-gold-dim)] bg-[#0d1726] p-6 lg:p-8 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--panel-glass)] backdrop-blur-xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
             <button
               onClick={() => {
                 setActiveMatter(null);
                 if (onCloseMatterModal) onCloseMatterModal();
               }}
-              className="absolute left-6 top-6 grid size-8 place-items-center rounded-full bg-white/10 text-slate-300 hover:bg-white/20 hover:text-white"
+              className="absolute left-4 top-4 grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
             >
               <X className="size-4" />
             </button>
 
-            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--axia-gold-light)]">
-              <Briefcase className="size-4" />
-              <span>ملف القضية القضائي المعتمد</span>
+            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-1">
+              <Briefcase className="size-3.5" />
+              <span>ملف القضية المعتمد</span>
             </div>
             
-            <h2 className="mt-2 text-xl font-bold text-white sm:text-2xl">
+            <h2 className="text-xl font-bold text-[var(--text)]">
               {activeMatter.caseNumber}
             </h2>
-            <p className="mt-1 text-sm text-slate-300">{activeMatter.title}</p>
+            <p className="mt-1 text-xs text-[var(--text-muted)] pb-4 border-b border-[var(--border)]">{activeMatter.title}</p>
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 text-xs">
-              <div className="rounded-xl border border-white/10 bg-black/25 p-3.5">
-                <span className="text-slate-400">المحكمة والدائرة:</span>
-                <p className="mt-1 font-bold text-white">{activeMatter.court} — {activeMatter.circuit}</p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 text-xs">
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 p-4">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase">المحكمة والدائرة</span>
+                <p className="mt-1 font-semibold text-[var(--text)]">{activeMatter.court} — {activeMatter.circuit}</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/25 p-3.5">
-                <span className="text-slate-400">حالة الدعوى:</span>
-                <p className="mt-1 font-bold text-amber-300">{activeMatter.stage}</p>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 p-4">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase">حالة الدعوى</span>
+                <p className="mt-1 font-semibold text-[var(--text)]">{activeMatter.stage}</p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/25 p-3.5">
-                <span className="text-slate-400">الموكل والصفة:</span>
-                <p className="mt-1 font-bold text-white">{activeMatter.clientName} ({activeMatter.clientRole})</p>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 p-4">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase">الموكل والصفة</span>
+                <p className="mt-1 font-semibold text-[var(--text)]">{activeMatter.clientName} <span className="text-[10px] text-[var(--text-muted)] font-normal">({activeMatter.clientRole})</span></p>
               </div>
-              <div className="rounded-xl border border-white/10 bg-black/25 p-3.5">
-                <span className="text-slate-400">الخصم ومحاميه:</span>
-                <p className="mt-1 font-bold text-white">{activeMatter.opponentName} · {activeMatter.opponentLawyer || "محام الخصم"}</p>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 p-4">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase">الخصم ومحاميه</span>
+                <p className="mt-1 font-semibold text-[var(--text)]">{activeMatter.opponentName}</p>
+                {activeMatter.opponentLawyer && <p className="text-[10px] text-[var(--text-muted)]">المحامي: {activeMatter.opponentLawyer}</p>}
               </div>
             </div>
 
             {/* Financials & Lawyer */}
-            <div className="mt-4 rounded-xl border border-white/10 bg-black/25 p-4 text-xs">
-              <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 p-4 text-xs">
+              <div className="grid grid-cols-3 gap-4 divide-x divide-x-reverse divide-[var(--border)] text-center">
                 <div>
-                  <span className="text-slate-400">الأتعاب المتفق عليها</span>
-                  <p className="mt-1 font-bold text-white">{activeMatter.agreedFees}</p>
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase">الأتعاب المتفق عليها</span>
+                  <p className="mt-1 font-bold text-[var(--text)]">{activeMatter.agreedFees}</p>
                 </div>
                 <div>
-                  <span className="text-slate-400">المسدد منها</span>
-                  <p className="mt-1 font-bold text-emerald-400">{activeMatter.paidFees}</p>
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase">المسدد منها</span>
+                  <p className="mt-1 font-bold text-emerald-600 dark:text-emerald-400">{activeMatter.paidFees}</p>
                 </div>
                 <div>
-                  <span className="text-slate-400">المحامي المسؤول</span>
-                  <p className="mt-1 font-bold text-slate-200">{activeMatter.assignedLawyer}</p>
+                  <span className="text-[10px] text-[var(--text-muted)] uppercase">المحامي المسؤول</span>
+                  <p className="mt-1 font-semibold text-[var(--text)]">{activeMatter.assignedLawyer}</p>
                 </div>
               </div>
             </div>
 
             {/* Notes & Actions */}
             {activeMatter.notes && (
-              <div className="mt-4 rounded-xl border border-[var(--axia-gold-dim)] bg-[var(--axia-gold)]/5 p-4 text-xs">
-                <span className="font-bold text-[var(--axia-gold-light)]">ملاحظات الدفاع والتحضير:</span>
-                <p className="mt-1 leading-relaxed text-slate-200">{activeMatter.notes}</p>
+              <div className="mt-4 rounded-xl border border-[var(--gold)]/30 bg-[var(--gold)]/5 p-4 text-xs">
+                <span className="font-semibold text-[var(--gold)] text-[11px]">ملاحظات الدفاع والتحضير:</span>
+                <p className="mt-1 leading-relaxed text-[var(--text)]">{activeMatter.notes}</p>
               </div>
             )}
 
-            <div className="mt-6 flex justify-end gap-3">
+            <div className="mt-6 flex justify-end gap-2 pt-4 border-t border-[var(--border)]">
               <button
-                onClick={() => setActiveMatter(null)}
-                className="rounded-xl bg-white/10 px-5 py-2 text-xs font-semibold text-white hover:bg-white/15"
+                onClick={() => {
+                  setActiveMatter(null);
+                  if (onCloseMatterModal) onCloseMatterModal();
+                }}
+                className="rounded-md border border-[var(--border)] bg-[var(--panel)] px-5 py-2 text-xs font-medium text-[var(--text)] hover:bg-[var(--accent)] transition-colors"
               >
                 إغلاق
               </button>
@@ -318,150 +335,156 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
 
       {/* New Matter Modal */}
       {isNewMatterOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-[var(--axia-gold-dim)] bg-[#0d1726] p-6 lg:p-8 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--panel-glass)] backdrop-blur-xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
             <button
               onClick={() => setIsNewMatterOpen(false)}
-              className="absolute left-6 top-6 grid size-8 place-items-center rounded-full bg-white/10 text-slate-300 hover:bg-white/20 hover:text-white"
+              className="absolute left-4 top-4 grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
             >
               <X className="size-4" />
             </button>
 
-            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--axia-gold-light)]">
+            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
               <Plus className="size-4" />
-              <span>قيد ملف قضية جديدة</span>
+              <span>قيد ملف جديد</span>
             </div>
             
-            <h2 className="mt-1 text-xl font-bold text-white">إضافة دعوى قضائية جديدة</h2>
+            <h2 className="text-xl font-bold text-[var(--text)] border-b border-[var(--border)] pb-4">إضافة دعوى قضائية</h2>
             
-            <form onSubmit={handleCreateMatter} className="mt-6 space-y-4 text-xs">
-              <div className="grid gap-3 sm:grid-cols-2">
+            <form onSubmit={handleCreateMatter} className="mt-4 space-y-4 text-xs">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">رقم القضية والسنة</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم القضية والسنة</label>
                   <input
                     type="text"
                     required
-                    placeholder="مثال: ٥٢١ لسنة ٢٠٢٦ مدني كلي شمال"
+                    placeholder="مثال: ٥٢١ لسنة ٢٠٢٦"
                     value={newCaseNumber}
                     onChange={(e) => setNewCaseNumber(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">المحكمة</label>
-                  <select
-                    value={newCourt}
-                    onChange={(e) => setNewCourt(e.target.value as CourtCategory)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
-                  >
-                    <option value="محكمة النقض">محكمة النقض</option>
-                    <option value="المحكمة الاقتصادية">المحكمة الاقتصادية</option>
-                    <option value="مجلس الدولة (القضاء الإداري)">مجلس الدولة (القضاء الإداري)</option>
-                    <option value="استئناف عالي">استئناف عالي</option>
-                    <option value="ابتدائية كلي">ابتدائية كلي</option>
-                  </select>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">المحكمة</label>
+                  <div className="relative">
+                    <select
+                      value={newCourt}
+                      onChange={(e) => setNewCourt(e.target.value as CourtCategory)}
+                      className="appearance-none w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                    >
+                      <option value="محكمة النقض">محكمة النقض</option>
+                      <option value="المحكمة الاقتصادية">المحكمة الاقتصادية</option>
+                      <option value="مجلس الدولة (القضاء الإداري)">مجلس الدولة</option>
+                      <option value="استئناف عالي">استئناف عالي</option>
+                      <option value="ابتدائية كلي">ابتدائية كلي</option>
+                    </select>
+                    <ChevronDown className="absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)] pointer-events-none" />
+                  </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-300 mb-1 font-semibold">موضوع الدعوى / الطعن</label>
+                <label className="block text-[var(--text-muted)] mb-1 font-medium">موضوع الدعوى / الطعن</label>
                 <input
                   type="text"
                   required
-                  placeholder="مثال: دعوى مطالبة بتعويض مادي وأدبي عن الإخلال ببنود العقد"
+                  placeholder="دعوى مطالبة بتعويض..."
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                 />
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <div className="sm:col-span-2">
-                  <label className="block text-slate-300 mb-1 font-semibold">اسم الموكل</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">اسم الموكل</label>
                   <input
                     type="text"
                     required
                     placeholder="اسم الشركة أو الموكل"
                     value={newClientName}
                     onChange={(e) => setNewClientName(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">صفة الموكل</label>
-                  <select
-                    value={newClientRole}
-                    onChange={(e) => setNewClientRole(e.target.value as Matter["clientRole"])}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
-                  >
-                    <option value="مدعي">مدعي</option>
-                    <option value="مدعى عليه">مدعى عليه</option>
-                    <option value="طاعن">طاعن</option>
-                    <option value="مطعون ضده">مطعون ضده</option>
-                    <option value="مستأنف">مستأنف</option>
-                    <option value="مستأنف ضده">مستأنف ضده</option>
-                  </select>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">صفة الموكل</label>
+                  <div className="relative">
+                    <select
+                      value={newClientRole}
+                      onChange={(e) => setNewClientRole(e.target.value as Matter["clientRole"])}
+                      className="appearance-none w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                    >
+                      <option value="مدعي">مدعي</option>
+                      <option value="مدعى عليه">مدعى عليه</option>
+                      <option value="طاعن">طاعن</option>
+                      <option value="مطعون ضده">مطعون ضده</option>
+                      <option value="مستأنف">مستأنف</option>
+                      <option value="مستأنف ضده">مستأنف ضده</option>
+                    </select>
+                    <ChevronDown className="absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)] pointer-events-none" />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">الخصم في الدعوى</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">الخصم في الدعوى</label>
                   <input
                     type="text"
                     placeholder="اسم الخصم أو الجهة"
                     value={newOpponentName}
                     onChange={(e) => setNewOpponentName(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">الدائرة / القاعة</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">الدائرة / القاعة</label>
                   <input
                     type="text"
                     placeholder="مثال: الدائرة ٧ مدني استثماري"
                     value={newCircuit}
                     onChange={(e) => setNewCircuit(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">تاريخ الجلسة القادمة</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">تاريخ الجلسة القادمة</label>
                   <input
                     type="date"
                     value={newNextHearingDate}
                     onChange={(e) => setNewNextHearingDate(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)] [color-scheme:dark]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">الأتعاب المتفق عليها</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">الأتعاب المتفق عليها</label>
                   <input
                     type="text"
                     placeholder="مثال: ١٥٠,٠٠٠ ج.م"
                     value={newAgreedFees}
                     onChange={(e) => setNewAgreedFees(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-end gap-3">
+              <div className="pt-4 mt-4 border-t border-[var(--border)] flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsNewMatterOpen(false)}
-                  className="rounded-xl bg-white/10 px-4 py-2 font-medium text-white hover:bg-white/15"
+                  className="rounded-md border border-[var(--border)] bg-[var(--panel)] px-4 py-2 font-medium text-[var(--text)] hover:bg-[var(--accent)] transition-colors"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-gradient-to-r from-[var(--axia-gold)] to-[#a77e16] px-5 py-2 font-bold text-slate-950 hover:brightness-110"
+                  className="rounded-md bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] hover:opacity-90 transition-opacity"
                 >
-                  حفظ وقيد الدعوى
+                  حفظ الدعوى
                 </button>
               </div>
             </form>

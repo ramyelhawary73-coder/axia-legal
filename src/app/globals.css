@@ -1,15 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  --axia-bg: #070d18;
-  --axia-panel: #0d1726;
-  --axia-card: #111d30;
-  --axia-card-hover: #15243c;
-  --axia-gold: #c59b27;
-  --axia-gold-light: #e5b842;
-  --axia-gold-dim: rgba(197, 155, 39, 0.15);
-  --axia-text: #f1f5f9;
-  --axia-muted: #94a3b8;
+  /* Premium Light Mode */
+  --bg: #f9f9fb;
+  --bg-glass: rgba(249, 249, 251, 0.7);
+  --panel: #ffffff;
+  --panel-glass: rgba(255, 255, 255, 0.7);
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.15);
+  --text: #111827;
+  --text-muted: #6b7280;
+  --accent: rgba(0, 0, 0, 0.04);
+  --accent-hover: rgba(0, 0, 0, 0.08);
+  --gold: #b38719; /* Deeper gold for readability in light mode */
+  --gold-light: #c59b27;
+  --gold-dim: rgba(197, 155, 39, 0.1);
+  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
+}
+
+.dark {
+  /* Premium Dark Mode */
+  --bg: #09090b;
+  --bg-glass: rgba(9, 9, 11, 0.7);
+  --panel: #141415;
+  --panel-glass: rgba(20, 20, 21, 0.7);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --text: #ededed;
+  --text-muted: #a1a1aa;
+  --accent: rgba(255, 255, 255, 0.04);
+  --accent-hover: rgba(255, 255, 255, 0.08);
+  --gold: #c59b27;
+  --gold-light: #e5b842;
+  --gold-dim: rgba(197, 155, 39, 0.15);
+  --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.4);
 }
 
 * {
@@ -17,20 +43,18 @@
 }
 
 html {
-  background: var(--axia-bg);
-  color-scheme: dark;
+  background: var(--bg);
+  color: var(--text);
 }
 
 body {
   height: 100vh;
   overflow: hidden;
   margin: 0;
-  background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(197, 155, 39, 0.07), transparent),
-    radial-gradient(circle at 90% 10%, rgba(30, 58, 138, 0.18), transparent 35rem),
-    var(--axia-bg);
+  background: var(--bg);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans Arabic", sans-serif;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 button,
@@ -40,27 +64,20 @@ select {
   font: inherit;
 }
 
-::selection {
-  background: rgba(197, 155, 39, 0.35);
-  color: #fff;
-}
-
 /* Custom Sleek Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  background: rgba(13, 23, 38, 0.6);
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: rgba(197, 155, 39, 0.25);
+  background: var(--border-strong);
   border-radius: 9999px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(197, 155, 39, 0.45);
+  background: var(--text-muted);
 }
+
 

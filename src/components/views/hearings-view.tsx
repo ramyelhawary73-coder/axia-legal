@@ -7,7 +7,9 @@ import {
   CheckCircle2, 
   Plus, 
   Building2,
-  X
+  X,
+  Search,
+  Filter
 } from "lucide-react";
 import { mockHearings } from "@/lib/mock-legal-data";
 import { Hearing } from "@/types/legal";
@@ -69,136 +71,162 @@ export function HearingsView() {
   });
 
   return (
-    <div className="space-y-7 p-6 sm:p-8 lg:p-10">
+    <div className="space-y-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-[var(--border)]">
         <div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-amber-300">
-            <Gavel className="size-4" />
-            <span>أجندة المحاكم ورول الجلسات</span>
-          </div>
-          <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
-            جدول الجلسات القضائية والقرارات
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--text)]">
+            أجندة المحاكم ورول الجلسات
           </h1>
-          <p className="mt-1 text-xs text-slate-400">
-            توزيع المحامين على قاعات المحاكم، تدوين القرارات الفورية بعد رفع الجلسة
+          <p className="mt-1 text-xs text-[var(--text-muted)] flex items-center gap-1.5">
+            <Gavel className="size-3.5" />
+            توزيع المحامين على قاعات المحاكم وتدوين القرارات
           </p>
         </div>
 
-        <button
-          onClick={() => setIsNewHearingOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 px-4 py-2.5 text-xs font-bold text-slate-950 shadow-md transition hover:brightness-110"
-        >
-          <Plus className="size-4" />
-          <span>إدراج جلسة في الرول</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="relative hidden md:block">
+            <Search className="absolute right-2.5 top-1.5 size-3.5 text-[var(--text-muted)]" />
+            <input
+              type="text"
+              placeholder="بحث في الأجندة..."
+              className="w-48 rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)] focus:outline-none transition-all"
+            />
+          </div>
+          <button
+            onClick={() => setIsNewHearingOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-md bg-[var(--text)] px-3 py-1.5 text-xs font-medium text-[var(--bg)] shadow-sm hover:opacity-90 transition-opacity"
+          >
+            <Plus className="size-3.5" />
+            <span>إدراج جلسة</span>
+          </button>
+        </div>
       </div>
 
       {/* Quick Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+      <div className="flex items-center gap-1 border-b border-[var(--border)] pb-0">
         <button
           onClick={() => setActiveTab("all")}
-          className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
+          className={`px-4 py-2 text-xs font-semibold border-b-2 transition-colors ${
             activeTab === "all"
-              ? "bg-[var(--axia-gold)]/20 text-[var(--axia-gold-light)] border border-[var(--axia-gold)]/40"
-              : "text-slate-400 hover:bg-white/5 hover:text-white"
+              ? "border-[var(--gold)] text-[var(--gold)]"
+              : "border-transparent text-[var(--text-muted)] hover:text-[var(--text)]"
           }`}
         >
-          كافة الجلسات ({hearings.length})
+          كافة الجلسات
+          <span className="ml-1.5 rounded bg-[var(--accent)] px-1.5 py-0.5 text-[9px] text-[var(--text)]">{hearings.length}</span>
         </button>
         <button
           onClick={() => setActiveTab("today")}
-          className={`rounded-xl px-4 py-2 text-xs font-semibold transition flex items-center gap-1.5 ${
+          className={`px-4 py-2 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${
             activeTab === "today"
-              ? "bg-amber-400 text-slate-950 font-bold"
-              : "text-amber-300 hover:bg-amber-400/10"
+              ? "border-[var(--text)] text-[var(--text)]"
+              : "border-transparent text-[var(--text-muted)] hover:text-[var(--text)]"
           }`}
         >
-          <span className="size-2 rounded-full bg-amber-400 animate-pulse" />
-          جلسات اليوم ({hearings.filter((h) => h.status === "اليوم").length})
+          <span className={`size-1.5 rounded-full ${activeTab === 'today' ? 'bg-red-500 animate-pulse' : 'bg-transparent'}`} />
+          جلسات اليوم
+          <span className={`ml-1.5 rounded px-1.5 py-0.5 text-[9px] ${
+            activeTab === "today" ? "bg-[var(--text)] text-[var(--bg)]" : "bg-[var(--accent)] text-[var(--text)]"
+          }`}>
+            {hearings.filter((h) => h.status === "اليوم").length}
+          </span>
         </button>
         <button
           onClick={() => setActiveTab("upcoming")}
-          className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
+          className={`px-4 py-2 text-xs font-semibold border-b-2 transition-colors ${
             activeTab === "upcoming"
-              ? "bg-[var(--axia-gold)]/20 text-[var(--axia-gold-light)] border border-[var(--axia-gold)]/40"
-              : "text-slate-400 hover:bg-white/5 hover:text-white"
+              ? "border-[var(--gold)] text-[var(--gold)]"
+              : "border-transparent text-[var(--text-muted)] hover:text-[var(--text)]"
           }`}
         >
-          الجلسات القادمة ({hearings.filter((h) => h.status === "قادمة").length})
+          الجلسات القادمة
+          <span className="ml-1.5 rounded bg-[var(--accent)] px-1.5 py-0.5 text-[9px] text-[var(--text)]">
+            {hearings.filter((h) => h.status === "قادمة").length}
+          </span>
         </button>
+        <div className="mr-auto">
+          <button className="flex items-center gap-1 text-[11px] text-[var(--text-muted)] hover:text-[var(--text)] px-2 py-1">
+            <Filter className="size-3" />
+            تصفية
+          </button>
+        </div>
       </div>
 
       {/* Hearings List */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {filteredHearings.map((hearing) => {
           const isToday = hearing.status === "اليوم";
           return (
             <div
               key={hearing.id}
-              className={`rounded-2xl border p-5 transition ${
+              className={`rounded-xl border transition-all ${
                 isToday
-                  ? "border-amber-400/50 bg-[#141b26] shadow-lg shadow-amber-950/20"
-                  : "border-white/10 bg-[#0d1726] hover:border-white/20"
+                  ? "border-[var(--gold)]/40 bg-[var(--gold)]/5 shadow-[var(--shadow-sm)]"
+                  : "border-[var(--border)] bg-[var(--panel)] hover:border-[var(--border-strong)] shadow-sm"
               }`}
             >
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="space-y-2">
+              <div className="p-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="space-y-2.5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded-md px-2.5 py-1 text-xs font-bold ${
-                      isToday ? "bg-amber-400 text-slate-950" : "bg-white/10 text-slate-200"
+                    <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      isToday ? "bg-[var(--gold)] text-[var(--bg)]" : "bg-[var(--accent)] text-[var(--text-muted)]"
                     }`}>
-                      {isToday ? "جلسة اليوم" : hearing.hearingDate}
+                      {isToday ? "اليوم" : hearing.hearingDate}
                     </span>
-                    <span className="text-xs font-bold text-[var(--axia-gold-light)]">
+                    <span className="text-xs font-bold text-[var(--text)]">
                       {hearing.caseNumber}
                     </span>
-                    <span className="rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-300 font-bold">
+                    <span className="text-[11px] text-[var(--text-muted)] border-r border-[var(--border)] pr-2 mr-1">
                       رول #{hearing.rollNumber}
                     </span>
-                    <span className="text-xs text-slate-400 flex items-center gap-1">
+                    <span className="text-[11px] text-[var(--text-muted)] flex items-center gap-1 border-r border-[var(--border)] pr-2 mr-1">
                       <Clock className="size-3" />
                       {hearing.hearingTime}
                     </span>
                   </div>
 
-                  <div className="text-sm font-bold text-white flex items-center gap-2">
-                    <Building2 className="size-4 text-slate-400" />
+                  <div className="text-sm font-semibold text-[var(--text)] flex items-center gap-2">
+                    <Building2 className="size-4 text-[var(--text-muted)]" />
                     <span>{hearing.court}</span>
-                    <span className="text-xs text-slate-400">({hearing.circuit})</span>
+                    <span className="text-xs font-normal text-[var(--text-muted)]">({hearing.circuit})</span>
                   </div>
 
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    <strong className="text-amber-200">الغاية الإجرائية:</strong> {hearing.purpose}
+                  <p className="text-xs text-[var(--text-muted)] leading-relaxed flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold)]"></span>
+                    <span className="font-medium text-[var(--text)]">المطلوب:</span> {hearing.purpose}
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300 lg:flex-col lg:items-end">
-                  <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-right">
-                    <span className="text-[11px] text-slate-400 block">المحامي المكلف بالحضور</span>
-                    <strong className="text-white text-xs">{hearing.attendingLawyer}</strong>
+                <div className="flex flex-row lg:flex-col items-center lg:items-end justify-between lg:justify-start gap-4 lg:gap-2">
+                  <div className="text-right">
+                    <span className="text-[10px] text-[var(--text-muted)] block mb-0.5">المحامي المكلف</span>
+                    <div className="flex items-center gap-1.5 bg-[var(--accent)] px-2 py-1 rounded-md">
+                       <div className="size-4 rounded-full bg-gradient-to-br from-[var(--gold-light)] to-[var(--gold)] flex items-center justify-center text-[8px] font-bold text-black">
+                         {hearing.attendingLawyer.charAt(0)}
+                       </div>
+                       <strong className="text-[var(--text)] text-xs font-medium">{hearing.attendingLawyer}</strong>
+                    </div>
                   </div>
-                  <div className="text-slate-400 text-[11px]">
-                    القاعة: <strong className="text-slate-200">{hearing.hall}</strong>
+                  <div className="text-[11px] text-[var(--text-muted)]">
+                    القاعة: <strong className="text-[var(--text)]">{hearing.hall}</strong>
                   </div>
                 </div>
               </div>
 
               {/* Court Decision Row */}
-              <div className="mt-4 border-t border-white/10 pt-3">
+              <div className="border-t border-[var(--border)] bg-[var(--bg)]/30 px-4 py-2.5 rounded-b-xl">
                 {hearing.lastDecision ? (
-                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs text-emerald-300 flex items-start gap-2">
-                    <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold">قرار المحكمة الصادر:</span>
-                      <p className="mt-0.5 text-slate-200">{hearing.lastDecision}</p>
-                    </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <CheckCircle2 className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="font-medium text-[var(--text)]">قرار المحكمة:</span>
+                    <span className="text-[var(--text-muted)]">{hearing.lastDecision}</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 max-w-2xl">
                     <input
                       type="text"
-                      placeholder="تدوين قرار الهيئة القضائية الصادر بالجلسة (تأجيل / حجز للحكم / ندب خبير)..."
+                      placeholder="تدوين قرار الجلسة (تأجيل / حجز للحكم / ندب خبير)..."
                       value={decisionNotes[hearing.id] || ""}
                       onChange={(e) =>
                         setDecisionNotes({
@@ -206,7 +234,7 @@ export function HearingsView() {
                           [hearing.id]: e.target.value,
                         })
                       }
-                      className="flex-1 rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:border-amber-400 focus:outline-none"
+                      className="flex-1 rounded-md border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                     />
                     <button
                       onClick={() => {
@@ -214,9 +242,9 @@ export function HearingsView() {
                           handleAddDecision(hearing.id, decisionNotes[hearing.id]);
                         }
                       }}
-                      className="rounded-xl bg-amber-400/20 px-4 py-2 text-xs font-bold text-amber-300 hover:bg-amber-400/30"
+                      className="rounded-md bg-[var(--text)] px-3 py-1.5 text-[11px] font-medium text-[var(--bg)] hover:opacity-90 transition-opacity whitespace-nowrap"
                     >
-                      اعتماد القرار
+                      اعتماد
                     </button>
                   </div>
                 )}
@@ -228,131 +256,131 @@ export function HearingsView() {
 
       {/* New Hearing Modal */}
       {isNewHearingOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-[var(--axia-gold-dim)] bg-[#0d1726] p-6 lg:p-8 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--panel-glass)] backdrop-blur-xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
             <button
               onClick={() => setIsNewHearingOpen(false)}
-              className="absolute left-6 top-6 grid size-8 place-items-center rounded-full bg-white/10 text-slate-300 hover:bg-white/20 hover:text-white"
+              className="absolute left-4 top-4 grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
             >
               <X className="size-4" />
             </button>
 
-            <div className="flex items-center gap-2 text-xs font-semibold text-amber-300">
-              <Plus className="size-4" />
-              <span>جدولة جلسة جديدة في الرول القضائي</span>
+            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
+              <Plus className="size-4 text-[var(--text)]" />
+              <span>جدولة جلسة</span>
             </div>
             
-            <h2 className="mt-1 text-xl font-bold text-white">إضافة جلسة محكمة</h2>
+            <h2 className="text-xl font-bold text-[var(--text)] border-b border-[var(--border)] pb-4">إضافة جلسة للرول</h2>
             
-            <form onSubmit={handleCreateHearing} className="mt-6 space-y-4 text-xs">
+            <form onSubmit={handleCreateHearing} className="mt-4 space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 mb-1 font-semibold">رقم القضية</label>
+                <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم القضية</label>
                 <input
                   type="text"
                   required
                   placeholder="مثال: ١٤٢٠ لسنة ٩٣ ق - نقض"
                   value={newCaseNumber}
                   onChange={(e) => setNewCaseNumber(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-amber-400 focus:outline-none"
+                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                 />
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">المحكمة ومقرها</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">المحكمة ومقرها</label>
                   <input
                     type="text"
                     required
                     value={newCourt}
                     onChange={(e) => setNewCourt(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-amber-400 focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">الدائرة القضائية</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">الدائرة القضائية</label>
                   <input
                     type="text"
                     value={newCircuit}
                     onChange={(e) => setNewCircuit(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-amber-400 focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">القاعة</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">القاعة</label>
                   <input
                     type="text"
                     value={newHall}
                     onChange={(e) => setNewHall(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-amber-400 focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">رقم الرول</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم الرول</label>
                   <input
                     type="number"
                     value={newRoll}
                     onChange={(e) => setNewRoll(Number(e.target.value))}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-amber-400 focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">توقيت الانعقاد</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">توقيت الانعقاد</label>
                   <input
                     type="text"
                     value={newTime}
                     onChange={(e) => setNewTime(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-amber-400 focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">تاريخ الجلسة</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">تاريخ الجلسة</label>
                   <input
                     type="date"
                     value={newDate}
                     onChange={(e) => setNewDate(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-amber-400 focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)] [color-scheme:dark]"
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-300 mb-1 font-semibold">المحامي المكلف بالحضور</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">المحامي المكلف بالحضور</label>
                   <input
                     type="text"
                     value={newLawyer}
                     onChange={(e) => setNewLawyer(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-amber-400 focus:outline-none"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-300 mb-1 font-semibold">المطلوب بالجلسة (الهدف الإجرائي)</label>
+                <label className="block text-[var(--text-muted)] mb-1 font-medium">المطلوب بالجلسة</label>
                 <textarea
                   rows={2}
                   value={newPurpose}
                   onChange={(e) => setNewPurpose(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-amber-400 focus:outline-none"
+                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)] resize-none"
                 />
               </div>
 
-              <div className="pt-3 flex justify-end gap-3">
+              <div className="pt-4 mt-4 border-t border-[var(--border)] flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsNewHearingOpen(false)}
-                  className="rounded-xl bg-white/10 px-4 py-2 font-medium text-white hover:bg-white/15"
+                  className="rounded-md border border-[var(--border)] bg-[var(--panel)] px-4 py-2 font-medium text-[var(--text)] hover:bg-[var(--accent)] transition-colors"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-gradient-to-r from-amber-400 to-amber-600 px-5 py-2 font-bold text-slate-950 hover:brightness-110"
+                  className="rounded-md bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] hover:opacity-90 transition-opacity"
                 >
-                  تثبيت الجلسة بالرول
+                  حفظ الجلسة
                 </button>
               </div>
             </form>
