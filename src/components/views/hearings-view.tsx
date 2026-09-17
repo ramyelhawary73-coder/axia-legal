@@ -256,7 +256,7 @@ export function HearingsView() {
 
       {/* New Hearing Modal */}
       {isNewHearingOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--accent)] backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--panel-glass)] backdrop-blur-xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
             <button
               onClick={() => setIsNewHearingOpen(false)}

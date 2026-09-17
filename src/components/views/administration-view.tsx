@@ -17,53 +17,53 @@ export function AdministrationView() {
 
   return (
     <div className="space-y-7 p-6 sm:p-8 lg:p-10">
-      <div className="border-b border-white/10 pb-6">
+      <div className="border-b border-[var(--border)] pb-6">
         <div className="flex items-center gap-2 text-xs font-semibold text-[var(--axia-gold-light)]">
           <Settings className="size-4" />
           <span>إعدادات النظام والمكتب القانوني</span>
         </div>
-        <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">
+        <h1 className="mt-1 text-2xl font-bold text-[var(--text)] sm:text-3xl">
           إدارة المنشأة القانونية والصلاحيات
         </h1>
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-[var(--text-muted)]">
           بيانات ترخيص نقابة المحامين، إدارة الصلاحيات والأدوار، وإعدادات الربط الآمن
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
-          <form onSubmit={handleSave} className="rounded-2xl border border-white/10 bg-[#0d1726] p-6 shadow-lg space-y-4 text-xs">
-            <h2 className="text-base font-bold text-white mb-2">
+          <form onSubmit={handleSave} className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-lg space-y-4 text-xs">
+            <h2 className="text-base font-bold text-[var(--text)] mb-2">
               الهوية الرسمية للمكتب وبيانات القيد
             </h2>
 
             <div>
-              <label className="block text-slate-300 mb-1 font-semibold">اسم المنشأة القانونية أو المكتب</label>
+              <label className="block text-[var(--text-muted)] mb-1 font-semibold">اسم المنشأة القانونية أو المكتب</label>
               <input
                 type="text"
                 value={firmName}
                 onChange={(e) => setFirmName(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
               />
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="block text-slate-300 mb-1 font-semibold">رقم القيد بنقابة المحامين والدرجة</label>
+                <label className="block text-[var(--text-muted)] mb-1 font-semibold">رقم القيد بنقابة المحامين والدرجة</label>
                 <input
                   type="text"
                   value={barNumber}
                   onChange={(e) => setBarNumber(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-slate-300 mb-1 font-semibold">المقر الرئيسي</label>
+                <label className="block text-[var(--text-muted)] mb-1 font-semibold">المقر الرئيسي</label>
                 <input
                   type="text"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black/30 p-2.5 text-white focus:border-[var(--axia-gold)] focus:outline-none"
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
                 />
               </div>
             </div>
@@ -88,29 +88,29 @@ export function AdministrationView() {
             </div>
           </form>
 
-          <div className="rounded-2xl border border-white/10 bg-[#0d1726] p-6 shadow-lg">
-            <h2 className="text-base font-bold text-white mb-2">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-lg">
+            <h2 className="text-base font-bold text-[var(--text)] mb-2">
               مستويات الصلاحيات والأدوار (RBAC)
             </h2>
             <div className="divide-y divide-white/5 text-xs">
               <div className="py-3 flex items-center justify-between">
                 <div>
-                  <strong className="text-white">الشركاء والمديرون (Managing Partners)</strong>
-                  <p className="text-slate-400 text-[11px]">كامل الصلاحيات المالية، العقود، وأرشيف القضايا</p>
+                  <strong className="text-[var(--text)]">الشركاء والمديرون (Managing Partners)</strong>
+                  <p className="text-[var(--text-muted)] text-[11px]">كامل الصلاحيات المالية، العقود، وأرشيف القضايا</p>
                 </div>
                 <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-emerald-300 text-[10px] font-bold">نشط</span>
               </div>
               <div className="py-3 flex items-center justify-between">
                 <div>
-                  <strong className="text-white">المحامون والمستشارون (Senior Counsel)</strong>
-                  <p className="text-slate-400 text-[11px]">إدارة القضايا والجلسات والمذكرات المسندة إليهم</p>
+                  <strong className="text-[var(--text)]">المحامون والمستشارون (Senior Counsel)</strong>
+                  <p className="text-[var(--text-muted)] text-[11px]">إدارة القضايا والجلسات والمذكرات المسندة إليهم</p>
                 </div>
                 <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-emerald-300 text-[10px] font-bold">نشط</span>
               </div>
               <div className="py-3 flex items-center justify-between">
                 <div>
-                  <strong className="text-white">المحامون المتدربون والسكرتارية (Trainees & Clerks)</strong>
-                  <p className="text-slate-400 text-[11px]">قلم المحضرين، استخراج الشهادات، وتدوين القرارات</p>
+                  <strong className="text-[var(--text)]">المحامون المتدربون والسكرتارية (Trainees & Clerks)</strong>
+                  <p className="text-[var(--text-muted)] text-[11px]">قلم المحضرين، استخراج الشهادات، وتدوين القرارات</p>
                 </div>
                 <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-emerald-300 text-[10px] font-bold">نشط</span>
               </div>
@@ -119,15 +119,15 @@ export function AdministrationView() {
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-2xl border border-white/10 bg-[#0d1726] p-6 shadow-lg text-xs space-y-3">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-lg text-xs space-y-3">
             <div className="flex items-center gap-2 text-[var(--axia-gold-light)] font-bold">
               <Database className="size-4" />
               <span>جاهزية الربط السحابي (Supabase)</span>
             </div>
-            <p className="text-slate-300 leading-relaxed">
+            <p className="text-[var(--text-muted)] leading-relaxed">
               هيكل البيانات مهيأ بالكامل للربط المباشر مع قاعدة بيانات Supabase / Cloud SQL فور تثبيت المفاتيح، مع عزل بيانات القضايا بسياسات RLS المحكمة.
             </p>
-            <div className="rounded-xl bg-black/30 p-3 font-mono text-[10px] text-slate-400">
+            <div className="rounded-xl bg-[var(--accent)] p-3 font-mono text-[10px] text-[var(--text-muted)]">
               NEXT_PUBLIC_SUPABASE_URL=ready<br />
               NEXT_PUBLIC_SUPABASE_KEY=configured<br />
               STATUS: STABLE_STANDALONE

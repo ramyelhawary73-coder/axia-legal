@@ -155,24 +155,24 @@ export function RajihAiView() {
   return (
     <div className="space-y-7 p-6 sm:p-8 lg:p-10">
       {/* Top Banner */}
-      <div className="rounded-2xl border border-[var(--axia-gold)]/40 bg-gradient-to-r from-[#0d1726] via-[#152338] to-[#0d1726] p-6 lg:p-8 shadow-xl shadow-black/20">
+      <div className="rounded-2xl border border-[var(--axia-gold)]/40 bg-gradient-to-r from-[var(--panel)] via-[var(--bg)] to-[var(--panel)] p-6 lg:p-8 shadow-xl shadow-black/20">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[var(--axia-gold)]/40 bg-[var(--axia-gold)]/10 px-3.5 py-1 text-xs font-semibold text-[var(--axia-gold-light)]">
               <Sparkles className="size-3.5" />
               <span>محرك الاستدلال القانوني الذكي المعتمد</span>
             </div>
-            <h1 className="mt-3 text-2xl font-bold text-white sm:text-3xl">
+            <h1 className="mt-3 text-2xl font-bold text-[var(--text)] sm:text-3xl">
               راجح — RAJIH AI Legal Copilot
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+            <p className="mt-1 text-xs sm:text-sm text-[var(--text-muted)] max-w-2xl leading-relaxed">
               المساعد القانوني المتخصص للبحث الفوري في أحكام محكمة النقض المصرية، صياغة مذكرات الدفوع الشكلية والموضوعية، وفحص بنود العقود وتحديد الثغرات القضائية.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-white/10 bg-black/25 px-4 py-2.5 text-right text-xs">
-              <span className="text-slate-400 block text-[10px]">قاعدة المعرفة النشطة:</span>
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--accent)] px-4 py-2.5 text-right text-xs">
+              <span className="text-[var(--text-muted)] block text-[10px]">قاعدة المعرفة النشطة:</span>
               <strong className="text-[var(--axia-gold-light)] font-mono">١٢٠,٠٠٠+ مبدأ نقض رسمي</strong>
             </div>
           </div>
@@ -181,7 +181,7 @@ export function RajihAiView() {
 
       {/* Recommended Quick Actions / Sample Prompts */}
       <div>
-        <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+        <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-3">
           نماذج استشارات وأبحاث قانونية فورية:
         </h2>
         <div className="grid gap-3 sm:grid-cols-3">
@@ -189,16 +189,16 @@ export function RajihAiView() {
             <button
               key={idx}
               onClick={() => handleSend(sp.query)}
-              className="group text-right rounded-2xl border border-white/10 bg-[#0d1726] p-4 transition hover:border-[var(--axia-gold)]/50 hover:bg-[#111e33]"
+              className="group text-right rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4 transition hover:border-[var(--axia-gold)]/50 hover:bg-[var(--accent-hover)]"
             >
               <div className="flex items-center justify-between text-[var(--axia-gold-light)] mb-2">
                 <Gavel className="size-4" />
                 <ArrowRight className="size-3.5 group-hover:-translate-x-1 transition" />
               </div>
-              <h3 className="text-xs font-bold text-white group-hover:text-[var(--axia-gold-light)] transition">
+              <h3 className="text-xs font-bold text-[var(--text)] group-hover:text-[var(--axia-gold-light)] transition">
                 {sp.title}
               </h3>
-              <p className="mt-1.5 text-[11px] text-slate-400 line-clamp-2">
+              <p className="mt-1.5 text-[11px] text-[var(--text-muted)] line-clamp-2">
                 {sp.query}
               </p>
             </button>
@@ -207,7 +207,7 @@ export function RajihAiView() {
       </div>
 
       {/* Chat Workspace */}
-      <div className="rounded-2xl border border-white/10 bg-[#0d1726] shadow-xl flex flex-col h-[520px]">
+      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] shadow-xl flex flex-col h-[520px]">
         {/* Messages Scroll Area */}
         <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
           {messages.map((msg) => {
@@ -230,14 +230,14 @@ export function RajihAiView() {
                 <div
                   className={`relative max-w-[85%] rounded-2xl p-4 text-xs leading-relaxed ${
                     isRajih
-                      ? "border border-white/10 bg-[#111d30] text-slate-200"
-                      : "bg-cyan-950/40 border border-cyan-500/20 text-white"
+                      ? "border border-[var(--border)] bg-[var(--accent-hover)] text-[var(--text)]"
+                      : "bg-cyan-950/40 border border-cyan-500/20 text-[var(--text)]"
                   }`}
                 >
                   <div className="whitespace-pre-wrap font-sans">{msg.text}</div>
 
                   {msg.citations && msg.citations.length > 0 && (
-                    <div className="mt-4 border-t border-white/10 pt-3">
+                    <div className="mt-4 border-t border-[var(--border)] pt-3">
                       <span className="text-[10px] font-bold text-[var(--axia-gold-light)] block mb-1.5">
                         المصادر والمراجع القانونية المعتمدة:
                       </span>
@@ -245,7 +245,7 @@ export function RajihAiView() {
                         {msg.citations.map((c, i) => (
                           <span
                             key={i}
-                            className="rounded bg-black/30 border border-white/10 px-2 py-0.5 text-[10px] text-slate-300 font-mono"
+                            className="rounded bg-[var(--accent)] border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--text-muted)] font-mono"
                           >
                             {c}
                           </span>
@@ -258,7 +258,7 @@ export function RajihAiView() {
                     <div className="mt-3 flex justify-end">
                       <button
                         onClick={() => handleCopy(msg.id, msg.text)}
-                        className="inline-flex items-center gap-1 rounded bg-black/20 px-2 py-1 text-[10px] text-slate-400 hover:text-white"
+                        className="inline-flex items-center gap-1 rounded bg-[var(--accent)] px-2 py-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text)]"
                       >
                         {copiedId === msg.id ? (
                           <>
@@ -288,7 +288,7 @@ export function RajihAiView() {
         </div>
 
         {/* Input Bar */}
-        <div className="border-t border-white/10 p-4 bg-black/20">
+        <div className="border-t border-[var(--border)] p-4 bg-[var(--accent)]">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -301,7 +301,7 @@ export function RajihAiView() {
               placeholder="اكتب استفسارك، أو اطلب صياغة دفع قانوني، أو ابحث عن مبدأ قضائي في محكمة النقض..."
               value={inputPrompt}
               onChange={(e) => setInputPrompt(e.target.value)}
-              className="flex-1 rounded-xl border border-white/10 bg-[#0d1726] px-4 py-3 text-xs text-white placeholder:text-slate-500 focus:border-[var(--axia-gold)] focus:outline-none"
+              className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-4 py-3 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--axia-gold)] focus:outline-none"
             />
             <button
               type="submit"

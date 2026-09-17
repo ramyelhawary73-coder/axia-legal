@@ -261,7 +261,7 @@ export function AppShell({ activeTab, onNavigate, children }: AppShellProps) {
           <div className="fixed inset-0 z-50 flex lg:hidden">
             <div 
               onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+              className="fixed inset-0 bg-[var(--accent)] backdrop-blur-sm transition-opacity"
             />
             <div className="relative w-72 bg-[var(--panel)] border-l border-[var(--border)] p-4 shadow-2xl h-full flex flex-col">
               <div className="flex items-center justify-between border-b border-[var(--border)] pb-3 mb-3">
