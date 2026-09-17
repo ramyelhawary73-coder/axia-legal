@@ -15,6 +15,7 @@ import { RajihAiView } from "@/components/views/rajih-ai-view";
 import { TeamView } from "@/components/views/team-view";
 import { ReportsView } from "@/components/views/reports-view";
 import { AdministrationView } from "@/components/views/administration-view";
+import { mockMatters } from "@/lib/mock-legal-data";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<NavigationTab>("overview");
@@ -25,8 +26,17 @@ export default function HomePage() {
     setActiveTab("matters");
   };
 
+  
+  let subContext = null;
+  if (activeTab === "matters" && selectedMatterId) {
+    const matter = mockMatters.find(m => m.id === selectedMatterId);
+    if (matter) {
+      subContext = `قضية رقم ${matter.caseNumber}`;
+    }
+  }
+
   return (
-    <AppShell activeTab={activeTab} onNavigate={setActiveTab}>
+    <AppShell activeTab={activeTab} onNavigate={(tab) => { setActiveTab(tab); setSelectedMatterId(null); }} subContext={subContext} onClearSubContext={() => setSelectedMatterId(null)}>
       {activeTab === "overview" && (
         <OverviewView 
           onNavigate={setActiveTab} 

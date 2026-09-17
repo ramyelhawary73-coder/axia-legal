@@ -16,7 +16,8 @@ import {
   Settings, 
   Search, 
   Bell, 
-  Menu, 
+  Menu,
+  ChevronLeft, 
   X,
   Shield,
   PanelRightClose,
@@ -31,6 +32,8 @@ interface AppShellProps {
   activeTab: NavigationTab;
   onNavigate: (tab: NavigationTab) => void;
   children: React.ReactNode;
+  subContext?: string | null;
+  onClearSubContext?: () => void;
 }
 
 const navItems: { id: NavigationTab; labelAr: string; labelEn: string; icon: LucideIcon; badge?: string }[] = [
@@ -48,7 +51,7 @@ const navItems: { id: NavigationTab; labelAr: string; labelEn: string; icon: Luc
   { id: "administration", labelAr: "إدارة المكتب والترخيص", labelEn: "Administration", icon: Settings },
 ];
 
-export function AppShell({ activeTab, onNavigate, children }: AppShellProps) {
+export function AppShell({ activeTab, onNavigate, children, subContext, onClearSubContext }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
@@ -312,7 +315,40 @@ export function AppShell({ activeTab, onNavigate, children }: AppShellProps) {
         )}
 
         {/* Main Content Area - Apple-like canvas */}
-        <main className="flex-1 min-w-0 overflow-y-auto relative z-0 scroll-smooth bg-[var(--bg)] custom-scrollbar">
+        <main className="flex-1 min-w-0 flex flex-col overflow-y-auto relative z-0 scroll-smooth bg-[var(--bg)] custom-scrollbar">
+
+          {/* Breadcrumb Navigation */}
+          <div className="flex items-center gap-1.5 px-4 pt-4 lg:px-6 text-[11px] font-medium text-[var(--text-muted)] animate-in fade-in duration-300">
+            <span 
+              className="cursor-pointer hover:text-[var(--text)] transition-colors"
+              onClick={() => {
+                if (activeTab !== "overview") onNavigate("overview");
+                if (onClearSubContext) onClearSubContext();
+              }}
+            >
+              الرئيسية
+            </span>
+            {activeTab !== "overview" && (
+              <>
+                <ChevronLeft className="size-3 opacity-50" />
+                <span 
+                  className={`${!subContext ? 'text-[var(--text)] font-semibold' : 'cursor-pointer hover:text-[var(--text)] transition-colors'}`}
+                  onClick={() => {
+                    if (subContext && onClearSubContext) onClearSubContext();
+                  }}
+                >
+                  {navItems.find((i) => i.id === activeTab)?.labelAr}
+                </span>
+              </>
+            )}
+            {subContext && (
+              <>
+                <ChevronLeft className="size-3 opacity-50" />
+                <span className="text-[var(--text)] font-semibold truncate max-w-[200px] sm:max-w-xs">{subContext}</span>
+              </>
+            )}
+          </div>
+
           <div className="mx-auto max-w-[1700px] p-4 lg:p-6 animate-in fade-in duration-300">
             {children}
           </div>
