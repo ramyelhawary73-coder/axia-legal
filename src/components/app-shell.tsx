@@ -349,6 +349,7 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
             )}
           </div>
 
+
           <div className="mx-auto max-w-[1700px] p-4 lg:p-6 animate-in fade-in duration-300">
             {children}
           </div>

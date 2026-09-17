@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { NavigationTab } from "@/types/legal";
@@ -26,8 +25,7 @@ export default function HomePage() {
     setActiveTab("matters");
   };
 
-  
-  let subContext = null;
+  let subContext: string | null = null;
   if (activeTab === "matters" && selectedMatterId) {
     const matter = mockMatters.find(m => m.id === selectedMatterId);
     if (matter) {
@@ -43,32 +41,21 @@ export default function HomePage() {
           onOpenMatter={handleOpenMatter} 
         />
       )}
-
       {activeTab === "matters" && (
         <MattersView 
           selectedMatterId={selectedMatterId}
           onCloseMatterModal={() => setSelectedMatterId(null)}
         />
       )}
-
       {activeTab === "hearings" && <HearingsView />}
-
       {activeTab === "clients" && <ClientsView />}
-
       {activeTab === "tasks" && <TasksView />}
-
       {activeTab === "documents" && <DocumentsView />}
-
       {activeTab === "finance" && <FinanceView />}
-
       {activeTab === "library" && <LibraryView />}
-
       {activeTab === "rajih" && <RajihAiView />}
-
       {activeTab === "team" && <TeamView />}
-
       {activeTab === "reports" && <ReportsView />}
-
       {activeTab === "administration" && <AdministrationView />}
     </AppShell>
   );
