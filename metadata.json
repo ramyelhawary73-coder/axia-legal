@@ -1,6 +1,6 @@
 {
   "name": "AXIA Legal",
-  "description": "Egyptian Legal Practice & Intelligence OS with automated daily summary snapshot export & cloud sync powered by RAJIH AI",
+  "description": "Egyptian Legal Practice & Intelligence OS with Legal Document Templates library, client auto-fill engine, and RAJIH AI",
   "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

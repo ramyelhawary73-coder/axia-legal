@@ -14,7 +14,7 @@ import { RajihAiView } from "@/components/views/rajih-ai-view";
 import { TeamView } from "@/components/views/team-view";
 import { ReportsView } from "@/components/views/reports-view";
 import { AdministrationView } from "@/components/views/administration-view";
-import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
+import { mockMatters, mockTasks, mockClients } from "@/lib/mock-legal-data";
 import { useDailySnapshotAutoExport } from "@/hooks/use-daily-snapshot-auto-export";
 import { DailySnapshotToast } from "@/components/daily-snapshot-toast";
 import { DailySnapshotManager } from "@/components/daily-snapshot-manager";
@@ -107,7 +107,7 @@ export default function HomePage() {
             onNavigate={setActiveTab}
           />
         )}
-        {activeTab === "documents" && <DocumentsView />}
+        {activeTab === "documents" && <DocumentsView clients={mockClients} matters={mockMatters} />}
         {activeTab === "finance" && <FinanceView />}
         {activeTab === "library" && <LibraryView />}
         {activeTab === "rajih" && <RajihAiView />}

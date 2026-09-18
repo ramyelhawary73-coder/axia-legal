@@ -29,6 +29,8 @@ import {
 } from "lucide-react";
 import { Client, Matter, CourtCategory } from "@/types/legal";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
+import { LegalTemplateGeneratorModal } from "@/components/legal-template-generator-modal";
+import { legalTemplatesCollection } from "@/lib/legal-templates-data";
 
 interface ClientDetailDashboardProps {
   client: Client;
@@ -57,6 +59,7 @@ export function ClientDetailDashboard({
   const [selectedMatterForDossier, setSelectedMatterForDossier] = useState<Matter | null>(null);
   const [isAddMatterModalOpen, setIsAddMatterModalOpen] = useState(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [copiedText, setCopiedText] = useState<string | null>(null);
 
   // New Matter Form State
@@ -207,6 +210,15 @@ export function ClientDetailDashboard({
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsTemplateModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--axia-gold)]/40 bg-[var(--axia-gold)]/10 px-3 py-1.5 text-xs font-bold text-[var(--axia-gold-light)] hover:bg-[var(--axia-gold)]/20 shadow-sm transition"
+          >
+            <FileText className="size-3.5 text-[var(--axia-gold)]" />
+            <span>صياغة وثيقة من قالب رسمي</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setIsPdfModalOpen(true)}
@@ -1210,6 +1222,18 @@ export function ClientDetailDashboard({
         tasks={[]}
         selectedMatter={selectedMatterForDossier}
       />
+
+      {/* Legal Template Generator Modal */}
+      {isTemplateModalOpen && (
+        <LegalTemplateGeneratorModal
+          isOpen={isTemplateModalOpen}
+          onClose={() => setIsTemplateModalOpen(false)}
+          template={legalTemplatesCollection[0]}
+          clients={clients}
+          matters={matters}
+          preSelectedClientId={client.id}
+        />
+      )}
     </div>
   );
 }
