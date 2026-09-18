@@ -16,8 +16,25 @@ import {
   UserPlus,
   Trash2,
   Copy,
-  Check
+  Check,
+  BarChart3,
+  PieChart as PieChartIcon,
+  Grid,
+  TrendingUp
 } from "lucide-react";
+import { 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid
+} from "recharts";
 import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
 import { Matter, CourtCategory } from "@/types/legal";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
@@ -111,6 +128,16 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
       localStorage.setItem("axia_matters", JSON.stringify(matters));
     }
   }, [matters]);
+
+  const [activeTab, setActiveTab] = useState<"list" | "dashboard">("list");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMounted(true);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [courtFilter, setCourtFilter] = useState<string>("all");
@@ -255,7 +282,35 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Segmented View Mode Toggle */}
+          <div className="flex items-center rounded-lg border border-[var(--border)] bg-[var(--panel)] p-0.5 shadow-sm ml-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("list")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === "list"
+                  ? "bg-[var(--text)] text-[var(--bg)] shadow-sm"
+                  : "text-[var(--text-muted)] hover:text-[var(--text)]"
+              }`}
+            >
+              <Grid className="size-3.5" />
+              <span>سجل القضايا</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("dashboard")}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === "dashboard"
+                  ? "bg-[var(--text)] text-[var(--bg)] shadow-sm"
+                  : "text-[var(--text-muted)] hover:text-[var(--text)]"
+              }`}
+            >
+              <BarChart3 className="size-3.5" />
+              <span>لوحة التحليلات</span>
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={() => {
@@ -279,161 +334,408 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
         </div>
       </div>
 
-      {/* Filters Bar - High Density */}
-      <div className="flex flex-wrap items-center gap-3 py-3 shrink-0">
-        <div className="relative flex-1 min-w-[250px] max-w-sm">
-          <Search className="absolute right-2.5 top-1.5 size-3.5 text-[var(--text-muted)]" />
-          <input
-            type="text"
-            placeholder="بحث برقم القضية، الموكل، الخصم..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-          />
-        </div>
+      {activeTab === "list" ? (
+        <>
+          {/* Filters Bar - High Density */}
+          <div className="flex flex-wrap items-center gap-3 py-3 shrink-0">
+            <div className="relative flex-1 min-w-[250px] max-w-sm">
+              <Search className="absolute right-2.5 top-1.5 size-3.5 text-[var(--text-muted)]" />
+              <input
+                type="text"
+                placeholder="بحث برقم القضية، الموكل، الخصم..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+              />
+            </div>
 
-        <div className="relative">
-          <select
-            value={courtFilter}
-            onChange={(e) => setCourtFilter(e.target.value)}
-            className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-          >
-            <option value="all">كافة المحاكم والجهات</option>
-            <option value="محكمة النقض">محكمة النقض</option>
-            <option value="المحكمة الاقتصادية">المحكمة الاقتصادية</option>
-            <option value="مجلس الدولة (القضاء الإداري)">مجلس الدولة</option>
-            <option value="استئناف عالي">استئناف عالي</option>
-            <option value="ابتدائية كلي">ابتدائية كلي</option>
-          </select>
-          <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
-        </div>
+            <div className="relative">
+              <select
+                value={courtFilter}
+                onChange={(e) => setCourtFilter(e.target.value)}
+                className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+              >
+                <option value="all">كافة المحاكم والجهات</option>
+                <option value="محكمة النقض">محكمة النقض</option>
+                <option value="المحكمة الاقتصادية">المحكمة الاقتصادية</option>
+                <option value="مجلس الدولة (القضاء الإداري)">مجلس الدولة</option>
+                <option value="استئناف عالي">استئناف عالي</option>
+                <option value="ابتدائية كلي">ابتدائية كلي</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
+            </div>
 
-        <div className="relative">
-          <select
-            value={stageFilter}
-            onChange={(e) => setStageFilter(e.target.value)}
-            className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-          >
-            <option value="all">كافة مراحل الدعوى</option>
-            <option value="متداولة">متداولة</option>
-            <option value="حجز للحكم">محجوزة للحكم</option>
-            <option value="مؤجلة لتقديم مستندات">مؤجلة للمستندات</option>
-            <option value="طعن بالنقض">طعن بالنقض</option>
-          </select>
-          <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
-        </div>
+            <div className="relative">
+              <select
+                value={stageFilter}
+                onChange={(e) => setStageFilter(e.target.value)}
+                className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+              >
+                <option value="all">كافة مراحل الدعوى</option>
+                <option value="متداولة">متداولة</option>
+                <option value="حجز للحكم">محجوزة للحكم</option>
+                <option value="مؤجلة لتقديم مستندات">مؤجلة للمستندات</option>
+                <option value="طعن بالنقض">طعن بالنقض</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
+            </div>
 
-        <div className="relative">
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-          >
-            <option value="all">كافة التصنيفات</option>
-            <option value="مدني">مدنية</option>
-            <option value="جنائي">جنائية</option>
-            <option value="عمالي">عمالية</option>
-            <option value="تجاري">تجارية</option>
-            <option value="إداري">إدارية</option>
-            <option value="أسرة">أسرة</option>
-          </select>
-          <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
-        </div>
-      </div>
+            <div className="relative">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+              >
+                <option value="all">كافة التصنيفات</option>
+                <option value="مدني">مدنية</option>
+                <option value="جنائي">جنائية</option>
+                <option value="عمالي">عمالية</option>
+                <option value="تجاري">تجارية</option>
+                <option value="إداري">إدارية</option>
+                <option value="أسرة">أسرة</option>
+              </select>
+              <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
+            </div>
+          </div>
 
-      {/* Matters Table - Replaces chunky cards with a clean, high-density Mac-like list */}
-      <div className="flex-1 overflow-hidden flex flex-col rounded-xl border border-[var(--border)] bg-[var(--panel)] shadow-sm">
-        <div className="overflow-x-auto flex-1">
-          <table className="w-full text-right text-[11px]">
-            <thead className="sticky top-0 bg-[var(--panel)] z-10 shadow-[0_1px_0_var(--border)]">
-              <tr className="text-[var(--text-muted)] uppercase tracking-wider text-[10px]">
-                <th className="px-4 py-2 font-medium w-[15%]">رقم القضية</th>
-                <th className="px-4 py-2 font-medium w-[25%]">الموضوع والمحكمة</th>
-                <th className="px-4 py-2 font-medium w-[20%]">الأطراف (موكل / خصم)</th>
-                <th className="px-4 py-2 font-medium w-[15%]">الجلسة القادمة</th>
-                <th className="px-4 py-2 font-medium w-[10%]">الحالة</th>
-                <th className="px-4 py-2 font-medium w-[10%]">المحامي</th>
-                <th className="px-4 py-2 font-medium w-[5%] text-center">الإجراء</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--border)]">
-              {filteredMatters.map((matter) => (
-                <tr 
-                  key={matter.id} 
-                  className="hover:bg-[var(--accent)] transition-colors group cursor-default"
-                  onDoubleClick={() => setLocalActiveMatterId(matter.id)}
-                >
-                  <td className="px-4 py-3 align-top">
-                    <div className="font-semibold text-[var(--text)] mb-1">{matter.caseNumber}</div>
-                    {matter.category && (
-                      <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-semibold leading-none ${getCategoryStyle(matter.category)}`}>
-                        {matter.category}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="font-medium text-[var(--text)] mb-0.5 line-clamp-1" title={matter.title}>{matter.title}</div>
-                    <div className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
-                      <span className="font-semibold">{matter.court}</span>
-                      <span>·</span>
-                      <span>{matter.circuit}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="font-medium text-[var(--text)] flex items-center justify-between mb-0.5">
-                      <span className="truncate pr-1">{matter.clientName}</span>
-                      <span className="shrink-0 bg-[var(--text)]/10 text-[var(--text)] px-1 py-0.5 rounded text-[8px]">{matter.clientRole}</span>
-                    </div>
-                    <div className="text-[10px] text-[var(--text-muted)] truncate" title={matter.opponentName}>
-                      ضد: {matter.opponentName}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="font-semibold text-[var(--text)] mb-0.5">{matter.nextHearingDate}</div>
-                    <div className="text-[9px] text-[var(--text-muted)] line-clamp-1" title={matter.nextHearingGoal}>
-                      {matter.nextHearingGoal}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <span className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-medium border ${
-                      matter.stage === "حجز للحكم"
-                        ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
-                        : matter.stage === "متداولة"
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                        : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                    }`}>
-                      {matter.stage}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 align-top text-[10px] text-[var(--text-muted)]">
-                     {matter.assignedLawyer.split(" ")[0]} {matter.assignedLawyer.split(" ")[1]}
-                  </td>
-                  <td className="px-4 py-3 align-top text-center">
-                    <button
-                      onClick={() => setLocalActiveMatterId(matter.id)}
-                      className="p-1 rounded-md text-[var(--text-muted)] hover:bg-[var(--border)] hover:text-[var(--text)] transition-colors opacity-0 group-hover:opacity-100 mx-auto"
-                      title="فتح الملف"
+          {/* Matters Table - Replaces chunky cards with a clean, high-density Mac-like list */}
+          <div className="flex-1 overflow-hidden flex flex-col rounded-xl border border-[var(--border)] bg-[var(--panel)] shadow-sm">
+            <div className="overflow-x-auto flex-1">
+              <table className="w-full text-right text-[11px]">
+                <thead className="sticky top-0 bg-[var(--panel)] z-10 shadow-[0_1px_0_var(--border)]">
+                  <tr className="text-[var(--text-muted)] uppercase tracking-wider text-[10px]">
+                    <th className="px-4 py-2 font-medium w-[15%]">رقم القضية</th>
+                    <th className="px-4 py-2 font-medium w-[25%]">الموضوع والمحكمة</th>
+                    <th className="px-4 py-2 font-medium w-[20%]">الأطراف (موكل / خصم)</th>
+                    <th className="px-4 py-2 font-medium w-[15%]">الجلسة القادمة</th>
+                    <th className="px-4 py-2 font-medium w-[10%]">الحالة</th>
+                    <th className="px-4 py-2 font-medium w-[10%]">المحامي</th>
+                    <th className="px-4 py-2 font-medium w-[5%] text-center">الإجراء</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border)]">
+                  {filteredMatters.map((matter) => (
+                    <tr 
+                      key={matter.id} 
+                      className="hover:bg-[var(--accent)] transition-colors group cursor-default"
+                      onDoubleClick={() => setLocalActiveMatterId(matter.id)}
                     >
-                      <ArrowUpRight className="size-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filteredMatters.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-[var(--text-muted)] text-xs">
-                    لا توجد قضايا مطابقة للبحث.
-                  </td>
-                </tr>
+                      <td className="px-4 py-3 align-top">
+                        <div className="font-semibold text-[var(--text)] mb-1">{matter.caseNumber}</div>
+                        {matter.category && (
+                          <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-semibold leading-none ${getCategoryStyle(matter.category)}`}>
+                            {matter.category}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="font-medium text-[var(--text)] mb-0.5 line-clamp-1" title={matter.title}>{matter.title}</div>
+                        <div className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
+                          <span className="font-semibold">{matter.court}</span>
+                          <span>·</span>
+                          <span>{matter.circuit}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="font-medium text-[var(--text)] flex items-center justify-between mb-0.5">
+                          <span className="truncate pr-1">{matter.clientName}</span>
+                          <span className="shrink-0 bg-[var(--text)]/10 text-[var(--text)] px-1 py-0.5 rounded text-[8px]">{matter.clientRole}</span>
+                        </div>
+                        <div className="text-[10px] text-[var(--text-muted)] truncate" title={matter.opponentName}>
+                          ضد: {matter.opponentName}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="font-semibold text-[var(--text)] mb-0.5">{matter.nextHearingDate}</div>
+                        <div className="text-[9px] text-[var(--text-muted)] line-clamp-1" title={matter.nextHearingGoal}>
+                          {matter.nextHearingGoal}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 align-top">
+                        <span className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-medium border ${
+                          matter.stage === "حجز للحكم"
+                            ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+                            : matter.stage === "متداولة"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                            : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                        }`}>
+                          {matter.stage}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 align-top text-[10px] text-[var(--text-muted)]">
+                         {matter.assignedLawyer.split(" ")[0]} {matter.assignedLawyer.split(" ")[1]}
+                      </td>
+                      <td className="px-4 py-3 align-top text-center">
+                        <button
+                          onClick={() => setLocalActiveMatterId(matter.id)}
+                          className="p-1 rounded-md text-[var(--text-muted)] hover:bg-[var(--border)] hover:text-[var(--text)] transition-colors opacity-0 group-hover:opacity-100 mx-auto"
+                          title="فتح الملف"
+                        >
+                          <ArrowUpRight className="size-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredMatters.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-8 text-center text-[var(--text-muted)] text-xs">
+                        لا توجد قضايا مطابقة للبحث.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="border-t border-[var(--border)] bg-[var(--bg)]/30 px-4 py-2 text-[10px] text-[var(--text-muted)] flex justify-between">
+              <span>إجمالي الملفات: {filteredMatters.length}</span>
+              <span>انقر نقراً مزدوجاً لفتح الملف</span>
+            </div>
+          </div>
+        </>
+      ) : (
+        /* Dashboard view */
+        <div className="flex-1 overflow-y-auto pr-0.5 space-y-6 py-4 animate-in fade-in duration-200 custom-scrollbar">
+          {/* Hero KPI Cards */}
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
+              <span className="text-[10px] text-[var(--text-muted)] font-bold flex items-center gap-1">
+                <Briefcase className="size-3 text-[var(--axia-gold)]" />
+                <span>إجمالي القضايا والمنازعات</span>
+              </span>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-[var(--text)]">{matters.length}</span>
+                <span className="text-[9px] bg-[var(--axia-gold)]/10 text-[var(--axia-gold)] px-1.5 py-0.5 rounded-full font-bold">ملف نشط</span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
+              <span className="text-[10px] text-[var(--text-muted)] font-bold flex items-center gap-1">
+                <TrendingUp className="size-3 text-emerald-500" />
+                <span>الدعاوى المتداولة</span>
+              </span>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-emerald-500">
+                  {matters.filter(m => m.stage === "متداولة").length}
+                </span>
+                <span className="text-[9px] text-emerald-500 font-bold">
+                  {matters.length > 0 ? Math.round((matters.filter(m => m.stage === "متداولة").length / matters.length) * 100) : 0}% من الكل
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
+              <span className="text-[10px] text-[var(--text-muted)] font-bold flex items-center gap-1">
+                <FileText className="size-3 text-purple-500" />
+                <span>محجوزة للحكم</span>
+              </span>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-purple-500">
+                  {matters.filter(m => m.stage === "حجز للحكم").length}
+                </span>
+                <span className="text-[9px] bg-purple-500/10 text-purple-500 px-1.5 py-0.5 rounded-full font-bold">جلسة قريبة</span>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
+              <span className="text-[10px] text-[var(--text-muted)] font-bold flex items-center gap-1">
+                <Check className="size-3 text-slate-500" />
+                <span>قضايا محكوم فيها</span>
+              </span>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-2xl font-black tracking-tight text-slate-500">
+                  {matters.filter(m => m.stage === "محكوم فيها").length}
+                </span>
+                <span className="text-[9px] bg-slate-500/10 text-slate-500 px-1.5 py-0.5 rounded-full font-bold">مغلقة نهائياً</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Charts Grid */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Pie Chart: Status Distribution */}
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
+              <h3 className="text-xs font-bold text-[var(--text)] mb-4 flex items-center gap-1.5 border-b border-[var(--border)] pb-2">
+                <PieChartIcon className="size-4 text-[var(--axia-gold)]" />
+                <span>توزيع القضايا حسب المرحلة والدور القضائي</span>
+              </h3>
+              <div className="w-full flex items-center justify-center">
+                {mounted ? (
+                  <ResponsiveContainer width="100%" height={240}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: "متداولة", value: matters.filter(m => m.stage === "متداولة").length, color: "#10b981" },
+                          { name: "حجز للحكم", value: matters.filter(m => m.stage === "حجز للحكم").length, color: "#8b5cf6" },
+                          { name: "محكوم فيها", value: matters.filter(m => m.stage === "محكوم فيها").length, color: "#64748b" },
+                          { name: "أخرى/مؤجلة", value: matters.filter(m => m.stage !== "متداولة" && m.stage !== "حجز للحكم" && m.stage !== "محكوم فيها").length, color: "#f59e0b" },
+                        ].filter(d => d.value > 0)}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={75}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        {[
+                          { name: "متداولة", value: matters.filter(m => m.stage === "متداولة").length, color: "#10b981" },
+                          { name: "حجز للحكم", value: matters.filter(m => m.stage === "حجز للحكم").length, color: "#8b5cf6" },
+                          { name: "محكوم فيها", value: matters.filter(m => m.stage === "محكوم فيها").length, color: "#64748b" },
+                          { name: "أخرى/مؤجلة", value: matters.filter(m => m.stage !== "متداولة" && m.stage !== "حجز للحكم" && m.stage !== "محكوم فيها").length, color: "#f59e0b" },
+                        ].filter(d => d.value > 0).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          direction: 'rtl',
+                          textAlign: 'right',
+                          backgroundColor: 'var(--panel)',
+                          borderColor: 'var(--border)',
+                          borderRadius: '8px',
+                          color: 'var(--text)',
+                          fontSize: '11px'
+                        }}
+                      />
+                      <Legend
+                        verticalAlign="bottom"
+                        height={36}
+                        iconType="circle"
+                        formatter={(value) => <span className="text-[10px] font-semibold text-[var(--text)]">{value}</span>}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[240px] flex items-center justify-center text-xs text-[var(--text-muted)]">جاري تحميل الرسم البياني...</div>
+                )}
+              </div>
+            </div>
+
+            {/* Bar Chart: Category Distribution */}
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
+              <h3 className="text-xs font-bold text-[var(--text)] mb-4 flex items-center gap-1.5 border-b border-[var(--border)] pb-2">
+                <BarChart3 className="size-4 text-[var(--axia-gold)]" />
+                <span>توزيع القضايا حسب التصنيفات القانونية</span>
+              </h3>
+              <div className="w-full flex items-center justify-center">
+                {mounted ? (
+                  <ResponsiveContainer width="100%" height={240}>
+                    <BarChart
+                      data={[
+                        { name: "مدني", value: matters.filter(m => m.category === "مدني").length, color: "#3b82f6" },
+                        { name: "جنائي", value: matters.filter(m => m.category === "جنائي").length, color: "#ef4444" },
+                        { name: "عمالي", value: matters.filter(m => m.category === "عمالي").length, color: "#10b981" },
+                        { name: "تجاري", value: matters.filter(m => m.category === "تجاري").length, color: "#f59e0b" },
+                        { name: "إداري", value: matters.filter(m => m.category === "إداري").length, color: "#8b5cf6" },
+                        { name: "أسرة", value: matters.filter(m => m.category === "أسرة").length, color: "#ec4899" },
+                      ]}
+                      barSize={20}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                      <XAxis
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 500 }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                      />
+                      <Tooltip
+                        cursor={{ fill: 'var(--accent)', opacity: 0.15 }}
+                        contentStyle={{
+                          direction: 'rtl',
+                          textAlign: 'right',
+                          backgroundColor: 'var(--panel)',
+                          borderColor: 'var(--border)',
+                          borderRadius: '8px',
+                          color: 'var(--text)',
+                          fontSize: '11px'
+                        }}
+                      />
+                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                        {[
+                          { name: "مدني", value: matters.filter(m => m.category === "مدني").length, color: "#3b82f6" },
+                          { name: "جنائي", value: matters.filter(m => m.category === "جنائي").length, color: "#ef4444" },
+                          { name: "عمالي", value: matters.filter(m => m.category === "عمالي").length, color: "#10b981" },
+                          { name: "تجاري", value: matters.filter(m => m.category === "تجاري").length, color: "#f59e0b" },
+                          { name: "إداري", value: matters.filter(m => m.category === "إداري").length, color: "#8b5cf6" },
+                          { name: "أسرة", value: matters.filter(m => m.category === "أسرة").length, color: "#ec4899" },
+                        ].map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[240px] flex items-center justify-center text-xs text-[var(--text-muted)]">جاري تحميل الرسم البياني...</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Court Volume Chart */}
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
+            <h3 className="text-xs font-bold text-[var(--text)] mb-4 flex items-center gap-1.5 border-b border-[var(--border)] pb-2">
+              <TrendingUp className="size-4 text-[var(--axia-gold)]" />
+              <span>كثافة وتواجد القضايا عبر المحاكم والجهات المختلفة</span>
+            </h3>
+            <div className="w-full flex items-center justify-center">
+              {mounted ? (
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart
+                    data={(() => {
+                      const courtCounts: Record<string, number> = {};
+                      matters.forEach(m => {
+                        courtCounts[m.court] = (courtCounts[m.court] || 0) + 1;
+                      });
+                      return Object.entries(courtCounts).map(([name, value]) => ({
+                        name: name.replace("محكمة ", ""),
+                        value
+                      })).sort((a, b) => b.value - a.value);
+                    })()}
+                    layout="vertical"
+                    barSize={12}
+                    margin={{ right: 20, left: 10 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                    <XAxis
+                      type="number"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                    />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 500 }}
+                      width={120}
+                    />
+                    <Tooltip
+                      cursor={{ fill: 'var(--accent)', opacity: 0.1 }}
+                      contentStyle={{
+                        direction: 'rtl',
+                        textAlign: 'right',
+                        backgroundColor: 'var(--panel)',
+                        borderColor: 'var(--border)',
+                        borderRadius: '8px',
+                        color: 'var(--text)',
+                        fontSize: '11px'
+                      }}
+                    />
+                    <Bar dataKey="value" fill="var(--axia-gold)" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[260px] flex items-center justify-center text-xs text-[var(--text-muted)]">جاري تحميل الرسم البياني...</div>
               )}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
-        <div className="border-t border-[var(--border)] bg-[var(--bg)]/30 px-4 py-2 text-[10px] text-[var(--text-muted)] flex justify-between">
-          <span>إجمالي الملفات: {filteredMatters.length}</span>
-          <span>انقر نقراً مزدوجاً لفتح الملف</span>
-        </div>
-      </div>
+      )}
 
       {/* Dossier Modal / View details */}
       {activeMatter && (
