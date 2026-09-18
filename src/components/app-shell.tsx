@@ -206,6 +206,8 @@ export function AppShell({
               onSelectMatter={onSelectMatter}
               onSelectClient={onSelectClient}
               onSelectDocument={onSelectDocument}
+              onCreateTaskTrigger={() => setIsTaskModalOpen(true)}
+              onOpenShortcutsTrigger={() => setIsShortcutsModalOpen(true)}
             />
           </div>
 
@@ -221,6 +223,8 @@ export function AppShell({
               onSelectMatter={onSelectMatter}
               onSelectClient={onSelectClient}
               onSelectDocument={onSelectDocument}
+              onCreateTaskTrigger={() => setIsTaskModalOpen(true)}
+              onOpenShortcutsTrigger={() => setIsShortcutsModalOpen(true)}
             />
 
             {/* Quick Task Button with Ctrl+N shortcut indicator */}

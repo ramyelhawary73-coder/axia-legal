@@ -9,12 +9,19 @@ import {
   FileText, 
   ChevronRight, 
   Eye, 
-  Sparkles
+  Sparkles,
+  PlusCircle,
+  Gavel,
+  Shield,
+  Keyboard,
+  BookOpen,
+  DollarSign,
+  Users
 } from "lucide-react";
 import { Matter, Client, LegalDocument, NavigationTab } from "@/types/legal";
 import { mockMatters, mockClients, mockDocuments } from "@/lib/mock-legal-data";
 
-export type SearchCategoryFilter = "all" | "matters" | "clients" | "documents";
+export type SearchCategoryFilter = "all" | "matters" | "clients" | "documents" | "actions";
 
 interface GlobalSearchBarProps {
   matters?: Matter[];
@@ -26,18 +33,20 @@ interface GlobalSearchBarProps {
   onSelectDocument?: (docId: string) => void;
   className?: string;
   isMobileTriggerOnly?: boolean;
+  onCreateTaskTrigger?: () => void;
+  onOpenShortcutsTrigger?: () => void;
 }
 
 interface SearchItem {
   id: string;
-  category: "matters" | "clients" | "documents";
+  category: "matters" | "clients" | "documents" | "actions";
   title: string;
   subtitle: string;
   badge: string;
-  badgeVariant: "gold" | "blue" | "emerald" | "purple" | "neutral";
+  badgeVariant: "gold" | "blue" | "emerald" | "purple" | "neutral" | "red" | "accent";
   details: string;
   meta: string;
-  rawItem: Matter | Client | LegalDocument;
+  rawItem: Matter | Client | LegalDocument | Record<string, unknown> | null;
 }
 
 export function GlobalSearchBar({
@@ -50,6 +59,8 @@ export function GlobalSearchBar({
   onSelectDocument,
   className = "",
   isMobileTriggerOnly = false,
+  onCreateTaskTrigger,
+  onOpenShortcutsTrigger,
 }: GlobalSearchBarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -100,9 +111,125 @@ export function GlobalSearchBar({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
-  // Index and normalize items for search
+  // Index and normalize items for search including action commands
   const allItems: SearchItem[] = useMemo(() => {
     const list: SearchItem[] = [];
+
+    // 0. Quick Command Actions
+    const actionsList: SearchItem[] = [
+      {
+        id: "action-create-task",
+        category: "actions",
+        title: "إضافة مهمة قضائية جديدة / إعلان محضرين",
+        subtitle: "اختصار Alt+N — فتح نافذة تسجيل مواعيد سقوط الطعن والمهام الفورية",
+        badge: "إجراء سريع",
+        badgeVariant: "accent",
+        details: "إرسال وتعيين المهمة إلى أحد أعضاء الفريق فوراً مع خيار المزامنة",
+        meta: "تشغيل",
+        rawItem: { description: "فتح نافذة إضافة مهمة جديدة" }
+      },
+      {
+        id: "action-open-rajih",
+        category: "actions",
+        title: "مساعد الذكاء الاصطناعي راجح (RAJIH AI CoPilot)",
+        subtitle: "صياغة المذكرات والدفوع القانونية واستخلاص المبادئ القضائية",
+        badge: "ذكاء اصطناعي",
+        badgeVariant: "gold",
+        details: "استشارات وبحوث قانونية متقدمة بدعم كامل للهجة المصرية الفصحى",
+        meta: "انتقال",
+        rawItem: { description: "فتح صفحة المساعد الذكي" }
+      },
+      {
+        id: "action-open-hearings",
+        category: "actions",
+        title: "فتح جدول الجلسات اليومي والتقويم القضائي",
+        subtitle: "متابعة رول المحكمة وحضور الدفاع وتأجيلات الجلسات الاستراتيجية",
+        badge: "الأجندة والتقويم",
+        badgeVariant: "blue",
+        details: "إدارة رول الجلسات وتأجيلات القضايا",
+        meta: "انتقال",
+        rawItem: { description: "فتح الأجندة" }
+      },
+      {
+        id: "action-open-admin",
+        category: "actions",
+        title: "إدارة الصلاحيات والتحكم بالأدوار (RBAC Controls)",
+        subtitle: "حجب البيانات الحساسة وعزل القوائم المالية وتعديل هويات المكتب",
+        badge: "الإدارة والصلاحيات",
+        badgeVariant: "red",
+        details: "محاكاة الأدوار في الوقت الحقيقي (Admin, Lawyer, Intern)",
+        meta: "انتقال",
+        rawItem: { description: "فتح صفحة الإدارة" }
+      },
+      {
+        id: "action-open-shortcuts",
+        category: "actions",
+        title: "عرض دليل اختصارات لوحة المفاتيح",
+        subtitle: "اختصار Ctrl+/ لفتح الدليل الفوري لتصفح المنظومة بالكامل بالكي بورد",
+        badge: "دليل المساعدة",
+        badgeVariant: "neutral",
+        details: "تصفح قائمة الاختصارات المتاحة لزيادة سرعة وسلاسة الاستخدام",
+        meta: "عرض",
+        rawItem: { description: "فتح نافذة الاختصارات" }
+      },
+      {
+        id: "action-open-library",
+        category: "actions",
+        title: "فتح المكتبة القانونية وأحكام محكمة النقض",
+        subtitle: "موسوعة المبادئ القانونية، المدونات القضائية والطعون المعتمدة",
+        badge: "المكتبة والكتب",
+        badgeVariant: "purple",
+        details: "البحث في مئات الآلاف من المبادئ القضائية الفورية بدقة بالغة",
+        meta: "انتقال",
+        rawItem: { description: "فتح المكتبة" }
+      },
+      {
+        id: "action-open-documents",
+        category: "actions",
+        title: "صياغة عقد أو مستند أو توكيل قانوني جديد",
+        subtitle: "استخدام النماذج القانونية الذكية المعتمدة وتوليد المستند فورا",
+        badge: "محرر العقود والمستندات",
+        badgeVariant: "purple",
+        details: "مزامنة سحابية فائقة وحفظ تلقائي بمجلد التنزيلات المحلي",
+        meta: "انتقال",
+        rawItem: { description: "فتح محرر المستندات" }
+      },
+      {
+        id: "action-open-finance",
+        category: "actions",
+        title: "عرض الإدارة المالية والأتعاب وسندات القبض",
+        subtitle: "تسجيل المقبوضات والأمانات المسددة ومطالبات الأتعاب والتدفقات",
+        badge: "المالية والأتعاب",
+        badgeVariant: "emerald",
+        details: "لوحة تحكم تفصيلية بالتدفقات المالية للمكتب",
+        meta: "انتقال",
+        rawItem: { description: "فتح لوحة المالية" }
+      },
+      {
+        id: "action-open-team",
+        category: "actions",
+        title: "عرض فريق العمل ومحامي المكتب",
+        subtitle: "إدارة المحامين المقيدين والمتدربين وتوزيع مأموريات قلم المحضرين",
+        badge: "فريق العمل",
+        badgeVariant: "blue",
+        details: "صلاحيات الأعضاء ومستندات التعيين الفورية",
+        meta: "انتقال",
+        rawItem: { description: "فتح فريق العمل" }
+      },
+      {
+        id: "action-open-reports",
+        category: "actions",
+        title: "عرض التقارير والتحليلات البيانية والـ KPIs",
+        subtitle: "متابعة كفاءة هيئة الدفاع ومؤشرات الأداء ومعدل كسب القضايا",
+        badge: "التقارير والإحصائيات",
+        badgeVariant: "gold",
+        details: "رسومات بيانية ذكية ومؤشرات الأداء",
+        meta: "انتقال",
+        rawItem: { description: "فتح التقارير" }
+      }
+    ];
+
+    list.push(...actionsList);
 
     // 1. Matters
     matters.forEach((m) => {
@@ -155,7 +282,13 @@ export function GlobalSearchBar({
   // Filtered Results
   const filteredResults = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
-    if (!trimmed) return [];
+    if (!trimmed) {
+      // If we are looking at specific categories, return items in that category when query is empty, especially for Actions!
+      if (categoryFilter !== "all") {
+        return allItems.filter(item => item.category === categoryFilter);
+      }
+      return [];
+    }
 
     return allItems.filter((item) => {
       const matchCategory = categoryFilter === "all" || item.category === categoryFilter;
@@ -191,6 +324,8 @@ export function GlobalSearchBar({
           (d.caseNumber && d.caseNumber.toLowerCase().includes(trimmed)) ||
           (d.clientName && d.clientName.toLowerCase().includes(trimmed))
         );
+      } else if (item.category === "actions") {
+        rawMatch = item.subtitle.toLowerCase().includes(trimmed);
       }
 
       return titleMatch || subMatch || detailsMatch || badgeMatch || metaMatch || rawMatch;
@@ -202,10 +337,11 @@ export function GlobalSearchBar({
     const trimmed = query.trim().toLowerCase();
     if (!trimmed) {
       return {
-        all: 0,
-        matters: 0,
-        clients: 0,
-        documents: 0,
+        all: allItems.length,
+        matters: allItems.filter((i) => i.category === "matters").length,
+        clients: allItems.filter((i) => i.category === "clients").length,
+        documents: allItems.filter((i) => i.category === "documents").length,
+        actions: allItems.filter((i) => i.category === "actions").length,
       };
     }
     const matches = allItems.filter((item) => {
@@ -222,6 +358,7 @@ export function GlobalSearchBar({
       matters: matches.filter((i) => i.category === "matters").length,
       clients: matches.filter((i) => i.category === "clients").length,
       documents: matches.filter((i) => i.category === "documents").length,
+      actions: matches.filter((i) => i.category === "actions").length,
     };
   }, [allItems, query]);
 
@@ -238,7 +375,38 @@ export function GlobalSearchBar({
   // Handle item selection
   const handleSelectItem = useCallback((item: SearchItem) => {
     setIsOpen(false);
-    if (item.category === "matters") {
+    if (item.category === "actions") {
+      const actionId = item.id;
+      if (actionId === "action-create-task" && onCreateTaskTrigger) {
+        onCreateTaskTrigger();
+      } else if (actionId === "action-open-shortcuts" && onOpenShortcutsTrigger) {
+        onOpenShortcutsTrigger();
+      } else if (actionId === "action-open-overview") {
+        onNavigate("overview");
+      } else if (actionId === "action-open-matters") {
+        onNavigate("matters");
+      } else if (actionId === "action-open-hearings") {
+        onNavigate("hearings");
+      } else if (actionId === "action-open-clients") {
+        onNavigate("clients");
+      } else if (actionId === "action-open-tasks") {
+        onNavigate("tasks");
+      } else if (actionId === "action-open-documents") {
+        onNavigate("documents");
+      } else if (actionId === "action-open-finance") {
+        onNavigate("finance");
+      } else if (actionId === "action-open-library") {
+        onNavigate("library");
+      } else if (actionId === "action-open-rajih") {
+        onNavigate("rajih");
+      } else if (actionId === "action-open-team") {
+        onNavigate("team");
+      } else if (actionId === "action-open-reports") {
+        onNavigate("reports");
+      } else if (actionId === "action-open-admin") {
+        onNavigate("administration");
+      }
+    } else if (item.category === "matters") {
       const matter = item.rawItem as Matter;
       if (onSelectMatter) {
         onSelectMatter(matter.id);
@@ -260,7 +428,7 @@ export function GlobalSearchBar({
         onNavigate("documents");
       }
     }
-  }, [onNavigate, onSelectMatter, onSelectClient, onSelectDocument]);
+  }, [onNavigate, onSelectMatter, onSelectClient, onSelectDocument, onCreateTaskTrigger, onOpenShortcutsTrigger]);
 
   // Keyboard navigation within list
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -289,7 +457,7 @@ export function GlobalSearchBar({
   };
 
   // Render Category Icon
-  const renderCategoryIcon = (category: SearchItem["category"]) => {
+  const renderCategoryIcon = (category: SearchItem["category"], itemId?: string) => {
     switch (category) {
       case "matters":
         return <Briefcase className="size-4 text-[var(--axia-gold)] shrink-0" />;
@@ -297,12 +465,22 @@ export function GlobalSearchBar({
         return <Building2 className="size-4 text-blue-400 shrink-0" />;
       case "documents":
         return <FileText className="size-4 text-purple-400 shrink-0" />;
+      case "actions":
+        if (itemId === "action-create-task") return <PlusCircle className="size-4 text-emerald-400 shrink-0" />;
+        if (itemId?.includes("rajih")) return <Sparkles className="size-4 text-[var(--axia-gold)] shrink-0" />;
+        if (itemId?.includes("shortcuts")) return <Keyboard className="size-4 text-zinc-400 shrink-0" />;
+        if (itemId?.includes("hearings")) return <Gavel className="size-4 text-[var(--axia-gold-light)] shrink-0" />;
+        if (itemId?.includes("admin")) return <Shield className="size-4 text-red-400 shrink-0" />;
+        if (itemId?.includes("finance")) return <DollarSign className="size-4 text-emerald-500 shrink-0" />;
+        if (itemId?.includes("library")) return <BookOpen className="size-4 text-purple-400 shrink-0" />;
+        if (itemId?.includes("team") || itemId?.includes("clients")) return <Users className="size-4 text-blue-400 shrink-0" />;
+        return <Sparkles className="size-4 text-[var(--axia-gold)] shrink-0" />;
     }
   };
 
   // Render Badge Style
   const renderBadge = (badge: string, variant: SearchItem["badgeVariant"]) => {
-    const base = "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border";
+    const base = "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border whitespace-nowrap";
     switch (variant) {
       case "gold":
         return <span className={`${base} bg-[var(--axia-gold-dim)] text-[var(--axia-gold-light)] border-[var(--axia-gold)]/30`}>{badge}</span>;
@@ -312,6 +490,10 @@ export function GlobalSearchBar({
         return <span className={`${base} bg-emerald-500/15 text-emerald-400 border-emerald-500/30`}>{badge}</span>;
       case "purple":
         return <span className={`${base} bg-purple-500/15 text-purple-400 border-purple-500/30`}>{badge}</span>;
+      case "red":
+        return <span className={`${base} bg-red-500/15 text-red-400 border-red-500/30`}>{badge}</span>;
+      case "accent":
+        return <span className={`${base} bg-[var(--axia-gold-dim)] text-[var(--axia-gold-light)] border-[var(--axia-gold)]/30`}>{badge}</span>;
       default:
         return <span className={`${base} bg-[var(--panel)] text-[var(--text-muted)] border-[var(--border)]`}>{badge}</span>;
     }
@@ -405,6 +587,18 @@ export function GlobalSearchBar({
                 </button>
                 <button
                   type="button"
+                  onClick={() => setCategoryFilter("actions")}
+                  className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 font-bold whitespace-nowrap transition ${
+                    categoryFilter === "actions"
+                      ? "bg-[var(--axia-gold)] text-black"
+                      : "bg-[var(--accent)] text-[var(--text-muted)] hover:text-[var(--text)]"
+                  }`}
+                >
+                  <Sparkles className="size-3" />
+                  <span>الإجراءات ({counts.actions})</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => setCategoryFilter("matters")}
                   className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 font-bold whitespace-nowrap transition ${
                     categoryFilter === "matters"
@@ -475,7 +669,7 @@ export function GlobalSearchBar({
                     >
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-1.5">
-                          {renderCategoryIcon(item.category)}
+                          {renderCategoryIcon(item.category, item.id)}
                           <span className="text-xs font-bold text-[var(--text)]">{item.title}</span>
                         </div>
                         {renderBadge(item.badge, item.badgeVariant)}
@@ -570,6 +764,19 @@ export function GlobalSearchBar({
                 }`}
               >
                 الكل {query.trim() && `(${counts.all})`}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCategoryFilter("actions")}
+                className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-bold transition ${
+                  categoryFilter === "actions"
+                    ? "bg-[var(--axia-gold)] text-black shadow-xs"
+                    : "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]"
+                }`}
+              >
+                <Sparkles className="size-3" />
+                <span>الإجراءات السريعة {query.trim() && `(${counts.actions})`}</span>
               </button>
 
               <button
@@ -684,7 +891,7 @@ export function GlobalSearchBar({
                   >
                     <div className="flex items-start gap-2.5 flex-1 min-w-0">
                       <div className="mt-0.5 grid size-7 place-items-center rounded-lg border border-[var(--border)] bg-[var(--bg)] shrink-0 group-hover:border-[var(--axia-gold)]/50 transition">
-                        {renderCategoryIcon(item.category)}
+                        {renderCategoryIcon(item.category, item.id)}
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -773,7 +980,7 @@ export function GlobalSearchBar({
             </button>
 
             <div className="flex items-center gap-2 mb-2">
-              {renderCategoryIcon(quickPreviewItem.category)}
+              {renderCategoryIcon(quickPreviewItem.category, quickPreviewItem.id)}
               <span className="text-xs font-bold text-[var(--axia-gold)]">
                 معاينة سريعة — {quickPreviewItem.category === "matters" ? "ملف قضية" : quickPreviewItem.category === "clients" ? "بيانات موكل" : "مستند قانوني"}
               </span>
