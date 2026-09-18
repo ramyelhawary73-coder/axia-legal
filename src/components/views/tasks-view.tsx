@@ -16,7 +16,9 @@ import {
   CheckSquare,
   Square,
   MinusSquare,
-  Check
+  Check,
+  FolderOpen,
+  RefreshCw
 } from "lucide-react";
 import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
 import { NavigationTab, LegalTask } from "@/types/legal";
@@ -31,6 +33,107 @@ import {
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 import { VoiceCommandModal } from "@/components/voice-command-modal";
 import { TaskCreationModal } from "@/components/task-creation-modal";
+
+interface TasksEmptyStateProps {
+  currentCategory: string;
+  onResetCategory: () => void;
+  onCreateTaskClick: () => void;
+  availableTasksCount: number;
+}
+
+function TasksEmptyState({
+  currentCategory,
+  onResetCategory,
+  onCreateTaskClick,
+  availableTasksCount,
+}: TasksEmptyStateProps) {
+  return (
+    <div className="relative overflow-hidden rounded-3xl border border-dashed border-[var(--border-strong)] bg-gradient-to-b from-[var(--panel)] to-[var(--bg)] p-10 text-center shadow-sm transition duration-300 hover:border-[var(--axia-gold)]/40">
+      {/* Decorative background vectors */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[var(--border-strong)] to-transparent" />
+      <div className="absolute -left-16 -top-16 size-48 rounded-full bg-[var(--axia-gold-dim)]/5 blur-3xl pointer-events-none" />
+      <div className="absolute -right-16 -bottom-16 size-48 rounded-full bg-red-500/5 blur-3xl pointer-events-none" />
+
+      {/* Decorative stacked isometric icon cluster */}
+      <div className="relative mx-auto flex h-24 w-24 items-center justify-center">
+        {/* Soft radial glow */}
+        <div className="absolute inset-0 rounded-full bg-[var(--axia-gold-dim)]/25 blur-xl animate-pulse" />
+        
+        {/* Outer dashed spinning orbit */}
+        <div className="absolute size-20 rounded-full border border-dashed border-[var(--axia-gold)]/30 animate-[spin_40s_linear_infinite]" />
+        
+        {/* Secondary offset back-plate */}
+        <div className="absolute size-14 translate-x-2 -translate-y-2 rounded-2xl border border-[var(--border-strong)] bg-[var(--panel-glass)]/60 backdrop-blur-sm opacity-50 rotate-6" />
+        
+        {/* Main central card container */}
+        <div className="absolute size-14 rounded-2xl bg-gradient-to-br from-[var(--panel)] to-[var(--bg)] border border-[var(--border-strong)] shadow-md flex items-center justify-center -rotate-6 transition-transform hover:rotate-0 duration-300">
+          <FolderOpen className="size-6 text-[var(--axia-gold)]" />
+        </div>
+
+        {/* Top-right floating indicator */}
+        <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500/10 border border-red-500/30 text-red-400 shadow animate-[bounce_3s_infinite]">
+          <AlertTriangle className="size-3" />
+        </div>
+      </div>
+
+      <div className="mt-6 max-w-md mx-auto space-y-2">
+        <h3 className="text-base font-bold text-[var(--text)] tracking-tight">
+          {currentCategory === "all" 
+            ? "سجل المهام الإجرائية فارغ تماماً" 
+            : `لا توجد مهام في تصنيف "${currentCategory}"`}
+        </h3>
+        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+          {currentCategory === "all"
+            ? "لم يتم تسجيل أي إعلانات محضرين أو مواعيد طعن بعد. ابدأ بإضافة أول مهمة لمتابعة سير الإجراءات المكتبية الفورية."
+            : `لا توجد أي مواعيد سقوط أو التزامات قضائية مجدولة تحت هذا التصنيف حالياً. يمكنك التحقق من باقي الأقسام أو تسجيل مهمة جديدة.`}
+        </p>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+        {currentCategory !== "all" && (
+          <button
+            type="button"
+            onClick={onResetCategory}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-xl border border-[var(--border-strong)] bg-[var(--panel)] px-4.5 py-2.5 text-xs font-semibold text-[var(--text)] hover:border-[var(--axia-gold)] hover:text-[var(--axia-gold)] shadow-sm transition"
+          >
+            <RefreshCw className="size-3.5" />
+            <span>عرض كافة المهام ({availableTasksCount})</span>
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onCreateTaskClick}
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-700 px-5 py-2.5 text-xs font-bold text-[var(--text)] shadow-md hover:brightness-110 transition"
+        >
+          <Plus className="size-4" />
+          <span>إضافة مهمة إجرائية جديدة</span>
+        </button>
+      </div>
+
+      {/* Interactive suggestions or educational tip */}
+      <div className="mt-10 pt-8 border-t border-[var(--border)] max-w-lg mx-auto">
+        <div className="text-[11px] font-semibold text-[var(--axia-gold)] mb-3">
+          💡 تلميحات سريعة لإدارة قلم المحضرين والمواعيد الإجرائية
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-right">
+          <div className="rounded-xl bg-[var(--panel-glass)]/40 p-3 border border-[var(--border)]">
+            <span className="block text-[11px] font-bold text-[var(--text)]">مواعيد السقوط الصارمة</span>
+            <span className="block text-[10px] text-[var(--text-muted)] mt-1 leading-relaxed">
+              تأكد من إدراج تاريخ الحكم بدقة ليقوم النظام بحساب مواعيد الاستئناف والطعن تلقائياً وتفعيل التنبيهات.
+            </span>
+          </div>
+          <div className="rounded-xl bg-[var(--panel-glass)]/40 p-3 border border-[var(--border)]">
+            <span className="block text-[11px] font-bold text-[var(--text)]">إعلان الخصوم</span>
+            <span className="block text-[10px] text-[var(--text-muted)] mt-1 leading-relaxed">
+              قم بجدولة مراجعة المحضرين للتحقق من إتمام تسليم صحيفة الدعوى وإعادتها بتقرير الإعلان القانوني.
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface TasksViewProps {
   tasks?: LegalTask[];
@@ -457,11 +560,12 @@ export function TasksView({
       {/* Tasks List */}
       <div className="space-y-3.5">
         {filteredTasks.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--panel)]/40 p-12 text-center text-[var(--text-muted)]">
-            <AlertTriangle className="mx-auto size-8 opacity-40 mb-2" />
-            <p className="text-sm font-semibold">لا توجد مهام إجرائية في هذا التصنيف</p>
-            <p className="text-xs mt-1">يمكنك إضافة مهمة جديدة أو النقر على &quot;كافة المهام&quot; لاستعراض جدول المواعيد.</p>
-          </div>
+          <TasksEmptyState
+            currentCategory={filterCategory}
+            onResetCategory={() => setFilterCategory("all")}
+            onCreateTaskClick={() => setIsNewTaskOpen(true)}
+            availableTasksCount={tasks.length}
+          />
         ) : (
           filteredTasks.map((task) => {
             const isCritical = task.priority.includes("حرجة");

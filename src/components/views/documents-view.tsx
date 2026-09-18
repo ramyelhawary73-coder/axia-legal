@@ -41,7 +41,7 @@ export function DocumentsView({
   const [filterType, setFilterType] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [localSelectedDocId, setLocalSelectedDocId] = useState<string | null>(null);
-  const [editorTargetDraftId, setEditorTargetDraftId] = useState<string | undefined>(undefined);
+  const [editorTargetDraftId] = useState<string | undefined>(undefined);
   const effectiveDocId = selectedDocId ?? localSelectedDocId;
   const selectedDoc = effectiveDocId ? docs.find((d) => d.id === effectiveDocId) || null : null;
   const [toastMessage, setToastMessage] = useState<string | null>(null);
