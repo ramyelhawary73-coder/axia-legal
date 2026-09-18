@@ -66,7 +66,7 @@ export function VoiceControlTrigger({
     }
   };
 
-  const showActiveBanner = (isListening || (lastResult && !bannerDismissed) || errorMessage) && true; // we check later if modal is open via parent if needed, or simply let it float.
+  const showActiveBanner = !bannerDismissed && (isListening || lastResult || errorMessage ? true : false);
 
   return (
     <>

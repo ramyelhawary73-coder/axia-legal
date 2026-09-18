@@ -207,6 +207,7 @@ export function useVoiceCommand({
     setLastResult(null);
     setTranscript("");
     setInterimTranscript("");
+    setErrorMessage(null);
   }, []);
 
   return {
