@@ -70,7 +70,7 @@ export function DocumentsView({
   });
 
   return (
-    <div className="flex flex-col h-full max-w-[1400px] mx-auto space-y-4">
+    <div className="flex flex-col h-full w-full space-y-4">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 left-6 z-50 flex items-center gap-2.5 rounded-2xl border border-[var(--axia-gold)]/50 bg-[var(--panel)] px-4 py-3 shadow-2xl text-xs font-bold text-[var(--text)] animate-in slide-in-from-bottom-5">

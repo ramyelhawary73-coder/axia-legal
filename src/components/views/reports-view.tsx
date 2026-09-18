@@ -61,7 +61,7 @@ export function ReportsView({ matters = mockMatters, tasks = mockTasks }: Report
   const pendingTasksCount = tasks.filter((t) => t.status !== "مكتملة").length;
 
   return (
-    <div className="space-y-8 p-6 sm:p-8 lg:p-10 max-w-[1400px] mx-auto">
+    <div className="space-y-8 p-6 sm:p-8 lg:p-10 w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[var(--border)] pb-6">
         <div>

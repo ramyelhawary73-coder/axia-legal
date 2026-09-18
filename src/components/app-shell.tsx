@@ -466,7 +466,7 @@ export function AppShell({
           </div>
 
 
-          <div className="mx-auto max-w-[1700px] p-4 lg:p-6 animate-in fade-in duration-300">
+          <div className="w-full px-4 md:px-6 lg:px-8 xl:px-10 py-4 lg:py-6 animate-in fade-in duration-300">
             {/* Urgent Deadline Banner for High-Priority Tasks due within 1 hour */}
             <UrgentDeadlineBanner 
               urgentTasks={urgentTasksDueWithinHour} 

@@ -34,7 +34,7 @@ export function OverviewView({ onNavigate, onOpenMatter }: OverviewViewProps) {
   const criticalTasks = mockTasks.filter((t) => t.priority.includes("حرجة") || t.priority === "عاجلة");
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 w-full">
       {/* Page Header (Apple style: Large clean typography, no big colorful cards for titles) */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-[var(--border)]">
         <div>

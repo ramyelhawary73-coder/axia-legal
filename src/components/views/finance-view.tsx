@@ -63,7 +63,7 @@ export function FinanceView() {
   });
 
   return (
-    <div className="flex flex-col h-full max-w-[1400px] mx-auto">
+    <div className="flex flex-col h-full w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-[var(--border)] shrink-0">
         <div>

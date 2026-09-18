@@ -104,7 +104,7 @@ export function ClientsView({ selectedClientId, onCloseClientDashboard }: Client
   }
 
   return (
-    <div className="flex flex-col h-full max-w-[1400px] mx-auto space-y-4">
+    <div className="flex flex-col h-full w-full space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-[var(--border)] shrink-0">
         <div>
