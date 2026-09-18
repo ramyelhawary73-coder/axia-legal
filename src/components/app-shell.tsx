@@ -58,6 +58,7 @@ interface AppShellProps {
   onSelectMatter?: (matterId: string) => void;
   onSelectClient?: (clientId: string) => void;
   onSelectDocument?: (docId: string) => void;
+  isFocusMode?: boolean;
 }
 
 const navItems: { id: NavigationTab; labelAr: string; labelEn: string; icon: LucideIcon; badge?: string }[] = [
@@ -90,6 +91,7 @@ export function AppShell({
   onSelectMatter,
   onSelectClient,
   onSelectDocument,
+  isFocusMode = false,
 }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -296,7 +298,7 @@ export function AppShell({
       <div className="flex flex-1 overflow-hidden w-full bg-[var(--bg)]">
         {/* Sidebar Navigation (Desktop) - Premium Glass Sidebar */}
         <aside 
-          className={`hidden shrink-0 border-l border-[var(--border)] bg-[var(--panel-glass)] backdrop-blur-xl transition-all duration-300 ease-in-out lg:flex flex-col z-30 ${
+          className={`hidden shrink-0 border-l border-[var(--border)] bg-[var(--panel-glass)] backdrop-blur-xl transition-all duration-300 ease-in-out ${isFocusMode ? "lg:hidden" : "lg:flex"} flex-col z-30 ${
             isSidebarCollapsed ? "w-16" : "w-64"
           }`}
         >
@@ -442,36 +444,38 @@ export function AppShell({
         <main className="flex-1 min-w-0 flex flex-col overflow-y-auto relative z-0 scroll-smooth bg-[var(--bg)] custom-scrollbar">
 
           {/* Breadcrumb Navigation */}
-          <div className="flex items-center gap-1.5 px-4 pt-4 lg:px-6 text-[11px] font-medium text-[var(--text-muted)] animate-in fade-in duration-300">
-            <span 
-              className="cursor-pointer hover:text-[var(--text)] transition-colors"
-              onClick={() => {
-                if (activeTab !== "overview") onNavigate("overview");
-                if (onClearSubContext) onClearSubContext();
-              }}
-            >
-              الرئيسية
-            </span>
-            {activeTab !== "overview" && (
-              <>
-                <ChevronLeft className="size-3 opacity-50" />
-                <span 
-                  className={`${!subContext ? 'text-[var(--text)] font-semibold' : 'cursor-pointer hover:text-[var(--text)] transition-colors'}`}
-                  onClick={() => {
-                    if (subContext && onClearSubContext) onClearSubContext();
-                  }}
-                >
-                  {navItems.find((i) => i.id === activeTab)?.labelAr}
-                </span>
-              </>
-            )}
-            {subContext && (
-              <>
-                <ChevronLeft className="size-3 opacity-50" />
-                <span className="text-[var(--text)] font-semibold truncate max-w-[200px] sm:max-w-xs">{subContext}</span>
-              </>
-            )}
-          </div>
+          {!isFocusMode && (
+            <div className="flex items-center gap-1.5 px-4 pt-4 lg:px-6 text-[11px] font-medium text-[var(--text-muted)] animate-in fade-in duration-300">
+              <span 
+                className="cursor-pointer hover:text-[var(--text)] transition-colors"
+                onClick={() => {
+                  if (activeTab !== "overview") onNavigate("overview");
+                  if (onClearSubContext) onClearSubContext();
+                }}
+              >
+                الرئيسية
+              </span>
+              {activeTab !== "overview" && (
+                <>
+                  <ChevronLeft className="size-3 opacity-50" />
+                  <span 
+                    className={`${!subContext ? 'text-[var(--text)] font-semibold' : 'cursor-pointer hover:text-[var(--text)] transition-colors'}`}
+                    onClick={() => {
+                      if (subContext && onClearSubContext) onClearSubContext();
+                    }}
+                  >
+                    {navItems.find((i) => i.id === activeTab)?.labelAr}
+                  </span>
+                </>
+              )}
+              {subContext && (
+                <>
+                  <ChevronLeft className="size-3 opacity-50" />
+                  <span className="text-[var(--text)] font-semibold truncate max-w-[200px] sm:max-w-xs">{subContext}</span>
+                </>
+              )}
+            </div>
+          )}
 
 
           <div className="w-full px-4 md:px-6 lg:px-8 xl:px-10 py-4 lg:py-6 animate-in fade-in duration-300">

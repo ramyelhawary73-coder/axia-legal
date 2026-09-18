@@ -19,7 +19,9 @@ import {
   Sparkles,
   Info,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { mockHearings, mockTasks, mockMatters } from "@/lib/mock-legal-data";
@@ -191,7 +193,13 @@ function PleadingNotesEditor({
   );
 }
 
-export function HearingsView() {
+export function HearingsView({
+  isFocusMode = false,
+  onToggleFocusMode
+}: {
+  isFocusMode?: boolean;
+  onToggleFocusMode?: () => void;
+} = {}) {
   // Master states for elements
   const [hearings, setHearings] = useState<Hearing[]>(mockHearings);
   const [tasks, setTasks] = useState<LegalTask[]>(mockTasks);
@@ -709,6 +717,31 @@ export function HearingsView() {
             <span>{isOnline ? "محفوظ محلياً (جاهز أوفلاين)" : "يعمل أوفلاين (تمكين التخزين المؤقت)"}</span>
           </div>
 
+          {/* Focus Mode Toggle Button */}
+          {onToggleFocusMode && (
+            <button
+              onClick={onToggleFocusMode}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-4 py-2 text-xs font-bold shadow-sm transition-all ${
+                isFocusMode
+                  ? "bg-[var(--axia-gold)]/10 text-[var(--axia-gold-light)] border-[var(--axia-gold)]/30"
+                  : "border-[var(--border)] bg-[var(--panel)] text-[var(--text)] hover:bg-[var(--accent)]"
+              }`}
+              title={isFocusMode ? "الخروج من وضع التركيز" : "تفعيل وضع التركيز لتوسيع التقويم"}
+            >
+              {isFocusMode ? (
+                <>
+                  <EyeOff className="size-3.5 text-[var(--axia-gold)]" />
+                  <span>إلغاء وضع التركيز</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="size-3.5" />
+                  <span>وضع التركيز (كامل الشاشة)</span>
+                </>
+              )}
+            </button>
+          )}
+
           <button
             onClick={() => setIsSyncModalOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-4 py-2 text-xs font-bold text-[var(--text)] shadow-sm hover:bg-[var(--accent)] transition"
@@ -732,7 +765,7 @@ export function HearingsView() {
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start">
           
           {/* Right Sidebar: Control Deck & Drag Sources */}
-          <div className="xl:col-span-1 space-y-5 flex flex-col">
+          <div className={`xl:col-span-1 space-y-5 flex flex-col ${isFocusMode ? "hidden" : ""}`}>
             
             {/* Legend & Filter Switches */}
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5 space-y-4 shadow-sm">
@@ -871,7 +904,7 @@ export function HearingsView() {
           </div>
 
           {/* Left Grid: The Interactive Calendar */}
-          <div className="xl:col-span-3 space-y-5">
+          <div className={`${isFocusMode ? "xl:col-span-4" : "xl:col-span-3"} space-y-5`}>
             
             {/* Calendar Controls & Quick Range Tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[var(--panel)] p-4 rounded-2xl border border-[var(--border)] shadow-sm">

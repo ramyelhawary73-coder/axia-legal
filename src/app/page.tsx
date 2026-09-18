@@ -26,6 +26,7 @@ export default function HomePage() {
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<LegalTask[]>(mockTasks);
   const [isSnapshotManagerOpen, setIsSnapshotManagerOpen] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
 
   // Background Auto-Export: automatically exports daily snapshot to Downloads / Cloud Sync on app startup
   const { toastNotification, dismissToast } = useDailySnapshotAutoExport(mockMatters, tasks);
@@ -107,6 +108,7 @@ export default function HomePage() {
           setSelectedMatterId(null);
           setSelectedClientId(null);
           setSelectedDocumentId(null);
+          setIsFocusMode(false);
         }} 
         subContext={subContext} 
         onClearSubContext={() => {
@@ -123,6 +125,7 @@ export default function HomePage() {
         onSelectMatter={handleSelectMatter}
         onSelectClient={handleSelectClient}
         onSelectDocument={handleSelectDocument}
+        isFocusMode={isFocusMode}
       >
         {activeTab === "overview" && (
           <OverviewView 
@@ -136,7 +139,12 @@ export default function HomePage() {
             onCloseMatterModal={() => setSelectedMatterId(null)}
           />
         )}
-        {activeTab === "hearings" && <HearingsView />}
+        {activeTab === "hearings" && (
+          <HearingsView 
+            isFocusMode={isFocusMode} 
+            onToggleFocusMode={() => setIsFocusMode(!isFocusMode)} 
+          />
+        )}
         {activeTab === "clients" && (
           <ClientsView 
             selectedClientId={selectedClientId}
