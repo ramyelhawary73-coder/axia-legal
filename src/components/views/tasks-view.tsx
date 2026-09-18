@@ -10,9 +10,22 @@ import {
 } from "lucide-react";
 import { mockTasks } from "@/lib/mock-legal-data";
 import { LegalTask } from "@/types/legal";
+import { analyzeTaskDeadline } from "@/lib/task-utils";
 
-export function TasksView() {
-  const [tasks, setTasks] = useState<LegalTask[]>(mockTasks);
+interface TasksViewProps {
+  tasks?: LegalTask[];
+  onToggleTaskStatus?: (id: string) => void;
+  onCreateTask?: (task: LegalTask) => void;
+}
+
+export function TasksView({
+  tasks: propTasks,
+  onToggleTaskStatus: propToggleStatus,
+  onCreateTask: propCreateTask,
+}: TasksViewProps = {}) {
+  const [internalTasks, setInternalTasks] = useState<LegalTask[]>(mockTasks);
+  const tasks = propTasks || internalTasks;
+
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
 
@@ -22,21 +35,25 @@ export function TasksView() {
   const [matterCaseNumber, setMatterCaseNumber] = useState("");
   const [courtOrBailiffOffice, setCourtOrBailiffOffice] = useState("");
   const [assignedTo, setAssignedTo] = useState("أ. مروان هاني (محام متدرب)");
-  const [deadline, setDeadline] = useState("2026-09-18");
+  const [deadline, setDeadline] = useState(() => new Date().toISOString().slice(0, 10));
   const [priority, setPriority] = useState<LegalTask["priority"]>("عاجلة");
 
   const handleToggleTaskStatus = (id: string) => {
-    setTasks(
-      tasks.map((t) => {
-        if (t.id === id) {
-          return {
-            ...t,
-            status: t.status === "مكتملة" ? "قيد التنفيذ" : "مكتملة",
-          };
-        }
-        return t;
-      })
-    );
+    if (propToggleStatus) {
+      propToggleStatus(id);
+    } else {
+      setInternalTasks((prev) =>
+        prev.map((t) => {
+          if (t.id === id) {
+            return {
+              ...t,
+              status: t.status === "مكتملة" ? "قيد التنفيذ" : "مكتملة",
+            };
+          }
+          return t;
+        })
+      );
+    }
   };
 
   const handleCreateTask = (e: React.FormEvent) => {
@@ -55,7 +72,11 @@ export function TasksView() {
       status: "قيد التنفيذ",
     };
 
-    setTasks([newTask, ...tasks]);
+    if (propCreateTask) {
+      propCreateTask(newTask);
+    } else {
+      setInternalTasks((prev) => [newTask, ...prev]);
+    }
     setIsNewTaskOpen(false);
     setTitle("");
     setCourtOrBailiffOffice("");
@@ -120,6 +141,7 @@ export function TasksView() {
         {filteredTasks.map((task) => {
           const isCritical = task.priority.includes("حرجة");
           const isCompleted = task.status === "مكتملة";
+          const deadlineInfo = analyzeTaskDeadline(task);
 
           return (
             <div
@@ -129,6 +151,8 @@ export function TasksView() {
                   ? "border-emerald-500/20 bg-emerald-950/10 opacity-75"
                   : isCritical
                   ? "border-red-500/30 bg-[var(--accent-hover)] shadow-md"
+                  : deadlineInfo.isWithin24Hours
+                  ? "border-amber-500/30 bg-amber-950/10 hover:border-amber-500/50"
                   : "border-[var(--border)] bg-[var(--panel)] hover:border-[var(--border-strong)]"
               }`}
             >
@@ -177,10 +201,14 @@ export function TasksView() {
 
                 <div className="flex items-center gap-3 sm:flex-col sm:items-end">
                   <div className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold ${
-                    isCritical ? "bg-red-500/20 text-red-300" : "bg-[var(--accent-hover)] text-[var(--text-muted)]"
+                    isCritical 
+                      ? "bg-red-500/20 text-red-300 border border-red-500/30" 
+                      : deadlineInfo.isWithin24Hours && !isCompleted
+                      ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
+                      : "bg-[var(--accent-hover)] text-[var(--text-muted)]"
                   }`}>
                     <Clock className="size-3.5" />
-                    <span>ميعاد أقصى: {task.deadline}</span>
+                    <span>{deadlineInfo.remainingText}</span>
                   </div>
                   <button
                     onClick={() => handleToggleTaskStatus(task.id)}

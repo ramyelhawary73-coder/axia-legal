@@ -243,6 +243,11 @@ export const mockClients: Client[] = [
   },
 ];
 
+const getOffsetHoursISO = (hours: number): string => {
+  const d = new Date(Date.now() + hours * 3600 * 1000);
+  return d.toISOString();
+};
+
 export const mockTasks: LegalTask[] = [
   {
     id: "TSK-101",
@@ -251,7 +256,7 @@ export const mockTasks: LegalTask[] = [
     matterCaseNumber: "٣٨٢ لسنة ٢٠٢٥ تجاري",
     courtOrBailiffOffice: "قلم كتاب استئناف عالي القاهرة - دار القضاء العالي",
     assignedTo: "أ. طارق الشريف",
-    deadline: "2026-09-17",
+    deadline: getOffsetHoursISO(4),
     priority: "حرجة للغاية (ميعاد سقوط)",
     status: "قيد التنفيذ",
   },
@@ -262,20 +267,9 @@ export const mockTasks: LegalTask[] = [
     matterCaseNumber: "٣٨٢ لسنة ٢٠٢٥ تجاري",
     courtOrBailiffOffice: "قلم محضرين المعادي ومحكمة البساتين",
     assignedTo: "أ. مروان هاني (محام متدرب)",
-    deadline: "2026-09-15",
+    deadline: getOffsetHoursISO(11),
     priority: "عاجلة",
     status: "قيد التنفيذ",
-  },
-  {
-    id: "TSK-103",
-    title: "استخراج صورة طبق الأصل من تقرير الخبير الهندسي من سكرتارية الدائرة",
-    category: "استخراج شهادة",
-    matterCaseNumber: "٨١٩ لسنة ٢٠٢٤ مدني مستأنف",
-    courtOrBailiffOffice: "سكرتارية محكمة استئناف الجيزة",
-    assignedTo: "أ. حسام فؤاد",
-    deadline: "2026-09-16",
-    priority: "عادية",
-    status: "مكتملة",
   },
   {
     id: "TSK-104",
@@ -284,7 +278,7 @@ export const mockTasks: LegalTask[] = [
     matterCaseNumber: "٣٨٢ لسنة ٢٠٢٥ تجاري",
     courtOrBailiffOffice: "خزينة المحكمة الاقتصادية بالمعادي",
     assignedTo: "أ. مروان هاني (محام متدرب)",
-    deadline: "2026-09-16",
+    deadline: getOffsetHoursISO(19),
     priority: "عاجلة",
     status: "قيد التنفيذ",
   },
@@ -295,9 +289,20 @@ export const mockTasks: LegalTask[] = [
     matterCaseNumber: "١٤٢٠ لسنة ٩٣ ق - نقض",
     courtOrBailiffOffice: "جدول محكمة النقض - دار القضاء العالي",
     assignedTo: "د. رامي الهواري",
-    deadline: "2026-09-20",
+    deadline: getOffsetHoursISO(72),
     priority: "حرجة للغاية (ميعاد سقوط)",
     status: "قيد التنفيذ",
+  },
+  {
+    id: "TSK-103",
+    title: "استخراج صورة طبق الأصل من تقرير الخبير الهندسي من سكرتارية الدائرة",
+    category: "استخراج شهادة",
+    matterCaseNumber: "٨١٩ لسنة ٢٠٢٤ مدني مستأنف",
+    courtOrBailiffOffice: "سكرتارية محكمة استئناف الجيزة",
+    assignedTo: "أ. حسام فؤاد",
+    deadline: getOffsetHoursISO(-2),
+    priority: "عادية",
+    status: "مكتملة",
   },
 ];
 

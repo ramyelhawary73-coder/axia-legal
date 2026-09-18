@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { NavigationTab } from "@/types/legal";
+import { NavigationTab, LegalTask } from "@/types/legal";
 import { OverviewView } from "@/components/views/overview-view";
 import { MattersView } from "@/components/views/matters-view";
 import { HearingsView } from "@/components/views/hearings-view";
@@ -14,11 +14,26 @@ import { RajihAiView } from "@/components/views/rajih-ai-view";
 import { TeamView } from "@/components/views/team-view";
 import { ReportsView } from "@/components/views/reports-view";
 import { AdministrationView } from "@/components/views/administration-view";
-import { mockMatters } from "@/lib/mock-legal-data";
+import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<NavigationTab>("overview");
   const [selectedMatterId, setSelectedMatterId] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<LegalTask[]>(mockTasks);
+
+  const handleToggleTaskStatus = (taskId: string) => {
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? { ...t, status: t.status === "مكتملة" ? "قيد التنفيذ" : "مكتملة" }
+          : t
+      )
+    );
+  };
+
+  const handleCreateTask = (newTask: LegalTask) => {
+    setTasks((prev) => [newTask, ...prev]);
+  };
 
   const handleOpenMatter = (matterId: string) => {
     setSelectedMatterId(matterId);
@@ -34,7 +49,14 @@ export default function HomePage() {
   }
 
   return (
-    <AppShell activeTab={activeTab} onNavigate={(tab) => { setActiveTab(tab); setSelectedMatterId(null); }} subContext={subContext} onClearSubContext={() => setSelectedMatterId(null)}>
+    <AppShell 
+      activeTab={activeTab} 
+      onNavigate={(tab) => { setActiveTab(tab); setSelectedMatterId(null); }} 
+      subContext={subContext} 
+      onClearSubContext={() => setSelectedMatterId(null)}
+      tasks={tasks}
+      onToggleTaskStatus={handleToggleTaskStatus}
+    >
       {activeTab === "overview" && (
         <OverviewView 
           onNavigate={setActiveTab} 
@@ -49,7 +71,13 @@ export default function HomePage() {
       )}
       {activeTab === "hearings" && <HearingsView />}
       {activeTab === "clients" && <ClientsView />}
-      {activeTab === "tasks" && <TasksView />}
+      {activeTab === "tasks" && (
+        <TasksView 
+          tasks={tasks}
+          onToggleTaskStatus={handleToggleTaskStatus}
+          onCreateTask={handleCreateTask}
+        />
+      )}
       {activeTab === "documents" && <DocumentsView />}
       {activeTab === "finance" && <FinanceView />}
       {activeTab === "library" && <LibraryView />}

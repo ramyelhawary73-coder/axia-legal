@@ -15,7 +15,6 @@ import {
   BarChart3, 
   Settings, 
   Search, 
-  Bell, 
   Menu,
   ChevronLeft, 
   X,
@@ -26,7 +25,10 @@ import {
   Moon,
   type LucideIcon
 } from "lucide-react";
-import { NavigationTab } from "@/types/legal";
+import { NavigationTab, LegalTask } from "@/types/legal";
+import { mockTasks } from "@/lib/mock-legal-data";
+import { NotificationsPopover } from "@/components/notifications-popover";
+import { getUpcomingDeadlineTasks } from "@/lib/task-utils";
 
 interface AppShellProps {
   activeTab: NavigationTab;
@@ -34,6 +36,8 @@ interface AppShellProps {
   children: React.ReactNode;
   subContext?: string | null;
   onClearSubContext?: () => void;
+  tasks?: LegalTask[];
+  onToggleTaskStatus?: (taskId: string) => void;
 }
 
 const navItems: { id: NavigationTab; labelAr: string; labelEn: string; icon: LucideIcon; badge?: string }[] = [
@@ -51,11 +55,21 @@ const navItems: { id: NavigationTab; labelAr: string; labelEn: string; icon: Luc
   { id: "administration", labelAr: "إدارة المكتب والترخيص", labelEn: "Administration", icon: Settings },
 ];
 
-export function AppShell({ activeTab, onNavigate, children, subContext, onClearSubContext }: AppShellProps) {
+export function AppShell({ 
+  activeTab, 
+  onNavigate, 
+  children, 
+  subContext, 
+  onClearSubContext,
+  tasks,
+  onToggleTaskStatus
+}: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
-  const [showNotifications, setShowNotifications] = useState(false);
+  
+  const activeTasks = tasks || mockTasks;
+  const upcomingTasksCount = getUpcomingDeadlineTasks(activeTasks).length;
   
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -133,37 +147,12 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
               </button>
             )}
 
-            {/* Notification Bell */}
-            <div className="relative">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="relative grid size-8 place-items-center rounded-lg border border-[var(--border)] bg-[var(--panel)]/50 text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
-              >
-                <Bell className="size-4" />
-                <span className="absolute top-1.5 left-1.5 size-1.5 rounded-full bg-red-500 ring-2 ring-[var(--bg)]" />
-              </button>
-
-              {showNotifications && (
-                <div className="absolute left-0 mt-2 w-72 rounded-xl border border-[var(--border-strong)] bg-[var(--panel-glass)] backdrop-blur-2xl p-3 shadow-[var(--shadow-md)] z-50 text-xs">
-                  <div className="flex items-center justify-between border-b border-[var(--border)] pb-2 mb-2 font-bold">
-                    <span>التنبيهات</span>
-                    <span className="text-[10px] text-red-500 font-semibold">٢ عاجل</span>
-                  </div>
-                  <div className="space-y-1.5">
-                    <div 
-                      onClick={() => {
-                        setShowNotifications(false);
-                        onNavigate("hearings");
-                      }}
-                      className="cursor-pointer rounded-lg bg-[var(--axia-gold)]/10 border border-[var(--axia-gold)]/20 p-2 hover:bg-[var(--axia-gold)]/15 transition-colors"
-                    >
-                      <strong className="text-[var(--axia-gold)] block">جلسة اليوم: رول رقم ٧</strong>
-                      <p className="text-[var(--text-muted)] text-[10px] mt-0.5">استئناف الجيزة · دائرة ٩ مدني</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* Notifications Popover */}
+            <NotificationsPopover
+              tasks={activeTasks}
+              onToggleTaskStatus={onToggleTaskStatus}
+              onNavigate={onNavigate}
+            />
 
             {/* Office Profile Pill */}
             <div className="hidden sm:flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--panel)]/50 px-2 py-1 cursor-pointer hover:bg-[var(--accent)] transition-colors">
@@ -207,6 +196,9 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
               const Icon = item.icon;
               const isActive = activeTab === item.id;
               const isRajih = item.id === "rajih";
+              const currentBadge = item.id === "tasks" 
+                ? (upcomingTasksCount > 0 ? String(upcomingTasksCount) : undefined) 
+                : item.badge;
 
               return (
                 <button
@@ -236,21 +228,21 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
                     )}
                   </div>
 
-                  {!isSidebarCollapsed && item.badge && (
+                  {!isSidebarCollapsed && currentBadge && (
                     <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${
-                      item.badge === "اليوم"
+                      currentBadge === "اليوم" || (item.id === "tasks" && upcomingTasksCount > 0)
                         ? "bg-red-500/10 text-red-500 border border-red-500/20"
-                        : item.badge === "AI"
+                        : currentBadge === "AI"
                         ? "bg-[var(--axia-gold)]/10 text-[var(--axia-gold)] border border-[var(--axia-gold)]/20"
                         : isActive
                         ? "bg-[var(--text)]/10 text-[var(--text)]"
                         : "bg-[var(--accent)] text-[var(--text-muted)]"
                     }`}>
-                      {item.badge}
+                      {currentBadge}
                     </span>
                   )}
                   
-                  {isSidebarCollapsed && item.badge && (
+                  {isSidebarCollapsed && currentBadge && (
                      <div className="absolute right-1 top-1 w-1.5 h-1.5 rounded-full bg-red-500"></div>
                   )}
                 </button>
@@ -284,6 +276,9 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
+                  const currentBadge = item.id === "tasks" 
+                    ? (upcomingTasksCount > 0 ? String(upcomingTasksCount) : undefined) 
+                    : item.badge;
                   return (
                     <button
                       key={item.id}
@@ -301,9 +296,13 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
                         <Icon className={`size-4 ${isActive ? 'text-[var(--text)]' : ''}`} />
                         <span className="text-xs">{item.labelAr}</span>
                       </div>
-                      {item.badge && (
-                        <span className="rounded bg-[var(--accent)] px-1.5 py-0.5 text-[9px]">
-                          {item.badge}
+                      {currentBadge && (
+                        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${
+                          currentBadge === "اليوم" || (item.id === "tasks" && upcomingTasksCount > 0)
+                            ? "bg-red-500/15 text-red-500"
+                            : "bg-[var(--accent)] text-[var(--text-muted)]"
+                        }`}>
+                          {currentBadge}
                         </span>
                       )}
                     </button>
