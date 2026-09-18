@@ -11,7 +11,12 @@ import {
   Send,
   BellRing,
   Download,
-  Mic
+  Mic,
+  Trash2,
+  CheckSquare,
+  Square,
+  MinusSquare,
+  Check
 } from "lucide-react";
 import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
 import { NavigationTab, LegalTask } from "@/types/legal";
@@ -35,6 +40,9 @@ interface TasksViewProps {
   tasks?: LegalTask[];
   onToggleTaskStatus?: (id: string) => void;
   onCreateTask?: (task: LegalTask) => void;
+  onBulkUpdateTaskStatus?: (taskIds: string[], status: LegalTask["status"]) => void;
+  onBulkDeleteTasks?: (taskIds: string[]) => void;
+  onDeleteTask?: (taskId: string) => void;
   onNavigate?: (tab: NavigationTab) => void;
 }
 
@@ -42,6 +50,9 @@ export function TasksView({
   tasks: propTasks,
   onToggleTaskStatus: propToggleStatus,
   onCreateTask: propCreateTask,
+  onBulkUpdateTaskStatus: propBulkUpdateStatus,
+  onBulkDeleteTasks: propBulkDelete,
+  onDeleteTask: propDeleteTask,
   onNavigate,
 }: TasksViewProps = {}) {
   const [internalTasks, setInternalTasks] = useState<LegalTask[]>(mockTasks);
@@ -213,10 +224,100 @@ export function TasksView({
     setCourtOrBailiffOffice("");
   };
 
+  // Multi-select & Bulk actions state
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [taskIdsToDelete, setTaskIdsToDelete] = useState<string[]>([]);
+
   const filteredTasks = tasks.filter((t) => {
     if (filterCategory === "all") return true;
     return t.category === filterCategory;
   });
+
+  const filteredTaskIds = filteredTasks.map((t) => t.id);
+  const isAllFilteredSelected =
+    filteredTaskIds.length > 0 &&
+    filteredTaskIds.every((id) => selectedTaskIds.includes(id));
+  const isSomeFilteredSelected =
+    filteredTaskIds.some((id) => selectedTaskIds.includes(id)) &&
+    !isAllFilteredSelected;
+
+  const handleToggleSelectTask = (id: string) => {
+    setSelectedTaskIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAll = () => {
+    if (isAllFilteredSelected) {
+      setSelectedTaskIds((prev) =>
+        prev.filter((id) => !filteredTaskIds.includes(id))
+      );
+    } else {
+      setSelectedTaskIds((prev) =>
+        Array.from(new Set([...prev, ...filteredTaskIds]))
+      );
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedTaskIds([]);
+  };
+
+  const handleBulkUpdateStatus = (newStatus: LegalTask["status"]) => {
+    if (selectedTaskIds.length === 0) return;
+    if (propBulkUpdateStatus) {
+      propBulkUpdateStatus(selectedTaskIds, newStatus);
+    } else {
+      setInternalTasks((prev) =>
+        prev.map((t) =>
+          selectedTaskIds.includes(t.id) ? { ...t, status: newStatus } : t
+        )
+      );
+    }
+    setVoiceToastMessage(
+      `تم تحديث حالة ${selectedTaskIds.length} ${
+        selectedTaskIds.length === 1 ? "مهمة" : "مهام"
+      } إلى "${newStatus}" بنجاح`
+    );
+    setTimeout(() => setVoiceToastMessage(null), 4000);
+    setSelectedTaskIds([]);
+  };
+
+  const handleRequestBulkDelete = () => {
+    if (selectedTaskIds.length === 0) return;
+    setTaskIdsToDelete(selectedTaskIds);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const handleRequestSingleDelete = (id: string) => {
+    setTaskIdsToDelete([id]);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (taskIdsToDelete.length === 0) return;
+    if (propBulkDelete) {
+      propBulkDelete(taskIdsToDelete);
+    } else if (propDeleteTask && taskIdsToDelete.length === 1) {
+      propDeleteTask(taskIdsToDelete[0]);
+    } else {
+      setInternalTasks((prev) =>
+        prev.filter((t) => !taskIdsToDelete.includes(t.id))
+      );
+    }
+    setSelectedTaskIds((prev) =>
+      prev.filter((id) => !taskIdsToDelete.includes(id))
+    );
+    setVoiceToastMessage(
+      `تم حذف ${taskIdsToDelete.length} ${
+        taskIdsToDelete.length === 1 ? "مهمة إجرائية" : "مهام إجرائية"
+      } بنجاح`
+    );
+    setTimeout(() => setVoiceToastMessage(null), 4000);
+    setIsDeleteConfirmOpen(false);
+    setTaskIdsToDelete([]);
+  };
 
   return (
     <div className="space-y-7 p-6 sm:p-8 lg:p-10">
@@ -368,126 +469,262 @@ export function TasksView({
         ))}
       </div>
 
+      {/* Multi-Select & Bulk Actions Bar */}
+      {selectedTaskIds.length > 0 ? (
+        <div className="sticky top-0 z-20 rounded-2xl border border-[var(--axia-gold)]/50 bg-[var(--panel)]/95 p-3.5 sm:p-4 shadow-xl backdrop-blur-md transition-all">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={handleToggleSelectAll}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 py-1.5 text-xs font-bold text-[var(--text)] border border-[var(--border)] hover:border-[var(--axia-gold)] transition shadow-sm"
+                title={isAllFilteredSelected ? "إلغاء تحديد الكل" : "تحديد كافة المهام المعروضة"}
+              >
+                {isAllFilteredSelected ? (
+                  <CheckSquare className="size-4 text-[var(--axia-gold)]" />
+                ) : isSomeFilteredSelected ? (
+                  <MinusSquare className="size-4 text-[var(--axia-gold)]" />
+                ) : (
+                  <Square className="size-4 text-[var(--text-muted)]" />
+                )}
+                <span>{isAllFilteredSelected ? "إلغاء تحديد الكل" : "تحديد كافة المعروض"}</span>
+              </button>
+
+              <div className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--axia-gold)]/15 border border-[var(--axia-gold)]/40 px-3 py-1 text-xs font-bold text-[var(--axia-gold-light)]">
+                <span>تم تحديد</span>
+                <span className="font-mono text-sm font-extrabold text-[var(--axia-gold)]">{selectedTaskIds.length}</span>
+                <span>من أصل {filteredTasks.length} مهمة</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleBulkUpdateStatus("مكتملة")}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 shadow-sm transition"
+                title="تحديث حالة كافة المهام المحددة إلى 'مكتملة'"
+              >
+                <CheckCircle2 className="size-3.5 text-emerald-400" />
+                <span>تعيين كمكتملة ({selectedTaskIds.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleBulkUpdateStatus("قيد التنفيذ")}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/25 shadow-sm transition"
+                title="تحديث حالة كافة المهام المحددة إلى 'قيد التنفيذ'"
+              >
+                <Clock className="size-3.5 text-amber-400" />
+                <span>تعيين كقيد التنفيذ</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleRequestBulkDelete}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/50 bg-red-600/20 px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-600/30 shadow-sm transition"
+                title="حذف المهام المحددة نهائياً"
+              >
+                <Trash2 className="size-3.5 text-red-400" />
+                <span>حذف المحدد ({selectedTaskIds.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleClearSelection}
+                className="inline-flex items-center gap-1 rounded-xl bg-[var(--accent)] px-2.5 py-1.5 text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text)] transition border border-transparent hover:border-[var(--border)]"
+                title="إلغاء التحديد"
+              >
+                <X className="size-3.5" />
+                <span>إلغاء</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-1 text-xs text-[var(--text-muted)]">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleToggleSelectAll}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition border border-transparent hover:border-[var(--border)]"
+              title="تحديد كافة المهام في هذه القائمة"
+            >
+              <Square className="size-3.5 text-[var(--text-muted)]" />
+              <span>تحديد الكل ({filteredTasks.length})</span>
+            </button>
+            <span className="text-[var(--border-strong)]">|</span>
+            <span>عرض {filteredTasks.length} من {tasks.length} مهمة مسجلة</span>
+          </div>
+
+          <span className="text-[11px] text-[var(--text-muted)]">
+            حدد مربع الاختيار على أي مهمة للبدء في إجراءات التحديث أو الحذف الجماعي
+          </span>
+        </div>
+      )}
+
       {/* Tasks List */}
       <div className="space-y-3.5">
-        {filteredTasks.map((task) => {
-          const isCritical = task.priority.includes("حرجة");
-          const isCompleted = task.status === "مكتملة";
-          const deadlineInfo = analyzeTaskDeadline(task);
-          const isDueWithinOneHour = 
-            deadlineInfo.diffHours > -0.08 && 
-            deadlineInfo.diffHours <= 1.0 && 
-            (isCritical || task.priority === "عاجلة") && 
-            !isCompleted;
+        {filteredTasks.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--panel)]/40 p-12 text-center text-[var(--text-muted)]">
+            <AlertTriangle className="mx-auto size-8 opacity-40 mb-2" />
+            <p className="text-sm font-semibold">لا توجد مهام إجرائية في هذا التصنيف</p>
+            <p className="text-xs mt-1">يمكنك إضافة مهمة جديدة أو النقر على &quot;كافة المهام&quot; لاستعراض جدول المواعيد.</p>
+          </div>
+        ) : (
+          filteredTasks.map((task) => {
+            const isCritical = task.priority.includes("حرجة");
+            const isCompleted = task.status === "مكتملة";
+            const isSelected = selectedTaskIds.includes(task.id);
+            const deadlineInfo = analyzeTaskDeadline(task);
+            const isDueWithinOneHour = 
+              deadlineInfo.diffHours > -0.08 && 
+              deadlineInfo.diffHours <= 1.0 && 
+              (isCritical || task.priority === "عاجلة") && 
+              !isCompleted;
 
-          return (
-            <div
-              key={task.id}
-              className={`rounded-2xl border p-4.5 transition ${
-                isCompleted
-                  ? "border-emerald-500/20 bg-emerald-950/10 opacity-75"
-                  : isDueWithinOneHour
-                  ? "border-red-500/60 bg-gradient-to-r from-red-950/30 to-[var(--panel)] shadow-lg ring-1 ring-red-500/30"
-                  : isCritical
-                  ? "border-red-500/30 bg-[var(--accent-hover)] shadow-md"
-                  : deadlineInfo.isWithin24Hours
-                  ? "border-amber-500/30 bg-amber-950/10 hover:border-amber-500/50"
-                  : "border-[var(--border)] bg-[var(--panel)] hover:border-[var(--border-strong)]"
-              }`}
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex items-start gap-3.5">
-                  <button
-                    onClick={() => handleToggleTaskStatus(task.id)}
-                    className={`mt-1 grid size-5 shrink-0 place-items-center rounded border transition ${
-                      isCompleted
-                        ? "border-emerald-400 bg-emerald-400 text-white"
-                        : "border-white/30 hover:border-white"
-                    }`}
-                  >
-                    {isCompleted && <CheckCircle2 className="size-4" />}
-                  </button>
+            return (
+              <div
+                key={task.id}
+                className={`rounded-2xl border p-4 sm:p-4.5 transition relative ${
+                  isSelected
+                    ? "border-[var(--axia-gold)] bg-gradient-to-r from-[var(--panel)] via-[var(--accent)] to-[var(--panel)] ring-2 ring-[var(--axia-gold)]/60 shadow-md"
+                    : isCompleted
+                    ? "border-emerald-500/20 bg-emerald-950/10 opacity-75"
+                    : isDueWithinOneHour
+                    ? "border-red-500/60 bg-gradient-to-r from-red-950/30 to-[var(--panel)] shadow-lg ring-1 ring-red-500/30"
+                    : isCritical
+                    ? "border-red-500/30 bg-[var(--accent-hover)] shadow-md"
+                    : deadlineInfo.isWithin24Hours
+                    ? "border-amber-500/30 bg-amber-950/10 hover:border-amber-500/50"
+                    : "border-[var(--border)] bg-[var(--panel)] hover:border-[var(--border-strong)]"
+                }`}
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    {/* Multi-Select Checkbox */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSelectTask(task.id)}
+                      className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border transition ${
+                        isSelected
+                          ? "border-[var(--axia-gold)] bg-[var(--axia-gold)] text-black"
+                          : "border-[var(--border-strong)] bg-[var(--accent)] text-transparent hover:border-[var(--axia-gold)]"
+                      }`}
+                      title={isSelected ? "إلغاء تحديد المهمة" : "تحديد المهمة لتنفيذ إجراء جماعي"}
+                      aria-label={`تحديد المهمة ${task.title}`}
+                    >
+                      <Check className="size-3.5 stroke-[3]" />
+                    </button>
 
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {isDueWithinOneHour && (
-                        <span className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                          <AlertTriangle className="size-3" />
-                          <span>ينقضي خلال أقل من ساعة!</span>
+                    {/* Quick Status Toggle Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleToggleTaskStatus(task.id)}
+                      className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border transition ${
+                        isCompleted
+                          ? "border-emerald-400 bg-emerald-400 text-white"
+                          : "border-white/30 hover:border-white text-transparent"
+                      }`}
+                      title={isCompleted ? "المهمة مكتملة - انقر لإعادة الفتح" : "انقر لتحديد المهمة كمكتملة"}
+                    >
+                      {isCompleted && <CheckCircle2 className="size-3.5" />}
+                    </button>
+
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {isDueWithinOneHour && (
+                          <span className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                            <AlertTriangle className="size-3" />
+                            <span>ينقضي خلال أقل من ساعة!</span>
+                          </span>
+                        )}
+                        <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                          isCritical ? "bg-red-500/20 text-red-300" : "bg-slate-800 text-[var(--text-muted)]"
+                        }`}>
+                          {task.priority}
                         </span>
-                      )}
-                      <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-                        isCritical ? "bg-red-500/20 text-red-300" : "bg-slate-800 text-[var(--text-muted)]"
+                        <span className="rounded bg-[var(--accent)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-muted)]">
+                          {task.category}
+                        </span>
+                        {task.matterCaseNumber && (
+                          <span className="text-xs font-semibold text-[var(--axia-gold-light)]">
+                            {task.matterCaseNumber}
+                          </span>
+                        )}
+                        {isSelected && (
+                          <span className="rounded-md bg-[var(--axia-gold)]/20 border border-[var(--axia-gold)]/40 px-2 py-0.2 text-[10px] font-extrabold text-[var(--axia-gold)]">
+                            محددة لإجراء جماعي
+                          </span>
+                        )}
+                      </div>
+
+                      <h3 className={`mt-2 text-sm font-semibold ${
+                        isCompleted ? "line-through text-[var(--text-muted)]" : "text-[var(--text)]"
                       }`}>
-                        {task.priority}
-                      </span>
-                      <span className="rounded bg-[var(--accent)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-muted)]">
-                        {task.category}
-                      </span>
-                      {task.matterCaseNumber && (
-                        <span className="text-xs font-semibold text-[var(--axia-gold-light)]">
-                          {task.matterCaseNumber}
-                        </span>
-                      )}
-                    </div>
+                        {task.title}
+                      </h3>
 
-                    <h3 className={`mt-2 text-sm font-semibold ${
-                      isCompleted ? "line-through text-[var(--text-muted)]" : "text-[var(--text)]"
+                      <div className="mt-2.5 flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)]">
+                        <span>الجهة: <strong className="text-[var(--text)]">{task.courtOrBailiffOffice}</strong></span>
+                        <span>المسؤول: <strong className="text-[var(--text)]">{task.assignedTo}</strong></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 sm:flex-col sm:items-end">
+                    <div className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold ${
+                      isDueWithinOneHour
+                        ? "bg-red-600 text-white shadow-sm"
+                        : isCritical 
+                        ? "bg-red-500/20 text-red-300 border border-red-500/30" 
+                        : deadlineInfo.isWithin24Hours && !isCompleted
+                        ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
+                        : "bg-[var(--accent-hover)] text-[var(--text-muted)]"
                     }`}>
-                      {task.title}
-                    </h3>
-
-                    <div className="mt-2.5 flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)]">
-                      <span>الجهة: <strong className="text-[var(--text)]">{task.courtOrBailiffOffice}</strong></span>
-                      <span>المسؤول: <strong className="text-[var(--text)]">{task.assignedTo}</strong></span>
+                      <Clock className="size-3.5" />
+                      <span>{deadlineInfo.remainingText}</span>
                     </div>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-3 sm:flex-col sm:items-end">
-                  <div className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold ${
-                    isDueWithinOneHour
-                      ? "bg-red-600 text-white shadow-sm"
-                      : isCritical 
-                      ? "bg-red-500/20 text-red-300 border border-red-500/30" 
-                      : deadlineInfo.isWithin24Hours && !isCompleted
-                      ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
-                      : "bg-[var(--accent-hover)] text-[var(--text-muted)]"
-                  }`}>
-                    <Clock className="size-3.5" />
-                    <span>{deadlineInfo.remainingText}</span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {isDueWithinOneHour && (
+                    <div className="flex items-center gap-2">
+                      {isDueWithinOneHour && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sendTaskDeadlineBrowserNotification({
+                              task,
+                              diffHours: deadlineInfo.diffHours,
+                              force: true,
+                            });
+                          }}
+                          className="inline-flex items-center gap-1 rounded-md border border-red-500/40 bg-red-600/10 px-2 py-0.5 text-[10px] font-bold text-red-400 hover:bg-red-600/20 transition"
+                          title="إرسال تنبيه مكتبي فوري لهذه المهمة"
+                        >
+                          <BellRing className="size-3" />
+                          <span>إشعار مكتبي</span>
+                        </button>
+                      )}
                       <button
                         type="button"
-                        onClick={() => {
-                          sendTaskDeadlineBrowserNotification({
-                            task,
-                            diffHours: deadlineInfo.diffHours,
-                            force: true,
-                          });
-                        }}
-                        className="inline-flex items-center gap-1 rounded-md border border-red-500/40 bg-red-600/10 px-2 py-0.5 text-[10px] font-bold text-red-400 hover:bg-red-600/20 transition"
-                        title="إرسال تنبيه مكتبي فوري لهذه المهمة"
+                        onClick={() => handleToggleTaskStatus(task.id)}
+                        className="text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text)]"
                       >
-                        <BellRing className="size-3" />
-                        <span>إشعار مكتبي</span>
+                        {isCompleted ? "إلغاء الإكمال" : "تحديد كمكتمل"}
                       </button>
-                    )}
-                    <button
-                      onClick={() => handleToggleTaskStatus(task.id)}
-                      className="text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text)]"
-                    >
-                      {isCompleted ? "إلغاء الإكمال" : "تحديد كمكتمل"}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRequestSingleDelete(task.id)}
+                        className="p-1 rounded-lg text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition"
+                        title="حذف هذه المهمة الإجرائية"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
 
       {/* New Task Modal */}
@@ -650,6 +887,70 @@ export function TasksView({
         }}
         onCreateTask={handleVoiceTaskCreated}
       />
+
+      {/* Bulk & Single Delete Confirmation Modal */}
+      {isDeleteConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150">
+          <div className="relative w-full max-w-md rounded-3xl border border-red-500/40 bg-[var(--panel)] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-red-400">
+              <div className="grid size-11 place-items-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 shrink-0">
+                <Trash2 className="size-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-[var(--text)]">تأكيد حذف المهام الإجرائية</h3>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  {taskIdsToDelete.length === 1
+                    ? "هل أنت متأكد من رغبتك في حذف هذه المهمة نهائياً؟"
+                    : `هل أنت متأكد من حذف ${taskIdsToDelete.length} مهام محددة دفعة واحدة؟`}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-[var(--bg)] p-3 border border-[var(--border)] max-h-48 overflow-y-auto space-y-2 text-xs">
+              <span className="block text-[11px] font-semibold text-[var(--text-muted)]">
+                المهام المحددة للحذف ({taskIdsToDelete.length}):
+              </span>
+              {tasks
+                .filter((t) => taskIdsToDelete.includes(t.id))
+                .map((t) => (
+                  <div
+                    key={t.id}
+                    className="flex items-center justify-between gap-2 rounded-xl bg-[var(--accent)] p-2.5 border border-[var(--border)]"
+                  >
+                    <span className="truncate font-medium text-[var(--text)]">{t.title}</span>
+                    <span className="shrink-0 rounded bg-[var(--panel)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">
+                      {t.category}
+                    </span>
+                  </div>
+                ))}
+            </div>
+
+            <p className="text-[11px] text-red-400/90 leading-relaxed font-medium bg-red-500/10 border border-red-500/20 rounded-xl p-2.5">
+              ⚠️ تنبيه قانوني: سيتم حذف المهام ومواعيدها بشكل نهائي من سجل قلم المحضرين وجدول مواعيد الطعون.
+            </p>
+
+            <div className="flex justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsDeleteConfirmOpen(false);
+                  setTaskIdsToDelete([]);
+                }}
+                className="rounded-xl bg-[var(--accent-hover)] px-4 py-2 text-xs font-semibold text-[var(--text)] hover:bg-white/15 transition"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="rounded-xl bg-gradient-to-r from-red-600 to-rose-700 px-5 py-2 text-xs font-bold text-white shadow-md hover:brightness-110 transition"
+              >
+                تأكيد الحذف نهائياً ({taskIdsToDelete.length})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

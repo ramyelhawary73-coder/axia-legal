@@ -38,6 +38,22 @@ export default function HomePage() {
     );
   };
 
+  const handleBulkUpdateTaskStatus = (taskIds: string[], newStatus: LegalTask["status"]) => {
+    setTasks((prev) =>
+      prev.map((t) =>
+        taskIds.includes(t.id) ? { ...t, status: newStatus } : t
+      )
+    );
+  };
+
+  const handleBulkDeleteTasks = (taskIds: string[]) => {
+    setTasks((prev) => prev.filter((t) => !taskIds.includes(t.id)));
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
+  };
+
   const handleCreateTask = (newTask: LegalTask) => {
     setTasks((prev) => [newTask, ...prev]);
   };
@@ -85,6 +101,9 @@ export default function HomePage() {
             tasks={tasks}
             onToggleTaskStatus={handleToggleTaskStatus}
             onCreateTask={handleCreateTask}
+            onBulkUpdateTaskStatus={handleBulkUpdateTaskStatus}
+            onBulkDeleteTasks={handleBulkDeleteTasks}
+            onDeleteTask={handleDeleteTask}
             onNavigate={setActiveTab}
           />
         )}
