@@ -1,4 +1,4 @@
-import { LegalTask } from "@/types/legal";
+import { LegalTask, Hearing } from "@/types/legal";
 
 export type NotificationPermissionStatus =
   | "granted"
@@ -202,3 +202,50 @@ export function hasTaskBeenNotified(taskId: string): boolean {
 export function resetTaskNotification(taskId: string): void {
   notifiedTaskIds.delete(taskId);
 }
+
+/**
+ * Dispatches a native browser notification for a hearing, proposing departure time and showing Google Maps traffic.
+ */
+export function sendHearingBrowserNotification({
+  hearing,
+  travelTimeText,
+  departureTimeText,
+  onClick,
+}: {
+  hearing: Hearing;
+  travelTimeText: string;
+  departureTimeText: string;
+  onClick?: () => void;
+}): boolean {
+  if (!isBrowserNotificationSupported()) return false;
+  if (Notification.permission !== "granted") return false;
+
+  const title = `⚖️ تذكير بموعد الجلسة: ${hearing.court}`;
+  const body = `ساعة واحدة متبقية على الجلسة رقم ${hearing.rollNumber} (الدائرة: ${hearing.circuit})\n\n🚙 وقت الانطلاق المقترح: ${departureTimeText}\n(الحالة المرورية الحية: ${travelTimeText} من خرائط Google)`;
+
+  try {
+    const notification = new Notification(title, {
+      body,
+      tag: `hearing-reminder-${hearing.id}`,
+      requireInteraction: true,
+      dir: "rtl",
+      lang: "ar",
+      silent: false,
+    });
+
+    notification.onclick = () => {
+      try {
+        window.focus();
+      } catch {}
+      if (onClick) onClick();
+      notification.close();
+    };
+
+    playLegalAlertChime();
+    return true;
+  } catch (err) {
+    console.warn("Failed to send hearing browser notification:", err);
+    return false;
+  }
+}
+
