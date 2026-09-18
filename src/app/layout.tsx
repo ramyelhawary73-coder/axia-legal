@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "AXIA Legal",
-  description: "Egyptian Legal Practice & Intelligence OS with automated daily summary snapshot export & cloud sync powered by RAJIH AI",
+  description: "Egyptian Legal Practice & Intelligence OS with global search (Ctrl+K) across matters, clients, and documents, keyboard shortcuts (Ctrl+N for rapid task creation), Legal Document Templates library, and RAJIH AI",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

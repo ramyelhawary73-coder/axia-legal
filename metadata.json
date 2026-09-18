@@ -1,6 +1,6 @@
 {
   "name": "AXIA Legal",
-  "description": "Egyptian Legal Practice & Intelligence OS with global keyboard shortcuts (Ctrl+N for rapid task creation), Legal Document Templates library, and RAJIH AI",
+  "description": "Egyptian Legal Practice & Intelligence OS with global search (Ctrl+K) across matters, clients, and documents, keyboard shortcuts (Ctrl+N for rapid task creation), Legal Document Templates library, and RAJIH AI",
   "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

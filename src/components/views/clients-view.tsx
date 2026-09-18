@@ -21,10 +21,17 @@ import { mockClients, mockMatters } from "@/lib/mock-legal-data";
 import { Client, Matter } from "@/types/legal";
 import { ClientDetailDashboard } from "@/components/client-detail-dashboard";
 
-export function ClientsView() {
+interface ClientsViewProps {
+  selectedClientId?: string | null;
+  onCloseClientDashboard?: () => void;
+}
+
+export function ClientsView({ selectedClientId, onCloseClientDashboard }: ClientsViewProps = {}) {
   const [clients, setClients] = useState<Client[]>(mockClients);
   const [matters, setMatters] = useState<Matter[]>(mockMatters);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [localSelectedClientId, setLocalSelectedClientId] = useState<string | null>(null);
+  const effectiveClientId = selectedClientId ?? localSelectedClientId;
+  const selectedClient = effectiveClientId ? clients.find((c) => c.id === effectiveClientId) || null : null;
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [isNewClientOpen, setIsNewClientOpen] = useState(false);
@@ -86,8 +93,11 @@ export function ClientsView() {
         client={selectedClient}
         clients={clients}
         matters={matters}
-        onSelectClient={(c) => setSelectedClient(c)}
-        onBack={() => setSelectedClient(null)}
+        onSelectClient={(c) => setLocalSelectedClientId(c.id)}
+        onBack={() => {
+          setLocalSelectedClientId(null);
+          onCloseClientDashboard?.();
+        }}
         onAddNewMatter={(newMatter) => setMatters([newMatter, ...matters])}
       />
     );
@@ -186,7 +196,7 @@ export function ClientsView() {
                 return (
                   <tr 
                     key={client.id} 
-                    onClick={() => setSelectedClient(client)}
+                    onClick={() => setLocalSelectedClientId(client.id)}
                     className="hover:bg-[var(--accent)]/70 transition-colors group cursor-pointer"
                   >
                     <td className="px-4 py-3 align-top">
@@ -263,7 +273,7 @@ export function ClientsView() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedClient(client);
+                            setLocalSelectedClientId(client.id);
                           }}
                           className="mt-1.5 w-full inline-flex items-center justify-center gap-1 rounded border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-[10px] font-bold text-[var(--text)] group-hover:border-[var(--axia-gold)] group-hover:text-[var(--axia-gold)] transition shadow-sm"
                         >

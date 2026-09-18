@@ -14,7 +14,7 @@ import { RajihAiView } from "@/components/views/rajih-ai-view";
 import { TeamView } from "@/components/views/team-view";
 import { ReportsView } from "@/components/views/reports-view";
 import { AdministrationView } from "@/components/views/administration-view";
-import { mockMatters, mockTasks, mockClients } from "@/lib/mock-legal-data";
+import { mockMatters, mockTasks, mockClients, mockDocuments } from "@/lib/mock-legal-data";
 import { useDailySnapshotAutoExport } from "@/hooks/use-daily-snapshot-auto-export";
 import { DailySnapshotToast } from "@/components/daily-snapshot-toast";
 import { DailySnapshotManager } from "@/components/daily-snapshot-manager";
@@ -22,6 +22,8 @@ import { DailySnapshotManager } from "@/components/daily-snapshot-manager";
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<NavigationTab>("overview");
   const [selectedMatterId, setSelectedMatterId] = useState<string | null>(null);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<LegalTask[]>(mockTasks);
   const [isSnapshotManagerOpen, setIsSnapshotManagerOpen] = useState(false);
 
@@ -63,11 +65,36 @@ export default function HomePage() {
     setActiveTab("matters");
   };
 
+  const handleSelectMatter = (matterId: string) => {
+    setSelectedMatterId(matterId);
+    setActiveTab("matters");
+  };
+
+  const handleSelectClient = (clientId: string) => {
+    setSelectedClientId(clientId);
+    setActiveTab("clients");
+  };
+
+  const handleSelectDocument = (docId: string) => {
+    setSelectedDocumentId(docId);
+    setActiveTab("documents");
+  };
+
   let subContext: string | null = null;
   if (activeTab === "matters" && selectedMatterId) {
     const matter = mockMatters.find(m => m.id === selectedMatterId);
     if (matter) {
       subContext = `قضية رقم ${matter.caseNumber}`;
+    }
+  } else if (activeTab === "clients" && selectedClientId) {
+    const client = mockClients.find(c => c.id === selectedClientId);
+    if (client) {
+      subContext = `الموكل: ${client.name}`;
+    }
+  } else if (activeTab === "documents" && selectedDocumentId) {
+    const doc = mockDocuments.find(d => d.id === selectedDocumentId);
+    if (doc) {
+      subContext = `مستند: ${doc.title}`;
     }
   }
 
@@ -75,12 +102,27 @@ export default function HomePage() {
     <>
       <AppShell 
         activeTab={activeTab} 
-        onNavigate={(tab) => { setActiveTab(tab); setSelectedMatterId(null); }} 
+        onNavigate={(tab) => { 
+          setActiveTab(tab); 
+          setSelectedMatterId(null);
+          setSelectedClientId(null);
+          setSelectedDocumentId(null);
+        }} 
         subContext={subContext} 
-        onClearSubContext={() => setSelectedMatterId(null)}
+        onClearSubContext={() => {
+          setSelectedMatterId(null);
+          setSelectedClientId(null);
+          setSelectedDocumentId(null);
+        }}
         tasks={tasks}
         onToggleTaskStatus={handleToggleTaskStatus}
         onCreateTask={handleCreateTask}
+        matters={mockMatters}
+        clients={mockClients}
+        documents={mockDocuments}
+        onSelectMatter={handleSelectMatter}
+        onSelectClient={handleSelectClient}
+        onSelectDocument={handleSelectDocument}
       >
         {activeTab === "overview" && (
           <OverviewView 
@@ -95,7 +137,12 @@ export default function HomePage() {
           />
         )}
         {activeTab === "hearings" && <HearingsView />}
-        {activeTab === "clients" && <ClientsView />}
+        {activeTab === "clients" && (
+          <ClientsView 
+            selectedClientId={selectedClientId}
+            onCloseClientDashboard={() => setSelectedClientId(null)}
+          />
+        )}
         {activeTab === "tasks" && (
           <TasksView 
             tasks={tasks}
@@ -107,7 +154,14 @@ export default function HomePage() {
             onNavigate={setActiveTab}
           />
         )}
-        {activeTab === "documents" && <DocumentsView clients={mockClients} matters={mockMatters} />}
+        {activeTab === "documents" && (
+          <DocumentsView 
+            clients={mockClients} 
+            matters={mockMatters}
+            selectedDocId={selectedDocumentId}
+            onCloseDocModal={() => setSelectedDocumentId(null)}
+          />
+        )}
         {activeTab === "finance" && <FinanceView />}
         {activeTab === "library" && <LibraryView />}
         {activeTab === "rajih" && <RajihAiView />}

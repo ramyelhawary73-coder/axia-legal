@@ -31,12 +31,9 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
   const [pdfSelectedMatter, setPdfSelectedMatter] = useState<Matter | null>(null);
   
   // Selected matter for viewing dossier
-  const [activeMatter, setActiveMatter] = useState<Matter | null>(() => {
-    if (selectedMatterId) {
-      return mockMatters.find((m) => m.id === selectedMatterId) || null;
-    }
-    return null;
-  });
+  const [localActiveMatterId, setLocalActiveMatterId] = useState<string | null>(null);
+  const effectiveMatterId = selectedMatterId ?? localActiveMatterId;
+  const activeMatter = effectiveMatterId ? mockMatters.find((m) => m.id === effectiveMatterId) || null : null;
 
   // Modal for new case
   const [isNewMatterOpen, setIsNewMatterOpen] = useState(false);
@@ -198,7 +195,7 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
                 <tr 
                   key={matter.id} 
                   className="hover:bg-[var(--accent)] transition-colors group cursor-default"
-                  onDoubleClick={() => setActiveMatter(matter)}
+                  onDoubleClick={() => setLocalActiveMatterId(matter.id)}
                 >
                   <td className="px-4 py-3 align-top">
                     <div className="font-semibold text-[var(--text)]">{matter.caseNumber}</div>
@@ -242,7 +239,7 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
                   </td>
                   <td className="px-4 py-3 align-top text-center">
                     <button
-                      onClick={() => setActiveMatter(matter)}
+                      onClick={() => setLocalActiveMatterId(matter.id)}
                       className="p-1 rounded-md text-[var(--text-muted)] hover:bg-[var(--border)] hover:text-[var(--text)] transition-colors opacity-0 group-hover:opacity-100 mx-auto"
                       title="فتح الملف"
                     >
@@ -273,7 +270,7 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
           <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--panel-glass)] backdrop-blur-xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
             <button
               onClick={() => {
-                setActiveMatter(null);
+                setLocalActiveMatterId(null);
                 if (onCloseMatterModal) onCloseMatterModal();
               }}
               className="absolute left-4 top-4 grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
@@ -352,7 +349,7 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
 
               <button
                 onClick={() => {
-                  setActiveMatter(null);
+                  setLocalActiveMatterId(null);
                   if (onCloseMatterModal) onCloseMatterModal();
                 }}
                 className="rounded-md border border-[var(--border)] bg-[var(--panel)] px-5 py-2 text-xs font-medium text-[var(--text)] hover:bg-[var(--accent)] transition-colors"

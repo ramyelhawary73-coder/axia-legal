@@ -22,18 +22,24 @@ interface DocumentsViewProps {
   clients?: Client[];
   matters?: Matter[];
   initialTab?: "archive" | "templates";
+  selectedDocId?: string | null;
+  onCloseDocModal?: () => void;
 }
 
 export function DocumentsView({
   clients = mockClients,
   matters = mockMatters,
   initialTab = "archive",
+  selectedDocId,
+  onCloseDocModal,
 }: DocumentsViewProps = {}) {
   const [activeTab, setActiveTab] = useState<"archive" | "templates">(initialTab);
   const [docs, setDocs] = useState<LegalDocument[]>(mockDocuments);
   const [filterType, setFilterType] = useState<string>("all");
   const [search, setSearch] = useState("");
-  const [selectedDoc, setSelectedDoc] = useState<LegalDocument | null>(null);
+  const [localSelectedDocId, setLocalSelectedDocId] = useState<string | null>(null);
+  const effectiveDocId = selectedDocId ?? localSelectedDocId;
+  const selectedDoc = effectiveDocId ? docs.find((d) => d.id === effectiveDocId) || null : null;
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const handleSaveGeneratedDoc = (newDoc: LegalDocument) => {
@@ -232,7 +238,7 @@ export function DocumentsView({
                       <td className="px-4 py-3 align-top text-center">
                         <button
                           type="button"
-                          onClick={() => setSelectedDoc(doc)}
+                          onClick={() => setLocalSelectedDocId(doc.id)}
                           className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1 text-[var(--text)] hover:bg-[var(--accent)] transition-colors opacity-0 group-hover:opacity-100 mx-auto text-xs"
                         >
                           <Download className="size-3" />
@@ -265,7 +271,10 @@ export function DocumentsView({
           <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
             <button
               type="button"
-              onClick={() => setSelectedDoc(null)}
+              onClick={() => {
+                setLocalSelectedDocId(null);
+                onCloseDocModal?.();
+              }}
               className="absolute left-4 top-4 grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
             >
               <X className="size-4" />
@@ -298,14 +307,20 @@ export function DocumentsView({
             <div className="mt-6 flex justify-end gap-2 border-t border-[var(--border)] pt-4">
               <button
                 type="button"
-                onClick={() => setSelectedDoc(null)}
+                onClick={() => {
+                  setLocalSelectedDocId(null);
+                  onCloseDocModal?.();
+                }}
                 className="rounded-xl border border-[var(--border)] bg-[var(--panel)] px-4 py-2 font-medium text-[var(--text)] hover:bg-[var(--accent)] transition-colors text-xs"
               >
                 إغلاق
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedDoc(null)}
+                onClick={() => {
+                  setLocalSelectedDocId(null);
+                  onCloseDocModal?.();
+                }}
                 className="rounded-xl bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] hover:opacity-90 transition-opacity text-xs inline-flex items-center gap-1.5"
               >
                 <Download className="size-3.5" />

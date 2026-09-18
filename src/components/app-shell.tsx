@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTheme } from "next-themes";
 import { 
   Scale, 
@@ -14,7 +14,6 @@ import {
   Sparkles, 
   BarChart3, 
   Settings, 
-  Search, 
   Menu, 
   ChevronLeft, 
   X, 
@@ -28,7 +27,7 @@ import {
   CheckCircle2, 
   type LucideIcon 
 } from "lucide-react";
-import { NavigationTab, LegalTask } from "@/types/legal";
+import { NavigationTab, LegalTask, Matter, Client, LegalDocument } from "@/types/legal";
 import { mockTasks } from "@/lib/mock-legal-data";
 import { NotificationsPopover } from "@/components/notifications-popover";
 import { getUpcomingDeadlineTasks, getHighPriorityTasksDueWithinHour } from "@/lib/task-utils";
@@ -41,6 +40,7 @@ import { VoiceControlTrigger } from "@/components/voice-control-trigger";
 import { useGlobalKeyboardShortcuts } from "@/hooks/use-global-keyboard-shortcuts";
 import { TaskCreationModal } from "@/components/task-creation-modal";
 import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
+import { GlobalSearchBar } from "@/components/global-search-bar";
 
 interface AppShellProps {
   activeTab: NavigationTab;
@@ -51,6 +51,12 @@ interface AppShellProps {
   tasks?: LegalTask[];
   onToggleTaskStatus?: (taskId: string) => void;
   onCreateTask?: (task: LegalTask) => void;
+  matters?: Matter[];
+  clients?: Client[];
+  documents?: LegalDocument[];
+  onSelectMatter?: (matterId: string) => void;
+  onSelectClient?: (clientId: string) => void;
+  onSelectDocument?: (docId: string) => void;
 }
 
 const navItems: { id: NavigationTab; labelAr: string; labelEn: string; icon: LucideIcon; badge?: string }[] = [
@@ -77,14 +83,18 @@ export function AppShell({
   tasks,
   onToggleTaskStatus,
   onCreateTask,
+  matters,
+  clients,
+  documents,
+  onSelectMatter,
+  onSelectClient,
+  onSelectDocument,
 }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [globalSearch, setGlobalSearch] = useState("");
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [taskCreatedToast, setTaskCreatedToast] = useState<{ id: string; title: string } | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   // Global Keyboard Shortcuts Listener (Ctrl+N / Alt+N for tasks, Ctrl+K for search, Esc, Ctrl+/)
   useGlobalKeyboardShortcuts({
@@ -92,8 +102,7 @@ export function AppShell({
       setIsTaskModalOpen(true);
     },
     onSearchFocus: () => {
-      searchInputRef.current?.focus();
-      searchInputRef.current?.select();
+      // Dispatches shortcut event or handled via Ctrl+K listener in GlobalSearchBar
     },
     onToggleHelp: () => {
       setIsShortcutsModalOpen((prev) => !prev);
@@ -187,32 +196,33 @@ export function AppShell({
             </div>
           </div>
 
-          {/* Quick Search - Spotlight Style */}
-          <div className="hidden md:flex flex-1 max-w-lg mx-6">
-            <div className="relative w-full group">
-              <Search className="absolute right-3 top-2.5 size-3.5 text-[var(--text-muted)] group-focus-within:text-[var(--axia-gold)] transition-colors" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="بحث في النظام..."
-                value={globalSearch}
-                onChange={(e) => setGlobalSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    onNavigate("matters");
-                  }
-                }}
-                className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)]/50 pr-9 pl-3 py-1.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--axia-gold)] focus:ring-1 focus:ring-[var(--axia-gold)] focus:outline-none shadow-sm transition-all"
-              />
-              <div className="absolute left-2 top-2 flex items-center gap-1">
-                <kbd className="hidden lg:inline-block rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 text-[10px] font-medium text-[var(--text-muted)]">⌘</kbd>
-                <kbd className="hidden lg:inline-block rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 text-[10px] font-medium text-[var(--text-muted)]">K</kbd>
-              </div>
-            </div>
+          {/* Global Omni-Search Bar (Matters, Clients, Documents) */}
+          <div className="hidden md:flex flex-1 max-w-xl mx-4 lg:mx-6">
+            <GlobalSearchBar
+              matters={matters}
+              clients={clients}
+              documents={documents}
+              onNavigate={onNavigate}
+              onSelectMatter={onSelectMatter}
+              onSelectClient={onSelectClient}
+              onSelectDocument={onSelectDocument}
+            />
           </div>
 
           {/* User & Quick Status */}
           <div className="flex items-center gap-2">
+            {/* Mobile Search Trigger Button */}
+            <GlobalSearchBar
+              isMobileTriggerOnly
+              matters={matters}
+              clients={clients}
+              documents={documents}
+              onNavigate={onNavigate}
+              onSelectMatter={onSelectMatter}
+              onSelectClient={onSelectClient}
+              onSelectDocument={onSelectDocument}
+            />
+
             {/* Quick Task Button with Ctrl+N shortcut indicator */}
             <button
               type="button"
