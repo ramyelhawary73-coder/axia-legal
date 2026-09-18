@@ -295,8 +295,17 @@ export function TasksView({
     setDraggedTaskId(null);
   };
 
+  const dueSoonTasksCount = tasks.filter((t) => {
+    const analysis = analyzeTaskDeadline(t);
+    return t.status !== "مكتملة" && analysis.diffHours <= 48;
+  }).length;
+
   const filteredTasks = tasks.filter((t) => {
     if (filterCategory === "all") return true;
+    if (filterCategory === "due-soon") {
+      const analysis = analyzeTaskDeadline(t);
+      return t.status !== "مكتملة" && analysis.diffHours <= 48;
+    }
     return t.category === filterCategory;
   });
 
@@ -521,23 +530,35 @@ export function TasksView({
         <div className="flex flex-wrap items-center gap-2">
           {[
             { id: "all", label: `كافة المهام (${tasks.length})` },
+            { id: "due-soon", label: `مواعيد قريبة [48 س] (${dueSoonTasksCount})` },
             { id: "قلم المحضرين", label: "أعمال قلم المحضرين" },
             { id: "ميعاد طعن قانوني", label: "مواعيد سقوط الطعون" },
             { id: "سداد رسوم", label: "الخزينة ورسوم الخبراء" },
             { id: "إيداع مذكرات", label: "إيداع المذكرات القضائية" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setFilterCategory(tab.id)}
-              className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ${
-                filterCategory === tab.id
-                  ? "bg-red-500/20 text-red-300 border border-red-500/30"
-                  : "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+          ].map((tab) => {
+            const isActive = filterCategory === tab.id;
+            let themeClass = "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]";
+            
+            if (isActive) {
+              if (tab.id === "due-soon") {
+                themeClass = "bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse font-bold";
+              } else {
+                themeClass = "bg-red-500/20 text-red-300 border border-red-500/30 font-bold";
+              }
+            } else if (tab.id === "due-soon" && dueSoonTasksCount > 0) {
+              themeClass = "text-amber-400 hover:bg-amber-500/10 font-bold";
+            }
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setFilterCategory(tab.id)}
+                className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all ${themeClass}`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Layout Toggle */}
