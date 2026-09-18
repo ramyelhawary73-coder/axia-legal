@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Search, 
   Plus, 
@@ -9,7 +9,14 @@ import {
   ArrowUpRight,
   ChevronDown,
   Download,
-  FileText
+  FileText,
+  Users,
+  Phone,
+  Mail,
+  UserPlus,
+  Trash2,
+  Copy,
+  Check
 } from "lucide-react";
 import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
 import { Matter, CourtCategory } from "@/types/legal";
@@ -21,7 +28,53 @@ interface MattersViewProps {
 }
 
 export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersViewProps) {
-  const [matters, setMatters] = useState<Matter[]>(mockMatters);
+  const [matters, setMatters] = useState<Matter[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("axia_matters");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    const defaultMatters = [...mockMatters];
+    if (defaultMatters[0]) {
+      defaultMatters[0].contacts = [
+        {
+          id: "con-1",
+          name: "م. شريف الألفي",
+          role: "خبير",
+          phone: "01002345678",
+          email: "sherif@experts.gov.eg",
+          notes: "الخبير الهندسي المنتدب لإعداد تقرير معاينة الموقع"
+        },
+        {
+          id: "con-2",
+          name: "اللواء محمد فتحي الراوي",
+          role: "شاهد",
+          phone: "01223456789",
+          notes: "شاهد إثبات على تسليم محاضر الاستلام الابتدائي للأعمال"
+        }
+      ];
+    }
+    if (defaultMatters[1]) {
+      defaultMatters[1].contacts = [
+        {
+          id: "con-3",
+          name: "أحمد منصور صابر",
+          role: "خصم",
+          phone: "01114567890",
+          notes: "المدعى عليه الأصلي الممتنع عن تسييل خطاب الضمان"
+        }
+      ];
+    }
+    return defaultMatters;
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("axia_matters", JSON.stringify(matters));
+    }
+  }, [matters]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [courtFilter, setCourtFilter] = useState<string>("all");
   const [stageFilter, setStageFilter] = useState<string>("all");
@@ -33,7 +86,60 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
   // Selected matter for viewing dossier
   const [localActiveMatterId, setLocalActiveMatterId] = useState<string | null>(null);
   const effectiveMatterId = selectedMatterId ?? localActiveMatterId;
-  const activeMatter = effectiveMatterId ? mockMatters.find((m) => m.id === effectiveMatterId) || null : null;
+  const activeMatter = effectiveMatterId ? matters.find((m) => m.id === effectiveMatterId) || null : null;
+
+  // New contact form states
+  const [contactName, setContactName] = useState("");
+  const [contactRole, setContactRole] = useState<"شاهد" | "خصم" | "خبير" | "أخرى">("شاهد");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactNotes, setContactNotes] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleAddContact = (matterId: string) => {
+    if (!contactName || !contactPhone) return;
+
+    const newContact = {
+      id: `con-${Date.now()}`,
+      name: contactName,
+      role: contactRole,
+      phone: contactPhone,
+      email: contactEmail || undefined,
+      notes: contactNotes || undefined,
+    };
+
+    setMatters((prevMatters) =>
+      prevMatters.map((m) => {
+        if (m.id === matterId) {
+          return {
+            ...m,
+            contacts: [...(m.contacts || []), newContact],
+          };
+        }
+        return m;
+      })
+    );
+
+    // Reset inputs
+    setContactName("");
+    setContactPhone("");
+    setContactEmail("");
+    setContactNotes("");
+  };
+
+  const handleRemoveContact = (matterId: string, contactId: string) => {
+    setMatters((prevMatters) =>
+      prevMatters.map((m) => {
+        if (m.id === matterId) {
+          return {
+            ...m,
+            contacts: (m.contacts || []).filter((c) => c.id !== contactId),
+          };
+        }
+        return m;
+      })
+    );
+  };
 
   // Modal for new case
   const [isNewMatterOpen, setIsNewMatterOpen] = useState(false);
@@ -333,6 +439,168 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
                 <p className="mt-1 leading-relaxed text-[var(--text)]">{activeMatter.notes}</p>
               </div>
             )}
+
+            {/* Case Linked Contacts Segment */}
+            <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg)]/30 p-4 text-xs">
+              <div className="flex items-center justify-between border-b border-[var(--border)] pb-2 mb-3">
+                <div className="flex items-center gap-1.5 text-[var(--text)]">
+                  <Users className="size-4 text-[var(--axia-gold)]" />
+                  <span className="font-bold text-sm">جهات الاتصال المرتبطة بالدعوى</span>
+                </div>
+                <span className="text-[10px] bg-[var(--axia-gold)]/10 text-[var(--axia-gold)] px-2 py-0.5 rounded-full font-bold">
+                  {(activeMatter.contacts || []).length} جهات اتصال
+                </span>
+              </div>
+
+              {/* List of Linked Contacts */}
+              <div className="space-y-2 mb-4">
+                {(!activeMatter.contacts || activeMatter.contacts.length === 0) ? (
+                  <p className="text-[11px] text-[var(--text-muted)] text-center py-2">
+                    لا توجد جهات اتصال (شهود، خصوم، خبراء) مرتبطة بملف هذه القضية حالياً.
+                  </p>
+                ) : (
+                  activeMatter.contacts.map((contact) => (
+                    <div 
+                      key={contact.id} 
+                      className="flex items-start justify-between p-2.5 rounded-xl border border-[var(--border)] bg-[var(--panel)]"
+                    >
+                      <div className="space-y-1 text-right">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-xs text-[var(--text)]">{contact.name}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
+                            contact.role === "شاهد"
+                              ? "bg-blue-500/10 text-blue-500"
+                              : contact.role === "خصم"
+                              ? "bg-rose-500/10 text-rose-500"
+                              : contact.role === "خبير"
+                              ? "bg-amber-500/10 text-amber-500"
+                              : "bg-stone-500/10 text-stone-500"
+                          }`}>
+                            {contact.role}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-3 text-[10px] text-[var(--text-muted)]">
+                          <span className="flex items-center gap-1">
+                            <Phone className="size-2.5" />
+                            <span className="font-mono">{contact.phone}</span>
+                          </span>
+                          {contact.email && (
+                            <span className="flex items-center gap-1">
+                              <Mail className="size-2.5" />
+                              <span className="font-mono">{contact.email}</span>
+                            </span>
+                          )}
+                        </div>
+                        {contact.notes && (
+                          <p className="text-[10px] text-[var(--text-muted)] bg-[var(--accent)]/50 p-1.5 rounded-md mt-1 leading-relaxed">
+                            {contact.notes}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(contact.phone);
+                            setCopiedId(contact.id);
+                            setTimeout(() => setCopiedId(null), 1500);
+                          }}
+                          className="p-1 rounded bg-[var(--accent)] text-[var(--text-muted)] hover:text-[var(--text)] transition"
+                          title="نسخ الرقم"
+                        >
+                          {copiedId === contact.id ? (
+                            <Check className="size-3 text-emerald-500" />
+                          ) : (
+                            <Copy className="size-3" />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveContact(activeMatter.id, contact.id)}
+                          className="p-1 rounded bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition"
+                          title="حذف الارتباط"
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Add New Contact Form */}
+              <div className="border-t border-[var(--border)] pt-3 mt-3">
+                <h4 className="font-bold text-[11px] text-[var(--text)] mb-2 flex items-center gap-1">
+                  <UserPlus className="size-3 text-[var(--axia-gold)]" />
+                  <span>ربط جهة اتصال جديدة بالملف</span>
+                </h4>
+                
+                <div className="grid gap-2 sm:grid-cols-2 mb-2">
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="الاسم الكامل لجهة الاتصال"
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5 text-[11px] text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--axia-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--axia-gold)]"
+                    />
+                  </div>
+                  <div>
+                    <select
+                      value={contactRole}
+                      onChange={(e) => setContactRole(e.target.value as "شاهد" | "خصم" | "خبير" | "أخرى")}
+                      className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5 text-[11px] text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--axia-gold)]"
+                    >
+                      <option value="شاهد">شاهد إثبات / نفي</option>
+                      <option value="خصم">الخصم المباشر / ممثله</option>
+                      <option value="خبير">خبير المحكمة المنتدب</option>
+                      <option value="أخرى">صفة أخرى</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-2 mb-2">
+                  <div>
+                    <input
+                      type="text"
+                      placeholder="رقم الهاتف والاتصال"
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5 text-[11px] text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--axia-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--axia-gold)]"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="email"
+                      placeholder="البريد الإلكتروني (اختياري)"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5 text-[11px] text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--axia-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--axia-gold)]"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-2">
+                  <input
+                    type="text"
+                    placeholder="ملاحظات توضيحية لجهة الاتصال"
+                    value={contactNotes}
+                    onChange={(e) => setContactNotes(e.target.value)}
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5 text-[11px] text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--axia-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--axia-gold)]"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleAddContact(activeMatter.id)}
+                  className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[var(--text)] text-[var(--bg)] font-bold text-[11px] hover:opacity-90 transition cursor-pointer"
+                >
+                  <Plus className="size-3" />
+                  <span>تأكيد ربط جهة الاتصال بالقضية</span>
+                </button>
+              </div>
+            </div>
 
             <div className="mt-6 flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-[var(--border)]">
               <button

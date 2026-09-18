@@ -51,6 +51,14 @@ export interface Matter {
   verdictResult?: "صالح الموكل (كسب الدعوى)" | "رفض الدعوى" | "صلح قضائي وبراءة ذمة" | "بطلان الحكم المستأنف" | "تأييد الحكم الابتدائي";
   executionStatus?: "تم التنفيذ واستلام الحقوق" | "قيد التنفيذ الجبري" | "منتهية بالتراضي" | "تم إنهاء النزاع بالصلح" | "سند تنفيذي معلن";
   finalAwardAmount?: string;
+  contacts?: {
+    id: string;
+    name: string;
+    role: "شاهد" | "خصم" | "خبير" | "أخرى";
+    phone: string;
+    email?: string;
+    notes?: string;
+  }[];
 }
 
 export interface Hearing {
