@@ -196,6 +196,70 @@ export function HearingsView() {
   const [hearings, setHearings] = useState<Hearing[]>(mockHearings);
   const [tasks, setTasks] = useState<LegalTask[]>(mockTasks);
   const [matters, setMatters] = useState<Matter[]>(mockMatters);
+  const [isOnline, setIsOnline] = useState(true);
+
+  // Monitor network status
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      Promise.resolve().then(() => setIsOnline(navigator.onLine));
+      const goOnline = () => setIsOnline(true);
+      const goOffline = () => setIsOnline(false);
+      window.addEventListener("online", goOnline);
+      window.addEventListener("offline", goOffline);
+      return () => {
+        window.removeEventListener("online", goOnline);
+        window.removeEventListener("offline", goOffline);
+      };
+    }
+  }, []);
+
+  // Load from LocalStorage on mount
+  useEffect(() => {
+    try {
+      const cachedHearings = localStorage.getItem("axia_hearings");
+      const cachedTasks = localStorage.getItem("axia_tasks");
+      const cachedMatters = localStorage.getItem("axia_matters");
+      
+      Promise.resolve().then(() => {
+        if (cachedHearings) {
+          setHearings(JSON.parse(cachedHearings));
+        }
+        if (cachedTasks) {
+          setTasks(JSON.parse(cachedTasks));
+        }
+        if (cachedMatters) {
+          setMatters(JSON.parse(cachedMatters));
+        }
+      });
+    } catch (err) {
+      console.error("Failed to load calendar data from localStorage", err);
+    }
+  }, []);
+
+  // Save to LocalStorage on changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("axia_hearings", JSON.stringify(hearings));
+    } catch (err) {
+      console.error("Failed to save hearings to localStorage", err);
+    }
+  }, [hearings]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("axia_tasks", JSON.stringify(tasks));
+    } catch (err) {
+      console.error("Failed to save tasks to localStorage", err);
+    }
+  }, [tasks]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("axia_matters", JSON.stringify(matters));
+    } catch (err) {
+      console.error("Failed to save matters to localStorage", err);
+    }
+  }, [matters]);
 
   const handleUpdateHearingNotes = (hearingId: string, notes: string) => {
     // 1. Update the hearing pleadingNotes
@@ -633,6 +697,16 @@ export function HearingsView() {
               <List className="size-3.5" />
               رول الجلسات الكلاسيكي
             </button>
+          </div>
+
+          {/* Offline/Online Cache Indicator Badge */}
+          <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[10px] font-bold shadow-sm transition-all ${
+            isOnline 
+              ? "bg-emerald-500/5 text-emerald-400 border-emerald-500/10" 
+              : "bg-amber-500/10 text-amber-400 border-amber-500/20 animate-pulse"
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-emerald-400" : "bg-amber-400"}`} />
+            <span>{isOnline ? "محفوظ محلياً (جاهز أوفلاين)" : "يعمل أوفلاين (تمكين التخزين المؤقت)"}</span>
           </div>
 
           <button
