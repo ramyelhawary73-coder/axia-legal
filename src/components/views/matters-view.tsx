@@ -20,7 +20,9 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   Grid,
-  TrendingUp
+  TrendingUp,
+  GripVertical,
+  RefreshCw
 } from "lucide-react";
 import { 
   ResponsiveContainer,
@@ -138,6 +140,62 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
     }, 0);
     return () => clearTimeout(timer);
   }, []);
+
+  // Drag and Drop layout states for Dashboard widgets
+  const [widgetOrder, setWidgetOrder] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("axia_dashboard_widget_order");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return ["kpis", "status-chart", "category-chart", "court-chart"];
+  });
+  const [draggedWidgetId, setDraggedWidgetId] = useState<string | null>(null);
+  const [dragOverWidgetId, setDragOverWidgetId] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.setData("text/plain", id);
+    e.dataTransfer.effectAllowed = "move";
+    setDraggedWidgetId(id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    if (draggedWidgetId !== id) {
+      setDragOverWidgetId(id);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setDragOverWidgetId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    const draggedId = e.dataTransfer.getData("text/plain");
+    if (draggedId === targetId) return;
+
+    const currentOrder = [...widgetOrder];
+    const draggedIdx = currentOrder.indexOf(draggedId);
+    const targetIdx = currentOrder.indexOf(targetId);
+
+    if (draggedIdx !== -1 && targetIdx !== -1) {
+      currentOrder.splice(draggedIdx, 1);
+      currentOrder.splice(targetIdx, 0, draggedId);
+      setWidgetOrder(currentOrder);
+      try {
+        localStorage.setItem("axia_dashboard_widget_order", JSON.stringify(currentOrder));
+      } catch {}
+    }
+    setDraggedWidgetId(null);
+    setDragOverWidgetId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedWidgetId(null);
+    setDragOverWidgetId(null);
+  };
 
   const [searchQuery, setSearchQuery] = useState("");
   const [courtFilter, setCourtFilter] = useState<string>("all");
@@ -495,244 +553,373 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
       ) : (
         /* Dashboard view */
         <div className="flex-1 overflow-y-auto pr-0.5 space-y-6 py-4 animate-in fade-in duration-200 custom-scrollbar">
-          {/* Hero KPI Cards */}
-          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
-              <span className="text-[10px] text-[var(--text-muted)] font-bold flex items-center gap-1">
-                <Briefcase className="size-3 text-[var(--axia-gold)]" />
-                <span>إجمالي القضايا والمنازعات</span>
-              </span>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-2xl font-black tracking-tight text-[var(--text)]">{matters.length}</span>
-                <span className="text-[9px] bg-[var(--axia-gold)]/10 text-[var(--axia-gold)] px-1.5 py-0.5 rounded-full font-bold">ملف نشط</span>
-              </div>
+          {/* Draggable Info & Reset Banner */}
+          <div className="flex flex-wrap items-center justify-between gap-4 text-xs text-[var(--text-muted)] bg-[var(--panel)] border border-[var(--border)] px-4 py-2.5 rounded-lg shadow-sm">
+            <div className="flex items-center gap-2">
+              <GripVertical className="size-4 text-[var(--axia-gold)] shrink-0" />
+              <span>بإمكانك إعادة ترتيب هذه اللوحات والرسوم البيانية؛ اسحب مقبض <span className="font-bold text-[var(--text)]">«ترتيب»</span> الموجود في رأس كل لوحة وأسقطها في المكان المناسب لتخصيص بيئة عملك.</span>
             </div>
-
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
-              <span className="text-[10px] text-[var(--text-muted)] font-bold flex items-center gap-1">
-                <TrendingUp className="size-3 text-emerald-500" />
-                <span>الدعاوى المتداولة</span>
-              </span>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-2xl font-black tracking-tight text-emerald-500">
-                  {matters.filter(m => m.stage === "متداولة").length}
-                </span>
-                <span className="text-[9px] text-emerald-500 font-bold">
-                  {matters.length > 0 ? Math.round((matters.filter(m => m.stage === "متداولة").length / matters.length) * 100) : 0}% من الكل
-                </span>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
-              <span className="text-[10px] text-[var(--text-muted)] font-bold flex items-center gap-1">
-                <FileText className="size-3 text-purple-500" />
-                <span>محجوزة للحكم</span>
-              </span>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-2xl font-black tracking-tight text-purple-500">
-                  {matters.filter(m => m.stage === "حجز للحكم").length}
-                </span>
-                <span className="text-[9px] bg-purple-500/10 text-purple-500 px-1.5 py-0.5 rounded-full font-bold">جلسة قريبة</span>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
-              <span className="text-[10px] text-[var(--text-muted)] font-bold flex items-center gap-1">
-                <Check className="size-3 text-slate-500" />
-                <span>قضايا محكوم فيها</span>
-              </span>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-2xl font-black tracking-tight text-slate-500">
-                  {matters.filter(m => m.stage === "محكوم فيها").length}
-                </span>
-                <span className="text-[9px] bg-slate-500/10 text-slate-500 px-1.5 py-0.5 rounded-full font-bold">مغلقة نهائياً</span>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const defaultOrder = ["kpis", "status-chart", "category-chart", "court-chart"];
+                setWidgetOrder(defaultOrder);
+                try {
+                  localStorage.setItem("axia_dashboard_widget_order", JSON.stringify(defaultOrder));
+                } catch {}
+              }}
+              className="inline-flex items-center gap-1.5 hover:text-[var(--text)] text-[var(--axia-gold)] font-bold transition cursor-pointer"
+            >
+              <RefreshCw className="size-3.5" />
+              <span>إعادة ضبط الترتيب الافتراضي</span>
+            </button>
           </div>
 
-          {/* Charts Grid */}
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Pie Chart: Status Distribution */}
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
-              <h3 className="text-xs font-bold text-[var(--text)] mb-4 flex items-center gap-1.5 border-b border-[var(--border)] pb-2">
-                <PieChartIcon className="size-4 text-[var(--axia-gold)]" />
-                <span>توزيع القضايا حسب المرحلة والدور القضائي</span>
-              </h3>
-              <div className="w-full flex items-center justify-center">
-                {mounted ? (
-                  <ResponsiveContainer width="100%" height={240}>
-                    <PieChart>
-                      <Pie
-                        data={[
-                          { name: "متداولة", value: matters.filter(m => m.stage === "متداولة").length, color: "#10b981" },
-                          { name: "حجز للحكم", value: matters.filter(m => m.stage === "حجز للحكم").length, color: "#8b5cf6" },
-                          { name: "محكوم فيها", value: matters.filter(m => m.stage === "محكوم فيها").length, color: "#64748b" },
-                          { name: "أخرى/مؤجلة", value: matters.filter(m => m.stage !== "متداولة" && m.stage !== "حجز للحكم" && m.stage !== "محكوم فيها").length, color: "#f59e0b" },
-                        ].filter(d => d.value > 0)}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={75}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {[
-                          { name: "متداولة", value: matters.filter(m => m.stage === "متداولة").length, color: "#10b981" },
-                          { name: "حجز للحكم", value: matters.filter(m => m.stage === "حجز للحكم").length, color: "#8b5cf6" },
-                          { name: "محكوم فيها", value: matters.filter(m => m.stage === "محكوم فيها").length, color: "#64748b" },
-                          { name: "أخرى/مؤجلة", value: matters.filter(m => m.stage !== "متداولة" && m.stage !== "حجز للحكم" && m.stage !== "محكوم فيها").length, color: "#f59e0b" },
-                        ].filter(d => d.value > 0).map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          direction: 'rtl',
-                          textAlign: 'right',
-                          backgroundColor: 'var(--panel)',
-                          borderColor: 'var(--border)',
-                          borderRadius: '8px',
-                          color: 'var(--text)',
-                          fontSize: '11px'
-                        }}
-                      />
-                      <Legend
-                        verticalAlign="bottom"
-                        height={36}
-                        iconType="circle"
-                        formatter={(value) => <span className="text-[10px] font-semibold text-[var(--text)]">{value}</span>}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[240px] flex items-center justify-center text-xs text-[var(--text-muted)]">جاري تحميل الرسم البياني...</div>
-                )}
-              </div>
-            </div>
-
-            {/* Bar Chart: Category Distribution */}
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
-              <h3 className="text-xs font-bold text-[var(--text)] mb-4 flex items-center gap-1.5 border-b border-[var(--border)] pb-2">
-                <BarChart3 className="size-4 text-[var(--axia-gold)]" />
-                <span>توزيع القضايا حسب التصنيفات القانونية</span>
-              </h3>
-              <div className="w-full flex items-center justify-center">
-                {mounted ? (
-                  <ResponsiveContainer width="100%" height={240}>
-                    <BarChart
-                      data={[
-                        { name: "مدني", value: matters.filter(m => m.category === "مدني").length, color: "#3b82f6" },
-                        { name: "جنائي", value: matters.filter(m => m.category === "جنائي").length, color: "#ef4444" },
-                        { name: "عمالي", value: matters.filter(m => m.category === "عمالي").length, color: "#10b981" },
-                        { name: "تجاري", value: matters.filter(m => m.category === "تجاري").length, color: "#f59e0b" },
-                        { name: "إداري", value: matters.filter(m => m.category === "إداري").length, color: "#8b5cf6" },
-                        { name: "أسرة", value: matters.filter(m => m.category === "أسرة").length, color: "#ec4899" },
-                      ]}
-                      barSize={20}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                      <XAxis
-                        dataKey="name"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 500 }}
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
-                      />
-                      <Tooltip
-                        cursor={{ fill: 'var(--accent)', opacity: 0.15 }}
-                        contentStyle={{
-                          direction: 'rtl',
-                          textAlign: 'right',
-                          backgroundColor: 'var(--panel)',
-                          borderColor: 'var(--border)',
-                          borderRadius: '8px',
-                          color: 'var(--text)',
-                          fontSize: '11px'
-                        }}
-                      />
-                      <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                        {[
-                          { name: "مدني", value: matters.filter(m => m.category === "مدني").length, color: "#3b82f6" },
-                          { name: "جنائي", value: matters.filter(m => m.category === "جنائي").length, color: "#ef4444" },
-                          { name: "عمالي", value: matters.filter(m => m.category === "عمالي").length, color: "#10b981" },
-                          { name: "تجاري", value: matters.filter(m => m.category === "تجاري").length, color: "#f59e0b" },
-                          { name: "إداري", value: matters.filter(m => m.category === "إداري").length, color: "#8b5cf6" },
-                          { name: "أسرة", value: matters.filter(m => m.category === "أسرة").length, color: "#ec4899" },
-                        ].map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="h-[240px] flex items-center justify-center text-xs text-[var(--text-muted)]">جاري تحميل الرسم البياني...</div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Court Volume Chart */}
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm">
-            <h3 className="text-xs font-bold text-[var(--text)] mb-4 flex items-center gap-1.5 border-b border-[var(--border)] pb-2">
-              <TrendingUp className="size-4 text-[var(--axia-gold)]" />
-              <span>كثافة وتواجد القضايا عبر المحاكم والجهات المختلفة</span>
-            </h3>
-            <div className="w-full flex items-center justify-center">
-              {mounted ? (
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart
-                    data={(() => {
-                      const courtCounts: Record<string, number> = {};
-                      matters.forEach(m => {
-                        courtCounts[m.court] = (courtCounts[m.court] || 0) + 1;
-                      });
-                      return Object.entries(courtCounts).map(([name, value]) => ({
-                        name: name.replace("محكمة ", ""),
-                        value
-                      })).sort((a, b) => b.value - a.value);
-                    })()}
-                    layout="vertical"
-                    barSize={12}
-                    margin={{ right: 20, left: 10 }}
+          {/* Unified Draggable Grid */}
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+            {widgetOrder.map((widgetId) => {
+              if (widgetId === "kpis") {
+                return (
+                  <div
+                    key="kpis"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, "kpis")}
+                    onDragOver={(e) => handleDragOver(e, "kpis")}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, "kpis")}
+                    onDragEnd={handleDragEnd}
+                    className={`col-span-1 md:col-span-2 relative group rounded-xl border p-4 shadow-sm transition-all duration-300 bg-[var(--panel)] ${
+                      draggedWidgetId === "kpis" ? "opacity-30 border-dashed border-[var(--axia-gold)] scale-[0.99]" : "border-[var(--border)]"
+                    } ${
+                      dragOverWidgetId === "kpis" ? "border-[var(--axia-gold)] bg-[var(--accent)]/40 ring-1 ring-[var(--axia-gold)]" : ""
+                    }`}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                    <XAxis
-                      type="number"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
-                    />
-                    <YAxis
-                      dataKey="name"
-                      type="category"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 500 }}
-                      width={120}
-                    />
-                    <Tooltip
-                      cursor={{ fill: 'var(--accent)', opacity: 0.1 }}
-                      contentStyle={{
-                        direction: 'rtl',
-                        textAlign: 'right',
-                        backgroundColor: 'var(--panel)',
-                        borderColor: 'var(--border)',
-                        borderRadius: '8px',
-                        color: 'var(--text)',
-                        fontSize: '11px'
-                      }}
-                    />
-                    <Bar dataKey="value" fill="var(--axia-gold)" radius={[0, 4, 4, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-[260px] flex items-center justify-center text-xs text-[var(--text-muted)]">جاري تحميل الرسم البياني...</div>
-              )}
-            </div>
+                    {/* Header with drag handle */}
+                    <div className="flex items-center justify-between pb-2 mb-3 border-b border-[var(--border)]/50">
+                      <span className="text-xs font-bold text-[var(--text)] flex items-center gap-1.5">
+                        <Grid className="size-4 text-[var(--axia-gold)]" />
+                        <span>المؤشرات الرئيسية للأداء القانوني</span>
+                      </span>
+                      <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] cursor-grab active:cursor-grabbing px-2 py-1 rounded hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors select-none">
+                        <GripVertical className="size-3.5" />
+                        <span>ترتيب</span>
+                      </div>
+                    </div>
+
+                    {/* Hero KPI Cards */}
+                    <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+                      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 p-4 shadow-sm">
+                        <span className="text-[10px] text-[var(--text-muted)] font-bold flex items-center gap-1">
+                          <Briefcase className="size-3 text-[var(--axia-gold)]" />
+                          <span>إجمالي القضايا والمنازعات</span>
+                        </span>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-2xl font-black tracking-tight text-[var(--text)]">{matters.length}</span>
+                          <span className="text-[9px] bg-[var(--axia-gold)]/10 text-[var(--axia-gold)] px-1.5 py-0.5 rounded-full font-bold">ملف نشط</span>
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 p-4 shadow-sm">
+                        <span className="text-[10px] text-[var(--text-muted)] font-bold flex items-center gap-1">
+                          <TrendingUp className="size-3 text-emerald-500" />
+                          <span>الدعاوى المتداولة</span>
+                        </span>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-2xl font-black tracking-tight text-emerald-500">
+                            {matters.filter(m => m.stage === "متداولة").length}
+                          </span>
+                          <span className="text-[9px] text-emerald-500 font-bold">
+                            {matters.length > 0 ? Math.round((matters.filter(m => m.stage === "متداولة").length / matters.length) * 100) : 0}% من الكل
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 p-4 shadow-sm">
+                        <span className="text-[10px] text-[var(--text-muted)] font-bold flex items-center gap-1">
+                          <FileText className="size-3 text-purple-500" />
+                          <span>محجوزة للحكم</span>
+                        </span>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-2xl font-black tracking-tight text-purple-500">
+                            {matters.filter(m => m.stage === "حجز للحكم").length}
+                          </span>
+                          <span className="text-[9px] bg-purple-500/10 text-purple-500 px-1.5 py-0.5 rounded-full font-bold">جلسة قريبة</span>
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 p-4 shadow-sm">
+                        <span className="text-[10px] text-[var(--text-muted)] font-bold flex items-center gap-1">
+                          <Check className="size-3 text-slate-500" />
+                          <span>قضايا محكوم فيها</span>
+                        </span>
+                        <div className="mt-2 flex items-baseline gap-2">
+                          <span className="text-2xl font-black tracking-tight text-slate-500">
+                            {matters.filter(m => m.stage === "محكوم فيها").length}
+                          </span>
+                          <span className="text-[9px] bg-slate-500/10 text-slate-500 px-1.5 py-0.5 rounded-full font-bold">مغلقة نهائياً</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              if (widgetId === "status-chart") {
+                return (
+                  <div
+                    key="status-chart"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, "status-chart")}
+                    onDragOver={(e) => handleDragOver(e, "status-chart")}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, "status-chart")}
+                    onDragEnd={handleDragEnd}
+                    className={`col-span-1 relative group rounded-xl border p-4 shadow-sm transition-all duration-300 bg-[var(--panel)] ${
+                      draggedWidgetId === "status-chart" ? "opacity-30 border-dashed border-[var(--axia-gold)] scale-[0.99]" : "border-[var(--border)]"
+                    } ${
+                      dragOverWidgetId === "status-chart" ? "border-[var(--axia-gold)] bg-[var(--accent)]/40 ring-1 ring-[var(--axia-gold)]" : ""
+                    }`}
+                  >
+                    {/* Header with drag handle */}
+                    <div className="flex items-center justify-between pb-2 mb-3 border-b border-[var(--border)]/50">
+                      <h3 className="text-xs font-bold text-[var(--text)] flex items-center gap-1.5">
+                        <PieChartIcon className="size-4 text-[var(--axia-gold)]" />
+                        <span>توزيع القضايا حسب المرحلة والدور القضائي</span>
+                      </h3>
+                      <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] cursor-grab active:cursor-grabbing px-2 py-1 rounded hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors select-none">
+                        <GripVertical className="size-3.5" />
+                        <span>ترتيب</span>
+                      </div>
+                    </div>
+
+                    <div className="w-full flex items-center justify-center">
+                      {mounted ? (
+                        <ResponsiveContainer width="100%" height={240}>
+                          <PieChart>
+                            <Pie
+                              data={[
+                                { name: "متداولة", value: matters.filter(m => m.stage === "متداولة").length, color: "#10b981" },
+                                { name: "حجز للحكم", value: matters.filter(m => m.stage === "حجز للحكم").length, color: "#8b5cf6" },
+                                { name: "محكوم فيها", value: matters.filter(m => m.stage === "محكوم فيها").length, color: "#64748b" },
+                                { name: "أخرى/مؤجلة", value: matters.filter(m => m.stage !== "متداولة" && m.stage !== "حجز للحكم" && m.stage !== "محكوم فيها").length, color: "#f59e0b" },
+                              ].filter(d => d.value > 0)}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={55}
+                              outerRadius={75}
+                              paddingAngle={5}
+                              dataKey="value"
+                            >
+                              {[
+                                { name: "متداولة", value: matters.filter(m => m.stage === "متداولة").length, color: "#10b981" },
+                                { name: "حجز للحكم", value: matters.filter(m => m.stage === "حجز للحكم").length, color: "#8b5cf6" },
+                                { name: "محكوم فيها", value: matters.filter(m => m.stage === "محكوم فيها").length, color: "#64748b" },
+                                { name: "أخرى/مؤجلة", value: matters.filter(m => m.stage !== "متداولة" && m.stage !== "حجز للحكم" && m.stage !== "محكوم فيها").length, color: "#f59e0b" },
+                              ].filter(d => d.value > 0).map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{
+                                direction: 'rtl',
+                                textAlign: 'right',
+                                backgroundColor: 'var(--panel)',
+                                borderColor: 'var(--border)',
+                                borderRadius: '8px',
+                                color: 'var(--text)',
+                                fontSize: '11px'
+                              }}
+                            />
+                            <Legend
+                              verticalAlign="bottom"
+                              height={36}
+                              iconType="circle"
+                              formatter={(value) => <span className="text-[10px] font-semibold text-[var(--text)]">{value}</span>}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-[240px] flex items-center justify-center text-xs text-[var(--text-muted)]">جاري تحميل الرسم البياني...</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+
+              if (widgetId === "category-chart") {
+                return (
+                  <div
+                    key="category-chart"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, "category-chart")}
+                    onDragOver={(e) => handleDragOver(e, "category-chart")}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, "category-chart")}
+                    onDragEnd={handleDragEnd}
+                    className={`col-span-1 relative group rounded-xl border p-4 shadow-sm transition-all duration-300 bg-[var(--panel)] ${
+                      draggedWidgetId === "category-chart" ? "opacity-30 border-dashed border-[var(--axia-gold)] scale-[0.99]" : "border-[var(--border)]"
+                    } ${
+                      dragOverWidgetId === "category-chart" ? "border-[var(--axia-gold)] bg-[var(--accent)]/40 ring-1 ring-[var(--axia-gold)]" : ""
+                    }`}
+                  >
+                    {/* Header with drag handle */}
+                    <div className="flex items-center justify-between pb-2 mb-3 border-b border-[var(--border)]/50">
+                      <h3 className="text-xs font-bold text-[var(--text)] flex items-center gap-1.5">
+                        <BarChart3 className="size-4 text-[var(--axia-gold)]" />
+                        <span>توزيع القضايا حسب التصنيفات القانونية</span>
+                      </h3>
+                      <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] cursor-grab active:cursor-grabbing px-2 py-1 rounded hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors select-none">
+                        <GripVertical className="size-3.5" />
+                        <span>ترتيب</span>
+                      </div>
+                    </div>
+
+                    <div className="w-full flex items-center justify-center">
+                      {mounted ? (
+                        <ResponsiveContainer width="100%" height={240}>
+                          <BarChart
+                            data={[
+                              { name: "مدني", value: matters.filter(m => m.category === "مدني").length, color: "#3b82f6" },
+                              { name: "جنائي", value: matters.filter(m => m.category === "جنائي").length, color: "#ef4444" },
+                              { name: "عمالي", value: matters.filter(m => m.category === "عمالي").length, color: "#10b981" },
+                              { name: "تجاري", value: matters.filter(m => m.category === "تجاري").length, color: "#f59e0b" },
+                              { name: "إداري", value: matters.filter(m => m.category === "إداري").length, color: "#8b5cf6" },
+                              { name: "أسرة", value: matters.filter(m => m.category === "أسرة").length, color: "#ec4899" },
+                            ]}
+                            barSize={20}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                            <XAxis
+                              dataKey="name"
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 500 }}
+                            />
+                            <YAxis
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                            />
+                            <Tooltip
+                              cursor={{ fill: 'var(--accent)', opacity: 0.15 }}
+                              contentStyle={{
+                                direction: 'rtl',
+                                textAlign: 'right',
+                                backgroundColor: 'var(--panel)',
+                                borderColor: 'var(--border)',
+                                borderRadius: '8px',
+                                color: 'var(--text)',
+                                fontSize: '11px'
+                              }}
+                            />
+                            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                              {[
+                                { name: "مدني", value: matters.filter(m => m.category === "مدني").length, color: "#3b82f6" },
+                                { name: "جنائي", value: matters.filter(m => m.category === "جنائي").length, color: "#ef4444" },
+                                { name: "عمالي", value: matters.filter(m => m.category === "عمالي").length, color: "#10b981" },
+                                { name: "تجاري", value: matters.filter(m => m.category === "تجاري").length, color: "#f59e0b" },
+                                { name: "إداري", value: matters.filter(m => m.category === "إداري").length, color: "#8b5cf6" },
+                                { name: "أسرة", value: matters.filter(m => m.category === "أسرة").length, color: "#ec4899" },
+                              ].map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-[240px] flex items-center justify-center text-xs text-[var(--text-muted)]">جاري تحميل الرسم البياني...</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+
+              if (widgetId === "court-chart") {
+                return (
+                  <div
+                    key="court-chart"
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, "court-chart")}
+                    onDragOver={(e) => handleDragOver(e, "court-chart")}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, "court-chart")}
+                    onDragEnd={handleDragEnd}
+                    className={`col-span-1 md:col-span-2 relative group rounded-xl border p-4 shadow-sm transition-all duration-300 bg-[var(--panel)] ${
+                      draggedWidgetId === "court-chart" ? "opacity-30 border-dashed border-[var(--axia-gold)] scale-[0.99]" : "border-[var(--border)]"
+                    } ${
+                      dragOverWidgetId === "court-chart" ? "border-[var(--axia-gold)] bg-[var(--accent)]/40 ring-1 ring-[var(--axia-gold)]" : ""
+                    }`}
+                  >
+                    {/* Header with drag handle */}
+                    <div className="flex items-center justify-between pb-2 mb-3 border-b border-[var(--border)]/50">
+                      <h3 className="text-xs font-bold text-[var(--text)] flex items-center gap-1.5">
+                        <TrendingUp className="size-4 text-[var(--axia-gold)]" />
+                        <span>كثافة وتواجد القضايا عبر المحاكم والجهات المختلفة</span>
+                      </h3>
+                      <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] cursor-grab active:cursor-grabbing px-2 py-1 rounded hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors select-none">
+                        <GripVertical className="size-3.5" />
+                        <span>ترتيب</span>
+                      </div>
+                    </div>
+
+                    <div className="w-full flex items-center justify-center">
+                      {mounted ? (
+                        <ResponsiveContainer width="100%" height={260}>
+                          <BarChart
+                            data={(() => {
+                              const courtCounts: Record<string, number> = {};
+                              matters.forEach(m => {
+                                courtCounts[m.court] = (courtCounts[m.court] || 0) + 1;
+                              });
+                              return Object.entries(courtCounts).map(([name, value]) => ({
+                                name: name.replace("محكمة ", ""),
+                                value
+                              })).sort((a, b) => b.value - a.value);
+                            })()}
+                            layout="vertical"
+                            barSize={12}
+                            margin={{ right: 20, left: 10 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                            <XAxis
+                              type="number"
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                            />
+                            <YAxis
+                              dataKey="name"
+                              type="category"
+                              axisLine={false}
+                              tickLine={false}
+                              tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 500 }}
+                              width={120}
+                            />
+                            <Tooltip
+                              cursor={{ fill: 'var(--accent)', opacity: 0.1 }}
+                              contentStyle={{
+                                direction: 'rtl',
+                                textAlign: 'right',
+                                backgroundColor: 'var(--panel)',
+                                borderColor: 'var(--border)',
+                                borderRadius: '8px',
+                                color: 'var(--text)',
+                                fontSize: '11px'
+                              }}
+                            />
+                            <Bar dataKey="value" fill="var(--axia-gold)" radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-[260px] flex items-center justify-center text-xs text-[var(--text-muted)]">جاري تحميل الرسم البياني...</div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+
+              return null;
+            })}
           </div>
         </div>
       )}
