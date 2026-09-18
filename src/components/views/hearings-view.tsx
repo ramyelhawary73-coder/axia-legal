@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/preserve-manual-memoization */
 "use client";
 
 import { useState, useMemo } from "react";
@@ -73,6 +74,7 @@ export function HearingsView() {
   const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(() => new Date(2026, 8, 18));
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; date: string; type: string } | null>(null);
+  const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
   // New hearing states
   const [newCaseNumber, setNewCaseNumber] = useState("");
@@ -90,6 +92,101 @@ export function HearingsView() {
   const triggerToast = (message: string, date: string, type: string) => {
     setToast({ message, date, type });
     setTimeout(() => setToast(null), 4000);
+  };
+
+  // iCal parsing and export helpers
+  const parseTimeTo24h = (timeStr: string): { hours: number; minutes: number } => {
+    let hours = 9;
+    let minutes = 0;
+    try {
+      const cleaned = timeStr.replace(/[^0-9:\sصبمap]/gi, "").trim();
+      const parts = cleaned.split(":");
+      if (parts.length >= 1) {
+        hours = parseInt(parts[0], 10);
+      }
+      if (parts.length >= 2) {
+        minutes = parseInt(parts[1], 10);
+      }
+      const isPM = timeStr.includes("م") || timeStr.toLowerCase().includes("pm");
+      const isAM = timeStr.includes("ص") || timeStr.toLowerCase().includes("am");
+      if (isPM && hours < 12) hours += 12;
+      if (isAM && hours === 12) hours = 0;
+    } catch {
+      // Fallback
+    }
+    return { hours, minutes };
+  };
+
+  const formatICalDate = (dateStr: string, timeStr?: string): string => {
+    const dateOnly = getDateOnly(dateStr);
+    if (!isValidDateStr(dateOnly)) return "";
+    const parts = dateOnly.split("-");
+    const year = parts[0];
+    const month = parts[1];
+    const day = parts[2];
+    
+    if (timeStr && timeStr !== "طوال اليوم") {
+      const { hours, minutes } = parseTimeTo24h(timeStr);
+      const hh = String(hours).padStart(2, "0");
+      const mm = String(minutes).padStart(2, "0");
+      return `${year}${month}${day}T${hh}${mm}00`;
+    }
+    return `${year}${month}${day}`;
+  };
+
+  const handleExportICS = () => {
+    let icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//AXIA Legal Applet//AR",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH"
+    ].join("\r\n") + "\r\n";
+
+    unifiedCalendarItems.forEach((item) => {
+      const isAllDay = item.time === "طوال اليوم" || !item.time;
+      const startStr = formatICalDate(item.date, item.time);
+      
+      let endStr = "";
+      if (isAllDay) {
+        const d = new Date(item.date);
+        d.setDate(d.getDate() + 1);
+        const nextDayStr = formatDateStr(d).replace(/-/g, "");
+        endStr = nextDayStr;
+      } else {
+        const parts = getDateOnly(item.date).split("-");
+        const { hours, minutes } = parseTimeTo24h(item.time);
+        const endHours = (hours + 1) % 24;
+        const eh = String(endHours).padStart(2, "0");
+        const em = String(minutes).padStart(2, "0");
+        endStr = `${parts[0]}${parts[1]}${parts[2]}T${eh}${em}00`;
+      }
+
+      icsContent += [
+        "BEGIN:VEVENT",
+        `UID:${item.type}-${item.id}@axia.legal`,
+        `DTSTAMP:${formatDateStr(new Date()).replace(/-/g, "")}T000000Z`,
+        isAllDay ? `DTSTART;VALUE=DATE:${startStr}` : `DTSTART:${startStr}`,
+        isAllDay ? `DTEND;VALUE=DATE:${endStr}` : `DTEND:${endStr}`,
+        `SUMMARY:${item.title}`,
+        `DESCRIPTION:${item.sub}`,
+        `LOCATION:${item.sub}`,
+        "END:VEVENT"
+      ].join("\r\n") + "\r\n";
+    });
+
+    icsContent += "END:VCALENDAR";
+
+    const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `axia_agenda_${formatDateStr(new Date())}.ics`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    triggerToast("تم إنشاء وتصدير ملف التقومة بنجاح", formatDateStr(new Date()), "matter");
   };
 
   // Drag & Drop handlers
@@ -370,6 +467,14 @@ export function HearingsView() {
               رول الجلسات الكلاسيكي
             </button>
           </div>
+
+          <button
+            onClick={() => setIsSyncModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-4 py-2 text-xs font-bold text-[var(--text)] shadow-sm hover:bg-[var(--accent)] transition"
+          >
+            <RefreshCw className="size-3.5 text-[var(--axia-gold)]" />
+            <span>مزامنة التقويم</span>
+          </button>
 
           <button
             onClick={() => setIsNewHearingOpen(true)}
@@ -1140,6 +1245,97 @@ export function HearingsView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Calendar Sync & Export Modal */}
+      {isSyncModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="relative h-[94vh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-xl overflow-y-auto rounded-t-[28px] sm:rounded-2xl border-t sm:border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
+            <button
+              onClick={() => setIsSyncModalOpen(false)}
+              className="absolute left-4 top-4 grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
+            >
+              <X className="size-4" />
+            </button>
+
+            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
+              <RefreshCw className="size-4 text-[var(--axia-gold)] animate-spin-slow" />
+              <span>مزامنة التقويم الشخصي</span>
+            </div>
+            
+            <h2 className="text-xl font-bold text-[var(--text)] border-b border-[var(--border)] pb-4">مزامنة الأجندة مع تقويم Google أو Outlook</h2>
+
+            <div className="mt-5 space-y-5 text-right">
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                قم بتصدير وتنزيل ملف التقويم التفاعلي بصيغة <strong className="font-mono text-[var(--text)]">iCal (.ics)</strong> القياسية لتتمكن من دمج ومزامنة كافة جلسات المحاكم، قضاياك الحالية، ومهامك القانونية مباشرة داخل تطبيق تقويم Google أو Outlook أو Apple على هاتفك وحاسوبك.
+              </p>
+
+              {/* Central CTA Download Button */}
+              <div className="bg-[var(--accent)]/40 border border-[var(--border)] p-6 rounded-2xl text-center space-y-4">
+                <div className="size-14 rounded-full bg-[var(--axia-gold)]/10 text-[var(--axia-gold)] flex items-center justify-center mx-auto border border-[var(--axia-gold)]/20 shadow-md">
+                  <CalendarIcon className="size-7" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-sm font-bold text-[var(--text)]">ملف التقويم القياسي الشامل</h3>
+                  <p className="text-[10px] text-[var(--text-muted)]">يحتوي على {unifiedCalendarItems.length} موعداً نشطاً وجلسة مجدولة حالياً</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleExportICS();
+                    setIsSyncModalOpen(false);
+                  }}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[var(--gold-light)] to-[var(--gold)] px-6 py-3 text-xs font-bold text-white shadow-lg hover:opacity-95 transition cursor-pointer"
+                >
+                  <RefreshCw className="size-4 shrink-0" />
+                  تحميل ملف التقويم التفاعلي (.ics)
+                </button>
+              </div>
+
+              {/* Instructions Guides Section */}
+              <div className="space-y-3.5">
+                <h4 className="text-xs font-bold text-[var(--text)] flex items-center gap-1.5 pb-2 border-b border-[var(--border)]">
+                  <Info className="size-4 text-[var(--axia-gold)]" />
+                  خطوات الاستيراد والمزامنة السريعة:
+                </h4>
+
+                <div className="grid gap-4 sm:grid-cols-2 text-xs">
+                  {/* Google Calendar Instructions */}
+                  <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--bg)]/30 space-y-2">
+                    <strong className="text-amber-400 block text-xs border-b border-[var(--border)] pb-1.5 mb-1.5">📅 تقويم Google:</strong>
+                    <ol className="list-decimal list-inside space-y-1.5 text-[11px] text-[var(--text-muted)]">
+                      <li>افتح <span className="text-[var(--text)]">Google Calendar</span> على الحاسوب.</li>
+                      <li>اضغط على أيقونة الترس <span className="text-[var(--text)]">(الإعدادات)</span> في الأعلى.</li>
+                      <li>من القائمة اليمنى اختر <span className="text-[var(--text)]">الاستيراد والتصدير</span>.</li>
+                      <li>قم برفع ملف الـ <strong className="font-mono text-[var(--text)]">.ics</strong> الذي قمت بتحميله واضغط استيراد.</li>
+                    </ol>
+                  </div>
+
+                  {/* Outlook Instructions */}
+                  <div className="p-4 rounded-xl border border-[var(--border)] bg-[var(--bg)]/30 space-y-2">
+                    <strong className="text-blue-400 block text-xs border-b border-[var(--border)] pb-1.5 mb-1.5">📧 تقويم Outlook:</strong>
+                    <ol className="list-decimal list-inside space-y-1.5 text-[11px] text-[var(--text-muted)]">
+                      <li>افتح تطبيق <span className="text-[var(--text)]">Outlook</span> على الويب أو سطح المكتب.</li>
+                      <li>انتقل إلى صفحة <span className="text-[var(--text)]">التقويم (Calendar)</span>.</li>
+                      <li>اضغط على زر <span className="text-[var(--text)]">إضافة تقويم (Add Calendar)</span>.</li>
+                      <li>اختر <span className="text-[var(--text)]">تحميل من ملف (Upload from file)</span> وحدد ملف الـ <strong className="font-mono text-[var(--text)]">.ics</strong>.</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-[var(--border)] flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsSyncModalOpen(false)}
+                  className="rounded-md border border-[var(--border)] bg-[var(--panel)] px-4 py-2 text-xs font-semibold text-[var(--text)] hover:bg-[var(--accent)] transition-colors"
+                >
+                  إغلاق النافذة
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
