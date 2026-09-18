@@ -27,3 +27,6 @@ pnpm-debug.log*
 *.pem
 *.key
 *.crt
+fix_*.js
+update_*.js
+*.tsbuildinfo
