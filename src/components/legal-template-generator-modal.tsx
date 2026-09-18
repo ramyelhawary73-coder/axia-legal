@@ -139,8 +139,8 @@ export function LegalTemplateGeneratorModal({
   if (!isOpen || !currentTemplate) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-5 animate-in fade-in duration-200">
-      <div className="relative flex flex-col h-[94vh] w-full max-w-5xl rounded-3xl border border-[var(--border)] bg-[var(--panel)] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+      <div className="relative flex flex-col h-[94vh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-5xl rounded-t-[28px] sm:rounded-3xl border-t sm:border border-[var(--border)] bg-[var(--panel)] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
         
         {/* Modal Top Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[var(--border)] bg-[var(--bg)]/90 px-6 py-3.5 gap-3">

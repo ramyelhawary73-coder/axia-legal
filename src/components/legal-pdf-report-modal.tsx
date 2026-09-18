@@ -161,8 +161,8 @@ export function LegalPdfReportModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-2 sm:p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative flex flex-col h-[95vh] w-full max-w-6xl rounded-2xl border border-[var(--border)] bg-[var(--panel)] shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+      <div className="relative flex flex-col h-[94vh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-6xl rounded-t-[28px] sm:rounded-2xl border-t sm:border border-[var(--border)] bg-[var(--panel)] shadow-2xl overflow-hidden">
         
         {/* Top Header & Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--bg)] px-5 py-3.5 shrink-0">

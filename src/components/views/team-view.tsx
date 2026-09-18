@@ -223,8 +223,8 @@ export function TeamView() {
 
       {/* Add New Member Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="relative h-[94vh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-md overflow-y-auto rounded-t-[28px] sm:rounded-3xl border-t sm:border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
             <button
               onClick={() => setIsAddModalOpen(false)}
               className="absolute left-4 top-4 rounded-xl p-1.5 text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition"
@@ -326,7 +326,7 @@ export function TeamView() {
       {selectedMember && (() => {
         const { tasks: assignedTasks, matters: assignedMatters } = getMemberAssignedItems(selectedMember.name);
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="h-full w-full max-w-lg border-r border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl flex flex-col justify-between animate-in slide-in-from-left duration-200 overflow-y-auto">
               <div>
                 <div className="flex items-center justify-between border-b border-[var(--border)] pb-4.5 mb-6">

@@ -20,11 +20,11 @@ export function KeyboardShortcutsModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div 
-        className="relative max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--panel)] shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col"
+        className="relative h-[94vh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-2xl overflow-hidden rounded-t-[28px] sm:rounded-3xl border-t sm:border border-[var(--border)] bg-[var(--panel)] shadow-2xl animate-in zoom-in-95 duration-150 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

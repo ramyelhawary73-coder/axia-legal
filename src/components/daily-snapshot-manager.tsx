@@ -137,8 +137,8 @@ export function DailySnapshotManager({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-3 sm:p-5 animate-in fade-in duration-200">
-      <div className="relative flex flex-col max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--panel)] shadow-2xl animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+      <div className="relative flex flex-col h-[94vh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-4xl overflow-hidden rounded-t-[28px] sm:rounded-2xl border-t sm:border border-[var(--border)] bg-[var(--panel)] shadow-2xl animate-in zoom-in-95 duration-200">
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--bg)]/40 px-6 py-4 shrink-0">

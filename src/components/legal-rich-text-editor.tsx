@@ -1103,8 +1103,8 @@ function LegalDraftWorkspace({
 
       {/* New Version Snapshot Modal */}
       {isNewVersionModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="relative h-[94vh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-md overflow-y-auto rounded-t-[28px] sm:rounded-3xl border-t sm:border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
             <button
               type="button"
               onClick={() => setIsNewVersionModalOpen(false)}
@@ -1189,8 +1189,8 @@ function LegalDraftWorkspace({
 
       {/* Historical Version Preview Modal */}
       {previewVersion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-3xl max-h-[90vh] flex flex-col rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="relative h-[94vh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-3xl flex flex-col rounded-t-[28px] sm:rounded-3xl border-t sm:border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
             <button
               type="button"
               onClick={() => setPreviewVersion(null)}
@@ -1252,8 +1252,8 @@ function LegalDraftWorkspace({
 
       {/* Version Diff / Compare Modal */}
       {compareVersion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-5xl max-h-[92vh] flex flex-col rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+          <div className="relative h-[94vh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-5xl flex flex-col rounded-t-[28px] sm:rounded-3xl border-t sm:border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
             <button
               type="button"
               onClick={() => setCompareVersion(null)}

@@ -81,8 +81,8 @@ export function VoiceCommandModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-[var(--axia-gold)]/40 bg-[var(--panel)] shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full sm:max-w-2xl overflow-hidden rounded-t-[28px] sm:rounded-3xl border-t sm:border border-[var(--border)] bg-[var(--panel)] shadow-2xl flex flex-col h-[94vh] sm:h-auto sm:max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[var(--border)] px-6 py-4 bg-gradient-to-r from-[var(--panel)] via-[var(--panel)] to-[var(--axia-gold-dim)]/15">
           <div className="flex items-center gap-3">

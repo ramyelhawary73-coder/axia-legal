@@ -13,18 +13,18 @@ import {
 } from "lucide-react";
 import { NavigationTab, LegalTask } from "@/types/legal";
 import { useVoiceCommand } from "@/hooks/use-voice-command";
-import { VoiceCommandModal } from "@/components/voice-command-modal";
 
 interface VoiceControlTriggerProps {
   onNavigate: (tab: NavigationTab) => void;
   onCreateTask?: (task: LegalTask) => void;
+  onOpenVoiceModal: () => void;
 }
 
 export function VoiceControlTrigger({
   onNavigate,
   onCreateTask,
+  onOpenVoiceModal,
 }: VoiceControlTriggerProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
   const {
@@ -54,7 +54,7 @@ export function VoiceControlTrigger({
 
   const handleMicClick = () => {
     if (!isSupported) {
-      setIsModalOpen(true);
+      onOpenVoiceModal();
       return;
     }
 
@@ -66,7 +66,7 @@ export function VoiceControlTrigger({
     }
   };
 
-  const showActiveBanner = (isListening || (lastResult && !bannerDismissed) || errorMessage) && !isModalOpen;
+  const showActiveBanner = (isListening || (lastResult && !bannerDismissed) || errorMessage) && true; // we check later if modal is open via parent if needed, or simply let it float.
 
   return (
     <>
@@ -117,7 +117,7 @@ export function VoiceControlTrigger({
           {/* Quick Settings / Cheatsheet button */}
           <button
             type="button"
-            onClick={() => setIsModalOpen(true)}
+            onClick={onOpenVoiceModal}
             title="إدارة الأوامر الصوتية ودليل الكلمات المفتاحية"
             className="p-1.5 rounded-lg border border-[var(--border)] bg-[var(--panel)]/40 text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--accent)] transition"
           >
@@ -127,7 +127,7 @@ export function VoiceControlTrigger({
 
         {/* Floating Live Voice Action Banner (below header) */}
         {showActiveBanner && (
-          <div className="fixed top-14 left-1/2 -translate-x-1/2 z-40 w-[92vw] max-w-lg rounded-2xl border border-[var(--axia-gold)]/40 bg-[var(--panel-glass)] backdrop-blur-xl p-3 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="fixed top-14 left-1/2 -translate-x-1/2 z-45 w-[92vw] max-w-lg rounded-2xl border border-[var(--axia-gold)]/40 bg-[var(--panel-glass)] backdrop-blur-xl p-3 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
                 {isListening ? (
@@ -213,7 +213,7 @@ export function VoiceControlTrigger({
 
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={onOpenVoiceModal}
                   className="rounded-lg border border-[var(--border)] bg-[var(--panel)] px-2 py-1 text-[11px] font-semibold text-[var(--text-muted)] hover:text-[var(--text)] transition"
                 >
                   الدليل
@@ -235,18 +235,6 @@ export function VoiceControlTrigger({
           </div>
         )}
       </div>
-
-      {/* Full Voice Command & Cheatsheet Modal */}
-      <VoiceCommandModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onNavigate={onNavigate}
-        onCreateTask={(task) => {
-          if (onCreateTask) {
-            onCreateTask(task);
-          }
-        }}
-      />
     </>
   );
 }

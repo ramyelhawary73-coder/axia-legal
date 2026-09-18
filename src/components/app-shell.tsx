@@ -40,6 +40,7 @@ import { VoiceControlTrigger } from "@/components/voice-control-trigger";
 import { useGlobalKeyboardShortcuts } from "@/hooks/use-global-keyboard-shortcuts";
 import { TaskCreationModal } from "@/components/task-creation-modal";
 import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
+import { VoiceCommandModal } from "@/components/voice-command-modal";
 import { GlobalSearchBar } from "@/components/global-search-bar";
 
 interface AppShellProps {
@@ -94,6 +95,7 @@ export function AppShell({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [taskCreatedToast, setTaskCreatedToast] = useState<{ id: string; title: string } | null>(null);
 
   // Global Keyboard Shortcuts Listener (Ctrl+N / Alt+N for tasks, Ctrl+K for search, Esc, Ctrl+/)
@@ -110,6 +112,7 @@ export function AppShell({
     onCloseModals: () => {
       setIsTaskModalOpen(false);
       setIsShortcutsModalOpen(false);
+      setIsVoiceModalOpen(false);
       setMobileMenuOpen(false);
     },
     onNavigateTab: onNavigate,
@@ -255,6 +258,7 @@ export function AppShell({
             <VoiceControlTrigger 
               onNavigate={onNavigate} 
               onCreateTask={onCreateTask} 
+              onOpenVoiceModal={() => setIsVoiceModalOpen(true)}
             />
 
             {/* Theme Toggle */}
@@ -377,7 +381,7 @@ export function AppShell({
           <div className="fixed inset-0 z-50 flex lg:hidden">
             <div 
               onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-[var(--accent)] backdrop-blur-sm transition-opacity"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
             />
             <div className="relative w-72 bg-[var(--panel)] border-l border-[var(--border)] p-4 shadow-2xl h-full flex flex-col">
               <div className="flex items-center justify-between border-b border-[var(--border)] pb-3 mb-3">
@@ -495,6 +499,14 @@ export function AppShell({
         isOpen={isShortcutsModalOpen}
         onClose={() => setIsShortcutsModalOpen(false)}
         onTriggerNewTask={() => setIsTaskModalOpen(true)}
+      />
+
+      {/* Voice Control Command Center Modal */}
+      <VoiceCommandModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onNavigate={onNavigate}
+        onCreateTask={handleCreateTaskFromModal}
       />
 
       {/* Quick Floating Toast on Task Creation */}

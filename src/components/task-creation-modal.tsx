@@ -163,10 +163,10 @@ export function TaskCreationModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-150"
       onKeyDown={handleKeyDown}
     >
-      <div className="relative max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-[var(--axia-gold-dim)] bg-[var(--panel)] p-6 lg:p-8 shadow-2xl animate-in zoom-in-95 duration-150">
+      <div className="relative h-[94vh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-xl overflow-y-auto rounded-t-[28px] sm:rounded-3xl border-t sm:border border-[var(--axia-gold-dim)] bg-[var(--panel)] p-6 lg:p-8 shadow-2xl animate-in zoom-in-95 duration-150">
         
         {/* Close Button */}
         <button

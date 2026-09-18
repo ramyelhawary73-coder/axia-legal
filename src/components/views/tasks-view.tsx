@@ -1051,8 +1051,8 @@ export function TasksView({
 
       {/* Bulk & Single Delete Confirmation Modal */}
       {isDeleteConfirmOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md rounded-3xl border border-red-500/40 bg-[var(--panel)] p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-150">
+          <div className="relative w-full sm:max-w-md rounded-t-[28px] sm:rounded-3xl border-t sm:border border-red-500/40 bg-[var(--panel)] p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3 text-red-400">
               <div className="grid size-11 place-items-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 shrink-0">
                 <Trash2 className="size-5" />

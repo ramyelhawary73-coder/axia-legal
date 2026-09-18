@@ -964,11 +964,11 @@ export function GlobalSearchBar({
       {/* Quick Preview Modal for Item (Matter / Client / Document) */}
       {quickPreviewItem && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-150"
           onClick={() => setQuickPreviewItem(null)}
         >
           <div 
-            className="relative w-full max-w-xl rounded-3xl border border-[var(--axia-gold-dim)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200 text-right"
+            className="relative h-[94vh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-xl overflow-y-auto rounded-t-[28px] sm:rounded-3xl border-t sm:border border-[var(--axia-gold-dim)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200 text-right custom-scrollbar"
             onClick={(e) => e.stopPropagation()}
           >
             <button
