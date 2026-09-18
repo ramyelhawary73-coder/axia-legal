@@ -138,7 +138,7 @@ export function TasksView() {
                     onClick={() => handleToggleTaskStatus(task.id)}
                     className={`mt-1 grid size-5 shrink-0 place-items-center rounded border transition ${
                       isCompleted
-                        ? "border-emerald-400 bg-emerald-400 text-slate-950"
+                        ? "border-emerald-400 bg-emerald-400 text-white"
                         : "border-white/30 hover:border-white"
                     }`}
                   >

@@ -121,7 +121,7 @@ export function LibraryView() {
             </div>
 
             {/* Principle text */}
-            <p className="mt-4 text-xs sm:text-sm leading-relaxed text-slate-100 font-serif">
+            <p className="mt-4 text-xs sm:text-sm leading-relaxed text-[var(--text)] font-serif">
               &quot;{item.principle}&quot;
             </p>
 
@@ -131,7 +131,7 @@ export function LibraryView() {
               {item.legalArticles.map((art, idx) => (
                 <span
                   key={idx}
-                  className="rounded-md border border-cyan-500/20 bg-cyan-950/20 px-2 py-0.5 text-[11px] font-semibold text-cyan-300"
+                  className="rounded-md border border-[var(--border-strong)] bg-[var(--accent-hover)] px-2 py-0.5 text-[11px] font-semibold text-[var(--text)]"
                 >
                   {art}
                 </span>

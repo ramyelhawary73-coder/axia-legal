@@ -66,7 +66,7 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
   }, []);
 
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden bg-[var(--bg)] text-[var(--text)] selection:bg-[var(--gold-dim)] selection:text-[var(--text)]">
+    <div className="h-screen w-full flex flex-col overflow-hidden bg-[var(--bg)] text-[var(--text)] selection:bg-[var(--axia-gold-dim)] selection:text-[var(--text)]">
       {/* Top Navbar - Premium Apple-like compact header */}
       <header className="shrink-0 z-40 border-b border-[var(--border)] bg-[var(--bg-glass)] backdrop-blur-xl">
         <div className="mx-auto flex h-14 w-full items-center justify-between px-4 lg:px-6">
@@ -83,13 +83,13 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
               onClick={() => onNavigate("overview")}
               className="flex cursor-pointer items-center gap-2.5 group"
             >
-              <div className="grid size-8 place-items-center rounded-lg border border-[var(--gold-dim)] bg-gradient-to-br from-[var(--gold)]/20 to-transparent text-[var(--gold-light)] shadow-sm group-hover:shadow transition-all">
+              <div className="grid size-8 place-items-center rounded-lg border border-[var(--axia-gold-dim)] bg-gradient-to-br from-[var(--axia-gold)]/20 to-transparent text-[var(--axia-gold-light)] shadow-sm group-hover:shadow transition-all">
                 <Scale className="size-4" />
               </div>
               <div className="hidden sm:block">
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-bold tracking-tight">AXIA Legal</span>
-                  <span className="rounded bg-[var(--gold)]/10 border border-[var(--gold)]/20 px-1 py-0.5 text-[9px] font-bold text-[var(--gold)]">
+                  <span className="rounded bg-[var(--axia-gold)]/10 border border-[var(--axia-gold)]/20 px-1 py-0.5 text-[9px] font-bold text-[var(--axia-gold)]">
                     ERP
                   </span>
                 </div>
@@ -100,7 +100,7 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
           {/* Quick Search - Spotlight Style */}
           <div className="hidden md:flex flex-1 max-w-lg mx-6">
             <div className="relative w-full group">
-              <Search className="absolute right-3 top-2.5 size-3.5 text-[var(--text-muted)] group-focus-within:text-[var(--gold)] transition-colors" />
+              <Search className="absolute right-3 top-2.5 size-3.5 text-[var(--text-muted)] group-focus-within:text-[var(--axia-gold)] transition-colors" />
               <input
                 type="text"
                 placeholder="بحث في النظام..."
@@ -111,7 +111,7 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
                     onNavigate("matters");
                   }
                 }}
-                className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)]/50 pr-9 pl-3 py-1.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)] focus:outline-none shadow-sm transition-all"
+                className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)]/50 pr-9 pl-3 py-1.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--axia-gold)] focus:ring-1 focus:ring-[var(--axia-gold)] focus:outline-none shadow-sm transition-all"
               />
               <div className="absolute left-2 top-2 flex items-center gap-1">
                 <kbd className="hidden lg:inline-block rounded border border-[var(--border)] bg-[var(--bg)] px-1.5 text-[10px] font-medium text-[var(--text-muted)]">⌘</kbd>
@@ -155,9 +155,9 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
                         setShowNotifications(false);
                         onNavigate("hearings");
                       }}
-                      className="cursor-pointer rounded-lg bg-[var(--gold)]/10 border border-[var(--gold)]/20 p-2 hover:bg-[var(--gold)]/15 transition-colors"
+                      className="cursor-pointer rounded-lg bg-[var(--axia-gold)]/10 border border-[var(--axia-gold)]/20 p-2 hover:bg-[var(--axia-gold)]/15 transition-colors"
                     >
-                      <strong className="text-[var(--gold)] block">جلسة اليوم: رول رقم ٧</strong>
+                      <strong className="text-[var(--axia-gold)] block">جلسة اليوم: رول رقم ٧</strong>
                       <p className="text-[var(--text-muted)] text-[10px] mt-0.5">استئناف الجيزة · دائرة ٩ مدني</p>
                     </div>
                   </div>
@@ -167,7 +167,7 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
 
             {/* Office Profile Pill */}
             <div className="hidden sm:flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--panel)]/50 px-2 py-1 cursor-pointer hover:bg-[var(--accent)] transition-colors">
-              <div className="size-6 rounded bg-gradient-to-br from-[var(--gold-light)] to-[var(--gold)] text-black font-bold grid place-items-center text-[10px]">
+              <div className="size-6 rounded bg-gradient-to-br from-[var(--axia-gold-light)] to-[var(--axia-gold)] text-white font-bold grid place-items-center text-[10px]">
                 ر.هـ
               </div>
               <div className="text-right">
@@ -219,14 +219,14 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
                     isActive
                       ? "bg-[var(--accent-hover)] text-[var(--text)] shadow-sm border border-[var(--border)]"
                       : isRajih
-                      ? "text-[var(--gold)] hover:bg-[var(--gold-dim)]"
+                      ? "text-[var(--axia-gold)] hover:bg-[var(--axia-gold-dim)]"
                       : "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]"
                   }`}
                 >
                   <div className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-2.5"}`}>
                     <Icon className={`size-4 shrink-0 transition-colors ${
                       isActive 
-                        ? (isRajih ? "text-[var(--gold-light)]" : "text-[var(--text)]") 
+                        ? (isRajih ? "text-[var(--axia-gold-light)]" : "text-[var(--text)]") 
                         : "group-hover:text-[var(--text)]"
                     }`} />
                     {!isSidebarCollapsed && (
@@ -241,7 +241,7 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
                       item.badge === "اليوم"
                         ? "bg-red-500/10 text-red-500 border border-red-500/20"
                         : item.badge === "AI"
-                        ? "bg-[var(--gold)]/10 text-[var(--gold)] border border-[var(--gold)]/20"
+                        ? "bg-[var(--axia-gold)]/10 text-[var(--axia-gold)] border border-[var(--axia-gold)]/20"
                         : isActive
                         ? "bg-[var(--text)]/10 text-[var(--text)]"
                         : "bg-[var(--accent)] text-[var(--text-muted)]"
@@ -269,7 +269,7 @@ export function AppShell({ activeTab, onNavigate, children, subContext, onClearS
             <div className="relative w-72 bg-[var(--panel)] border-l border-[var(--border)] p-4 shadow-2xl h-full flex flex-col">
               <div className="flex items-center justify-between border-b border-[var(--border)] pb-3 mb-3">
                 <div className="flex items-center gap-2">
-                  <Scale className="size-4 text-[var(--gold)]" />
+                  <Scale className="size-4 text-[var(--axia-gold)]" />
                   <span className="font-bold text-[var(--text)] text-sm">AXIA Legal</span>
                 </div>
                 <button

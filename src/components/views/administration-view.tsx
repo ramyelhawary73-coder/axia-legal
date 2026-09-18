@@ -71,7 +71,7 @@ export function AdministrationView() {
             <div className="pt-2 flex justify-end">
               <button
                 type="submit"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--axia-gold)] to-[#a77e16] px-5 py-2.5 text-xs font-bold text-slate-950 shadow-md transition hover:brightness-110"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--axia-gold)] to-[#a77e16] px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:brightness-110"
               >
                 {isSaved ? (
                   <>

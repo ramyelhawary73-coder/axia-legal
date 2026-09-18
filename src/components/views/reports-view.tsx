@@ -26,7 +26,7 @@ export function ReportsView() {
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5 shadow-lg">
           <span className="text-xs text-[var(--text-muted)]">متوسط أمد التقاضي</span>
-          <p className="mt-2 text-3xl font-bold text-cyan-400">٧.٢ شهر</p>
+          <p className="mt-2 text-3xl font-bold text-[var(--text)]">٧.٢ شهر</p>
           <p className="mt-1 text-[11px] text-[var(--text-muted)]">بالمحاكم الابتدائية والاقتصادية</p>
         </div>
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5 shadow-lg">
@@ -60,10 +60,10 @@ export function ReportsView() {
             <div>
               <div className="flex justify-between text-[var(--text-muted)] mb-1">
                 <span>محكمة النقض (طعون مدنية وتجارية)</span>
-                <span className="font-bold text-cyan-400">٢٨٪</span>
+                <span className="font-bold text-[var(--text)]">٢٨٪</span>
               </div>
               <div className="h-2 rounded-full bg-[var(--accent)] overflow-hidden">
-                <div className="h-full bg-cyan-400 rounded-full w-[28%]" />
+                <div className="h-full bg-[var(--text)] rounded-full w-[28%]" />
               </div>
             </div>
 

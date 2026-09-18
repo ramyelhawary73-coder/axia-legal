@@ -221,7 +221,7 @@ export function RajihAiView() {
                   className={`grid size-9 shrink-0 place-items-center rounded-xl font-bold text-xs ${
                     isRajih
                       ? "border border-[var(--axia-gold)]/40 bg-[var(--axia-gold)]/15 text-[var(--axia-gold-light)]"
-                      : "bg-cyan-500 text-slate-950"
+                      : "bg-[var(--text)] text-[var(--bg)]"
                   }`}
                 >
                   {isRajih ? <Sparkles className="size-4" /> : "أنت"}
@@ -231,7 +231,7 @@ export function RajihAiView() {
                   className={`relative max-w-[85%] rounded-2xl p-4 text-xs leading-relaxed ${
                     isRajih
                       ? "border border-[var(--border)] bg-[var(--accent-hover)] text-[var(--text)]"
-                      : "bg-cyan-950/40 border border-cyan-500/20 text-[var(--text)]"
+                      : "bg-cyan-950/40 border border-[var(--border-strong)] text-[var(--text)]"
                   }`}
                 >
                   <div className="whitespace-pre-wrap font-sans">{msg.text}</div>
@@ -306,7 +306,7 @@ export function RajihAiView() {
             <button
               type="submit"
               disabled={!inputPrompt.trim() || isTyping}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--axia-gold)] to-[#a77e16] px-5 py-3 text-xs font-bold text-slate-950 shadow-md transition hover:brightness-110 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--axia-gold)] to-[#a77e16] px-5 py-3 text-xs font-bold text-white shadow-md transition hover:brightness-110 disabled:opacity-50"
             >
               <span>تحليل</span>
               <Send className="size-3.5" />

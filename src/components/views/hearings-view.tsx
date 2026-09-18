@@ -202,7 +202,7 @@ export function HearingsView() {
                   <div className="text-right">
                     <span className="text-[10px] text-[var(--text-muted)] block mb-0.5">المحامي المكلف</span>
                     <div className="flex items-center gap-1.5 bg-[var(--accent)] px-2 py-1 rounded-md">
-                       <div className="size-4 rounded-full bg-gradient-to-br from-[var(--gold-light)] to-[var(--gold)] flex items-center justify-center text-[8px] font-bold text-black">
+                       <div className="size-4 rounded-full bg-gradient-to-br from-[var(--gold-light)] to-[var(--gold)] flex items-center justify-center text-[8px] font-bold text-white">
                          {hearing.attendingLawyer.charAt(0)}
                        </div>
                        <strong className="text-[var(--text)] text-xs font-medium">{hearing.attendingLawyer}</strong>
