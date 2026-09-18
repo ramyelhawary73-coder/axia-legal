@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   AlertTriangle, 
   Clock, 
@@ -10,10 +10,11 @@ import {
   Radio,
   Send,
   BellRing,
-  Download
+  Download,
+  Mic
 } from "lucide-react";
 import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
-import { LegalTask } from "@/types/legal";
+import { NavigationTab, LegalTask } from "@/types/legal";
 import { analyzeTaskDeadline } from "@/lib/task-utils";
 import { 
   getNotificationPermissionStatus, 
@@ -23,17 +24,25 @@ import {
   NotificationPermissionStatus 
 } from "@/lib/browser-notifications";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
+import { VoiceCommandModal } from "@/components/voice-command-modal";
+import { 
+  getSpeechRecognitionConstructor, 
+  IWindowSpeechRecognition, 
+  SpeechRecognitionEvent 
+} from "@/lib/web-speech-service";
 
 interface TasksViewProps {
   tasks?: LegalTask[];
   onToggleTaskStatus?: (id: string) => void;
   onCreateTask?: (task: LegalTask) => void;
+  onNavigate?: (tab: NavigationTab) => void;
 }
 
 export function TasksView({
   tasks: propTasks,
   onToggleTaskStatus: propToggleStatus,
   onCreateTask: propCreateTask,
+  onNavigate,
 }: TasksViewProps = {}) {
   const [internalTasks, setInternalTasks] = useState<LegalTask[]>(mockTasks);
   const tasks = propTasks || internalTasks;
@@ -72,6 +81,93 @@ export function TasksView({
   const [assignedTo, setAssignedTo] = useState("أ. مروان هاني (محام متدرب)");
   const [deadline, setDeadline] = useState(() => new Date().toISOString().slice(0, 10));
   const [priority, setPriority] = useState<LegalTask["priority"]>("عاجلة");
+  
+  // Voice Command & Dictation State
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [isDictatingTitle, setIsDictatingTitle] = useState(false);
+  const [voiceToastMessage, setVoiceToastMessage] = useState<string | null>(null);
+  const titleRecognitionRef = useRef<IWindowSpeechRecognition | null>(null);
+
+  const handleToggleTitleDictation = () => {
+    if (isDictatingTitle) {
+      if (titleRecognitionRef.current) {
+        try {
+          titleRecognitionRef.current.stop();
+        } catch {
+          // ignore
+        }
+      }
+      setIsDictatingTitle(false);
+      return;
+    }
+
+    const SpeechRec = getSpeechRecognitionConstructor();
+    if (!SpeechRec) {
+      alert("المتصفح لا يدعم التعرف الصوتي المباشر عبر Web Speech API.");
+      return;
+    }
+
+    try {
+      const rec = new SpeechRec();
+      rec.lang = "ar-EG";
+      rec.continuous = false;
+      rec.interimResults = true;
+
+      rec.onstart = () => {
+        setIsDictatingTitle(true);
+      };
+
+      rec.onresult = (ev: SpeechRecognitionEvent) => {
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const res = ev.results[i];
+          const text = res[0].transcript;
+          if (res.isFinal) {
+            setTitle((prev) => (prev ? `${prev} ${text}` : text));
+            setIsDictatingTitle(false);
+
+            // Auto-detect category from spoken text
+            const lower = text.toLowerCase();
+            if (lower.includes("رسم") || lower.includes("رسوم") || lower.includes("سداد") || lower.includes("امانة")) {
+              setCategory("سداد رسوم");
+            } else if (lower.includes("مذكرة") || lower.includes("دفاع") || lower.includes("ايداع")) {
+              setCategory("إيداع مذكرات");
+            } else if (lower.includes("شهادة") || lower.includes("صورة رسمية")) {
+              setCategory("استخراج شهادة");
+            } else if (lower.includes("تنفيذ") || lower.includes("حجز")) {
+              setCategory("تنفيذ حكم");
+            } else if (lower.includes("طعن") || lower.includes("سقوط") || lower.includes("استئناف")) {
+              setCategory("ميعاد طعن قانوني");
+            } else if (lower.includes("محضر") || lower.includes("اعلان") || lower.includes("صحيفة")) {
+              setCategory("قلم المحضرين");
+            }
+          }
+        }
+      };
+
+      rec.onerror = () => {
+        setIsDictatingTitle(false);
+      };
+
+      rec.onend = () => {
+        setIsDictatingTitle(false);
+      };
+
+      titleRecognitionRef.current = rec;
+      rec.start();
+    } catch {
+      setIsDictatingTitle(false);
+    }
+  };
+
+  const handleVoiceTaskCreated = (newTask: LegalTask) => {
+    if (propCreateTask) {
+      propCreateTask(newTask);
+    } else {
+      setInternalTasks((prev) => [newTask, ...prev]);
+    }
+    setVoiceToastMessage(`تمت إضافة المهمة الصوتية بنجاح: "${newTask.title}"`);
+    setTimeout(() => setVoiceToastMessage(null), 4500);
+  };
 
   const handleToggleTaskStatus = (id: string) => {
     if (propToggleStatus) {
@@ -151,6 +247,16 @@ export function TasksView({
           </button>
 
           <button
+            type="button"
+            onClick={() => setIsVoiceModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--axia-gold)]/50 bg-[var(--panel)] px-3.5 py-2.5 text-xs font-bold text-[var(--axia-gold)] hover:bg-[var(--accent)] hover:border-[var(--axia-gold)] shadow-sm transition"
+            title="إملاء المهام والملاحظات عبر الصوت (Web Speech API)"
+          >
+            <Mic className="size-4" />
+            <span>إملاء مهمة صوتية (Web Speech)</span>
+          </button>
+
+          <button
             onClick={() => setIsNewTaskOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-700 px-4 py-2.5 text-xs font-bold text-[var(--text)] shadow-md transition hover:brightness-110"
           >
@@ -159,6 +265,23 @@ export function TasksView({
           </button>
         </div>
       </div>
+
+      {/* Voice Action Toast / Notice */}
+      {voiceToastMessage && (
+        <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3.5 text-xs text-emerald-300 flex items-center justify-between animate-in fade-in slide-in-from-top duration-200">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+            <span className="font-bold">{voiceToastMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setVoiceToastMessage(null)}
+            className="text-emerald-400 hover:text-white"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
 
       {/* Browser Notification API Status Banner */}
       <div className="rounded-2xl border border-[var(--border-strong)] bg-[var(--panel-glass)] p-4 backdrop-blur-xl shadow-sm">
@@ -387,7 +510,22 @@ export function TasksView({
             
             <form onSubmit={handleCreateTask} className="mt-6 space-y-4 text-xs">
               <div>
-                <label className="block text-[var(--text-muted)] mb-1 font-semibold">بيان المهمة والإجراء المطلوب</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[var(--text-muted)] font-semibold">بيان المهمة والإجراء المطلوب</label>
+                  <button
+                    type="button"
+                    onClick={handleToggleTitleDictation}
+                    className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-bold border transition ${
+                      isDictatingTitle
+                        ? "bg-red-500 text-white border-red-400 animate-pulse"
+                        : "bg-[var(--panel)] text-[var(--axia-gold)] border-[var(--border)] hover:border-[var(--axia-gold)]"
+                    }`}
+                    title="إملاء تفاصيل المهمة صوتياً (Web Speech API)"
+                  >
+                    <Mic className="size-3" />
+                    <span>{isDictatingTitle ? "جارٍ الإملاء... انقر للإنهاء" : "إملاء صوتي (Web Speech)"}</span>
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
@@ -499,6 +637,18 @@ export function TasksView({
         defaultReportType="tasks"
         matters={mockMatters}
         tasks={tasks}
+      />
+
+      {/* Voice Command & Dictation Assistant Modal */}
+      <VoiceCommandModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onNavigate={(tab) => {
+          if (onNavigate) {
+            onNavigate(tab);
+          }
+        }}
+        onCreateTask={handleVoiceTaskCreated}
       />
     </div>
   );

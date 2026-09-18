@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, Database, Save, Check, FolderDown, RefreshCw } from "lucide-react";
+import { Settings, Database, Save, Check, FolderDown, RefreshCw, Mic, Volume2 } from "lucide-react";
 import { Matter, LegalTask } from "@/types/legal";
 import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
 import { DailySnapshotManager } from "@/components/daily-snapshot-manager";
 import { getSnapshotConfig } from "@/lib/daily-snapshot-service";
+import { VoiceCommandModal } from "@/components/voice-command-modal";
+import { isSpeechRecognitionSupported } from "@/lib/web-speech-service";
 
 interface AdministrationViewProps {
   matters?: Matter[];
@@ -18,8 +20,10 @@ export function AdministrationView({ matters = mockMatters, tasks = mockTasks }:
   const [address, setAddress] = useState("شارع قصر النيل، وسط البلد، القاهرة");
   const [isSaved, setIsSaved] = useState(false);
   const [isSnapshotModalOpen, setIsSnapshotModalOpen] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
   const snapshotConfig = getSnapshotConfig();
+  const speechSupported = typeof window !== "undefined" ? isSpeechRecognitionSupported() : false;
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,6 +180,42 @@ export function AdministrationView({ matters = mockMatters, tasks = mockTasks }:
             </button>
           </div>
 
+          {/* Web Speech API Voice Control Card */}
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-lg text-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[var(--axia-gold-light)] font-bold">
+                <Mic className="size-4 text-[var(--axia-gold)]" />
+                <span>محرك الأوامر الصوتية (Web Speech API)</span>
+              </div>
+              <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                speechSupported ? "bg-emerald-500/10 text-emerald-300" : "bg-amber-500/10 text-amber-300"
+              }`}>
+                {speechSupported ? "مدعوم بالمتصفح" : "غير مدعوم مباشرة"}
+              </span>
+            </div>
+            <p className="text-[var(--text-muted)] leading-relaxed">
+              يدعم النظام التنقل الصوتي الفوري بين جميع الأقسام، وتسجيل المهام القضائية وإعلانات المحضرين بمجرد النطق باللهجة المصرية والعربية الفصحى مع دعم الرد الصوتي (SpeechSynthesis).
+            </p>
+            <div className="space-y-1.5 rounded-xl bg-[var(--bg)]/60 p-3 border border-[var(--border)] text-[11px]">
+              <div className="flex justify-between">
+                <span className="text-[var(--text-muted)]">معالجة اللهجة المصرية:</span>
+                <span className="font-semibold text-emerald-400">مفعلة (تطبيع الهمزات والتاء المربوطة)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--text-muted)]">إذن الميكروفون:</span>
+                <span className="font-semibold text-[var(--text)]">مطلوب عند أول استخدام</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsVoiceModalOpen(true)}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--axia-gold)]/40 bg-[var(--accent)] px-4 py-2 text-xs font-bold text-[var(--axia-gold)] hover:bg-[var(--axia-gold)] hover:text-black transition"
+            >
+              <Volume2 className="size-3.5" />
+              <span>فتح لوحة الأوامر الصوتية ودليل الكلمات</span>
+            </button>
+          </div>
+
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-lg text-xs space-y-3">
             <div className="flex items-center gap-2 text-[var(--axia-gold-light)] font-bold">
               <Database className="size-4" />
@@ -199,6 +239,14 @@ export function AdministrationView({ matters = mockMatters, tasks = mockTasks }:
         onClose={() => setIsSnapshotModalOpen(false)}
         matters={matters}
         tasks={tasks}
+      />
+
+      {/* Voice Command Modal */}
+      <VoiceCommandModal
+        isOpen={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+        onNavigate={() => {}}
+        onCreateTask={() => {}}
       />
     </div>
   );

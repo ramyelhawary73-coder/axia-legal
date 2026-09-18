@@ -64,6 +64,7 @@ export default function HomePage() {
         onClearSubContext={() => setSelectedMatterId(null)}
         tasks={tasks}
         onToggleTaskStatus={handleToggleTaskStatus}
+        onCreateTask={handleCreateTask}
       >
         {activeTab === "overview" && (
           <OverviewView 
@@ -84,6 +85,7 @@ export default function HomePage() {
             tasks={tasks}
             onToggleTaskStatus={handleToggleTaskStatus}
             onCreateTask={handleCreateTask}
+            onNavigate={setActiveTab}
           />
         )}
         {activeTab === "documents" && <DocumentsView />}

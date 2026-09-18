@@ -34,6 +34,7 @@ import {
   getNotificationPermissionStatus 
 } from "@/lib/browser-notifications";
 import { UrgentDeadlineBanner } from "@/components/urgent-deadline-banner";
+import { VoiceControlTrigger } from "@/components/voice-control-trigger";
 
 interface AppShellProps {
   activeTab: NavigationTab;
@@ -43,6 +44,7 @@ interface AppShellProps {
   onClearSubContext?: () => void;
   tasks?: LegalTask[];
   onToggleTaskStatus?: (taskId: string) => void;
+  onCreateTask?: (task: LegalTask) => void;
 }
 
 const navItems: { id: NavigationTab; labelAr: string; labelEn: string; icon: LucideIcon; badge?: string }[] = [
@@ -67,7 +69,8 @@ export function AppShell({
   subContext, 
   onClearSubContext,
   tasks,
-  onToggleTaskStatus
+  onToggleTaskStatus,
+  onCreateTask,
 }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -169,6 +172,12 @@ export function AppShell({
 
           {/* User & Quick Status */}
           <div className="flex items-center gap-2">
+            {/* Voice Control (Web Speech API) */}
+            <VoiceControlTrigger 
+              onNavigate={onNavigate} 
+              onCreateTask={onCreateTask} 
+            />
+
             {/* Theme Toggle */}
             {mounted && (
               <button
