@@ -21,7 +21,8 @@ import {
   RefreshCw,
   AlertCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Archive
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { mockHearings, mockTasks, mockMatters } from "@/lib/mock-legal-data";
@@ -227,10 +228,27 @@ export function HearingsView({
       const cachedHearings = localStorage.getItem("axia_hearings");
       const cachedTasks = localStorage.getItem("axia_tasks");
       const cachedMatters = localStorage.getItem("axia_matters");
+      const todayStr = "2026-09-18";
       
       Promise.resolve().then(() => {
         if (cachedHearings) {
-          setHearings(JSON.parse(cachedHearings));
+          const parsed = JSON.parse(cachedHearings);
+          const withAutoArchive = parsed.map((h: Hearing) => {
+            if (h.hearingDate < todayStr && h.isArchived === undefined) {
+              return { ...h, isArchived: true, status: "منتهية" as const };
+            }
+            return h;
+          });
+          setHearings(withAutoArchive);
+        } else {
+          setHearings((prev) =>
+            prev.map((h) => {
+              if (h.hearingDate < todayStr && h.isArchived === undefined) {
+                return { ...h, isArchived: true, status: "منتهية" as const };
+              }
+              return h;
+            })
+          );
         }
         if (cachedTasks) {
           setTasks(JSON.parse(cachedTasks));
@@ -299,6 +317,7 @@ export function HearingsView({
 
   // Layout & Filtering states
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  const [subTab, setSubTab] = useState<"active" | "archived">("active");
   const [calendarView, setCalendarView] = useState<"month" | "week" | "day">("month");
   const [activeTab, setActiveTab] = useState<"all" | "today" | "upcoming">("all");
   const [isNewHearingOpen, setIsNewHearingOpen] = useState(false);
@@ -331,6 +350,31 @@ export function HearingsView({
   const triggerToast = (message: string, date: string, type: string) => {
     setToast({ message, date, type });
     setTimeout(() => setToast(null), 4000);
+  };
+
+  const handleToggleArchive = (hearingId: string) => {
+    const hearing = hearings.find((h) => h.id === hearingId);
+    if (!hearing) return;
+    
+    const nextArchived = !hearing.isArchived;
+
+    setHearings((prev) =>
+      prev.map((h) =>
+        h.id === hearingId
+          ? { 
+              ...h, 
+              isArchived: nextArchived,
+              status: nextArchived ? "منتهية" as const : "قادمة" as const
+            }
+          : h
+      )
+    );
+
+    triggerToast(
+      nextArchived ? "تم نقل الجلسة للأرشيف المنتهي بنجاح" : "تم استعادة الجلسة وإعادتها للجدول النشط",
+      hearing.hearingDate,
+      "hearing"
+    );
   };
 
   // iCal parsing and export helpers
@@ -507,8 +551,40 @@ export function HearingsView({
       original: Hearing | LegalTask | Matter;
     }> = [];
 
+    if (subTab === "archived") {
+      if (showHearings) {
+        hearings.forEach((h) => {
+          if (h.isArchived) {
+            const d = getDateOnly(h.hearingDate);
+            if (isValidDateStr(d)) {
+              items.push({
+                id: h.id,
+                title: h.caseNumber,
+                sub: h.court,
+                time: h.hearingTime,
+                date: d,
+                type: "hearing",
+                priority: "عادية",
+                original: h,
+              });
+            }
+          }
+        });
+      }
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        return items.filter((item) =>
+          item.title.toLowerCase().includes(q) ||
+          item.sub.toLowerCase().includes(q)
+        );
+      }
+      return items;
+    }
+
     if (showHearings) {
       hearings.forEach(h => {
+        if (h.isArchived) return; // Do not show archived in active calendar
+
         const d = getDateOnly(h.hearingDate);
         if (isValidDateStr(d)) {
           items.push({
@@ -571,16 +647,19 @@ export function HearingsView({
     }
 
     return items;
-  }, [hearings, tasks, matters, showHearings, showTasks, showMatters, searchQuery]);
+  }, [hearings, tasks, matters, showHearings, showTasks, showMatters, searchQuery, subTab]);
 
   // Classic List filter calculation
   const filteredListHearings = useMemo(() => {
     return hearings.filter((h) => {
+      const shouldShow = subTab === "active" ? !h.isArchived : h.isArchived;
+      if (!shouldShow) return false;
+
       if (activeTab === "today") return h.status === "اليوم";
       if (activeTab === "upcoming") return h.status === "قادمة";
       return true;
     });
-  }, [hearings, activeTab]);
+  }, [hearings, activeTab, subTab]);
 
   // Generate Month dates (42 grid cells)
   const monthDates = useMemo(() => {
@@ -704,6 +783,37 @@ export function HearingsView({
             >
               <List className="size-3.5" />
               رول الجلسات الكلاسيكي
+            </button>
+          </div>
+
+          {/* Active / Archive Switcher */}
+          <div className="flex items-center gap-1 rounded-xl bg-[var(--accent)]/40 p-1 border border-[var(--border)]">
+            <button
+              onClick={() => setSubTab("active")}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                subTab === "active"
+                  ? "bg-[var(--panel)] text-[var(--axia-gold)] shadow-sm border border-[var(--border)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text)]"
+              }`}
+            >
+              <CalendarIcon className="size-3.5" />
+              <span>الرول النشط</span>
+            </button>
+            <button
+              onClick={() => setSubTab("archived")}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                subTab === "archived"
+                  ? "bg-[var(--panel)] text-[var(--axia-gold)] shadow-sm border border-[var(--border)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text)]"
+              }`}
+            >
+              <Archive className="size-3.5" />
+              <span>الجلسات المنتهية</span>
+              {hearings.filter((h) => h.isArchived).length > 0 && (
+                <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-500 font-bold font-mono">
+                  {hearings.filter((h) => h.isArchived).length}
+                </span>
+              )}
             </button>
           </div>
 
@@ -1242,7 +1352,29 @@ export function HearingsView({
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-4.5 text-xs text-[var(--text-muted)] border-t md:border-t-0 pt-3 md:pt-0 border-[var(--border)] shrink-0">
+                          <div className="flex items-center gap-3 text-xs text-[var(--text-muted)] border-t md:border-t-0 pt-3 md:pt-0 border-[var(--border)] shrink-0">
+                            {item.type === "hearing" && (
+                              <button
+                                onClick={() => handleToggleArchive(item.id)}
+                                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${
+                                  (item.original as Hearing).isArchived
+                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                                    : "bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20"
+                                }`}
+                              >
+                                {(item.original as Hearing).isArchived ? (
+                                  <>
+                                    <RefreshCw className="size-3" />
+                                    <span>استعادة</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Archive className="size-3" />
+                                    <span>أرشفة</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
                             <span className="flex items-center gap-1 bg-[var(--accent)] px-3 py-1.5 rounded-xl font-medium text-[var(--text)]">
                               <Clock className="size-3.5 text-[var(--axia-gold)]" />
                               {item.time}
@@ -1271,7 +1403,9 @@ export function HearingsView({
               }`}
             >
               كافة الجلسات
-              <span className="ml-1.5 rounded bg-[var(--accent)] px-1.5 py-0.5 text-[9px] text-[var(--text)]">{hearings.length}</span>
+              <span className="ml-1.5 rounded bg-[var(--accent)] px-1.5 py-0.5 text-[9px] text-[var(--text)]">
+                {hearings.filter((h) => subTab === "active" ? !h.isArchived : h.isArchived).length}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab("today")}
@@ -1286,7 +1420,7 @@ export function HearingsView({
               <span className={`ml-1.5 rounded px-1.5 py-0.5 text-[9px] ${
                 activeTab === "today" ? "bg-[var(--text)] text-[var(--bg)]" : "bg-[var(--accent)] text-[var(--text)]"
               }`}>
-                {hearings.filter((h) => h.status === "اليوم").length}
+                {hearings.filter((h) => (subTab === "active" ? !h.isArchived : h.isArchived) && h.status === "اليوم").length}
               </span>
             </button>
             <button
@@ -1299,7 +1433,7 @@ export function HearingsView({
             >
               الجلسات القادمة
               <span className="ml-1.5 rounded bg-[var(--accent)] px-1.5 py-0.5 text-[9px] text-[var(--text)]">
-                {hearings.filter((h) => h.status === "قادمة").length}
+                {hearings.filter((h) => (subTab === "active" ? !h.isArchived : h.isArchived) && h.status === "قادمة").length}
               </span>
             </button>
           </div>
@@ -1312,9 +1446,11 @@ export function HearingsView({
                 <div
                   key={hearing.id}
                   className={`rounded-2xl border transition-all ${
-                    isToday
-                      ? "border-[var(--gold)]/40 bg-[var(--gold)]/5 shadow-sm"
-                      : "border-[var(--border)] bg-[var(--panel)] hover:border-[var(--border-strong)] shadow-sm"
+                    hearing.isArchived
+                      ? "border-[var(--border)] bg-[var(--panel)]/40 opacity-80 shadow-sm"
+                      : isToday
+                        ? "border-[var(--gold)]/40 bg-[var(--gold)]/5 shadow-sm"
+                        : "border-[var(--border)] bg-[var(--panel)] hover:border-[var(--border-strong)] shadow-sm"
                   }`}
                 >
                   <div className="p-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -1365,6 +1501,26 @@ export function HearingsView({
                       <div className="text-[11px] text-[var(--text-muted)]">
                         القاعة: <strong className="text-[var(--text)]">{hearing.hall}</strong>
                       </div>
+                      <button
+                        onClick={() => handleToggleArchive(hearing.id)}
+                        className={`mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all ${
+                          hearing.isArchived
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                            : "bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20"
+                        }`}
+                      >
+                        {hearing.isArchived ? (
+                          <>
+                            <RefreshCw className="size-3.5" />
+                            <span>استعادة للرول النشط</span>
+                          </>
+                        ) : (
+                          <>
+                            <Archive className="size-3.5" />
+                            <span>نقل للأرشيف المنتهي</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
 
@@ -1414,6 +1570,21 @@ export function HearingsView({
                 </div>
               );
             })}
+            {filteredListHearings.length === 0 && (
+              <div className="text-center py-20 bg-[var(--panel)] border border-dashed border-[var(--border)] rounded-2xl">
+                <AlertCircle className="size-10 mx-auto mb-3 text-[var(--text-muted)]/40" />
+                <p className="text-sm font-semibold text-[var(--text)]">
+                  {subTab === "archived" 
+                    ? "لا توجد جلسات مؤرشفة حالياً في رول الجلسات المنتهية" 
+                    : "لا توجد جلسات نشطة مطابقة لهذا التصنيف"}
+                </p>
+                <p className="text-xs text-[var(--text-muted)] mt-1">
+                  {subTab === "archived" 
+                    ? "سيتم أرشفة أي جلسة يمر تاريخها تلقائياً أو يمكنك أرشفتها يدوياً" 
+                    : "يمكنك إضافة جلسة جديدة للرول باستخدام الزر المخصص بالتقويم"}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}

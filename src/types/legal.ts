@@ -68,6 +68,7 @@ export interface Hearing {
   lastDecision?: string; // قرار الجلسة السابقة
   status: "قادمة" | "اليوم" | "منتهية" | "مؤجلة";
   pleadingNotes?: string; // نقاط المرافعة وملاحظات سريعة للجلسة
+  isArchived?: boolean; // أرشفة الجلسة
 }
 
 export interface Client {
