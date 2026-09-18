@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { 
   AlertTriangle, 
   Clock, 
@@ -30,11 +30,7 @@ import {
 } from "@/lib/browser-notifications";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 import { VoiceCommandModal } from "@/components/voice-command-modal";
-import { 
-  getSpeechRecognitionConstructor, 
-  IWindowSpeechRecognition, 
-  SpeechRecognitionEvent 
-} from "@/lib/web-speech-service";
+import { TaskCreationModal } from "@/components/task-creation-modal";
 
 interface TasksViewProps {
   tasks?: LegalTask[];
@@ -84,91 +80,9 @@ export function TasksView({
     }
   };
 
-  // New task form state
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<LegalTask["category"]>("قلم المحضرين");
-  const [matterCaseNumber, setMatterCaseNumber] = useState("");
-  const [courtOrBailiffOffice, setCourtOrBailiffOffice] = useState("");
-  const [assignedTo, setAssignedTo] = useState("أ. مروان هاني (محام متدرب)");
-  const [deadline, setDeadline] = useState(() => new Date().toISOString().slice(0, 10));
-  const [priority, setPriority] = useState<LegalTask["priority"]>("عاجلة");
-  
   // Voice Command & Dictation State
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
-  const [isDictatingTitle, setIsDictatingTitle] = useState(false);
   const [voiceToastMessage, setVoiceToastMessage] = useState<string | null>(null);
-  const titleRecognitionRef = useRef<IWindowSpeechRecognition | null>(null);
-
-  const handleToggleTitleDictation = () => {
-    if (isDictatingTitle) {
-      if (titleRecognitionRef.current) {
-        try {
-          titleRecognitionRef.current.stop();
-        } catch {
-          // ignore
-        }
-      }
-      setIsDictatingTitle(false);
-      return;
-    }
-
-    const SpeechRec = getSpeechRecognitionConstructor();
-    if (!SpeechRec) {
-      alert("المتصفح لا يدعم التعرف الصوتي المباشر عبر Web Speech API.");
-      return;
-    }
-
-    try {
-      const rec = new SpeechRec();
-      rec.lang = "ar-EG";
-      rec.continuous = false;
-      rec.interimResults = true;
-
-      rec.onstart = () => {
-        setIsDictatingTitle(true);
-      };
-
-      rec.onresult = (ev: SpeechRecognitionEvent) => {
-        for (let i = ev.resultIndex; i < ev.results.length; i++) {
-          const res = ev.results[i];
-          const text = res[0].transcript;
-          if (res.isFinal) {
-            setTitle((prev) => (prev ? `${prev} ${text}` : text));
-            setIsDictatingTitle(false);
-
-            // Auto-detect category from spoken text
-            const lower = text.toLowerCase();
-            if (lower.includes("رسم") || lower.includes("رسوم") || lower.includes("سداد") || lower.includes("امانة")) {
-              setCategory("سداد رسوم");
-            } else if (lower.includes("مذكرة") || lower.includes("دفاع") || lower.includes("ايداع")) {
-              setCategory("إيداع مذكرات");
-            } else if (lower.includes("شهادة") || lower.includes("صورة رسمية")) {
-              setCategory("استخراج شهادة");
-            } else if (lower.includes("تنفيذ") || lower.includes("حجز")) {
-              setCategory("تنفيذ حكم");
-            } else if (lower.includes("طعن") || lower.includes("سقوط") || lower.includes("استئناف")) {
-              setCategory("ميعاد طعن قانوني");
-            } else if (lower.includes("محضر") || lower.includes("اعلان") || lower.includes("صحيفة")) {
-              setCategory("قلم المحضرين");
-            }
-          }
-        }
-      };
-
-      rec.onerror = () => {
-        setIsDictatingTitle(false);
-      };
-
-      rec.onend = () => {
-        setIsDictatingTitle(false);
-      };
-
-      titleRecognitionRef.current = rec;
-      rec.start();
-    } catch {
-      setIsDictatingTitle(false);
-    }
-  };
 
   const handleVoiceTaskCreated = (newTask: LegalTask) => {
     if (propCreateTask) {
@@ -196,32 +110,6 @@ export function TasksView({
         })
       );
     }
-  };
-
-  const handleCreateTask = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title || !courtOrBailiffOffice) return;
-
-    const newTask: LegalTask = {
-      id: `TSK-${Date.now()}`,
-      title,
-      category,
-      matterCaseNumber: matterCaseNumber || "عام بالمكتب",
-      courtOrBailiffOffice,
-      assignedTo,
-      deadline,
-      priority,
-      status: "قيد التنفيذ",
-    };
-
-    if (propCreateTask) {
-      propCreateTask(newTask);
-    } else {
-      setInternalTasks((prev) => [newTask, ...prev]);
-    }
-    setIsNewTaskOpen(false);
-    setTitle("");
-    setCourtOrBailiffOffice("");
   };
 
   // Multi-select & Bulk actions state
@@ -360,9 +248,13 @@ export function TasksView({
           <button
             onClick={() => setIsNewTaskOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-700 px-4 py-2.5 text-xs font-bold text-[var(--text)] shadow-md transition hover:brightness-110"
+            title="تكليف بمهمة إجرائية جديدة (Ctrl+N أو Alt+N)"
           >
             <Plus className="size-4" />
             <span>تكليف بمهمة إجرائية جديدة</span>
+            <kbd className="hidden sm:inline-block rounded bg-black/30 border border-white/20 px-1.5 py-0.5 text-[10px] font-mono font-bold text-white/90">
+              Ctrl+N
+            </kbd>
           </button>
         </div>
       </div>
@@ -728,145 +620,18 @@ export function TasksView({
       </div>
 
       {/* New Task Modal */}
-      {isNewTaskOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-[var(--axia-gold-dim)] bg-[var(--panel)] p-6 lg:p-8 shadow-2xl">
-            <button
-              onClick={() => setIsNewTaskOpen(false)}
-              className="absolute left-6 top-6 grid size-8 place-items-center rounded-full bg-[var(--accent-hover)] text-[var(--text-muted)] hover:bg-[var(--accent-hover)] hover:text-[var(--text)]"
-            >
-              <X className="size-4" />
-            </button>
-
-            <div className="flex items-center gap-2 text-xs font-semibold text-red-300">
-              <Plus className="size-4" />
-              <span>إسناد مهمة إجرائية وميعاد قانوني</span>
-            </div>
-            
-            <h2 className="mt-1 text-xl font-bold text-[var(--text)]">إضافة مهمة إجرائية</h2>
-            
-            <form onSubmit={handleCreateTask} className="mt-6 space-y-4 text-xs">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-[var(--text-muted)] font-semibold">بيان المهمة والإجراء المطلوب</label>
-                  <button
-                    type="button"
-                    onClick={handleToggleTitleDictation}
-                    className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-bold border transition ${
-                      isDictatingTitle
-                        ? "bg-red-500 text-white border-red-400 animate-pulse"
-                        : "bg-[var(--panel)] text-[var(--axia-gold)] border-[var(--border)] hover:border-[var(--axia-gold)]"
-                    }`}
-                    title="إملاء تفاصيل المهمة صوتياً (Web Speech API)"
-                  >
-                    <Mic className="size-3" />
-                    <span>{isDictatingTitle ? "جارٍ الإملاء... انقر للإنهاء" : "إملاء صوتي (Web Speech)"}</span>
-                  </button>
-                </div>
-                <input
-                  type="text"
-                  required
-                  placeholder="مثال: تسليم أصل صحيفة الاستئناف معلنة لقلم كتاب المحكمة"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-[var(--text)] focus:border-red-400 focus:outline-none"
-                />
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-semibold">التصنيف الإجرائي</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value as LegalTask["category"])}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-[var(--text)] focus:border-red-400 focus:outline-none"
-                  >
-                    <option value="قلم المحضرين">قلم المحضرين</option>
-                    <option value="ميعاد طعن قانوني">ميعاد طعن قانوني (سقوط)</option>
-                    <option value="سداد رسوم">سداد رسوم / أمانة خبير</option>
-                    <option value="إيداع مذكرات">إيداع مذكرات</option>
-                    <option value="استخراج شهادة">استخراج شهادة / صورة رسمية</option>
-                    <option value="تنفيذ حكم">تنفيذ حكم</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-semibold">درجة الأهمية والميعاد</label>
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value as LegalTask["priority"])}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-[var(--text)] focus:border-red-400 focus:outline-none"
-                  >
-                    <option value="حرجة للغاية (ميعاد سقوط)">حرجة للغاية (ميعاد سقوط)</option>
-                    <option value="عاجلة">عاجلة</option>
-                    <option value="عادية">عادية</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-semibold">المقر أو المحكمة المعنية</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="مثال: قلم محضرين العجوزة"
-                    value={courtOrBailiffOffice}
-                    onChange={(e) => setCourtOrBailiffOffice(e.target.value)}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-[var(--text)] focus:border-red-400 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-semibold">رقم القضية المرتبطة</label>
-                  <input
-                    type="text"
-                    placeholder="مثال: ٣٨٢ لسنة ٢٠٢٥ تجاري"
-                    value={matterCaseNumber}
-                    onChange={(e) => setMatterCaseNumber(e.target.value)}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-[var(--text)] focus:border-red-400 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-semibold">تاريخ الميعاد الأقصى</label>
-                  <input
-                    type="date"
-                    value={deadline}
-                    onChange={(e) => setDeadline(e.target.value)}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-[var(--text)] focus:border-red-400 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-semibold">المحامي / الموظف المكلف</label>
-                  <input
-                    type="text"
-                    value={assignedTo}
-                    onChange={(e) => setAssignedTo(e.target.value)}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-[var(--text)] focus:border-red-400 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsNewTaskOpen(false)}
-                  className="rounded-xl bg-[var(--accent-hover)] px-4 py-2 font-medium text-[var(--text)] hover:bg-white/15"
-                >
-                  إلغاء
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-xl bg-gradient-to-r from-red-500 to-rose-700 px-5 py-2 font-bold text-[var(--text)] hover:brightness-110"
-                >
-                  حفظ وتكليف
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <TaskCreationModal
+        isOpen={isNewTaskOpen}
+        onClose={() => setIsNewTaskOpen(false)}
+        onCreateTask={(newTask) => {
+          if (propCreateTask) {
+            propCreateTask(newTask);
+          } else {
+            setInternalTasks((prev) => [newTask, ...prev]);
+          }
+          setIsNewTaskOpen(false);
+        }}
+      />
       {/* Legal PDF Report Modal */}
       <LegalPdfReportModal
         isOpen={isPdfModalOpen}

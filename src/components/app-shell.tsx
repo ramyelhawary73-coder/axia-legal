@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useTheme } from "next-themes";
 import { 
   Scale, 
@@ -15,15 +15,18 @@ import {
   BarChart3, 
   Settings, 
   Search, 
-  Menu,
+  Menu, 
   ChevronLeft, 
-  X,
-  Shield,
-  PanelRightClose,
-  PanelRightOpen,
-  Sun,
-  Moon,
-  type LucideIcon
+  X, 
+  Shield, 
+  PanelRightClose, 
+  PanelRightOpen, 
+  Sun, 
+  Moon, 
+  Plus, 
+  Keyboard, 
+  CheckCircle2, 
+  type LucideIcon 
 } from "lucide-react";
 import { NavigationTab, LegalTask } from "@/types/legal";
 import { mockTasks } from "@/lib/mock-legal-data";
@@ -35,6 +38,9 @@ import {
 } from "@/lib/browser-notifications";
 import { UrgentDeadlineBanner } from "@/components/urgent-deadline-banner";
 import { VoiceControlTrigger } from "@/components/voice-control-trigger";
+import { useGlobalKeyboardShortcuts } from "@/hooks/use-global-keyboard-shortcuts";
+import { TaskCreationModal } from "@/components/task-creation-modal";
+import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
 
 interface AppShellProps {
   activeTab: NavigationTab;
@@ -75,6 +81,40 @@ export function AppShell({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
+  const [taskCreatedToast, setTaskCreatedToast] = useState<{ id: string; title: string } | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Global Keyboard Shortcuts Listener (Ctrl+N / Alt+N for tasks, Ctrl+K for search, Esc, Ctrl+/)
+  useGlobalKeyboardShortcuts({
+    onNewTask: () => {
+      setIsTaskModalOpen(true);
+    },
+    onSearchFocus: () => {
+      searchInputRef.current?.focus();
+      searchInputRef.current?.select();
+    },
+    onToggleHelp: () => {
+      setIsShortcutsModalOpen((prev) => !prev);
+    },
+    onCloseModals: () => {
+      setIsTaskModalOpen(false);
+      setIsShortcutsModalOpen(false);
+      setMobileMenuOpen(false);
+    },
+    onNavigateTab: onNavigate,
+  });
+
+  const handleCreateTaskFromModal = (task: LegalTask) => {
+    if (onCreateTask) {
+      onCreateTask(task);
+    }
+    setTaskCreatedToast({ id: task.id, title: task.title });
+    setTimeout(() => {
+      setTaskCreatedToast(null);
+    }, 4500);
+  };
   
   const activeTasks = tasks || mockTasks;
   const upcomingTasksCount = getUpcomingDeadlineTasks(activeTasks).length;
@@ -152,6 +192,7 @@ export function AppShell({
             <div className="relative w-full group">
               <Search className="absolute right-3 top-2.5 size-3.5 text-[var(--text-muted)] group-focus-within:text-[var(--axia-gold)] transition-colors" />
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="بحث في النظام..."
                 value={globalSearch}
@@ -172,6 +213,30 @@ export function AppShell({
 
           {/* User & Quick Status */}
           <div className="flex items-center gap-2">
+            {/* Quick Task Button with Ctrl+N shortcut indicator */}
+            <button
+              type="button"
+              onClick={() => setIsTaskModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--axia-gold)]/40 bg-[var(--axia-gold)]/10 px-2.5 py-1 text-xs font-bold text-[var(--axia-gold-light)] hover:bg-[var(--axia-gold)]/20 shadow-sm transition"
+              title="إسناد مهمة إجرائية جديدة (Ctrl+N أو Alt+N)"
+            >
+              <Plus className="size-3.5 text-[var(--axia-gold)]" />
+              <span className="hidden sm:inline">مهمة جديدة</span>
+              <kbd className="hidden md:inline-block rounded bg-[var(--bg)]/90 border border-[var(--axia-gold)]/30 px-1 py-0.2 text-[9px] font-mono font-bold text-[var(--axia-gold)]">
+                Ctrl+N
+              </kbd>
+            </button>
+
+            {/* Keyboard Shortcuts Guide Button */}
+            <button
+              type="button"
+              onClick={() => setIsShortcutsModalOpen(true)}
+              className="grid size-8 place-items-center rounded-lg border border-[var(--border)] bg-[var(--panel)]/50 text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
+              title="دليل اختصارات لوحة المفاتيح (Ctrl+/)"
+            >
+              <Keyboard className="size-4" />
+            </button>
+
             {/* Voice Control (Web Speech API) */}
             <VoiceControlTrigger 
               onNavigate={onNavigate} 
@@ -402,6 +467,44 @@ export function AppShell({
           </div>
         </main>
       </div>
+
+      {/* Global Task Creation Modal (triggered via Ctrl+N, Alt+N, header button, or voice) */}
+      <TaskCreationModal
+        isOpen={isTaskModalOpen}
+        onClose={() => setIsTaskModalOpen(false)}
+        onCreateTask={handleCreateTaskFromModal}
+        sourceLabel="اختصار سريع (Ctrl+N)"
+      />
+
+      {/* Keyboard Shortcuts Cheat-Sheet Modal */}
+      <KeyboardShortcutsModal
+        isOpen={isShortcutsModalOpen}
+        onClose={() => setIsShortcutsModalOpen(false)}
+        onTriggerNewTask={() => setIsTaskModalOpen(true)}
+      />
+
+      {/* Quick Floating Toast on Task Creation */}
+      {taskCreatedToast && (
+        <div className="fixed bottom-6 left-6 z-50 flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-[var(--panel)] p-4 shadow-2xl animate-in slide-in-from-bottom-5 duration-200">
+          <div className="grid size-9 place-items-center rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+            <CheckCircle2 className="size-4" />
+          </div>
+          <div className="space-y-0.5">
+            <p className="text-xs font-bold text-[var(--text)]">تم إسناد المهمة بنجاح</p>
+            <p className="text-[11px] text-[var(--text-muted)] max-w-xs truncate">{taskCreatedToast.title}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              onNavigate("tasks");
+              setTaskCreatedToast(null);
+            }}
+            className="mr-2 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] px-2.5 py-1 text-xs font-bold text-[var(--axia-gold-light)] transition"
+          >
+            عرض المهام
+          </button>
+        </div>
+      )}
     </div>
   );
 }
