@@ -7,21 +7,24 @@ import {
   Search, 
   FileCheck, 
   ChevronDown, 
-  X,
-  BookOpen,
-  Sparkles,
-  CheckCircle2,
-  Scale
+  X, 
+  BookOpen, 
+  Sparkles, 
+  CheckCircle2, 
+  Scale,
+  Edit3,
+  PenTool
 } from "lucide-react";
 import { mockDocuments, mockClients, mockMatters } from "@/lib/mock-legal-data";
 import { LegalDocument, Client, Matter } from "@/types/legal";
 import { LegalTemplatesLibrary } from "@/components/legal-templates-library";
+import { LegalRichTextEditor } from "@/components/legal-rich-text-editor";
 import { legalTemplatesCollection } from "@/lib/legal-templates-data";
 
 interface DocumentsViewProps {
   clients?: Client[];
   matters?: Matter[];
-  initialTab?: "archive" | "templates";
+  initialTab?: "archive" | "editor" | "templates";
   selectedDocId?: string | null;
   onCloseDocModal?: () => void;
 }
@@ -33,11 +36,12 @@ export function DocumentsView({
   selectedDocId,
   onCloseDocModal,
 }: DocumentsViewProps = {}) {
-  const [activeTab, setActiveTab] = useState<"archive" | "templates">(initialTab);
+  const [activeTab, setActiveTab] = useState<"archive" | "editor" | "templates">(initialTab);
   const [docs, setDocs] = useState<LegalDocument[]>(mockDocuments);
   const [filterType, setFilterType] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [localSelectedDocId, setLocalSelectedDocId] = useState<string | null>(null);
+  const [editorTargetDraftId, setEditorTargetDraftId] = useState<string | undefined>(undefined);
   const effectiveDocId = selectedDocId ?? localSelectedDocId;
   const selectedDoc = effectiveDocId ? docs.find((d) => d.id === effectiveDocId) || null : null;
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -46,6 +50,14 @@ export function DocumentsView({
     setDocs((prev) => [newDoc, ...prev]);
     setToastMessage(`تم حفظ "${newDoc.title}" بنجاح في الأرشيف ومستندات الموكل.`);
     setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  const handleOpenDocInEditor = (doc: LegalDocument) => {
+    setActiveTab("editor");
+    setLocalSelectedDocId(null);
+    onCloseDocModal?.();
+    setToastMessage(`تم فتح "${doc.title}" في محرر المسودات القانونية.`);
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
   const filteredDocs = docs.filter((doc) => {
@@ -75,18 +87,24 @@ export function DocumentsView({
             <span>الوثائق والعقود والمحررات القانونية</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-[var(--text)]">
-            {activeTab === "archive" ? "الأرشيف القانوني والعقود المعتمدة" : "مكتبة القوالب والنماذج القانونية الرسمية"}
+            {activeTab === "archive" 
+              ? "الأرشيف القانوني والعقود المعتمدة" 
+              : activeTab === "editor"
+              ? "محرر المسودات القانونية الذكي"
+              : "مكتبة القوالب والنماذج القانونية الرسمية"}
           </h1>
           <p className="mt-1 text-xs text-[var(--text-muted)] flex items-center gap-1.5">
             <FileText className="size-3.5" />
             {activeTab === "archive" 
               ? "حفظ إلكتروني، مذكرات الدفاع، صحف الدعاوى، والأحكام القضائية المعتمدة"
+              : activeTab === "editor"
+              ? "تحرير غني متقدم مع حفظ تلقائي وسجل إصدارات تاريخية لضبط صياغة المذكرات والعقود"
               : "قوالب رسمية معتمدة وفقاً للقانون المصري، قابلة للتعبئة التلقائية ببيانات الموكلين"}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Main Top Switcher */}
+          {/* Main Top Switcher (3 Tabs) */}
           <div className="inline-flex rounded-xl border border-[var(--border)] bg-[var(--panel)] p-1 shadow-sm">
             <button
               type="button"
@@ -98,7 +116,20 @@ export function DocumentsView({
               }`}
             >
               <FileText className="size-3.5" />
-              <span>الأرشيف والمستندات ({docs.length})</span>
+              <span>الأرشيف ({docs.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("editor")}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                activeTab === "editor"
+                  ? "bg-[var(--axia-gold)] text-black shadow-xs font-extrabold"
+                  : "text-[var(--text-muted)] hover:text-[var(--text)]"
+              }`}
+            >
+              <PenTool className="size-3.5" />
+              <span>محرر المسودات</span>
             </button>
 
             <button
@@ -106,25 +137,28 @@ export function DocumentsView({
               onClick={() => setActiveTab("templates")}
               className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition ${
                 activeTab === "templates"
-                  ? "bg-[var(--axia-gold)] text-black shadow-xs"
+                  ? "bg-[var(--accent)] text-[var(--text)] shadow-xs"
                   : "text-[var(--text-muted)] hover:text-[var(--text)]"
               }`}
             >
               <Sparkles className="size-3.5" />
-              <span>مكتبة القوالب ({legalTemplatesCollection.length})</span>
+              <span>القوالب ({legalTemplatesCollection.length})</span>
             </button>
           </div>
 
-          {activeTab === "archive" ? (
+          {/* Quick Primary Actions */}
+          {activeTab !== "editor" && (
             <button
               type="button"
-              onClick={() => setActiveTab("templates")}
+              onClick={() => setActiveTab("editor")}
               className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--axia-gold)] px-3.5 py-2 text-xs font-bold text-black shadow-md hover:bg-[var(--axia-gold-light)] transition"
             >
-              <Sparkles className="size-3.5" />
-              <span>صياغة وثيقة من قالب</span>
+              <Edit3 className="size-3.5" />
+              <span>تحرير مسودة جديدة</span>
             </button>
-          ) : (
+          )}
+
+          {activeTab === "editor" && (
             <button
               type="button"
               onClick={() => setActiveTab("archive")}
@@ -138,7 +172,15 @@ export function DocumentsView({
       </div>
 
       {/* Content Rendering based on activeTab */}
-      {activeTab === "templates" ? (
+      {activeTab === "editor" ? (
+        <LegalRichTextEditor
+          clients={clients}
+          matters={matters}
+          initialDraftId={editorTargetDraftId}
+          onSaveToArchive={handleSaveGeneratedDoc}
+          onCloseEditor={() => setActiveTab("archive")}
+        />
+      ) : activeTab === "templates" ? (
         <LegalTemplatesLibrary
           clients={clients}
           matters={matters}
@@ -175,14 +217,27 @@ export function DocumentsView({
               <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
             </div>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("templates")}
-              className="mr-auto inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--axia-gold-light)] hover:underline"
-            >
-              <BookOpen className="size-3.5" />
-              <span>استعراض مكتبة النماذج والقوالب القانونية ({legalTemplatesCollection.length} قوالب)</span>
-            </button>
+            <div className="mr-auto flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setActiveTab("editor")}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--axia-gold)] hover:underline"
+              >
+                <PenTool className="size-3.5" />
+                <span>فتح محرر المسودات وسجل الإصدارات</span>
+              </button>
+
+              <span className="text-[var(--border-strong)]">|</span>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("templates")}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--axia-gold-light)] hover:underline"
+              >
+                <BookOpen className="size-3.5" />
+                <span>مكتبة النماذج ({legalTemplatesCollection.length} قالب)</span>
+              </button>
+            </div>
           </div>
 
           {/* Documents Table */}
@@ -236,14 +291,27 @@ export function DocumentsView({
                         <div className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider">{doc.fileSize}</div>
                       </td>
                       <td className="px-4 py-3 align-top text-center">
-                        <button
-                          type="button"
-                          onClick={() => setLocalSelectedDocId(doc.id)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2.5 py-1 text-[var(--text)] hover:bg-[var(--accent)] transition-colors opacity-0 group-hover:opacity-100 mx-auto text-xs"
-                        >
-                          <Download className="size-3" />
-                          <span>معاينة</span>
-                        </button>
+                        <div className="inline-flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            onClick={() => setLocalSelectedDocId(doc.id)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-[var(--text)] hover:bg-[var(--accent)] transition-colors text-xs"
+                            title="معاينة المستند"
+                          >
+                            <Download className="size-3" />
+                            <span>معاينة</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDocInEditor(doc)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-[var(--axia-gold)]/40 bg-[var(--axia-gold-dim)] px-2 py-1 text-[var(--axia-gold)] hover:bg-[var(--axia-gold)] hover:text-black transition-colors text-xs font-bold"
+                            title="فتح في محرر المسودات"
+                          >
+                            <Edit3 className="size-3" />
+                            <span>تحرير</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -257,9 +325,9 @@ export function DocumentsView({
                 </tbody>
               </table>
             </div>
-            <div className="border-t border-[var(--border)] bg-[var(--bg)]/30 px-4 py-2 text-[10px] text-[var(--text-muted)] flex justify-between">
-              <span>إجمالي المستندات: {filteredDocs.length}</span>
-              <span>يمكنك إنشاء وثيقة جديدة عبر التوجه لـ &quot;مكتبة القوالب&quot; بأعلى الشاشة.</span>
+            <div className="border-t border-[var(--border)] bg-[var(--bg)]/30 px-4 py-2 text-[10px] text-[var(--text-muted)] flex justify-between items-center">
+              <span>إجمالي المستندات بالأرشيف: {filteredDocs.length}</span>
+              <span>يمكنك إنشاء مسودة جديدة حرة أو الاعتماد على قوالب العقود الرسمية.</span>
             </div>
           </div>
         </>
@@ -304,28 +372,39 @@ export function DocumentsView({
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-2 border-t border-[var(--border)] pt-4">
+            <div className="mt-6 flex flex-wrap justify-between items-center gap-2 border-t border-[var(--border)] pt-4">
               <button
                 type="button"
-                onClick={() => {
-                  setLocalSelectedDocId(null);
-                  onCloseDocModal?.();
-                }}
-                className="rounded-xl border border-[var(--border)] bg-[var(--panel)] px-4 py-2 font-medium text-[var(--text)] hover:bg-[var(--accent)] transition-colors text-xs"
+                onClick={() => handleOpenDocInEditor(selectedDoc)}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--axia-gold)] bg-[var(--axia-gold-dim)] px-4 py-2 font-bold text-[var(--axia-gold)] hover:bg-[var(--axia-gold)] hover:text-black transition-colors text-xs"
               >
-                إغلاق
+                <Edit3 className="size-3.5" />
+                <span>فتح وتعديل في محرر المسودات الذكي</span>
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setLocalSelectedDocId(null);
-                  onCloseDocModal?.();
-                }}
-                className="rounded-xl bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] hover:opacity-90 transition-opacity text-xs inline-flex items-center gap-1.5"
-              >
-                <Download className="size-3.5" />
-                <span>تنزيل الملف (PDF)</span>
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocalSelectedDocId(null);
+                    onCloseDocModal?.();
+                  }}
+                  className="rounded-xl border border-[var(--border)] bg-[var(--panel)] px-4 py-2 font-medium text-[var(--text)] hover:bg-[var(--accent)] transition-colors text-xs"
+                >
+                  إغلاق
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLocalSelectedDocId(null);
+                    onCloseDocModal?.();
+                  }}
+                  className="rounded-xl bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] hover:opacity-90 transition-opacity text-xs inline-flex items-center gap-1.5"
+                >
+                  <Download className="size-3.5" />
+                  <span>تنزيل الملف (PDF)</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -333,4 +412,3 @@ export function DocumentsView({
     </div>
   );
 }
-
