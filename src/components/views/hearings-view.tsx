@@ -126,11 +126,104 @@ function CourtLocationBadge({ courtName, compact = false }: { courtName: string;
   );
 }
 
+function PleadingNotesEditor({ 
+  initialNotes = "", 
+  onSave 
+}: { 
+  initialNotes?: string; 
+  onSave: (notes: string) => void; 
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [notes, setNotes] = useState(initialNotes);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    Promise.resolve().then(() => setNotes(initialNotes));
+  }, [initialNotes]);
+
+  const handleChange = (val: string) => {
+    setNotes(val);
+    setIsSaving(true);
+    onSave(val);
+    const t = setTimeout(() => setIsSaving(false), 600);
+    return () => clearTimeout(t);
+  };
+
+  return (
+    <div className="mt-3 border-t border-[var(--border)]/40 pt-2.5">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="inline-flex items-center gap-1.5 text-[11px] text-[var(--text-muted)] hover:text-[var(--axia-gold)] transition-colors focus:outline-none"
+      >
+        <span className="text-xs">📝</span>
+        <span>{isOpen ? "إخفاء مذكرات المرافعة والملاحظات" : "مذكرات المرافعة والملاحظات العاجلة للجلسة"}</span>
+        {notes && !isOpen && (
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--axia-gold)] animate-ping" />
+        )}
+      </button>
+
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="mt-2 space-y-1.5"
+        >
+          <div className="relative">
+            <textarea
+              value={notes}
+              onChange={(e) => handleChange(e.target.value)}
+              placeholder="اكتب هنا دفوعك القانونية، طلباتك بالجلسة، أو ملاحظاتك العاجلة للمرافعة..."
+              className="w-full text-xs bg-[var(--accent)] text-[var(--text)] border border-[var(--border)] rounded-xl p-3 min-h-[75px] focus:outline-none focus:ring-1 focus:ring-[var(--axia-gold)] leading-relaxed resize-y custom-scrollbar"
+            />
+            {isSaving && (
+              <span className="absolute bottom-2 left-3 text-[9px] text-[var(--axia-gold)] animate-pulse font-medium">
+                جاري المزامنة مع تفاصيل القضية...
+              </span>
+            )}
+          </div>
+          <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
+            <span>✨</span>
+            <span>تُحفظ نقاط المرافعة فورياً وتتم مزامنتها مباشرة مع ملف القضية برقمها المرجعي.</span>
+          </p>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
 export function HearingsView() {
   // Master states for elements
   const [hearings, setHearings] = useState<Hearing[]>(mockHearings);
   const [tasks, setTasks] = useState<LegalTask[]>(mockTasks);
   const [matters, setMatters] = useState<Matter[]>(mockMatters);
+
+  const handleUpdateHearingNotes = (hearingId: string, notes: string) => {
+    // 1. Update the hearing pleadingNotes
+    setHearings(prev => 
+      prev.map(h => h.id === hearingId ? { ...h, pleadingNotes: notes } : h)
+    );
+
+    // 2. Locate the hearing to find the associated matterId
+    const targetHearing = hearings.find(h => h.id === hearingId);
+    if (targetHearing && targetHearing.matterId) {
+      setMatters(prev => 
+        prev.map(m => {
+          if (m.id === targetHearing.matterId) {
+            const header = `📝 نقاط مرافعة جلسة ${targetHearing.hearingDate}:`;
+            let newNotes = m.notes || "";
+            if (newNotes.includes(header)) {
+              const parts = newNotes.split("\n\n");
+              newNotes = parts.map(p => p.startsWith(header) ? `${header} ${notes}` : p).join("\n\n");
+            } else {
+              newNotes = `${header} ${notes}\n\n${newNotes}`;
+            }
+            return { ...m, notes: newNotes.trim() };
+          }
+          return m;
+        })
+      );
+    }
+  };
 
   // Layout & Filtering states
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
@@ -1031,6 +1124,14 @@ export function HearingsView() {
                                   <CourtLocationBadge courtName={item.sub} />
                                 </div>
                               )}
+                              {item.type === "hearing" && (
+                                <div className="mt-1">
+                                  <PleadingNotesEditor
+                                    initialNotes={(item.original as Hearing).pleadingNotes}
+                                    onSave={(notes) => handleUpdateHearingNotes(item.id, notes)}
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -1194,6 +1295,14 @@ export function HearingsView() {
                         </button>
                       </div>
                     )}
+                  </div>
+
+                  {/* Pleading Notes Section */}
+                  <div className="px-4 pb-3 border-t border-[var(--border)]/40 bg-[var(--bg)]/10 rounded-b-2xl">
+                    <PleadingNotesEditor
+                      initialNotes={hearing.pleadingNotes}
+                      onSave={(notes) => handleUpdateHearingNotes(hearing.id, notes)}
+                    />
                   </div>
                 </div>
               );
