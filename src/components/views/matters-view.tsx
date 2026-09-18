@@ -22,6 +22,25 @@ import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
 import { Matter, CourtCategory } from "@/types/legal";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 
+const getCategoryStyle = (cat: "مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة" | string) => {
+  switch (cat) {
+    case "مدني":
+      return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20";
+    case "جنائي":
+      return "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20";
+    case "عمالي":
+      return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
+    case "تجاري":
+      return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20";
+    case "إداري":
+      return "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20";
+    case "أسرة":
+      return "bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-500/20";
+    default:
+      return "bg-stone-500/10 text-stone-600 dark:text-stone-400 border border-stone-500/20";
+  }
+};
+
 interface MattersViewProps {
   selectedMatterId?: string | null;
   onCloseMatterModal?: () => void;
@@ -35,7 +54,25 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
         if (cached) return JSON.parse(cached);
       } catch {}
     }
-    const defaultMatters = [...mockMatters];
+    const defaultMatters = mockMatters.map((m, idx) => {
+      let category: "مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة" = "مدني";
+      if (m.caseNumber.includes("جنايات") || m.court === "محكمة الجنايات" || m.title.includes("سرقة") || m.title.includes("اختلاس") || m.title.includes("قتل")) {
+        category = "جنائي";
+      } else if (m.caseNumber.includes("عمال") || m.title.includes("عمالي") || m.title.includes("مستحقات") || m.title.includes("طرد تعسفي") || m.title.includes("فصل تعسفي")) {
+        category = "عمالي";
+      } else if (m.caseNumber.includes("تجاري") || m.court === "المحكمة الاقتصادية" || m.title.includes("شركاء") || m.title.includes("خطاب ضمان") || m.title.includes("بطلان شرط التحكيم")) {
+        category = "تجاري";
+      } else if (m.court === "مجلس الدولة (القضاء الإداري)" || m.caseNumber.includes("إداري") || m.title.includes("قرار إداري")) {
+        category = "إداري";
+      } else if (m.court === "محكمة الأسرة" || m.title.includes("خلع") || m.title.includes("نفقة") || m.title.includes("طلاق")) {
+        category = "أسرة";
+      } else {
+        const cats: ("مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة")[] = ["مدني", "جنائي", "عمالي", "تجاري", "إداري", "أسرة"];
+        category = cats[idx % cats.length];
+      }
+      return { ...m, category };
+    });
+
     if (defaultMatters[0]) {
       defaultMatters[0].contacts = [
         {
@@ -145,6 +182,7 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
   const [isNewMatterOpen, setIsNewMatterOpen] = useState(false);
   const [newCaseNumber, setNewCaseNumber] = useState("");
   const [newCourt, setNewCourt] = useState<CourtCategory>("محكمة النقض");
+  const [newCategory, setNewCategory] = useState<"مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة">("مدني");
   const [newCircuit, setNewCircuit] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [newClientName, setNewClientName] = useState("");
@@ -163,6 +201,7 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
       caseNumber: newCaseNumber,
       year: 2026,
       court: newCourt,
+      category: newCategory,
       circuit: newCircuit || "الدائرة الأولى",
       title: newTitle,
       clientName: newClientName,
@@ -183,7 +222,10 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
     setNewCaseNumber("");
     setNewTitle("");
     setNewClientName("");
+    setNewCategory("مدني");
   };
+
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
   const filteredMatters = matters.filter((matter) => {
     const matchesSearch =
@@ -194,8 +236,9 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
 
     const matchesCourt = courtFilter === "all" || matter.court === courtFilter;
     const matchesStage = stageFilter === "all" || matter.stage === stageFilter;
+    const matchesCategory = categoryFilter === "all" || matter.category === categoryFilter;
 
-    return matchesSearch && matchesCourt && matchesStage;
+    return matchesSearch && matchesCourt && matchesStage && matchesCategory;
   });
 
   return (
@@ -279,6 +322,23 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
           </select>
           <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
         </div>
+
+        <div className="relative">
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+          >
+            <option value="all">كافة التصنيفات</option>
+            <option value="مدني">مدنية</option>
+            <option value="جنائي">جنائية</option>
+            <option value="عمالي">عمالية</option>
+            <option value="تجاري">تجارية</option>
+            <option value="إداري">إدارية</option>
+            <option value="أسرة">أسرة</option>
+          </select>
+          <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
+        </div>
       </div>
 
       {/* Matters Table - Replaces chunky cards with a clean, high-density Mac-like list */}
@@ -304,7 +364,12 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
                   onDoubleClick={() => setLocalActiveMatterId(matter.id)}
                 >
                   <td className="px-4 py-3 align-top">
-                    <div className="font-semibold text-[var(--text)]">{matter.caseNumber}</div>
+                    <div className="font-semibold text-[var(--text)] mb-1">{matter.caseNumber}</div>
+                    {matter.category && (
+                      <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-semibold leading-none ${getCategoryStyle(matter.category)}`}>
+                        {matter.category}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 align-top">
                     <div className="font-medium text-[var(--text)] mb-0.5 line-clamp-1" title={matter.title}>{matter.title}</div>
@@ -389,9 +454,16 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
               <span>ملف القضية المعتمد</span>
             </div>
             
-            <h2 className="text-xl font-bold text-[var(--text)]">
-              {activeMatter.caseNumber}
-            </h2>
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-xl font-bold text-[var(--text)]">
+                {activeMatter.caseNumber}
+              </h2>
+              {activeMatter.category && (
+                <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${getCategoryStyle(activeMatter.category)}`}>
+                  {activeMatter.category}
+                </span>
+              )}
+            </div>
             <p className="mt-1 text-xs text-[var(--text-muted)] pb-4 border-b border-[var(--border)]">{activeMatter.title}</p>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2 text-xs">
@@ -648,7 +720,7 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
             <h2 className="text-xl font-bold text-[var(--text)] border-b border-[var(--border)] pb-4">إضافة دعوى قضائية</h2>
             
             <form onSubmit={handleCreateMatter} className="mt-4 space-y-4 text-xs">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <div>
                   <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم القضية والسنة</label>
                   <input
@@ -673,6 +745,24 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
                       <option value="مجلس الدولة (القضاء الإداري)">مجلس الدولة</option>
                       <option value="استئناف عالي">استئناف عالي</option>
                       <option value="ابتدائية كلي">ابتدائية كلي</option>
+                    </select>
+                    <ChevronDown className="absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)] pointer-events-none" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">تصنيف القضية</label>
+                  <div className="relative">
+                    <select
+                      value={newCategory}
+                      onChange={(e) => setNewCategory(e.target.value as "مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة")}
+                      className="appearance-none w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                    >
+                      <option value="مدني">مدنية</option>
+                      <option value="جنائي">جنائية</option>
+                      <option value="عمالي">عمالية</option>
+                      <option value="تجاري">تجارية</option>
+                      <option value="إداري">إدارية</option>
+                      <option value="أسرة">أسرة</option>
                     </select>
                     <ChevronDown className="absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)] pointer-events-none" />
                   </div>

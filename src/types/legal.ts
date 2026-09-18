@@ -29,6 +29,7 @@ export interface Matter {
   caseNumber: string; // e.g. "1284 لسنة 2025 مدني كلي شمال"
   year: number;
   court: CourtCategory;
+  category?: "مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة";
   circuit: string; // e.g. "الدائرة 14 مدني واستثمار"
   title: string; // e.g. "دعوى بطلان عقد بيع ومطالبة بتعويض"
   clientName: string;
