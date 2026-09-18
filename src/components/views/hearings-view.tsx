@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/preserve-manual-memoization */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   Gavel, 
   Clock, 
@@ -51,6 +51,80 @@ const formatDateStr = (date: Date): string => {
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 };
+
+function CourtLocationBadge({ courtName, compact = false }: { courtName: string; compact?: boolean }) {
+  const [data, setData] = useState<{ duration: string; distance: string; source: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!courtName) {
+      Promise.resolve().then(() => setLoading(false));
+      return;
+    }
+    fetch(`/api/maps/travel-time?court=${encodeURIComponent(courtName)}`)
+      .then(res => res.json())
+      .then(d => {
+        setData(d);
+      })
+      .catch(err => {
+        console.error("Failed to load travel time", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [courtName]);
+
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(courtName)}`;
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-1.5 text-[9px]">
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[var(--axia-gold)] hover:underline font-bold shrink-0"
+          title="عرض الموقع"
+        >
+          📍 الخريطة
+        </a>
+        {loading ? (
+          <span className="opacity-50 animate-pulse">جاري الحساب...</span>
+        ) : data ? (
+          <span className="text-[var(--text-muted)] truncate" title={`المسافة: ${data.distance}`}>
+            🚗 {data.duration}
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="inline-flex flex-wrap items-center gap-2 text-[11px] leading-relaxed">
+      <a
+        href={mapsUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1 text-[var(--axia-gold)] hover:underline font-bold"
+        title="عرض الموقع على خرائط جوجل"
+      >
+        <span>📍 الموقع على الخريطة</span>
+      </a>
+      
+      {loading ? (
+        <span className="text-[10px] text-[var(--text-muted)] animate-pulse">حساب وقت التنقل...</span>
+      ) : data ? (
+        <span 
+          className="inline-flex items-center gap-1 bg-[var(--accent)] px-2 py-0.5 rounded-md text-[var(--text-muted)] border border-[var(--border)]"
+          title={`التقدير من: ${data.source}`}
+        >
+          <span>🚗 {data.duration} ({data.distance})</span>
+          <span className="text-[9px] opacity-60">من المقر بالمعادي</span>
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 export function HearingsView() {
   // Master states for elements
@@ -860,6 +934,11 @@ export function HearingsView() {
                                 <span className="text-[10px] opacity-80 block truncate">
                                   {item.sub}
                                 </span>
+                                {(item.type === "hearing" || item.type === "matter") && (
+                                  <div className="mt-1">
+                                    <CourtLocationBadge courtName={item.sub} compact />
+                                  </div>
+                                )}
                                 {item.time && (
                                   <span className="text-[9px] font-mono flex items-center gap-1 opacity-70 mt-1">
                                     <Clock className="size-2.5" />
@@ -947,6 +1026,11 @@ export function HearingsView() {
                               </div>
                               <h4 className="text-sm font-bold text-[var(--text)]">{item.title}</h4>
                               <p className="text-xs text-[var(--text-muted)]">{item.sub}</p>
+                              {(item.type === "hearing" || item.type === "matter") && (
+                                <div className="mt-1">
+                                  <CourtLocationBadge courtName={item.sub} />
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -1049,6 +1133,9 @@ export function HearingsView() {
                         <Building2 className="size-4 text-[var(--text-muted)]" />
                         <span>{hearing.court}</span>
                         <span className="text-xs font-normal text-[var(--text-muted)]">({hearing.circuit})</span>
+                      </div>
+                      <div className="mt-1">
+                        <CourtLocationBadge courtName={hearing.court} />
                       </div>
 
                       <p className="text-xs text-[var(--text-muted)] leading-relaxed flex items-center gap-1.5">
