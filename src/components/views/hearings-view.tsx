@@ -22,11 +22,14 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  Archive
+  Archive,
+  Printer,
+  Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { mockHearings, mockTasks, mockMatters } from "@/lib/mock-legal-data";
 import { Hearing, LegalTask, Matter } from "@/types/legal";
+import { exportElementToPdf, generateReportRef } from "@/lib/pdf-export-service";
 
 // Arabic Days and Months
 const ARABIC_DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
@@ -334,6 +337,39 @@ export function HearingsView({
   const [toast, setToast] = useState<{ message: string; date: string; type: string } | null>(null);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
 
+  // Generate Month dates (42 grid cells)
+  const monthDates = useMemo(() => {
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startDayOfWeek = firstDay.getDay(); // 0 is Sunday, 6 is Saturday
+    
+    const gridStart = new Date(year, month, 1 - startDayOfWeek);
+    const dates: Date[] = [];
+    const curr = new Date(gridStart);
+    for (let i = 0; i < 42; i++) {
+      dates.push(new Date(curr));
+      curr.setDate(curr.getDate() + 1);
+    }
+    return dates;
+  }, [currentCalendarDate]);
+
+  // Generate Week dates (7 grid cells)
+  const weekDates = useMemo(() => {
+    const startOfWeek = new Date(currentCalendarDate);
+    startOfWeek.setDate(currentCalendarDate.getDate() - currentCalendarDate.getDay());
+    
+    const dates: Date[] = [];
+    const curr = new Date(startOfWeek);
+    for (let i = 0; i < 7; i++) {
+      dates.push(new Date(curr));
+      curr.setDate(curr.getDate() + 1);
+    }
+    return dates;
+  }, [currentCalendarDate]);
+
+  const [reportCode, setReportCode] = useState(() => generateReportRef("AX-REP"));
+
   // New hearing states
   const [newCaseNumber, setNewCaseNumber] = useState("");
   const [newCourt, setNewCourt] = useState("دار القضاء العالي - محكمة النقض");
@@ -345,6 +381,81 @@ export function HearingsView({
   const [newLawyer, setNewLawyer] = useState("د. رامي الهواري");
   const [newPurpose, setNewPurpose] = useState("المرافعة وتقديم المستندات");
   const [decisionNotes, setDecisionNotes] = useState<{ [id: string]: string }>({});
+
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
+  // Filter hearings for print based on calendar view
+  const printHearings = useMemo(() => {
+    return hearings.filter((h) => {
+      if (h.isArchived) return false;
+      
+      if (calendarView === "month") {
+        const parts = h.hearingDate.split("-");
+        if (parts.length === 3) {
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          return y === currentCalendarDate.getFullYear() && m === currentCalendarDate.getMonth();
+        }
+      } else if (calendarView === "week") {
+        const parts = h.hearingDate.split("-");
+        if (parts.length === 3) {
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const d = parseInt(parts[2], 10);
+          const hDate = new Date(y, m, d);
+          hDate.setHours(0,0,0,0);
+          return weekDates.some((wDate) => {
+            const copy = new Date(wDate);
+            copy.setHours(0,0,0,0);
+            return copy.getTime() === hDate.getTime();
+          });
+        }
+      } else if (calendarView === "day") {
+        const parts = h.hearingDate.split("-");
+        if (parts.length === 3) {
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10) - 1;
+          const d = parseInt(parts[2], 10);
+          const hDate = new Date(y, m, d);
+          hDate.setHours(0,0,0,0);
+          const aDate = new Date(currentCalendarDate);
+          aDate.setHours(0,0,0,0);
+          return hDate.getTime() === aDate.getTime();
+        }
+      }
+      return false;
+    }).sort((a, b) => {
+      const dateDiff = a.hearingDate.localeCompare(b.hearingDate);
+      if (dateDiff !== 0) return dateDiff;
+      return a.hearingTime.localeCompare(b.hearingTime);
+    });
+  }, [hearings, calendarView, currentCalendarDate, weekDates]);
+
+  const handleExportPDF = async () => {
+    setIsGeneratingPDF(true);
+    // Refresh the unique report tracking code for each generated report
+    setReportCode(generateReportRef("AX-REP"));
+    triggerToast("جاري إعداد وتحضير تقرير رول الجلسات المعتمد...", "الآن", "document");
+
+    setTimeout(async () => {
+      const element = document.getElementById("printable-court-report");
+      if (element) {
+        const success = await exportElementToPdf(element, {
+          filename: `جدول_جلسات_أكسيا_${calendarView}_${currentCalendarDate.getFullYear()}.pdf`,
+          quality: 1.0,
+          scale: 2.2
+        });
+        if (success) {
+          triggerToast("تم تصدير جدول الجلسات بنجاح كتقرير PDF معتمد جاهز للمحكمة", "الآن", "document");
+        } else {
+          triggerToast("فشل تصدير التقرير، يرجى المحاولة لاحقاً", "الآن", "task");
+        }
+      } else {
+        triggerToast("تعذر العثور على حاوية تقرير الطباعة", "الآن", "task");
+      }
+      setIsGeneratingPDF(false);
+    }, 600);
+  };
 
   // Trigger custom animated notification
   const triggerToast = (message: string, date: string, type: string) => {
@@ -517,8 +628,10 @@ export function HearingsView({
     e.preventDefault();
     if (!newCaseNumber) return;
 
+    // eslint-disable-next-line react-hooks/purity
+    const generatedId = `HR-${Date.now()}`;
     const hearing: Hearing = {
-      id: `HR-${Date.now()}`,
+      id: generatedId,
       matterId: "MAT-NEW",
       caseNumber: newCaseNumber,
       court: newCourt,
@@ -660,37 +773,6 @@ export function HearingsView({
       return true;
     });
   }, [hearings, activeTab, subTab]);
-
-  // Generate Month dates (42 grid cells)
-  const monthDates = useMemo(() => {
-    const year = currentCalendarDate.getFullYear();
-    const month = currentCalendarDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const startDayOfWeek = firstDay.getDay(); // 0 is Sunday, 6 is Saturday
-    
-    const gridStart = new Date(year, month, 1 - startDayOfWeek);
-    const dates: Date[] = [];
-    const curr = new Date(gridStart);
-    for (let i = 0; i < 42; i++) {
-      dates.push(new Date(curr));
-      curr.setDate(curr.getDate() + 1);
-    }
-    return dates;
-  }, [currentCalendarDate]);
-
-  // Generate Week dates (7 grid cells)
-  const weekDates = useMemo(() => {
-    const startOfWeek = new Date(currentCalendarDate);
-    startOfWeek.setDate(currentCalendarDate.getDate() - currentCalendarDate.getDay());
-    
-    const dates: Date[] = [];
-    const curr = new Date(startOfWeek);
-    for (let i = 0; i < 7; i++) {
-      dates.push(new Date(curr));
-      curr.setDate(curr.getDate() + 1);
-    }
-    return dates;
-  }, [currentCalendarDate]);
 
   // Handle navigation prev/next
   const handleCalendarNavigate = (direction: "prev" | "next") => {
@@ -851,6 +933,25 @@ export function HearingsView({
               )}
             </button>
           )}
+
+          <button
+            onClick={handleExportPDF}
+            disabled={isGeneratingPDF}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-xs font-bold text-rose-500 hover:bg-rose-500/20 disabled:opacity-50 transition cursor-pointer"
+            title="تحميل وتصدير جدول الجلسات بصيغة PDF معتمدة للمثول أمام المحكمة"
+          >
+            {isGeneratingPDF ? (
+              <>
+                <Loader2 className="size-3.5 animate-spin text-rose-500" />
+                <span>جاري توليد الـ PDF...</span>
+              </>
+            ) : (
+              <>
+                <Printer className="size-3.5 text-rose-500" />
+                <span>تصدير تقرير الجلسات (PDF)</span>
+              </>
+            )}
+          </button>
 
           <button
             onClick={() => setIsSyncModalOpen(true)}
@@ -1813,6 +1914,139 @@ export function HearingsView({
           </div>
         </div>
       )}
+
+      {/* HIDDEN COURTROOM-READY PRINTABLE PDF REPORT CONTAINER */}
+      <div 
+        id="printable-court-report"
+        className="hidden"
+        style={{
+          position: 'absolute',
+          left: '-9999px',
+          top: '-9999px',
+          width: '840px',
+          padding: '40px',
+          background: '#ffffff',
+          color: '#1e293b',
+          fontFamily: 'system-ui, sans-serif',
+          direction: 'rtl',
+          display: isGeneratingPDF ? 'block' : 'none'
+        }}
+      >
+        {/* Header Section */}
+        <div className="border-b-2 border-amber-600 pb-5 mb-6 text-right">
+          <div className="flex items-center justify-between">
+            <div className="text-right">
+              <h1 className="text-2xl font-black text-slate-900 tracking-wide">أكسيا للمحاماة والاستشارات القانونية</h1>
+              <p className="text-[10px] text-amber-700 font-bold tracking-widest mt-1">AXIA LAW FIRM & LEGAL ARBITRATION</p>
+            </div>
+            <div className="text-left bg-stone-100 p-2.5 rounded-xl border border-stone-200">
+              <p className="text-[10px] text-stone-600 font-bold">تاريخ التقرير: 18 سبتمبر 2026</p>
+              <p className="text-[10px] text-stone-500 font-mono mt-0.5">المرجع الرسمي: {reportCode}</p>
+            </div>
+          </div>
+          <div className="mt-4 flex justify-between items-center bg-slate-900 text-white px-4 py-2 rounded-lg">
+            <span className="text-xs font-bold">أجندة رول الجلسات المعتمدة للمثول أمام هيئة المحكمة الموقرة</span>
+            <span className="text-[11px] font-bold bg-amber-600 px-3 py-1 rounded text-white">
+              {calendarView === "month" ? "تقرير شهري شامل" : calendarView === "week" ? "تقرير أسبوعي شامل" : "تقرير يومي"}
+            </span>
+          </div>
+        </div>
+
+        {/* Executive Summary / Metadata Box */}
+        <div className="grid grid-cols-3 gap-4 mb-6 bg-stone-50 border border-stone-200 rounded-xl p-4 text-xs text-right">
+          <div>
+            <span className="text-stone-500 block font-bold mb-1">النطاق الزمني المستهدف:</span>
+            <strong className="text-slate-900 text-sm block">
+              {calendarView === "month" && `شهر ${ARABIC_MONTHS[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`}
+              {calendarView === "week" && `أسبوع الجلسات النشطة`}
+              {calendarView === "day" && `يوم ${ARABIC_DAYS[currentCalendarDate.getDay()]} ${currentCalendarDate.getDate()} ${ARABIC_MONTHS[currentCalendarDate.getMonth()]} ${currentCalendarDate.getFullYear()}`}
+            </strong>
+          </div>
+          <div>
+            <span className="text-stone-500 block font-bold mb-1">إجمالي الجلسات المدرجة:</span>
+            <strong className="text-slate-900 text-sm block">{printHearings.length} جلسة قضائية</strong>
+          </div>
+          <div>
+            <span className="text-stone-500 block font-bold mb-1">الجهة المعتمدة والمصدرة:</span>
+            <strong className="text-slate-900 text-sm block">إدارة الشؤون القانونية والجدولة القضائية</strong>
+          </div>
+        </div>
+
+        {/* Sessions / Hearings High-Contrast Data Table */}
+        <table className="w-full border-collapse text-right text-xs" style={{ direction: "rtl" }}>
+          <thead>
+            <tr className="bg-slate-900 text-white text-[10px]">
+              <th className="border border-stone-300 p-2.5 w-[16%]">اليوم والتاريخ</th>
+              <th className="border border-stone-300 p-2.5 w-[10%]">الساعة</th>
+              <th className="border border-stone-300 p-2.5 w-[16%]">رقم الدعوى</th>
+              <th className="border border-stone-300 p-2.5 w-[22%]">المحكمة والدائرة</th>
+              <th className="border border-stone-300 p-2.5 w-[12%]">القاعة والرول</th>
+              <th className="border border-stone-300 p-2.5 w-[12%]">المحامي الحاضر</th>
+              <th className="border border-stone-300 p-2.5 w-[12%]">المطلوب بالجلسة</th>
+            </tr>
+          </thead>
+          <tbody>
+            {printHearings.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="border border-stone-300 p-8 text-center text-stone-400 font-bold bg-white">
+                  لا توجد جلسات قضائية مجدولة لهذا النطاق حالياً.
+                </td>
+              </tr>
+            ) : (
+              printHearings.map((h) => {
+                const parts = h.hearingDate.split("-");
+                let arabicDateLabel = h.hearingDate;
+                if (parts.length === 3) {
+                  const year = parseInt(parts[0], 10);
+                  const month = parseInt(parts[1], 10) - 1;
+                  const day = parseInt(parts[2], 10);
+                  const dateObj = new Date(year, month, day);
+                  arabicDateLabel = `${ARABIC_DAYS[dateObj.getDay()]} ${day} ${ARABIC_MONTHS[month]}`;
+                }
+
+                return (
+                  <tr key={h.id} className="text-slate-800 bg-white font-semibold">
+                    <td className="border border-stone-300 p-2.5 font-bold">{arabicDateLabel}</td>
+                    <td className="border border-stone-300 p-2.5 font-black text-slate-900">{h.hearingTime}</td>
+                    <td className="border border-stone-300 p-2.5 font-mono text-slate-900">{h.caseNumber}</td>
+                    <td className="border border-stone-300 p-2.5">
+                      <div className="font-bold text-slate-900">{h.court}</div>
+                      <div className="text-[9px] text-stone-500 mt-0.5">{h.circuit}</div>
+                    </td>
+                    <td className="border border-stone-300 p-2.5 text-center">
+                      <div className="text-xs font-black text-slate-900">رول {h.rollNumber}</div>
+                      <div className="text-[9px] text-stone-500 mt-0.5">{h.hall}</div>
+                    </td>
+                    <td className="border border-stone-300 p-2.5 text-stone-600">{h.attendingLawyer}</td>
+                    <td className="border border-stone-300 p-2.5 text-[10px] font-bold text-slate-900 leading-relaxed">{h.purpose}</td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+
+        {/* Compliance Footer and Official Signatures Section */}
+        <div className="mt-12 pt-8 border-t border-stone-200 grid grid-cols-3 gap-8 text-center text-xs">
+          <div className="flex flex-col items-center">
+            <span className="text-stone-500 font-bold mb-14">توقيع المندوب القضائي الحاضر</span>
+            <div className="w-36 border-b border-stone-400 border-dashed" />
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-stone-500 font-bold mb-14">اعتماد مستشار الهيئة</span>
+            <div className="w-36 border-b border-stone-400 border-dashed" />
+          </div>
+          <div className="flex flex-col items-center justify-center">
+            <div className="size-20 rounded-full border border-amber-600/40 border-dashed flex items-center justify-center text-[8px] text-amber-700 font-black tracking-widest bg-amber-50/50">
+              ختم الإدارة الرسمية
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-12 text-center text-[9px] text-stone-400 font-medium">
+          هذا التقرير الصادر آلياً يمثل مستنداً رسمياً لتمثيل مكتب أكسيا للمحاماة أمام المحاكم المصرية.
+        </div>
+      </div>
     </div>
   );
 }
