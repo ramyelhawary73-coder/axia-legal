@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { FolderDown, X, ExternalLink } from "lucide-react";
 
 interface DailySnapshotToastProps {
@@ -19,7 +20,34 @@ export function DailySnapshotToast({
   onDismiss,
   onOpenManager,
 }: DailySnapshotToastProps) {
-  if (!notification || !notification.visible) return null;
+  const [prevFilename, setPrevFilename] = useState<string | null>(null);
+  const [localDismissed, setLocalDismissed] = useState(false);
+
+  const currentFilename = notification?.filename || null;
+  if (currentFilename !== prevFilename) {
+    setPrevFilename(currentFilename);
+    setLocalDismissed(false);
+  }
+
+  if (!notification || !notification.visible || localDismissed) return null;
+
+  const handleDismiss = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    try {
+      // Instantly hide the toast locally to guarantee zero-latency UX
+      setLocalDismissed(true);
+      
+      // Notify parent to update the global app state
+      if (typeof onDismiss === "function") {
+        onDismiss();
+      }
+    } catch (error) {
+      console.error("Critical error in DailySnapshotToast dismiss handler:", error);
+    }
+  };
 
   return (
     <div className="fixed bottom-5 left-5 z-50 max-w-md w-[calc(100vw-2.5rem)] rounded-2xl border border-emerald-500/30 bg-[var(--panel)] p-4 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5 duration-300">
@@ -34,8 +62,10 @@ export function DailySnapshotToast({
               {notification.title}
             </h4>
             <button
-              onClick={onDismiss}
-              className="text-[var(--text-muted)] hover:text-[var(--text)] transition"
+              onClick={handleDismiss}
+              className="text-[var(--text-muted)] hover:text-[var(--text)] transition p-1 rounded-lg hover:bg-[var(--accent)] cursor-pointer"
+              aria-label="إغلاق التنبيه"
+              type="button"
             >
               <X className="size-3.5" />
             </button>
@@ -56,11 +86,20 @@ export function DailySnapshotToast({
 
           <div className="mt-3 flex items-center gap-2 pt-2 border-t border-[var(--border)]/60">
             <button
-              onClick={() => {
-                onOpenManager();
-                onDismiss();
+              onClick={(e) => {
+                if (e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+                try {
+                  onOpenManager();
+                  handleDismiss();
+                } catch (error) {
+                  console.error("Error launching snapshot manager from toast:", error);
+                }
               }}
-              className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--axia-gold-light)] hover:underline"
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--axia-gold-light)] hover:underline cursor-pointer"
+              type="button"
             >
               <ExternalLink className="size-3" />
               <span>إدارة الأرشيف وضبط المزامنة السحابية</span>
