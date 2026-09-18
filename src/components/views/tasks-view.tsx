@@ -18,7 +18,10 @@ import {
   MinusSquare,
   Check,
   FolderOpen,
-  RefreshCw
+  RefreshCw,
+  List,
+  Kanban,
+  GripVertical
 } from "lucide-react";
 import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
 import { NavigationTab, LegalTask } from "@/types/legal";
@@ -157,6 +160,47 @@ export function TasksView({
   const [internalTasks, setInternalTasks] = useState<LegalTask[]>(mockTasks);
   const tasks = propTasks || internalTasks;
 
+  const [viewMode, setViewMode] = useState<"list" | "kanban">("kanban");
+  const [hoveredColumn, setHoveredColumn] = useState<LegalTask["status"] | null>(null);
+  const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+
+  const handleUpdateTaskStatus = (id: string, newStatus: LegalTask["status"]) => {
+    if (propBulkUpdateStatus) {
+      propBulkUpdateStatus([id], newStatus);
+    } else {
+      setInternalTasks((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t))
+      );
+    }
+  };
+
+  const statuses: { id: LegalTask["status"]; label: string; bg: string; border: string; text: string; dot: string }[] = [
+    { 
+      id: "قيد التنفيذ", 
+      label: "قيد التنفيذ", 
+      bg: "bg-amber-500/10", 
+      border: "border-amber-500/30", 
+      text: "text-amber-400", 
+      dot: "bg-amber-500"
+    },
+    { 
+      id: "معلقة", 
+      label: "معلقة (مؤجلة)", 
+      bg: "bg-slate-500/10", 
+      border: "border-slate-500/30", 
+      text: "text-slate-400", 
+      dot: "bg-slate-400"
+    },
+    { 
+      id: "مكتملة", 
+      label: "مكتملة", 
+      bg: "bg-emerald-500/10", 
+      border: "border-emerald-500/30", 
+      text: "text-emerald-400", 
+      dot: "bg-emerald-500"
+    },
+  ];
+
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
@@ -219,6 +263,37 @@ export function TasksView({
   const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [taskIdsToDelete, setTaskIdsToDelete] = useState<string[]>([]);
+
+  // HTML5 Drag and Drop Handlers
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData("text/plain", taskId);
+    setDraggedTaskId(taskId);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTaskId(null);
+    setHoveredColumn(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, status: LegalTask["status"]) => {
+    e.preventDefault();
+    setHoveredColumn(status);
+  };
+
+  const handleDragLeave = () => {
+    setHoveredColumn(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetStatus: LegalTask["status"]) => {
+    e.preventDefault();
+    const taskId = e.dataTransfer.getData("text/plain") || draggedTaskId;
+    if (taskId) {
+      handleUpdateTaskStatus(taskId, targetStatus);
+    }
+    setHoveredColumn(null);
+    setDraggedTaskId(null);
+  };
 
   const filteredTasks = tasks.filter((t) => {
     if (filterCategory === "all") return true;
@@ -441,27 +516,59 @@ export function TasksView({
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border)] pb-3">
-        {[
-          { id: "all", label: `كافة المهام (${tasks.length})` },
-          { id: "قلم المحضرين", label: "أعمال قلم المحضرين" },
-          { id: "ميعاد طعن قانوني", label: "مواعيد سقوط الطعون" },
-          { id: "سداد رسوم", label: "الخزينة ورسوم الخبراء" },
-          { id: "إيداع مذكرات", label: "إيداع المذكرات القضائية" },
-        ].map((tab) => (
+      {/* Filter Tabs & View Mode Switcher */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-[var(--border)] pb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {[
+            { id: "all", label: `كافة المهام (${tasks.length})` },
+            { id: "قلم المحضرين", label: "أعمال قلم المحضرين" },
+            { id: "ميعاد طعن قانوني", label: "مواعيد سقوط الطعون" },
+            { id: "سداد رسوم", label: "الخزينة ورسوم الخبراء" },
+            { id: "إيداع مذكرات", label: "إيداع المذكرات القضائية" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setFilterCategory(tab.id)}
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ${
+                filterCategory === tab.id
+                  ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                  : "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Layout Toggle */}
+        <div className="flex items-center gap-1 rounded-xl bg-[var(--accent)] p-1 border border-[var(--border)] shrink-0 self-start md:self-auto">
           <button
-            key={tab.id}
-            onClick={() => setFilterCategory(tab.id)}
-            className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ${
-              filterCategory === tab.id
-                ? "bg-red-500/20 text-red-300 border border-red-500/30"
-                : "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]"
+            type="button"
+            onClick={() => setViewMode("list")}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              viewMode === "list"
+                ? "bg-[var(--panel)] text-[var(--text)] shadow-sm"
+                : "text-[var(--text-muted)] hover:text-[var(--text)]"
             }`}
+            title="عرض المهام في قائمة مفصلة متعاقبة"
           >
-            {tab.label}
+            <List className="size-3.5" />
+            <span>جدول المواعيد</span>
           </button>
-        ))}
+          <button
+            type="button"
+            onClick={() => setViewMode("kanban")}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              viewMode === "kanban"
+                ? "bg-[var(--panel)] text-[var(--text)] shadow-sm"
+                : "text-[var(--text-muted)] hover:text-[var(--text)]"
+            }`}
+            title="عرض المهام في لوحة كانبان التفاعلية للسحب والإفلات"
+          >
+            <Kanban className="size-3.5" />
+            <span>لوحة كانبان</span>
+          </button>
+        </div>
       </div>
 
       {/* Multi-Select & Bulk Actions Bar */}
@@ -557,171 +664,335 @@ export function TasksView({
         </div>
       )}
 
-      {/* Tasks List */}
-      <div className="space-y-3.5">
-        {filteredTasks.length === 0 ? (
-          <TasksEmptyState
-            currentCategory={filterCategory}
-            onResetCategory={() => setFilterCategory("all")}
-            onCreateTaskClick={() => setIsNewTaskOpen(true)}
-            availableTasksCount={tasks.length}
-          />
-        ) : (
-          filteredTasks.map((task) => {
-            const isCritical = task.priority.includes("حرجة");
-            const isCompleted = task.status === "مكتملة";
-            const isSelected = selectedTaskIds.includes(task.id);
-            const deadlineInfo = analyzeTaskDeadline(task);
-            const isDueWithinOneHour = 
-              deadlineInfo.diffHours > -0.08 && 
-              deadlineInfo.diffHours <= 1.0 && 
-              (isCritical || task.priority === "عاجلة") && 
-              !isCompleted;
+      {/* Tasks Content Block */}
+      {viewMode === "kanban" ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          {statuses.map((statusCol) => {
+            const columnTasks = filteredTasks.filter((t) => t.status === statusCol.id);
+            const isColumnHovered = hoveredColumn === statusCol.id;
 
             return (
               <div
-                key={task.id}
-                className={`rounded-2xl border p-4 sm:p-4.5 transition relative ${
-                  isSelected
-                    ? "border-[var(--axia-gold)] bg-gradient-to-r from-[var(--panel)] via-[var(--accent)] to-[var(--panel)] ring-2 ring-[var(--axia-gold)]/60 shadow-md"
-                    : isCompleted
-                    ? "border-emerald-500/20 bg-emerald-950/10 opacity-75"
-                    : isDueWithinOneHour
-                    ? "border-red-500/60 bg-gradient-to-r from-red-950/30 to-[var(--panel)] shadow-lg ring-1 ring-red-500/30"
-                    : isCritical
-                    ? "border-red-500/30 bg-[var(--accent-hover)] shadow-md"
-                    : deadlineInfo.isWithin24Hours
-                    ? "border-amber-500/30 bg-amber-950/10 hover:border-amber-500/50"
-                    : "border-[var(--border)] bg-[var(--panel)] hover:border-[var(--border-strong)]"
+                key={statusCol.id}
+                onDragOver={(e) => handleDragOver(e, statusCol.id)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, statusCol.id)}
+                className={`flex flex-col rounded-3xl border p-4.5 min-h-[500px] transition-all duration-200 ${
+                  isColumnHovered
+                    ? `${statusCol.bg} ${statusCol.border} border-dashed ring-2 ring-[var(--axia-gold)]/40 shadow-lg`
+                    : "border-[var(--border)] bg-[var(--panel-glass)]/30 backdrop-blur-sm"
                 }`}
               >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex items-start gap-3">
-                    {/* Multi-Select Checkbox */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleSelectTask(task.id)}
-                      className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border transition ${
-                        isSelected
-                          ? "border-[var(--axia-gold)] bg-[var(--axia-gold)] text-black"
-                          : "border-[var(--border-strong)] bg-[var(--accent)] text-transparent hover:border-[var(--axia-gold)]"
-                      }`}
-                      title={isSelected ? "إلغاء تحديد المهمة" : "تحديد المهمة لتنفيذ إجراء جماعي"}
-                      aria-label={`تحديد المهمة ${task.title}`}
-                    >
-                      <Check className="size-3.5 stroke-[3]" />
-                    </button>
-
-                    {/* Quick Status Toggle Button */}
-                    <button
-                      type="button"
-                      onClick={() => handleToggleTaskStatus(task.id)}
-                      className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border transition ${
-                        isCompleted
-                          ? "border-emerald-400 bg-emerald-400 text-white"
-                          : "border-white/30 hover:border-white text-transparent"
-                      }`}
-                      title={isCompleted ? "المهمة مكتملة - انقر لإعادة الفتح" : "انقر لتحديد المهمة كمكتملة"}
-                    >
-                      {isCompleted && <CheckCircle2 className="size-3.5" />}
-                    </button>
-
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        {isDueWithinOneHour && (
-                          <span className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
-                            <AlertTriangle className="size-3" />
-                            <span>ينقضي خلال أقل من ساعة!</span>
-                          </span>
-                        )}
-                        <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-                          isCritical ? "bg-red-500/20 text-red-300" : "bg-slate-800 text-[var(--text-muted)]"
-                        }`}>
-                          {task.priority}
-                        </span>
-                        <span className="rounded bg-[var(--accent)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-muted)]">
-                          {task.category}
-                        </span>
-                        {task.matterCaseNumber && (
-                          <span className="text-xs font-semibold text-[var(--axia-gold-light)]">
-                            {task.matterCaseNumber}
-                          </span>
-                        )}
-                        {isSelected && (
-                          <span className="rounded-md bg-[var(--axia-gold)]/20 border border-[var(--axia-gold)]/40 px-2 py-0.2 text-[10px] font-extrabold text-[var(--axia-gold)]">
-                            محددة لإجراء جماعي
-                          </span>
-                        )}
-                      </div>
-
-                      <h3 className={`mt-2 text-sm font-semibold ${
-                        isCompleted ? "line-through text-[var(--text-muted)]" : "text-[var(--text)]"
-                      }`}>
-                        {task.title}
-                      </h3>
-
-                      <div className="mt-2.5 flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)]">
-                        <span>الجهة: <strong className="text-[var(--text)]">{task.courtOrBailiffOffice}</strong></span>
-                        <span>المسؤول: <strong className="text-[var(--text)]">{task.assignedTo}</strong></span>
-                      </div>
-                    </div>
+                {/* Column Header */}
+                <div className="flex items-center justify-between border-b border-[var(--border)] pb-3.5 mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className={`size-2.5 rounded-full ${statusCol.dot}`} />
+                    <span className="font-bold text-xs text-[var(--text)]">{statusCol.label}</span>
                   </div>
+                  <span className="rounded-full bg-[var(--accent)] px-2.5 py-0.5 text-[10px] font-mono font-bold text-[var(--text-muted)]">
+                    {columnTasks.length}
+                  </span>
+                </div>
 
-                  <div className="flex items-center gap-3 sm:flex-col sm:items-end">
-                    <div className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold ${
-                      isDueWithinOneHour
-                        ? "bg-red-600 text-white shadow-sm"
-                        : isCritical 
-                        ? "bg-red-500/20 text-red-300 border border-red-500/30" 
-                        : deadlineInfo.isWithin24Hours && !isCompleted
-                        ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
-                        : "bg-[var(--accent-hover)] text-[var(--text-muted)]"
-                    }`}>
-                      <Clock className="size-3.5" />
-                      <span>{deadlineInfo.remainingText}</span>
+                {/* Column Content */}
+                <div className="space-y-3.5 flex-1 flex flex-col justify-start">
+                  {columnTasks.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--panel)]/20 p-6 text-center text-[var(--text-muted)] min-h-[250px] transition duration-200">
+                      <FolderOpen className="size-6 text-[var(--text-muted)] opacity-30 mb-2" />
+                      <span className="text-[11px] font-semibold">لا توجد مهام حالياً</span>
+                      <span className="text-[10px] text-[var(--text-muted)] opacity-80 mt-1">
+                        اسحب أي مهمة هنا لتغيير حالتها
+                      </span>
                     </div>
+                  ) : (
+                    columnTasks.map((task) => {
+                      const isCritical = task.priority.includes("حرجة");
+                      const isCompleted = task.status === "مكتملة";
+                      const isSelected = selectedTaskIds.includes(task.id);
+                      const deadlineInfo = analyzeTaskDeadline(task);
+                      const isDueWithinOneHour =
+                        deadlineInfo.diffHours > -0.08 &&
+                        deadlineInfo.diffHours <= 1.0 &&
+                        (isCritical || task.priority === "عاجلة") &&
+                        !isCompleted;
 
-                    <div className="flex items-center gap-2">
-                      {isDueWithinOneHour && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            sendTaskDeadlineBrowserNotification({
-                              task,
-                              diffHours: deadlineInfo.diffHours,
-                              force: true,
-                            });
-                          }}
-                          className="inline-flex items-center gap-1 rounded-md border border-red-500/40 bg-red-600/10 px-2 py-0.5 text-[10px] font-bold text-red-400 hover:bg-red-600/20 transition"
-                          title="إرسال تنبيه مكتبي فوري لهذه المهمة"
+                      return (
+                        <div
+                          key={task.id}
+                          draggable={true}
+                          onDragStart={(e) => handleDragStart(e, task.id)}
+                          onDragEnd={handleDragEnd}
+                          className={`rounded-2xl border p-3.5 transition duration-200 cursor-grab active:cursor-grabbing select-none relative ${
+                            draggedTaskId === task.id
+                              ? "opacity-40 border-[var(--border-strong)] bg-[var(--bg)]"
+                              : isSelected
+                              ? "border-[var(--axia-gold)] bg-gradient-to-r from-[var(--panel)] via-[var(--accent)] to-[var(--panel)] ring-2 ring-[var(--axia-gold)]/60 shadow-md"
+                              : isCompleted
+                              ? "border-emerald-500/20 bg-emerald-950/10 opacity-75"
+                              : isDueWithinOneHour
+                              ? "border-red-500/60 bg-gradient-to-r from-red-950/30 to-[var(--panel)] shadow-lg"
+                              : isCritical
+                              ? "border-red-500/30 bg-[var(--accent-hover)]"
+                              : "border-[var(--border)] bg-[var(--panel)] hover:border-[var(--border-strong)] hover:shadow-sm"
+                          }`}
                         >
-                          <BellRing className="size-3" />
-                          <span>إشعار مكتبي</span>
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => handleToggleTaskStatus(task.id)}
-                        className="text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text)]"
-                      >
-                        {isCompleted ? "إلغاء الإكمال" : "تحديد كمكتمل"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRequestSingleDelete(task.id)}
-                        className="p-1 rounded-lg text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition"
-                        title="حذف هذه المهمة الإجرائية"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between gap-1.5">
+                              <div className="flex flex-wrap gap-1.5 items-center">
+                                <span className={`rounded px-1.5 py-0.2 text-[9px] font-bold ${
+                                  isCritical ? "bg-red-500/20 text-red-300" : "bg-slate-800 text-[var(--text-muted)]"
+                                }`}>
+                                  {task.priority}
+                                </span>
+                                <span className="rounded bg-[var(--accent)] px-1.5 py-0.2 text-[9px] font-medium text-[var(--text-muted)]">
+                                  {task.category}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0 text-[var(--text-muted)]">
+                                <GripVertical className="size-3.5 opacity-40 cursor-grab" />
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleSelectTask(task.id)}
+                                  className={`grid size-4 shrink-0 place-items-center rounded border transition ${
+                                    isSelected
+                                      ? "border-[var(--axia-gold)] bg-[var(--axia-gold)] text-black"
+                                      : "border-[var(--border-strong)] bg-[var(--accent)] text-transparent hover:border-[var(--axia-gold)]"
+                                  }`}
+                                >
+                                  <Check className="size-3 stroke-[3]" />
+                                </button>
+                              </div>
+                            </div>
+
+                            <h4 className={`text-xs font-bold leading-relaxed ${
+                              isCompleted ? "line-through text-[var(--text-muted)] text-[11px]" : "text-[var(--text)]"
+                            }`}>
+                              {task.title}
+                            </h4>
+
+                            {task.matterCaseNumber && (
+                              <div className="text-[10px] font-semibold text-[var(--axia-gold-light)]">
+                                {task.matterCaseNumber}
+                              </div>
+                            )}
+
+                            <div className="text-[10px] text-[var(--text-muted)] space-y-1">
+                              <div className="flex justify-between items-center">
+                                <span>الجهة:</span>
+                                <strong className="text-[var(--text)]">{task.courtOrBailiffOffice}</strong>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span>المسؤول:</span>
+                                <strong className="text-[var(--text)]">{task.assignedTo}</strong>
+                              </div>
+                            </div>
+
+                            <div className="border-t border-[var(--border)] pt-2 mt-2 flex items-center justify-between gap-1.5">
+                              <span className={`inline-flex items-center gap-1 text-[9px] font-bold rounded px-1.5 py-0.5 ${
+                                isDueWithinOneHour
+                                  ? "bg-red-600 text-white"
+                                  : deadlineInfo.isWithin24Hours && !isCompleted
+                                  ? "bg-amber-500/15 text-amber-500"
+                                  : "bg-[var(--accent)] text-[var(--text-muted)]"
+                              }`}>
+                                <Clock className="size-3" />
+                                <span>{deadlineInfo.remainingText}</span>
+                              </span>
+
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleTaskStatus(task.id)}
+                                  className="text-[9px] font-bold text-[var(--text-muted)] hover:text-[var(--text)]"
+                                >
+                                  {isCompleted ? "تراجع" : "إكمال"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRequestSingleDelete(task.id)}
+                                  className="p-1 rounded text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition"
+                                >
+                                  <Trash2 className="size-3" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      ) : (
+        <div className="space-y-3.5">
+          {filteredTasks.length === 0 ? (
+            <TasksEmptyState
+              currentCategory={filterCategory}
+              onResetCategory={() => setFilterCategory("all")}
+              onCreateTaskClick={() => setIsNewTaskOpen(true)}
+              availableTasksCount={tasks.length}
+            />
+          ) : (
+            filteredTasks.map((task) => {
+              const isCritical = task.priority.includes("حرجة");
+              const isCompleted = task.status === "مكتملة";
+              const isSelected = selectedTaskIds.includes(task.id);
+              const deadlineInfo = analyzeTaskDeadline(task);
+              const isDueWithinOneHour = 
+                deadlineInfo.diffHours > -0.08 && 
+                deadlineInfo.diffHours <= 1.0 && 
+                (isCritical || task.priority === "عاجلة") && 
+                !isCompleted;
+
+              return (
+                <div
+                  key={task.id}
+                  className={`rounded-2xl border p-4 sm:p-4.5 transition relative ${
+                    isSelected
+                      ? "border-[var(--axia-gold)] bg-gradient-to-r from-[var(--panel)] via-[var(--accent)] to-[var(--panel)] ring-2 ring-[var(--axia-gold)]/60 shadow-md"
+                      : isCompleted
+                      ? "border-emerald-500/20 bg-emerald-950/10 opacity-75"
+                      : isDueWithinOneHour
+                      ? "border-red-500/60 bg-gradient-to-r from-red-950/30 to-[var(--panel)] shadow-lg ring-1 ring-red-500/30"
+                      : isCritical
+                      ? "border-red-500/30 bg-[var(--accent-hover)] shadow-md"
+                      : deadlineInfo.isWithin24Hours
+                      ? "border-amber-500/30 bg-amber-950/10 hover:border-amber-500/50"
+                      : "border-[var(--border)] bg-[var(--panel)] hover:border-[var(--border-strong)]"
+                  }`}
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      {/* Multi-Select Checkbox */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleSelectTask(task.id)}
+                        className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md border transition ${
+                          isSelected
+                            ? "border-[var(--axia-gold)] bg-[var(--axia-gold)] text-black"
+                            : "border-[var(--border-strong)] bg-[var(--accent)] text-transparent hover:border-[var(--axia-gold)]"
+                        }`}
+                        title="تحديد المهمة لتنفيذ إجراء جماعي"
+                        aria-label={`تحديد المهمة ${task.title}`}
+                      >
+                        <Check className="size-3.5 stroke-[3]" />
+                      </button>
+
+                      {/* Quick Status Toggle Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleToggleTaskStatus(task.id)}
+                        className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border transition ${
+                          isCompleted
+                            ? "border-emerald-400 bg-emerald-400 text-white"
+                            : "border-white/30 hover:border-white text-transparent"
+                        }`}
+                        title={isCompleted ? "المهمة مكتملة - انقر لإعادة الفتح" : "انقر لتحديد المهمة كمكتملة"}
+                      >
+                        {isCompleted && <CheckCircle2 className="size-3.5" />}
+                      </button>
+
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {isDueWithinOneHour && (
+                            <span className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                              <AlertTriangle className="size-3" />
+                              <span>ينقضي خلال أقل من ساعة!</span>
+                            </span>
+                          )}
+                          <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                            isCritical ? "bg-red-500/20 text-red-300" : "bg-slate-800 text-[var(--text-muted)]"
+                          }`}>
+                            {task.priority}
+                          </span>
+                          <span className="rounded bg-[var(--accent)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-muted)]">
+                            {task.category}
+                          </span>
+                          {task.matterCaseNumber && (
+                            <span className="text-xs font-semibold text-[var(--axia-gold-light)]">
+                              {task.matterCaseNumber}
+                            </span>
+                          )}
+                          {isSelected && (
+                            <span className="rounded-md bg-[var(--axia-gold)]/20 border border-[var(--axia-gold)]/40 px-2 py-0.2 text-[10px] font-extrabold text-[var(--axia-gold)]">
+                              محددة لإجراء جماعي
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 className={`mt-2 text-sm font-semibold ${
+                          isCompleted ? "line-through text-[var(--text-muted)]" : "text-[var(--text)]"
+                        }`}>
+                          {task.title}
+                        </h3>
+
+                        <div className="mt-2.5 flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)]">
+                          <span>الجهة: <strong className="text-[var(--text)]">{task.courtOrBailiffOffice}</strong></span>
+                          <span>المسؤول: <strong className="text-[var(--text)]">{task.assignedTo}</strong></span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 sm:flex-col sm:items-end">
+                      <div className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold ${
+                        isDueWithinOneHour
+                          ? "bg-red-600 text-white shadow-sm"
+                          : isCritical 
+                          ? "bg-red-500/20 text-red-300 border border-red-500/30" 
+                          : deadlineInfo.isWithin24Hours && !isCompleted
+                          ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
+                          : "bg-[var(--accent-hover)] text-[var(--text-muted)]"
+                      }`}>
+                        <Clock className="size-3.5" />
+                        <span>{deadlineInfo.remainingText}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {isDueWithinOneHour && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              sendTaskDeadlineBrowserNotification({
+                                task,
+                                diffHours: deadlineInfo.diffHours,
+                                force: true,
+                              });
+                            }}
+                            className="inline-flex items-center gap-1 rounded-md border border-red-500/40 bg-red-600/10 px-2 py-0.5 text-[10px] font-bold text-red-400 hover:bg-red-600/20 transition"
+                            title="إرسال تنبيه مكتبي فوري لهذه المهمة"
+                          >
+                            <BellRing className="size-3" />
+                            <span>إشعار مكتبي</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleTaskStatus(task.id)}
+                          className="text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text)]"
+                        >
+                          {isCompleted ? "إلغاء الإكمال" : "تحديد كمكتمل"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRequestSingleDelete(task.id)}
+                          className="p-1 rounded-lg text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition"
+                          title="حذف هذه المهمة الإجرائية"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
 
       {/* New Task Modal */}
       <TaskCreationModal
