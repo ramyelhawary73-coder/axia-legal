@@ -1,13 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Settings, Database, Save, Check } from "lucide-react";
+import { Settings, Database, Save, Check, FolderDown, RefreshCw } from "lucide-react";
+import { Matter, LegalTask } from "@/types/legal";
+import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
+import { DailySnapshotManager } from "@/components/daily-snapshot-manager";
+import { getSnapshotConfig } from "@/lib/daily-snapshot-service";
 
-export function AdministrationView() {
+interface AdministrationViewProps {
+  matters?: Matter[];
+  tasks?: LegalTask[];
+}
+
+export function AdministrationView({ matters = mockMatters, tasks = mockTasks }: AdministrationViewProps) {
   const [firmName, setFirmName] = useState("مكتب د. رامي الهواري للاستشارات القانونية والتحكيم الدولي");
   const [barNumber, setBarNumber] = useState("قيد نقابة المحامين: ١٤٥٢١ / جدول النقض");
   const [address, setAddress] = useState("شارع قصر النيل، وسط البلد، القاهرة");
   const [isSaved, setIsSaved] = useState(false);
+  const [isSnapshotModalOpen, setIsSnapshotModalOpen] = useState(false);
+
+  const snapshotConfig = getSnapshotConfig();
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,6 +131,51 @@ export function AdministrationView() {
         </div>
 
         <div className="space-y-6">
+          {/* Daily Snapshot & Cloud Sync Card */}
+          <div className="rounded-2xl border border-[var(--axia-gold)]/40 bg-gradient-to-b from-[var(--panel)] to-[var(--axia-gold-dim)]/20 p-6 shadow-lg text-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[var(--axia-gold-light)] font-bold">
+                <FolderDown className="size-4 text-[var(--axia-gold)]" />
+                <span>النسخ الاحتياطي اليومي للقضايا والمهام</span>
+              </div>
+              <span className="rounded bg-[var(--axia-gold)] text-black px-2 py-0.5 text-[10px] font-bold">
+                مؤتمت
+              </span>
+            </div>
+
+            <p className="text-[var(--text-muted)] leading-relaxed">
+              يقوم النظام بتوليد وتصدير لقطة يومية معتمدة (Daily Summary Snapshot) تشمل جميع القضايا النشطة والمهام المفتوحة وحفظها تلقائياً بمجلد التنزيلات المحلي ومزامنتها سحابياً.
+            </p>
+
+            <div className="space-y-2 rounded-xl bg-[var(--bg)]/60 p-3 border border-[var(--border)]">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-[var(--text-muted)]">حالة الأتمتة:</span>
+                <span className={`font-semibold ${snapshotConfig.enabled ? "text-emerald-400" : "text-zinc-400"}`}>
+                  {snapshotConfig.enabled ? "نشطة ومفعلة" : "متوقفة"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-[var(--text-muted)]">وجهة الحفظ:</span>
+                <span className="font-semibold text-[var(--text)]">
+                  {snapshotConfig.destination === "download_folder" ? "مجلد Downloads المحلي" : snapshotConfig.destination === "cloud_sync" ? "سحابي فقط" : "تنزيل محلي + سحابي"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-[var(--text-muted)]">توقيت التصدير:</span>
+                <span className="font-mono text-[var(--axia-gold-light)]">{snapshotConfig.autoExportTime}</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsSnapshotModalOpen(true)}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--axia-gold)] px-4 py-2 text-xs font-bold text-black hover:bg-[var(--axia-gold-light)] shadow transition"
+            >
+              <RefreshCw className="size-3.5" />
+              <span>إدارة اللقطات والمزامنة السحابية</span>
+            </button>
+          </div>
+
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-lg text-xs space-y-3">
             <div className="flex items-center gap-2 text-[var(--axia-gold-light)] font-bold">
               <Database className="size-4" />
@@ -135,6 +192,14 @@ export function AdministrationView() {
           </div>
         </div>
       </div>
+
+      {/* Daily Snapshot Manager Modal */}
+      <DailySnapshotManager
+        isOpen={isSnapshotModalOpen}
+        onClose={() => setIsSnapshotModalOpen(false)}
+        matters={matters}
+        tasks={tasks}
+      />
     </div>
   );
 }

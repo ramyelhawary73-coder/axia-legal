@@ -10,11 +10,17 @@ import {
   Briefcase, 
   ShieldCheck, 
   Printer, 
-  FileSpreadsheet
+  FileSpreadsheet,
+  FolderDown,
+  Cloud,
+  Settings,
+  Sparkles
 } from "lucide-react";
 import { Matter, LegalTask } from "@/types/legal";
 import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
 import { LegalPdfReportModal, ReportType } from "@/components/legal-pdf-report-modal";
+import { DailySnapshotManager } from "@/components/daily-snapshot-manager";
+import { getSnapshotConfig, performDailyExport, getTodayDateString } from "@/lib/daily-snapshot-service";
 
 interface ReportsViewProps {
   matters?: Matter[];
@@ -24,10 +30,30 @@ interface ReportsViewProps {
 export function ReportsView({ matters = mockMatters, tasks = mockTasks }: ReportsViewProps) {
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [selectedReportType, setSelectedReportType] = useState<ReportType>("matters");
+  const [isSnapshotModalOpen, setIsSnapshotModalOpen] = useState(false);
+  const [isQuickExporting, setIsQuickExporting] = useState(false);
+  const [quickExportSuccess, setQuickExportSuccess] = useState<string | null>(null);
+
+  const snapshotConfig = getSnapshotConfig();
+  const today = getTodayDateString();
+  const isExportedToday = snapshotConfig.lastExportDate === today;
 
   const handleOpenPdfModal = (type: ReportType) => {
     setSelectedReportType(type);
     setIsPdfModalOpen(true);
+  };
+
+  const handleQuickExportSnapshot = async () => {
+    setIsQuickExporting(true);
+    try {
+      const res = await performDailyExport(matters, tasks);
+      setQuickExportSuccess(`تم تنزيل ${res.record.filename} بنجاح إلى مجلد التنزيلات (Downloads)`);
+      setTimeout(() => setQuickExportSuccess(null), 4000);
+    } catch (e) {
+      console.error("Quick export error:", e);
+    } finally {
+      setIsQuickExporting(false);
+    }
   };
 
   const activeMattersCount = matters.length;
@@ -61,6 +87,83 @@ export function ReportsView({ matters = mockMatters, tasks = mockTasks }: Report
             <span>تصدير التقرير الشامل (PDF)</span>
           </button>
         </div>
+      </div>
+
+      {/* Daily Summary Snapshot & Cloud Sync Banner */}
+      <div className="relative overflow-hidden rounded-2xl border border-[var(--axia-gold)]/40 bg-gradient-to-r from-[var(--panel)] via-[var(--panel)] to-[var(--axia-gold-dim)]/20 p-6 shadow-xl">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-2xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--axia-gold)] text-black px-2.5 py-0.5 text-[10px] font-bold">
+                <Sparkles className="size-3" />
+                <span>أرشفة يومية مؤتمتة</span>
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-[var(--accent)] text-[var(--text-muted)] border border-[var(--border)] px-2.5 py-0.5 text-[10px] font-mono">
+                Daily Snapshot Engine
+              </span>
+              {snapshotConfig.enabled ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 text-[10px] font-semibold">
+                  <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>الأتمتة نشطة (مجلد التنزيل والمزامنة)</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-zinc-500/10 text-zinc-400 border border-zinc-500/20 px-2.5 py-0.5 text-[10px] font-semibold">
+                  <span>الأتمتة متوقفة مؤقتاً</span>
+                </span>
+              )}
+            </div>
+
+            <h2 className="text-lg font-bold text-[var(--text)] sm:text-xl">
+              التصدير التلقائي للقطة اليومية للقضايا والمهام (Daily Summary Snapshot)
+            </h2>
+            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+              تفريغ دوري وشامل لجميع القضايا النشطة المتداولة والمهام القضائية المعلقة وحفظها تلقائياً في مجلد التنزيلات المحلي (Downloads) مع المزامنة المشفرة للمستودع السحابي لمكتب المحاماة.
+            </p>
+
+            <div className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-[var(--text-muted)]">
+              <span className="flex items-center gap-1">
+                <FolderDown className="size-3.5 text-amber-400" />
+                <span>المسار: <strong>مجلد التنزيلات المحلي (OS Downloads)</strong></span>
+              </span>
+              <span className="flex items-center gap-1">
+                <Cloud className="size-3.5 text-blue-400" />
+                <span>المزامنة: <strong>{snapshotConfig.destination === "download_folder" ? "تنزيل محلي فقط" : snapshotConfig.destination === "cloud_sync" ? "سحابي فقط" : "تنزيل محلي + مستودع سحابي"}</strong></span>
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="size-3.5 text-emerald-400" />
+                <span>حالة اليوم: <strong className={isExportedToday ? "text-emerald-400" : "text-amber-400"}>{isExportedToday ? "تم الحفظ بنجاح اليوم" : "بانتظار لقطة اليوم"}</strong></span>
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleQuickExportSnapshot}
+              disabled={isQuickExporting}
+              className="inline-flex items-center gap-2 rounded-xl bg-[var(--axia-gold)] px-4 py-2.5 text-xs font-bold text-black shadow-md hover:bg-[var(--axia-gold-light)] transition disabled:opacity-50"
+            >
+              <Download className={`size-4 ${isQuickExporting ? "animate-bounce" : ""}`} />
+              <span>{isQuickExporting ? "جارٍ الحفظ..." : "تصدير لقطة اليوم الآن"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsSnapshotModalOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-4 py-2.5 text-xs font-bold text-[var(--text)] hover:bg-[var(--accent)] transition"
+            >
+              <Settings className="size-4 text-[var(--axia-gold)]" />
+              <span>إدارة الأتمتة والسجل</span>
+            </button>
+          </div>
+        </div>
+
+        {quickExportSuccess && (
+          <div className="mt-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-3 text-xs font-semibold text-emerald-400 flex items-center gap-2 animate-in fade-in duration-200">
+            <CheckCircle2 className="size-4 shrink-0" />
+            <span>{quickExportSuccess}</span>
+          </div>
+        )}
       </div>
 
       {/* PDF Export Center Cards */}
@@ -276,6 +379,14 @@ export function ReportsView({ matters = mockMatters, tasks = mockTasks }: Report
         isOpen={isPdfModalOpen}
         onClose={() => setIsPdfModalOpen(false)}
         defaultReportType={selectedReportType}
+        matters={matters}
+        tasks={tasks}
+      />
+
+      {/* Daily Snapshot & Auto-Export Manager Modal */}
+      <DailySnapshotManager
+        isOpen={isSnapshotModalOpen}
+        onClose={() => setIsSnapshotModalOpen(false)}
         matters={matters}
         tasks={tasks}
       />

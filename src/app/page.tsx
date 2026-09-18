@@ -15,11 +15,18 @@ import { TeamView } from "@/components/views/team-view";
 import { ReportsView } from "@/components/views/reports-view";
 import { AdministrationView } from "@/components/views/administration-view";
 import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
+import { useDailySnapshotAutoExport } from "@/hooks/use-daily-snapshot-auto-export";
+import { DailySnapshotToast } from "@/components/daily-snapshot-toast";
+import { DailySnapshotManager } from "@/components/daily-snapshot-manager";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<NavigationTab>("overview");
   const [selectedMatterId, setSelectedMatterId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<LegalTask[]>(mockTasks);
+  const [isSnapshotManagerOpen, setIsSnapshotManagerOpen] = useState(false);
+
+  // Background Auto-Export: automatically exports daily snapshot to Downloads / Cloud Sync on app startup
+  const { toastNotification, dismissToast } = useDailySnapshotAutoExport(mockMatters, tasks);
 
   const handleToggleTaskStatus = (taskId: string) => {
     setTasks((prev) =>
@@ -49,42 +56,59 @@ export default function HomePage() {
   }
 
   return (
-    <AppShell 
-      activeTab={activeTab} 
-      onNavigate={(tab) => { setActiveTab(tab); setSelectedMatterId(null); }} 
-      subContext={subContext} 
-      onClearSubContext={() => setSelectedMatterId(null)}
-      tasks={tasks}
-      onToggleTaskStatus={handleToggleTaskStatus}
-    >
-      {activeTab === "overview" && (
-        <OverviewView 
-          onNavigate={setActiveTab} 
-          onOpenMatter={handleOpenMatter} 
-        />
-      )}
-      {activeTab === "matters" && (
-        <MattersView 
-          selectedMatterId={selectedMatterId}
-          onCloseMatterModal={() => setSelectedMatterId(null)}
-        />
-      )}
-      {activeTab === "hearings" && <HearingsView />}
-      {activeTab === "clients" && <ClientsView />}
-      {activeTab === "tasks" && (
-        <TasksView 
-          tasks={tasks}
-          onToggleTaskStatus={handleToggleTaskStatus}
-          onCreateTask={handleCreateTask}
-        />
-      )}
-      {activeTab === "documents" && <DocumentsView />}
-      {activeTab === "finance" && <FinanceView />}
-      {activeTab === "library" && <LibraryView />}
-      {activeTab === "rajih" && <RajihAiView />}
-      {activeTab === "team" && <TeamView />}
-      {activeTab === "reports" && <ReportsView tasks={tasks} />}
-      {activeTab === "administration" && <AdministrationView />}
-    </AppShell>
+    <>
+      <AppShell 
+        activeTab={activeTab} 
+        onNavigate={(tab) => { setActiveTab(tab); setSelectedMatterId(null); }} 
+        subContext={subContext} 
+        onClearSubContext={() => setSelectedMatterId(null)}
+        tasks={tasks}
+        onToggleTaskStatus={handleToggleTaskStatus}
+      >
+        {activeTab === "overview" && (
+          <OverviewView 
+            onNavigate={setActiveTab} 
+            onOpenMatter={handleOpenMatter} 
+          />
+        )}
+        {activeTab === "matters" && (
+          <MattersView 
+            selectedMatterId={selectedMatterId}
+            onCloseMatterModal={() => setSelectedMatterId(null)}
+          />
+        )}
+        {activeTab === "hearings" && <HearingsView />}
+        {activeTab === "clients" && <ClientsView />}
+        {activeTab === "tasks" && (
+          <TasksView 
+            tasks={tasks}
+            onToggleTaskStatus={handleToggleTaskStatus}
+            onCreateTask={handleCreateTask}
+          />
+        )}
+        {activeTab === "documents" && <DocumentsView />}
+        {activeTab === "finance" && <FinanceView />}
+        {activeTab === "library" && <LibraryView />}
+        {activeTab === "rajih" && <RajihAiView />}
+        {activeTab === "team" && <TeamView />}
+        {activeTab === "reports" && <ReportsView matters={mockMatters} tasks={tasks} />}
+        {activeTab === "administration" && <AdministrationView matters={mockMatters} tasks={tasks} />}
+      </AppShell>
+
+      {/* Floating Notification for Daily Snapshot Auto-Export */}
+      <DailySnapshotToast
+        notification={toastNotification}
+        onDismiss={dismissToast}
+        onOpenManager={() => setIsSnapshotManagerOpen(true)}
+      />
+
+      {/* Daily Snapshot & Cloud Sync Manager Modal */}
+      <DailySnapshotManager
+        isOpen={isSnapshotManagerOpen}
+        onClose={() => setIsSnapshotManagerOpen(false)}
+        matters={mockMatters}
+        tasks={tasks}
+      />
+    </>
   );
 }
