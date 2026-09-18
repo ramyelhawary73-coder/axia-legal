@@ -13,13 +13,18 @@ import {
   Search, 
   ShieldCheck, 
   X,
-  ChevronDown
+  ChevronDown,
+  CheckCircle2,
+  ChevronLeft
 } from "lucide-react";
-import { mockClients } from "@/lib/mock-legal-data";
-import { Client } from "@/types/legal";
+import { mockClients, mockMatters } from "@/lib/mock-legal-data";
+import { Client, Matter } from "@/types/legal";
+import { ClientDetailDashboard } from "@/components/client-detail-dashboard";
 
 export function ClientsView() {
   const [clients, setClients] = useState<Client[]>(mockClients);
+  const [matters, setMatters] = useState<Matter[]>(mockMatters);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [isNewClientOpen, setIsNewClientOpen] = useState(false);
@@ -58,6 +63,11 @@ export function ClientsView() {
     setIsNewClientOpen(false);
     setName("");
     setPhone("");
+    setNationalIdOrCr("");
+    setEmail("");
+    setPoaNumber("");
+    setPoaOffice("");
+    setAddress("");
   };
 
   const filteredClients = clients.filter((client) => {
@@ -69,8 +79,22 @@ export function ClientsView() {
     return matchesSearch && matchesType;
   });
 
+  // If a client is selected, render the Client Detail Dashboard
+  if (selectedClient) {
+    return (
+      <ClientDetailDashboard
+        client={selectedClient}
+        clients={clients}
+        matters={matters}
+        onSelectClient={(c) => setSelectedClient(c)}
+        onBack={() => setSelectedClient(null)}
+        onAddNewMatter={(newMatter) => setMatters([newMatter, ...matters])}
+      />
+    );
+  }
+
   return (
-    <div className="flex flex-col h-full max-w-[1400px] mx-auto">
+    <div className="flex flex-col h-full max-w-[1400px] mx-auto space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-[var(--border)] shrink-0">
         <div>
@@ -79,14 +103,14 @@ export function ClientsView() {
           </h1>
           <p className="mt-1 text-xs text-[var(--text-muted)] flex items-center gap-1.5">
             <Users className="size-3.5" />
-            إدارة الموكلين، أرشيف التوكيلات الرسمية، والمتابعة المالية
+            إدارة الموكلين، أرشيف التوكيلات الرسمية، ولوحة البيانات القضائية التراكمية
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsNewClientOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-md bg-[var(--text)] px-3 py-1.5 text-xs font-medium text-[var(--bg)] shadow-sm hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--text)] px-3.5 py-2 text-xs font-bold text-[var(--bg)] shadow-sm hover:opacity-90 transition-opacity"
           >
             <Plus className="size-3.5" />
             <span>إضافة موكل جديد</span>
@@ -95,29 +119,36 @@ export function ClientsView() {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-3 py-3 shrink-0">
-        <div className="relative flex-1 min-w-[250px] max-w-sm">
-          <Search className="absolute right-2.5 top-1.5 size-3.5 text-[var(--text-muted)]" />
-          <input
-            type="text"
-            placeholder="بحث بالاسم، رقم الهاتف، أو التوكيل..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-          />
+      <div className="flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-3 flex-1">
+          <div className="relative flex-1 min-w-[250px] max-w-sm">
+            <Search className="absolute right-2.5 top-2 size-3.5 text-[var(--text-muted)]" />
+            <input
+              type="text"
+              placeholder="بحث بالاسم، رقم الهاتف، أو التوكيل..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--axia-gold)] focus:outline-none"
+            />
+          </div>
+
+          <div className="relative">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-3 pl-8 py-1.5 text-xs text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none cursor-pointer"
+            >
+              <option value="all">كافة التصنيفات</option>
+              <option value="شركة / مؤسسة">شركات ومؤسسات</option>
+              <option value="فرد / شخص طبيعي">أفراد</option>
+            </select>
+            <ChevronDown className="absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)] pointer-events-none" />
+          </div>
         </div>
 
-        <div className="relative">
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-          >
-            <option value="all">كافة التصنيفات</option>
-            <option value="شركة / مؤسسة">شركات ومؤسسات</option>
-            <option value="فرد / شخص طبيعي">أفراد</option>
-          </select>
-          <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
+        <div className="text-xs text-[var(--text-muted)] hidden md:flex items-center gap-1.5">
+          <span>نصيحة:</span>
+          <span className="text-[var(--text)] font-medium">اضغط على أي موكل لعرض لوحة بياناته وتاريخ قضاياه المفتوحة والمغلقة</span>
         </div>
       </div>
 
@@ -127,76 +158,123 @@ export function ClientsView() {
           <table className="w-full text-right text-[11px]">
             <thead className="sticky top-0 bg-[var(--panel)] z-10 shadow-[0_1px_0_var(--border)]">
               <tr className="text-[var(--text-muted)] uppercase tracking-wider text-[10px]">
-                <th className="px-4 py-2 font-medium w-[25%]">اسم الموكل / النوع</th>
-                <th className="px-4 py-2 font-medium w-[20%]">بيانات التواصل</th>
-                <th className="px-4 py-2 font-medium w-[25%]">بيانات التوكيل الرسمي</th>
-                <th className="px-4 py-2 font-medium w-[15%]">القضايا النشطة</th>
-                <th className="px-4 py-2 font-medium w-[15%]">الموقف المالي (مسدد / متبقي)</th>
+                <th className="px-4 py-2.5 font-medium w-[26%]">اسم الموكل / النوع</th>
+                <th className="px-4 py-2.5 font-medium w-[18%]">بيانات التواصل</th>
+                <th className="px-4 py-2.5 font-medium w-[22%]">بيانات التوكيل الرسمي</th>
+                <th className="px-4 py-2.5 font-medium w-[16%]">سجل القضايا (مفتوحة / مغلقة)</th>
+                <th className="px-4 py-2.5 font-medium w-[18%]">الموقف المالي والإجراء</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
-              {filteredClients.map((client) => (
-                <tr 
-                  key={client.id} 
-                  className="hover:bg-[var(--accent)] transition-colors group cursor-default"
-                >
-                  <td className="px-4 py-3 align-top">
-                    <div className="flex items-start gap-2.5">
-                      <div className="grid size-7 shrink-0 place-items-center rounded-md bg-[var(--bg)] border border-[var(--border)] text-[var(--text-muted)]">
-                        {client.type === "شركة / مؤسسة" ? <Building2 className="size-3.5" /> : <User className="size-3.5" />}
+              {filteredClients.map((client) => {
+                // Compute open and closed matters for this client
+                const clientMatters = matters.filter((m) => {
+                  const matchId = m.clientId && m.clientId === client.id;
+                  const matchName = m.clientName && (
+                    m.clientName.includes(client.name) || client.name.includes(m.clientName)
+                  );
+                  return matchId || matchName;
+                });
+
+                const openCount = clientMatters.filter(
+                  (m) => m.status === "مفتوحة" || (!m.status && m.stage !== "محكوم فيها")
+                ).length;
+                const closedCount = clientMatters.filter(
+                  (m) => m.status === "مغلقة" || m.stage === "محكوم فيها"
+                ).length;
+
+                return (
+                  <tr 
+                    key={client.id} 
+                    onClick={() => setSelectedClient(client)}
+                    className="hover:bg-[var(--accent)]/70 transition-colors group cursor-pointer"
+                  >
+                    <td className="px-4 py-3 align-top">
+                      <div className="flex items-start gap-2.5">
+                        <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-[var(--bg)] border border-[var(--border)] text-[var(--axia-gold)] group-hover:border-[var(--axia-gold)] transition">
+                          {client.type === "شركة / مؤسسة" ? <Building2 className="size-4" /> : <User className="size-4" />}
+                        </div>
+                        <div>
+                          <div className="font-bold text-[var(--text)] text-xs mb-0.5 group-hover:text-[var(--axia-gold)] transition">
+                            {client.name}
+                          </div>
+                          <div className="text-[10px] text-[var(--text-muted)] font-mono">{client.nationalIdOrCr}</div>
+                          <span className="inline-block mt-1 text-[9px] rounded bg-[var(--border)]/60 px-1.5 py-0.2 text-[var(--text-muted)]">
+                            {client.type}
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-semibold text-[var(--text)] text-xs mb-0.5">{client.name}</div>
-                        <div className="text-[10px] text-[var(--text-muted)] font-mono">{client.nationalIdOrCr}</div>
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-[var(--text)]">
+                          <Phone className="size-3 text-[var(--text-muted)]" />
+                          <span dir="ltr" className="font-mono text-left">{client.phone}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[var(--text)]">
+                          <Mail className="size-3 text-[var(--text-muted)]" />
+                          <span className="truncate">{client.email}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                          <MapPin className="size-3" />
+                          <span className="truncate text-[10px]">{client.address}</span>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 text-[var(--text)]">
-                        <Phone className="size-3 text-[var(--text-muted)]" />
-                        <span dir="ltr" className="font-mono text-left">{client.phone}</span>
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <div className="flex items-center gap-1.5 mb-1 text-[var(--text)] font-semibold font-mono text-[10px]">
+                        <FileCheck className="size-3 text-[var(--axia-gold)]" />
+                        {client.poaNumber}
                       </div>
-                      <div className="flex items-center gap-1.5 text-[var(--text)]">
-                        <Mail className="size-3 text-[var(--text-muted)]" />
-                        <span className="truncate">{client.email}</span>
+                      <div className="text-[10px] text-[var(--text-muted)] mr-4 mb-1">{client.poaOffice}</div>
+                      <div className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-500 mr-4 border border-emerald-500/20">
+                        <ShieldCheck className="size-2.5" />
+                        توكيل ساري
                       </div>
-                      <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
-                        <MapPin className="size-3" />
-                        <span className="truncate text-[10px]">{client.address}</span>
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                            <span className="size-1.5 rounded-full bg-emerald-400"></span>
+                            <span>{openCount} مفتوحة</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 text-[10px] font-bold text-purple-400">
+                            <CheckCircle2 className="size-2.5" />
+                            <span>{closedCount} مغلقة</span>
+                          </span>
+                        </div>
+                        <div className="text-[10px] text-[var(--text-muted)]">
+                          إجمالي: {clientMatters.length} دعاوى مسجلة
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="flex items-center gap-1.5 mb-1 text-[var(--text)] font-medium">
-                      <FileCheck className="size-3 text-[var(--gold)]" />
-                      {client.poaNumber}
-                    </div>
-                    <div className="text-[10px] text-[var(--text-muted)] mr-4.5 mb-1">{client.poaOffice}</div>
-                    <div className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-600 dark:text-emerald-400 mr-4.5 border border-emerald-500/20">
-                      <ShieldCheck className="size-2.5" />
-                      توكيل ساري
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[var(--bg)] border border-[var(--border)] text-[10px] font-bold text-[var(--text)]">
-                      {client.activeMattersCount}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="space-y-1 text-[10px]">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[var(--text-muted)]">المسدد:</span>
-                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">{client.totalPaid}</span>
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <div className="space-y-1 text-[10px]">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[var(--text-muted)]">المسدد:</span>
+                          <span className="font-semibold text-emerald-500">{client.totalPaid}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[var(--text-muted)]">المتبقي:</span>
+                          <span className="font-semibold text-amber-500">{client.balanceDue}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedClient(client);
+                          }}
+                          className="mt-1.5 w-full inline-flex items-center justify-center gap-1 rounded border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-[10px] font-bold text-[var(--text)] group-hover:border-[var(--axia-gold)] group-hover:text-[var(--axia-gold)] transition shadow-sm"
+                        >
+                          <span>عرض لوحة الموكل</span>
+                          <ChevronLeft className="size-3" />
+                        </button>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[var(--text-muted)]">المتبقي:</span>
-                        <span className="font-semibold text-amber-600 dark:text-amber-400">{client.balanceDue}</span>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
               {filteredClients.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-4 py-8 text-center text-[var(--text-muted)] text-xs">
@@ -207,15 +285,16 @@ export function ClientsView() {
             </tbody>
           </table>
         </div>
-        <div className="border-t border-[var(--border)] bg-[var(--bg)]/30 px-4 py-2 text-[10px] text-[var(--text-muted)]">
-          إجمالي الموكلين: {filteredClients.length}
+        <div className="border-t border-[var(--border)] bg-[var(--bg)]/30 px-4 py-2.5 text-[10px] text-[var(--text-muted)] flex justify-between items-center">
+          <span>إجمالي الموكلين: {filteredClients.length}</span>
+          <span className="font-medium text-[var(--text)]">مكتب أكسيا للمحاماة - الإدارة القانونية الرقمية</span>
         </div>
       </div>
 
       {/* New Client Modal */}
       {isNewClientOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--accent)] backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--panel-glass)] backdrop-blur-xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="relative max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
             <button
               onClick={() => setIsNewClientOpen(false)}
               className="absolute left-4 top-4 grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
@@ -223,8 +302,8 @@ export function ClientsView() {
               <X className="size-4" />
             </button>
 
-            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
-              <Plus className="size-4 text-[var(--text)]" />
+            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--axia-gold)] uppercase tracking-wider mb-2">
+              <Plus className="size-4" />
               <span>إدراج موكل جديد</span>
             </div>
             
@@ -239,7 +318,7 @@ export function ClientsView() {
                   placeholder="مثال: شركة القاهرة للتطوير والاستثمار العقاري"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
                 />
               </div>
 
@@ -250,7 +329,7 @@ export function ClientsView() {
                     <select
                       value={type}
                       onChange={(e) => setType(e.target.value as Client["type"])}
-                      className="appearance-none w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                      className="appearance-none w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
                     >
                       <option value="شركة / مؤسسة">شركة / مؤسسة تجارية</option>
                       <option value="فرد / شخص طبيعي">فرد / شخص طبيعي</option>
@@ -258,89 +337,94 @@ export function ClientsView() {
                     <ChevronDown className="absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)] pointer-events-none" />
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم السجل التجاري / الرقم القومي</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم السجل التجاري أو الرقم القومي</label>
                   <input
                     type="text"
-                    placeholder="س.ت: ٥٤٨١٢٣ أو الرقم القومي"
+                    placeholder="مثال: س.ت ٥١٩٣٠٢ / ر.ق ٢٨٠٠..."
                     value={nationalIdOrCr}
                     onChange={(e) => setNationalIdOrCr(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم الهاتف والتواصل</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم الهاتف الأساسي</label>
                   <input
                     type="text"
                     required
                     placeholder="+20 100 000 0000"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none text-left"
+                    dir="ltr"
                   />
                 </div>
+
                 <div>
                   <label className="block text-[var(--text-muted)] mb-1 font-medium">البريد الإلكتروني</label>
                   <input
                     type="email"
-                    placeholder="legal@company.com"
+                    placeholder="client@domain.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none text-left"
+                    dir="ltr"
                   />
                 </div>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم التوكيل الرسمي وحرفه</label>
+                  <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم التوكيل وحرفه</label>
                   <input
                     type="text"
-                    placeholder="مثال: ٥٤١ / ب لسنة ٢٠٢٥ عام قضايا"
+                    placeholder="مثال: ٥٤١ / أ لسنة ٢٠٢٥ قصر النيل"
                     value={poaNumber}
                     onChange={(e) => setPoaNumber(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
                   />
                 </div>
+
                 <div>
                   <label className="block text-[var(--text-muted)] mb-1 font-medium">مكتب التوثيق (الشهر العقاري)</label>
                   <input
                     type="text"
-                    placeholder="مثال: توثيق قصر النيل المطور"
+                    placeholder="مثال: توثيق استثمار القاهرة"
                     value={poaOffice}
                     onChange={(e) => setPoaOffice(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[var(--text-muted)] mb-1 font-medium">العنوان والمقر القانوني</label>
+                <label className="block text-[var(--text-muted)] mb-1 font-medium">العنوان القانوني المختار للمراسلات</label>
                 <input
                   type="text"
-                  placeholder="العنوان التفصيلي"
+                  placeholder="مثال: ١٤ شارع قصر النيل، القاهرة"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
                 />
               </div>
 
-              <div className="pt-4 mt-4 border-t border-[var(--border)] flex justify-end gap-2">
+              <div className="pt-4 border-t border-[var(--border)] flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsNewClientOpen(false)}
-                  className="rounded-md border border-[var(--border)] bg-[var(--panel)] px-4 py-2 font-medium text-[var(--text)] hover:bg-[var(--accent)] transition-colors"
+                  className="rounded-md border border-[var(--border)] bg-[var(--panel)] px-4 py-2 text-xs font-semibold text-[var(--text)] hover:bg-[var(--accent)] transition-colors"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="rounded-md bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] hover:opacity-90 transition-opacity"
+                  className="rounded-md bg-[var(--text)] px-4 py-2 text-xs font-bold text-[var(--bg)] shadow-md hover:opacity-90 transition-opacity"
                 >
-                  حفظ الموكل
+                  حفظ وتسجيل الموكل
                 </button>
               </div>
             </form>

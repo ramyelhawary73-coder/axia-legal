@@ -32,6 +32,7 @@ export interface Matter {
   circuit: string; // e.g. "الدائرة 14 مدني واستثمار"
   title: string; // e.g. "دعوى بطلان عقد بيع ومطالبة بتعويض"
   clientName: string;
+  clientId?: string;
   clientRole: "مدعي" | "مدعى عليه" | "طاعن" | "مطعون ضده" | "مستأنف" | "مستأنف ضده";
   opponentName: string;
   opponentLawyer?: string;
@@ -43,6 +44,13 @@ export interface Matter {
   agreedFees: string;
   paidFees: string;
   notes?: string;
+  status?: "مفتوحة" | "مغلقة";
+  filingDate?: string;
+  verdictDate?: string;
+  verdict?: string;
+  verdictResult?: "صالح الموكل (كسب الدعوى)" | "رفض الدعوى" | "صلح قضائي وبراءة ذمة" | "بطلان الحكم المستأنف" | "تأييد الحكم الابتدائي";
+  executionStatus?: "تم التنفيذ واستلام الحقوق" | "قيد التنفيذ الجبري" | "منتهية بالتراضي" | "تم إنهاء النزاع بالصلح" | "سند تنفيذي معلن";
+  finalAwardAmount?: string;
 }
 
 export interface Hearing {
