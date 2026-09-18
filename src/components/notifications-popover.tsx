@@ -11,10 +11,23 @@ import {
   X, 
   Scale, 
   Building2, 
-  User 
+  User,
+  Radio,
+  Send,
+  Sparkles
 } from "lucide-react";
 import { LegalTask, NavigationTab } from "@/types/legal";
-import { getUpcomingDeadlineTasks } from "@/lib/task-utils";
+import { 
+  getUpcomingDeadlineTasks, 
+  getHighPriorityTasksDueWithinHour 
+} from "@/lib/task-utils";
+import {
+  getNotificationPermissionStatus,
+  requestBrowserNotificationPermission,
+  sendTaskDeadlineBrowserNotification,
+  sendTestBrowserNotification,
+  NotificationPermissionStatus,
+} from "@/lib/browser-notifications";
 
 interface NotificationsPopoverProps {
   tasks: LegalTask[];
@@ -29,7 +42,18 @@ export function NotificationsPopover({
 }: NotificationsPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [completedNotificationId, setCompletedNotificationId] = useState<string | null>(null);
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermissionStatus>(() => {
+    return typeof window !== "undefined" ? getNotificationPermissionStatus() : "default";
+  });
+  const [isRequestingPerm, setIsRequestingPerm] = useState(false);
+  const [testNotificationSent, setTestNotificationSent] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Sync notification permission state when popover opens
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPermissionStatus(getNotificationPermissionStatus());
+  }, [isOpen]);
 
   // Close on outside click
   useEffect(() => {
@@ -66,9 +90,16 @@ export function NotificationsPopover({
     return getUpcomingDeadlineTasks(tasks);
   }, [tasks]);
 
+  // Compute critical tasks due within <= 1 hour
+  const tasksDueWithinOneHour = useMemo(() => {
+    return getHighPriorityTasksDueWithinHour(tasks);
+  }, [tasks]);
+
   const hasCritical = upcomingDeadlines.some(
     (item) => item.task.priority.includes("حرجة") || item.isOverdue
   );
+
+  const hasDueWithinOneHour = tasksDueWithinOneHour.length > 0;
 
   const handleTaskClick = () => {
     setIsOpen(false);
@@ -84,6 +115,54 @@ export function NotificationsPopover({
     setTimeout(() => {
       setCompletedNotificationId(null);
     }, 1500);
+  };
+
+  const handleRequestPermission = async () => {
+    setIsRequestingPerm(true);
+    try {
+      const res = await requestBrowserNotificationPermission();
+      setPermissionStatus(res);
+
+      // If granted and there are tasks due within 1 hour, immediately alert for them
+      if (res === "granted" && tasksDueWithinOneHour.length > 0) {
+        const topTask = tasksDueWithinOneHour[0];
+        sendTaskDeadlineBrowserNotification({
+          task: topTask.task,
+          diffHours: topTask.diffHours,
+          onClick: () => {
+            setIsOpen(false);
+            onNavigate("tasks");
+          },
+          force: true,
+        });
+      }
+    } finally {
+      setIsRequestingPerm(false);
+    }
+  };
+
+  const handleSendTestNotification = () => {
+    const success = sendTestBrowserNotification(() => {
+      setIsOpen(false);
+      onNavigate("tasks");
+    });
+    if (success) {
+      setTestNotificationSent(true);
+      setTimeout(() => setTestNotificationSent(false), 3000);
+    }
+  };
+
+  const handleTriggerManualAlert = (e: React.MouseEvent, item: (typeof tasksDueWithinOneHour)[0]) => {
+    e.stopPropagation();
+    sendTaskDeadlineBrowserNotification({
+      task: item.task,
+      diffHours: item.diffHours,
+      onClick: () => {
+        setIsOpen(false);
+        onNavigate("tasks");
+      },
+      force: true,
+    });
   };
 
   return (
@@ -168,8 +247,102 @@ export function NotificationsPopover({
             </div>
           </div>
 
+          {/* Browser Notification Integration Bar */}
+          <div className="border-b border-[var(--border)] bg-[var(--panel-glass)] px-3.5 py-2.5 backdrop-blur-md">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Radio className={`size-3.5 ${
+                  permissionStatus === "granted"
+                    ? "text-emerald-500 animate-pulse"
+                    : permissionStatus === "denied"
+                    ? "text-red-500"
+                    : "text-[var(--axia-gold)]"
+                }`} />
+                <div className="text-right">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-semibold text-[11px] text-[var(--text)]">
+                      إشعارات المتصفح الفورية (Desktop Alerts)
+                    </span>
+                    {permissionStatus === "granted" && (
+                      <span className="rounded bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.2 text-[9px] font-bold text-emerald-400">
+                        مفعلة
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-[var(--text-muted)]">
+                    {permissionStatus === "granted"
+                      ? "يتم إرسال تنبيه صوتي ومكتبي فوري عند بقاء أقل من ساعة على أي ميعاد حرج"
+                      : permissionStatus === "denied"
+                      ? "الإشعارات محظورة في إعدادات المتصفح. يمكنك السماح بها عبر شريط العنوان"
+                      : "احصل على تنبيه صوتي ومكتبي فوري عند بقاء أقل من ساعة على المهام الحرجة"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Action button based on permission state */}
+              <div>
+                {permissionStatus === "granted" ? (
+                  <button
+                    type="button"
+                    onClick={handleSendTestNotification}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)] bg-[var(--panel)] px-2 py-1 text-[10px] font-medium text-[var(--text)] hover:border-[var(--axia-gold)] hover:text-[var(--axia-gold)] transition-colors"
+                    title="إرسال إشعار تجريبي لاختبار التنبيه المكتبي"
+                  >
+                    <Send className="size-2.5" />
+                    <span>{testNotificationSent ? "تم الإرسال ✓" : "تجربة إشعار"}</span>
+                  </button>
+                ) : permissionStatus === "denied" ? (
+                  <span className="text-[10px] text-red-400 font-medium">محظورة</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleRequestPermission}
+                    disabled={isRequestingPerm}
+                    className="inline-flex items-center gap-1 rounded-lg bg-[var(--axia-gold)] px-2.5 py-1 text-[10px] font-bold text-black shadow-sm hover:bg-[var(--axia-gold-light)] transition-colors"
+                  >
+                    <Sparkles className="size-2.5" />
+                    <span>{isRequestingPerm ? "جاري التفعيل..." : "تفعيل الآن"}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* High Priority (<1h) Alert Highlight Banner */}
+          {hasDueWithinOneHour && (
+            <div className="border-b border-red-500/30 bg-red-950/20 px-3.5 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="relative flex size-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                    <span className="relative inline-flex size-2.5 rounded-full bg-red-600" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-[11px] text-red-400">
+                      إنذار ميعاد سقوط عاجل (أقل من ساعة)
+                    </span>
+                    <p className="text-[10px] text-red-300/80">
+                      {tasksDueWithinOneHour.length} مهمة تستوجب تدخلاً فورياً قبل انتهاء الميعاد القضائي
+                    </p>
+                  </div>
+                </div>
+
+                {permissionStatus === "granted" && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleTriggerManualAlert(e, tasksDueWithinOneHour[0])}
+                    className="inline-flex items-center gap-1 rounded border border-red-500/40 bg-red-600/20 px-1.5 py-0.5 text-[9px] font-bold text-red-300 hover:bg-red-600/30 transition-colors"
+                    title="إرسال إشعار فوري لسطح المكتب لهذه المهمة"
+                  >
+                    <span>إشعار مكتبي</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Body: List of 24h Deadline Tasks */}
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-[var(--border)] custom-scrollbar">
+          <div className="max-h-[360px] overflow-y-auto divide-y divide-[var(--border)] custom-scrollbar">
             {upcomingDeadlines.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-8 text-center">
                 <div className="grid size-12 place-items-center rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 mb-3">

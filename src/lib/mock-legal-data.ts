@@ -250,6 +250,17 @@ const getOffsetHoursISO = (hours: number): string => {
 
 export const mockTasks: LegalTask[] = [
   {
+    id: "TSK-100",
+    title: "ميعاد سقوط طعن عاجل - إيداع أسباب الطعن بالاستئناف وقيده بجدول الدائرة المستعجلة",
+    category: "ميعاد طعن قانوني",
+    matterCaseNumber: "٩١٢ لسنة ٢٠٢٥ مستأنف مستعجل",
+    courtOrBailiffOffice: "قلم كتاب محكمة جنوب القاهرة الابتدائية - باب الخلق",
+    assignedTo: "د. رامي الهواري",
+    deadline: getOffsetHoursISO(0.65), // ~39 minutes remaining (within the next hour!)
+    priority: "حرجة للغاية (ميعاد سقوط)",
+    status: "قيد التنفيذ",
+  },
+  {
     id: "TSK-101",
     title: "ميعاد سقوط استئناف فرعي - سداد الرسم وإيداع العريضة قلم كتاب استئناف القاهرة",
     category: "ميعاد طعن قانوني",

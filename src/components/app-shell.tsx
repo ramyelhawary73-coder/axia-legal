@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTheme } from "next-themes";
 import { 
   Scale, 
@@ -28,7 +28,12 @@ import {
 import { NavigationTab, LegalTask } from "@/types/legal";
 import { mockTasks } from "@/lib/mock-legal-data";
 import { NotificationsPopover } from "@/components/notifications-popover";
-import { getUpcomingDeadlineTasks } from "@/lib/task-utils";
+import { getUpcomingDeadlineTasks, getHighPriorityTasksDueWithinHour } from "@/lib/task-utils";
+import { 
+  sendTaskDeadlineBrowserNotification, 
+  getNotificationPermissionStatus 
+} from "@/lib/browser-notifications";
+import { UrgentDeadlineBanner } from "@/components/urgent-deadline-banner";
 
 interface AppShellProps {
   activeTab: NavigationTab;
@@ -71,6 +76,34 @@ export function AppShell({
   const activeTasks = tasks || mockTasks;
   const upcomingTasksCount = getUpcomingDeadlineTasks(activeTasks).length;
   
+  // High-priority legal tasks due within <= 1 hour
+  const urgentTasksDueWithinHour = useMemo(() => {
+    return getHighPriorityTasksDueWithinHour(activeTasks);
+  }, [activeTasks]);
+
+  // Background monitor: alert user via Browser Notification API when a high-priority task is due within 1 hour
+  useEffect(() => {
+    const checkAndAlertUrgentDeadlines = () => {
+      const dueWithinHour = getHighPriorityTasksDueWithinHour(activeTasks);
+      if (dueWithinHour.length > 0 && getNotificationPermissionStatus() === "granted") {
+        dueWithinHour.forEach((item) => {
+          sendTaskDeadlineBrowserNotification({
+            task: item.task,
+            diffHours: item.diffHours,
+            onClick: () => onNavigate("tasks"),
+          });
+        });
+      }
+    };
+
+    // Check immediately on mount or active tasks change
+    checkAndAlertUrgentDeadlines();
+
+    // Check periodically every 30 seconds
+    const interval = setInterval(checkAndAlertUrgentDeadlines, 30000);
+    return () => clearInterval(interval);
+  }, [activeTasks, onNavigate]);
+
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -350,6 +383,12 @@ export function AppShell({
 
 
           <div className="mx-auto max-w-[1700px] p-4 lg:p-6 animate-in fade-in duration-300">
+            {/* Urgent Deadline Banner for High-Priority Tasks due within 1 hour */}
+            <UrgentDeadlineBanner 
+              urgentTasks={urgentTasksDueWithinHour} 
+              onNavigate={onNavigate} 
+              onToggleTaskStatus={onToggleTaskStatus} 
+            />
             {children}
           </div>
         </main>

@@ -114,3 +114,19 @@ export function getUpcomingDeadlineTasks(tasks: LegalTask[], referenceTime = new
     .filter((analysis) => analysis.isWithin24Hours)
     .sort((a, b) => a.diffHours - b.diffHours);
 }
+
+/**
+ * Filter all high-priority tasks whose deadline is due within the next 1 hour (<= 60 minutes)
+ */
+export function getHighPriorityTasksDueWithinHour(tasks: LegalTask[], referenceTime = new Date()): TaskDeadlineAnalysis[] {
+  return tasks
+    .map((task) => analyzeTaskDeadline(task, referenceTime))
+    .filter((analysis) => {
+      const isPending = analysis.task.status !== "مكتملة";
+      const isHighPriority = analysis.task.priority.includes("حرجة") || analysis.task.priority === "عاجلة";
+      // Remaining time is within 1 hour (> 0 and <= 1.0 hr, or overdue by less than 5 minutes)
+      const isWithinHour = analysis.diffHours > -0.08 && analysis.diffHours <= 1.0;
+      return isPending && isHighPriority && isWithinHour;
+    })
+    .sort((a, b) => a.diffHours - b.diffHours);
+}

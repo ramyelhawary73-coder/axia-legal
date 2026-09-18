@@ -1,16 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   AlertTriangle, 
   Clock, 
   CheckCircle2, 
   Plus, 
-  X
+  X,
+  Radio,
+  Send,
+  BellRing
 } from "lucide-react";
 import { mockTasks } from "@/lib/mock-legal-data";
 import { LegalTask } from "@/types/legal";
 import { analyzeTaskDeadline } from "@/lib/task-utils";
+import { 
+  getNotificationPermissionStatus, 
+  requestBrowserNotificationPermission, 
+  sendTestBrowserNotification, 
+  sendTaskDeadlineBrowserNotification, 
+  NotificationPermissionStatus 
+} from "@/lib/browser-notifications";
 
 interface TasksViewProps {
   tasks?: LegalTask[];
@@ -28,6 +38,28 @@ export function TasksView({
 
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermissionStatus>(() => {
+    return typeof window !== "undefined" ? getNotificationPermissionStatus() : "default";
+  });
+  const [testSent, setTestSent] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPermissionStatus(getNotificationPermissionStatus());
+  }, []);
+
+  const handleRequestPermission = async () => {
+    const res = await requestBrowserNotificationPermission();
+    setPermissionStatus(res);
+  };
+
+  const handleSendTest = () => {
+    const ok = sendTestBrowserNotification();
+    if (ok) {
+      setTestSent(true);
+      setTimeout(() => setTestSent(false), 3000);
+    }
+  };
 
   // New task form state
   const [title, setTitle] = useState("");
@@ -113,6 +145,68 @@ export function TasksView({
         </button>
       </div>
 
+      {/* Browser Notification API Status Banner */}
+      <div className="rounded-2xl border border-[var(--border-strong)] bg-[var(--panel-glass)] p-4 backdrop-blur-xl shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={`grid size-9 place-items-center rounded-xl border ${
+              permissionStatus === "granted"
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                : permissionStatus === "denied"
+                ? "border-red-500/30 bg-red-500/10 text-red-400"
+                : "border-[var(--axia-gold-dim)] bg-[var(--axia-gold)]/10 text-[var(--axia-gold)]"
+            }`}>
+              <Radio className="size-4.5 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-xs text-[var(--text)]">
+                  نظام التنبيهات المكتبية الفورية (Browser Notification API)
+                </span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  permissionStatus === "granted"
+                    ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
+                    : permissionStatus === "denied"
+                    ? "bg-red-500/15 border border-red-500/30 text-red-400"
+                    : "bg-amber-500/15 border border-amber-500/30 text-amber-400"
+                }`}>
+                  {permissionStatus === "granted" ? "متصل ونشط" : permissionStatus === "denied" ? "محظور بالمتصفح" : "بانتظار الإذن"}
+                </span>
+              </div>
+              <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                تنبيه صوتي ومرئي منبثق من المتصفح عند بقاء أقل من ساعة على المهام القضائية العاجلة ومواعيد الطعن.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {permissionStatus === "granted" ? (
+              <button
+                type="button"
+                onClick={handleSendTest}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-xs font-semibold text-[var(--text)] hover:border-[var(--axia-gold)] hover:text-[var(--axia-gold)] transition shadow-sm"
+              >
+                <Send className="size-3" />
+                <span>{testSent ? "تم إرسال الإشعار بنجاح ✓" : "اختبار إشعار المتصفح"}</span>
+              </button>
+            ) : permissionStatus === "denied" ? (
+              <span className="text-xs text-red-400 font-medium">
+                يرجى السماح بالإشعارات من إعدادات المتصفح
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={handleRequestPermission}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--axia-gold)] px-3.5 py-1.5 text-xs font-bold text-black shadow hover:brightness-110 transition"
+              >
+                <BellRing className="size-3.5" />
+                <span>تفعيل التنبيهات المكتبية</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Filter Tabs */}
       <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border)] pb-3">
         {[
@@ -142,6 +236,11 @@ export function TasksView({
           const isCritical = task.priority.includes("حرجة");
           const isCompleted = task.status === "مكتملة";
           const deadlineInfo = analyzeTaskDeadline(task);
+          const isDueWithinOneHour = 
+            deadlineInfo.diffHours > -0.08 && 
+            deadlineInfo.diffHours <= 1.0 && 
+            (isCritical || task.priority === "عاجلة") && 
+            !isCompleted;
 
           return (
             <div
@@ -149,6 +248,8 @@ export function TasksView({
               className={`rounded-2xl border p-4.5 transition ${
                 isCompleted
                   ? "border-emerald-500/20 bg-emerald-950/10 opacity-75"
+                  : isDueWithinOneHour
+                  ? "border-red-500/60 bg-gradient-to-r from-red-950/30 to-[var(--panel)] shadow-lg ring-1 ring-red-500/30"
                   : isCritical
                   ? "border-red-500/30 bg-[var(--accent-hover)] shadow-md"
                   : deadlineInfo.isWithin24Hours
@@ -171,6 +272,12 @@ export function TasksView({
 
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
+                      {isDueWithinOneHour && (
+                        <span className="inline-flex items-center gap-1 rounded bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+                          <AlertTriangle className="size-3" />
+                          <span>ينقضي خلال أقل من ساعة!</span>
+                        </span>
+                      )}
                       <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${
                         isCritical ? "bg-red-500/20 text-red-300" : "bg-slate-800 text-[var(--text-muted)]"
                       }`}>
@@ -201,7 +308,9 @@ export function TasksView({
 
                 <div className="flex items-center gap-3 sm:flex-col sm:items-end">
                   <div className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold ${
-                    isCritical 
+                    isDueWithinOneHour
+                      ? "bg-red-600 text-white shadow-sm"
+                      : isCritical 
                       ? "bg-red-500/20 text-red-300 border border-red-500/30" 
                       : deadlineInfo.isWithin24Hours && !isCompleted
                       ? "bg-amber-500/15 text-amber-500 border border-amber-500/30"
@@ -210,12 +319,32 @@ export function TasksView({
                     <Clock className="size-3.5" />
                     <span>{deadlineInfo.remainingText}</span>
                   </div>
-                  <button
-                    onClick={() => handleToggleTaskStatus(task.id)}
-                    className="text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text)]"
-                  >
-                    {isCompleted ? "إلغاء الإكمال" : "تحديد كمكتمل"}
-                  </button>
+
+                  <div className="flex items-center gap-2">
+                    {isDueWithinOneHour && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sendTaskDeadlineBrowserNotification({
+                            task,
+                            diffHours: deadlineInfo.diffHours,
+                            force: true,
+                          });
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md border border-red-500/40 bg-red-600/10 px-2 py-0.5 text-[10px] font-bold text-red-400 hover:bg-red-600/20 transition"
+                        title="إرسال تنبيه مكتبي فوري لهذه المهمة"
+                      >
+                        <BellRing className="size-3" />
+                        <span>إشعار مكتبي</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleToggleTaskStatus(task.id)}
+                      className="text-[11px] font-medium text-[var(--text-muted)] hover:text-[var(--text)]"
+                    >
+                      {isCompleted ? "إلغاء الإكمال" : "تحديد كمكتمل"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
