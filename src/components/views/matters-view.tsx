@@ -7,10 +7,13 @@ import {
   Briefcase, 
   X,
   ArrowUpRight,
-  ChevronDown
+  ChevronDown,
+  Download,
+  FileText
 } from "lucide-react";
-import { mockMatters } from "@/lib/mock-legal-data";
+import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
 import { Matter, CourtCategory } from "@/types/legal";
+import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 
 interface MattersViewProps {
   selectedMatterId?: string | null;
@@ -22,6 +25,10 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
   const [searchQuery, setSearchQuery] = useState("");
   const [courtFilter, setCourtFilter] = useState<string>("all");
   const [stageFilter, setStageFilter] = useState<string>("all");
+  
+  // PDF Export Modal state
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [pdfSelectedMatter, setPdfSelectedMatter] = useState<Matter | null>(null);
   
   // Selected matter for viewing dossier
   const [activeMatter, setActiveMatter] = useState<Matter | null>(() => {
@@ -103,6 +110,19 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setPdfSelectedMatter(null);
+              setIsPdfModalOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-xs font-semibold text-[var(--text)] hover:border-[var(--axia-gold)] hover:text-[var(--axia-gold)] shadow-sm transition"
+            title="تصدير جدول القضايا الحالية إلى ملف PDF رسمي"
+          >
+            <Download className="size-3.5" />
+            <span>تصدير تقرير القضايا (PDF)</span>
+          </button>
+
           <button
             onClick={() => setIsNewMatterOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-md bg-[var(--text)] px-3 py-1.5 text-xs font-medium text-[var(--bg)] shadow-sm hover:opacity-90 transition-opacity"
@@ -317,7 +337,19 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
               </div>
             )}
 
-            <div className="mt-6 flex justify-end gap-2 pt-4 border-t border-[var(--border)]">
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-[var(--border)]">
+              <button
+                type="button"
+                onClick={() => {
+                  setPdfSelectedMatter(activeMatter);
+                  setIsPdfModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md bg-[var(--axia-gold)] px-4 py-2 text-xs font-bold text-black shadow-md hover:bg-[var(--axia-gold-light)] transition"
+              >
+                <FileText className="size-3.5" />
+                <span>تصدير ملف القضية (PDF)</span>
+              </button>
+
               <button
                 onClick={() => {
                   setActiveMatter(null);
@@ -490,6 +522,18 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
           </div>
         </div>
       )}
+      {/* Legal PDF Report Modal */}
+      <LegalPdfReportModal
+        isOpen={isPdfModalOpen}
+        onClose={() => {
+          setIsPdfModalOpen(false);
+          setPdfSelectedMatter(null);
+        }}
+        defaultReportType={pdfSelectedMatter ? "single-matter" : "matters"}
+        matters={filteredMatters}
+        tasks={mockTasks}
+        selectedMatter={pdfSelectedMatter}
+      />
     </div>
   );
 }

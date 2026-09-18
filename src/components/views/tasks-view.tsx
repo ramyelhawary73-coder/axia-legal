@@ -9,9 +9,10 @@ import {
   X,
   Radio,
   Send,
-  BellRing
+  BellRing,
+  Download
 } from "lucide-react";
-import { mockTasks } from "@/lib/mock-legal-data";
+import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
 import { LegalTask } from "@/types/legal";
 import { analyzeTaskDeadline } from "@/lib/task-utils";
 import { 
@@ -21,6 +22,7 @@ import {
   sendTaskDeadlineBrowserNotification, 
   NotificationPermissionStatus 
 } from "@/lib/browser-notifications";
+import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 
 interface TasksViewProps {
   tasks?: LegalTask[];
@@ -38,6 +40,7 @@ export function TasksView({
 
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermissionStatus>(() => {
     return typeof window !== "undefined" ? getNotificationPermissionStatus() : "default";
   });
@@ -136,13 +139,25 @@ export function TasksView({
           </p>
         </div>
 
-        <button
-          onClick={() => setIsNewTaskOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-700 px-4 py-2.5 text-xs font-bold text-[var(--text)] shadow-md transition hover:brightness-110"
-        >
-          <Plus className="size-4" />
-          <span>تكليف بمهمة إجرائية جديدة</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsPdfModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3.5 py-2.5 text-xs font-bold text-[var(--text)] hover:border-[var(--axia-gold)] hover:text-[var(--axia-gold)] shadow-sm transition"
+            title="تصدير جدول المهام وإعلانات المحضرين ومواعيد السقوط إلى PDF"
+          >
+            <Download className="size-4" />
+            <span>تصدير جدول المهام (PDF)</span>
+          </button>
+
+          <button
+            onClick={() => setIsNewTaskOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-red-500 to-rose-700 px-4 py-2.5 text-xs font-bold text-[var(--text)] shadow-md transition hover:brightness-110"
+          >
+            <Plus className="size-4" />
+            <span>تكليف بمهمة إجرائية جديدة</span>
+          </button>
+        </div>
       </div>
 
       {/* Browser Notification API Status Banner */}
@@ -477,6 +492,14 @@ export function TasksView({
           </div>
         </div>
       )}
+      {/* Legal PDF Report Modal */}
+      <LegalPdfReportModal
+        isOpen={isPdfModalOpen}
+        onClose={() => setIsPdfModalOpen(false)}
+        defaultReportType="tasks"
+        matters={mockMatters}
+        tasks={tasks}
+      />
     </div>
   );
 }

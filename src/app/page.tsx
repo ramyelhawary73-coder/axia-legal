@@ -83,7 +83,7 @@ export default function HomePage() {
       {activeTab === "library" && <LibraryView />}
       {activeTab === "rajih" && <RajihAiView />}
       {activeTab === "team" && <TeamView />}
-      {activeTab === "reports" && <ReportsView />}
+      {activeTab === "reports" && <ReportsView tasks={tasks} />}
       {activeTab === "administration" && <AdministrationView />}
     </AppShell>
   );
