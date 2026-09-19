@@ -1,91 +1,53 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Sparkles, 
-  Send, 
-  Copy, 
-  Check, 
-  ArrowRight,
-  Gavel
+import {
+  ArrowUp,
+  BookOpen,
+  Check,
+  Clipboard,
+  FileSearch,
+  Gavel,
+  Info,
+  Loader2,
+  MessageSquareText,
+  Scale,
+  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 
-let msgSeq = 100;
-function nextMsgId(prefix: string) {
-  msgSeq += 1;
-  return `${prefix}-${msgSeq}`;
+let messageSequence = 100;
+function nextMessageId(prefix: string) {
+  messageSequence += 1;
+  return `${prefix}-${messageSequence}`;
 }
 
-interface Message {
+type Message = {
   id: string;
   sender: "user" | "rajih";
   text: string;
-  timestamp: string;
   citations?: string[];
-}
+};
 
 const samplePrompts = [
   {
-    title: "صياغة دفع بعدم قبول الدعوى لوجود شرط التحكيم",
-    query: "صغ لي دفعاً بعدم قبول الدعوى لوجود شرط التحكيم الصحيح في عقد المقاولة وفقاً للمادة ١٣ من قانون التحكيم المصري ٢٧ لسنة ١٩٩٤ مع أحدث أحكام محكمة النقض.",
-    response: `**مذكرة بالدفع الشكلي: بعدم قبول الدعوى لوجود شرط التحكيم**
-
-أولاً: الأساس القانوني (المادة ١٣ من قانون التحكيم رقم ٢٧ لسنة ١٩٩٤):
-تنص المادة ١٣ على أنه: «يجب على المحكمة التي يرفع إليها نزاع يوجد بشأنه اتفاق تحكيم أن تحكم بعدم قبول الدعوى إذا دفع المدعى عليه بذلك قبل إبدائه أي طلب أو دفاع في الموضوع».
-
-ثانياً: شروط إبداء الدفع شكلاً:
-١. التمسك بالدفع بالجلسة الأولى وقبل التكلم في الموضوع أو إبداء أي دفع موضوعي آخر.
-٢. إرفاق أصل العقد أو صورته الضوئية غير المجحودة المتضمنة البند التحكيمي الصريح.
-
-ثالثاً: أحكام محكمة النقض المؤيدة:
-- الطعن رقم ٤١١٢ لسنة ٨٦ ق - جلسة ٢٠١٨/٠٤/١٥ (دوائر المواد المدنية):
-«المقرر في قضاء النقض أن شرط التحكيم متى ورد صريحاً غير غامض استلب ولاية القضاء في نظر النزاع، ويتعين على محكمة الموضوع القضاء بعدم قبول الدعوى بمجرد التمسك به قبل الخوض في الموضوع».
-
-رابعاً: نص الدفـع المقترح للمذكرة:
-«نلتمس من الهيئة الموقرة القضاء أصلياً: بعدم قبول الدعوى لوجود شرط التحكيم، وإلزام المدعي بالمصروفات ومقابل أتعاب المحاماة».`,
-    citations: [
-      "مادة ١٣ من قانون التحكيم رقم ٢٧ لسنة ١٩٩٤",
-      "نقض مدني طعن ٤١١٢ لسنة ٨٦ ق - جلسة ٢٠١٨/٠٤/١٥",
-      "مادة ١٠٨ مرافعات مدنية وتجارية"
-    ]
+    title: "بحث في نص قانوني",
+    description: "ابحث في نص قانوني منشور ومقارنته بتاريخ الواقعة.",
+    query: "ما النصوص السارية التي تنظم شرط التحكيم في عقود المقاولات؟",
+    icon: Scale,
   },
   {
-    title: "الدفع بسقوط الحق في رفع دعوى البطلان بالتقادم",
-    query: "ما هو ميعاد سقوط دعوى بطلان العقد للغلط أو التدليس أو الإكراه وفقاً للقانون المدني المصري؟",
-    response: `**المذكرة القانونية في شأن سقوط دعوى الإبطال بالتقادم (المادة ١٤٠ مدني)**
-
-تنص المادة ١٤٠ من القانون المدني المصري على:
-«يسقط الحق في إبطال العقد إذا لم يتمسك به صاحبه خلال ثلاث سنوات. ويبدأ سريان هذه المدة، في حالة نقص الأهلية من اليوم الذي يزول فيه هذا السبب، وفي حالة الغلط أو التدليس من اليوم الذي يكشف فيه، وفي حالة الإكراه من يوم انقطاعه، وفي كل حال لا يجوز التمسك بحق الإبطال لغلط أو تدليس أو إكراه إذا انقضت خمس عشرة سنة من وقت تمام العقد».
-
-الدفوع الجوهرية الواجب إبداؤها:
-١. الدفع بسقوط الحق في طلب الإبطال لمضي أكثر من ثلاث سنوات من تاريخ علم المدعي بالواقعة أو استلام المبيع.
-٢. الدفع بسقوط الحق بالتقادم الطويل (١٥ سنة) من تاريخ تحرير العقد كحد أقصى مطلق.
-
-مبدأ محكمة النقض (طعن ١٢٨ لسنة ٦٢ ق):
-«مدة الثلاث سنوات المقررة لسقوط دعوى الإبطال هي مدة سقوط حتمية لا تقبل الوقف أو الانقطاع، وانقضاؤها يرتب سقوط الحق في المطالبة».`,
-    citations: [
-      "المادة ١٤٠ من القانون المدني المصري",
-      "نقض مدني طعن ١٢٨ لسنة ٦٢ ق"
-    ]
+    title: "تحليل ملف قضية",
+    description: "لخّص الخط الزمني والنقاط التي تحتاج إلى تحقق.",
+    query: "لخّص آخر تطورات القضية وحدد المواعيد والمعلومات الناقصة.",
+    icon: FileSearch,
   },
   {
-    title: "تدقيق ثغرات بند التعويض الاتفاقي (الشرط الجزائي)",
-    query: "كيف يتم تخفيض الشرط الجزائي المبالغ فيه في عقد التوريد أمام القضاء المصري؟",
-    response: `**المذكرة الفنية في سلطة القاضي في تخفيض الشرط الجزائي (المادة ٢٢٤ مدني)**
-
-وفقاً للمادة ٢٢٤ من القانون المدني:
-١. لا يكون التعويض الاتفاقي مستحقاً إذا أثبت المدين أن الدائن لم يلحقه أي ضرر.
-٢. ويجوز للقاضي أن يخفض هذا التعويض إذا أثبت المدين أن التقدير كان مبالغاً فيه إلى درجة كبيرة، أو أن الالتزام قد نفذ في جزء منه.
-٣. يقع باطلاً كل اتفاق يخالف حكم هاتين الفقرتين (قاعدة آمرة متعلقة بالنظام العام الاقتصادي).
-
-استراتيجية المرافعة المقترحة:
-- طلب ندب خبير حسابي لبيان الضرر الفعلي الواقعي إن وجد مقارنة بالتعويض الاتفاقي الخيالي.
-- إثبات حسن نية المورد وتنفيذ نسبة ٧٠٪ من التوريدات التعاقدية.`,
-    citations: [
-      "المادة ٢٢٤ من القانون المدني المصري",
-      "نقض مدني طعن ٩٠٤ لسنة ٥٤ ق"
-    ]
-  }
+    title: "مسودة قانونية",
+    description: "أنشئ مسودة أولية مع مصادرها للمراجعة البشرية.",
+    query: "أنشئ هيكلاً أولياً لمذكرة دفاع مع بيان المصادر المطلوبة.",
+    icon: Gavel,
+  },
 ];
 
 export function RajihAiView() {
@@ -93,227 +55,170 @@ export function RajihAiView() {
     {
       id: "msg-1",
       sender: "rajih",
-      text: "مرحباً بك يا أستاذنا المستشار. أنا «راجح RAJIH AI» - المساعد القانوني الذكي المتخصص في المنظومة القضائية والتشريعات المصرية وأحكام محكمة النقض. يمكنك سؤالي عن صياغة الدفوع، استخراج أرقام الطعون المطابقة لوقائع قضيتك، فحص بنود العقود، أو تلخيص صحف الدعاوى المعقدة.",
-      timestamp: "الآن",
+      text: "مرحباً بك في راجح. أنا مساعد بحث قانوني أعمل بالمصادر المنشورة والمعتمدة فقط. لن أجزم بإجابة عند نقص المعلومات، وكل نتيجة تحتاج إلى مراجعة محامٍ مختص قبل الاعتماد عليها.",
     },
   ]);
   const [inputPrompt, setInputPrompt] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const handleSend = (textToSend?: string) => {
-    const text = textToSend || inputPrompt;
-    if (!text.trim()) return;
+  const handleSend = async (textToSend?: string) => {
+    const text = (textToSend || inputPrompt).trim();
+    if (!text || isTyping) return;
 
-    const userMsg: Message = {
-      id: nextMsgId("usr"),
-      sender: "user",
-      text,
-      timestamp: "الآن",
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((previous) => [...previous, { id: nextMessageId("usr"), sender: "user", text }]);
     setInputPrompt("");
     setIsTyping(true);
 
-    // Look for matching sample prompt or generate structured response
-    setTimeout(() => {
-      const match = samplePrompts.find((p) => text.includes(p.title) || p.query.includes(text) || text.includes("تحكيم") || text.includes("بطلان"));
-      
-      const reply: Message = {
-        id: nextMsgId("raj"),
-        sender: "rajih",
-        text: match ? match.response : `**تحليل راجح القانوني للاستفسار:**
-
-بناءً على نصوص القانون المصري والمبادئ القضائية المستقرة:
-
-١. التكييف القانوني السليم للواقعة:
-يخضع هذا النزاع للقواعد العامة للمسؤولية العقدية والتقصيرية وفقاً لنصوص القانون المدني وقانون المرافعات المدنية والتجارية.
-
-٢. الدفوع الموصى بالتمسك بها في المذكرة:
-- الدفع بعدم قبول الدعوى لرفعها بغير الطريق الذي رسمه القانون.
-- الدفع بانعدام الخصومة لعدم اختصام ذوي الشأن الأصليين.
-- الدفع بسقوط الحق بالميعاد أو التقادم المسقط.
-
-٣. السوابق القضائية لمحكمة النقض:
-«المقرر في قضاء هذه المحكمة أن عبء إثبات الواقعة المنشئة للالتزام يقع على عاتق المدعي، فإذا عجز عن إثباتها تعين رفض الدعوى بحالتها» (نقض مدني طعن رقم ٧١٨ لسنة ٨٢ ق).`,
-        timestamp: "الآن",
-        citations: match ? match.citations : ["قانون المرافعات المصري", "القانون المدني المصري", "مبادئ الدوائر المدنية لمحكمة النقض"],
+    try {
+      const response = await fetch("/api/rajih", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: text }),
+      });
+      const result = (await response.json()) as {
+        answer?: string;
+        citations?: Array<{ title: string; version: string; sourceAuthority: string }>;
+        error?: string;
       };
-
-      setMessages((prev) => [...prev, reply]);
+      setMessages((previous) => [
+        ...previous,
+        {
+          id: nextMessageId("raj"),
+          sender: "rajih",
+          text: result.answer ?? result.error ?? "تعذر معالجة الطلب بشكل آمن.",
+          citations: (result.citations ?? []).map(
+            (citation) => `${citation.title} — ${citation.sourceAuthority} — الإصدار ${citation.version}`,
+          ),
+        },
+      ]);
+    } catch {
+      setMessages((previous) => [
+        ...previous,
+        {
+          id: nextMessageId("raj"),
+          sender: "rajih",
+          text: "تعذر الاتصال بخادم راجح. لم يتم إنشاء إجابة بديلة غير موثقة.",
+        },
+      ]);
+    } finally {
       setIsTyping(false);
-    }, 600);
+    }
   };
 
-  const handleCopy = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+  const copyAnswer = async (message: Message) => {
+    await navigator.clipboard.writeText(message.text);
+    setCopiedId(message.id);
+    window.setTimeout(() => setCopiedId(null), 1800);
   };
 
   return (
-    <div className="space-y-7 p-6 sm:p-8 lg:p-10">
-      {/* Top Banner */}
-      <div className="rounded-2xl border border-[var(--axia-gold)]/40 bg-gradient-to-r from-[var(--panel)] via-[var(--bg)] to-[var(--panel)] p-6 lg:p-8 shadow-xl shadow-black/20">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--axia-gold)]/40 bg-[var(--axia-gold)]/10 px-3.5 py-1 text-xs font-semibold text-[var(--axia-gold-light)]">
-              <Sparkles className="size-3.5" />
-              <span>محرك الاستدلال القانوني الذكي المعتمد</span>
+    <main className="min-h-full space-y-5 p-3 sm:space-y-7 sm:p-6 lg:p-10" dir="rtl">
+      <section className="relative overflow-hidden rounded-[2rem] border border-[var(--axia-gold)]/30 bg-[radial-gradient(circle_at_top_right,rgba(191,151,45,0.18),transparent_42%),linear-gradient(135deg,var(--panel),var(--bg))] p-5 shadow-2xl shadow-black/20 sm:p-8">
+        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-bold text-emerald-300">
+              <span className="size-1.5 animate-pulse rounded-full bg-emerald-300" />
+              مساعد بحث قانوني آمن
             </div>
-            <h1 className="mt-3 text-2xl font-bold text-[var(--text)] sm:text-3xl">
-              راجح — RAJIH AI Legal Copilot
+            <h1 className="mt-4 text-3xl font-black tracking-tight text-[var(--text)] sm:text-5xl">
+              راجح <span className="text-[var(--axia-gold-light)]">RAJIH</span>
             </h1>
-            <p className="mt-1 text-xs sm:text-sm text-[var(--text-muted)] max-w-2xl leading-relaxed">
-              المساعد القانوني المتخصص للبحث الفوري في أحكام محكمة النقض المصرية، صياغة مذكرات الدفوع الشكلية والموضوعية، وفحص بنود العقود وتحديد الثغرات القضائية.
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--text-muted)] sm:text-base">
+              ابحث في المصادر القانونية المعتمدة، حلّل مستنداتك المصرح بها، وأنشئ مسودات قابلة للمراجعة — مع مصدر كل نتيجة وتاريخ سريانها.
             </p>
           </div>
-
-          <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-[var(--border)] bg-[var(--accent)] px-4 py-2.5 text-right text-xs">
-              <span className="text-[var(--text-muted)] block text-[10px]">قاعدة المعرفة النشطة:</span>
-              <strong className="text-[var(--axia-gold-light)] font-mono">١٢٠,٠٠٠+ مبدأ نقض رسمي</strong>
-            </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:w-[420px]">
+            {[
+              [ShieldCheck, "مصادر معتمدة", "فقط"],
+              [BookOpen, "بحث موثق", "بالاستشهادات"],
+              [MessageSquareText, "مسودات", "للمراجعة"],
+              [Info, "المحامي", "صاحب القرار"],
+            ].map(([Icon, label, value]) => {
+              const IconComponent = Icon as typeof ShieldCheck;
+              return (
+                <div key={label as string} className="rounded-2xl border border-[var(--border)] bg-black/15 p-3">
+                  <IconComponent className="size-4 text-[var(--axia-gold-light)]" />
+                  <p className="mt-2 text-[10px] text-[var(--text-muted)]">{label as string}</p>
+                  <p className="mt-0.5 text-[11px] font-bold text-[var(--text)]">{value as string}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Recommended Quick Actions / Sample Prompts */}
-      <div>
-        <h2 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-3">
-          نماذج استشارات وأبحاث قانونية فورية:
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {samplePrompts.map((sp, idx) => (
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--axia-gold-light)]">ابدأ بسرعة</p>
+            <h2 className="mt-1 text-lg font-bold text-[var(--text)]">ماذا تريد من راجح اليوم؟</h2>
+          </div>
+          <Sparkles className="size-5 text-[var(--axia-gold-light)]" />
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          {samplePrompts.map(({ title, description, query, icon: Icon }) => (
             <button
-              key={idx}
-              onClick={() => handleSend(sp.query)}
-              className="group text-right rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4 transition hover:border-[var(--axia-gold)]/50 hover:bg-[var(--accent-hover)]"
+              key={title}
+              type="button"
+              onClick={() => handleSend(query)}
+              disabled={isTyping}
+              className="group rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4 text-right transition hover:-translate-y-0.5 hover:border-[var(--axia-gold)]/60 hover:bg-[var(--accent-hover)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <div className="flex items-center justify-between text-[var(--axia-gold-light)] mb-2">
-                <Gavel className="size-4" />
-                <ArrowRight className="size-3.5 group-hover:-translate-x-1 transition" />
+              <div className="flex items-center justify-between">
+                <span className="grid size-9 place-items-center rounded-xl bg-[var(--axia-gold)]/10 text-[var(--axia-gold-light)]"><Icon className="size-4" /></span>
+                <ArrowUp className="size-4 rotate-45 text-[var(--text-muted)] transition group-hover:-translate-y-1" />
               </div>
-              <h3 className="text-xs font-bold text-[var(--text)] group-hover:text-[var(--axia-gold-light)] transition">
-                {sp.title}
-              </h3>
-              <p className="mt-1.5 text-[11px] text-[var(--text-muted)] line-clamp-2">
-                {sp.query}
-              </p>
+              <h3 className="mt-4 text-sm font-bold text-[var(--text)]">{title}</h3>
+              <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{description}</p>
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Chat Workspace */}
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)] shadow-xl flex flex-col h-[520px]">
-        {/* Messages Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
-          {messages.map((msg) => {
-            const isRajih = msg.sender === "rajih";
-            return (
-              <div
-                key={msg.id}
-                className={`flex gap-3.5 ${isRajih ? "items-start" : "items-start flex-row-reverse"}`}
-              >
-                <div
-                  className={`grid size-9 shrink-0 place-items-center rounded-xl font-bold text-xs ${
-                    isRajih
-                      ? "border border-[var(--axia-gold)]/40 bg-[var(--axia-gold)]/15 text-[var(--axia-gold-light)]"
-                      : "bg-[var(--text)] text-[var(--bg)]"
-                  }`}
-                >
-                  {isRajih ? <Sparkles className="size-4" /> : "أنت"}
-                </div>
+      <section className="overflow-hidden rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel)] shadow-2xl shadow-black/20">
+        <div className="flex flex-col gap-3 border-b border-[var(--border)] bg-[var(--accent)]/60 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="grid size-10 place-items-center rounded-2xl bg-[var(--axia-gold)]/15 text-[var(--axia-gold-light)]"><Sparkles className="size-5" /></div>
+            <div><h2 className="text-sm font-bold text-[var(--text)]">جلسة بحث راجح</h2><p className="text-[10px] text-[var(--text-muted)]">المصادر والنتائج محفوظة للتدقيق عند التفعيل</p></div>
+          </div>
+          <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold text-emerald-300"><ShieldCheck className="size-3" /> مراجعة بشرية إلزامية</span>
+        </div>
 
-                <div
-                  className={`relative max-w-[85%] rounded-2xl p-4 text-xs leading-relaxed ${
-                    isRajih
-                      ? "border border-[var(--border)] bg-[var(--accent-hover)] text-[var(--text)]"
-                      : "bg-cyan-950/40 border border-[var(--border-strong)] text-[var(--text)]"
-                  }`}
-                >
-                  <div className="whitespace-pre-wrap font-sans">{msg.text}</div>
-
-                  {msg.citations && msg.citations.length > 0 && (
-                    <div className="mt-4 border-t border-[var(--border)] pt-3">
-                      <span className="text-[10px] font-bold text-[var(--axia-gold-light)] block mb-1.5">
-                        المصادر والمراجع القانونية المعتمدة:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {msg.citations.map((c, i) => (
-                          <span
-                            key={i}
-                            className="rounded bg-[var(--accent)] border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--text-muted)] font-mono"
-                          >
-                            {c}
-                          </span>
-                        ))}
+        <div className="flex h-[min(62vh,620px)] min-h-[440px] flex-col">
+          <div className="flex-1 space-y-5 overflow-y-auto p-4 sm:p-6">
+            {messages.map((message) => {
+              const isRajih = message.sender === "rajih";
+              return (
+                <div key={message.id} className={`flex gap-3 ${isRajih ? "items-start" : "flex-row-reverse items-start"}`}>
+                  <div className={`grid size-9 shrink-0 place-items-center rounded-xl text-[10px] font-bold ${isRajih ? "border border-[var(--axia-gold)]/40 bg-[var(--axia-gold)]/15 text-[var(--axia-gold-light)]" : "bg-[var(--text)] text-[var(--bg)]"}`}>
+                    {isRajih ? <Sparkles className="size-4" /> : "أنت"}
+                  </div>
+                  <div className={`max-w-[90%] rounded-2xl p-4 text-sm leading-7 sm:max-w-[78%] ${isRajih ? "rounded-tr-sm border border-[var(--border)] bg-[var(--accent-hover)] text-[var(--text)]" : "rounded-tl-sm bg-cyan-950/40 text-[var(--text)]"}`}>
+                    <p className="whitespace-pre-wrap">{message.text}</p>
+                    {message.citations && message.citations.length > 0 && (
+                      <div className="mt-4 border-t border-[var(--border)] pt-3">
+                        <p className="mb-2 text-[10px] font-bold text-[var(--axia-gold-light)]">المصادر المستخدمة</p>
+                        <div className="flex flex-wrap gap-1.5">{message.citations.map((citation) => <span key={citation} className="rounded-lg border border-[var(--border)] bg-[var(--accent)] px-2 py-1 text-[10px] text-[var(--text-muted)]">{citation}</span>)}</div>
                       </div>
-                    </div>
-                  )}
-
-                  {isRajih && (
-                    <div className="mt-3 flex justify-end">
-                      <button
-                        onClick={() => handleCopy(msg.id, msg.text)}
-                        className="inline-flex items-center gap-1 rounded bg-[var(--accent)] px-2 py-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text)]"
-                      >
-                        {copiedId === msg.id ? (
-                          <>
-                            <Check className="size-3 text-emerald-400" />
-                            <span className="text-emerald-400">تم النسخ</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="size-3" />
-                            <span>نسخ الصيغة القانونية</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
+                    )}
+                    {isRajih && <button type="button" onClick={() => copyAnswer(message)} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-2.5 py-1.5 text-[10px] text-[var(--text-muted)] transition hover:text-[var(--text)]">{copiedId === message.id ? <><Check className="size-3 text-emerald-400" /> تم النسخ</> : <><Clipboard className="size-3" /> نسخ الإجابة</>}</button>}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+            {isTyping && <div className="flex items-center gap-2 text-xs text-[var(--axia-gold-light)]"><Loader2 className="size-4 animate-spin" /> يجري البحث في المصادر المعتمدة…</div>}
+          </div>
 
-          {isTyping && (
-            <div className="flex items-center gap-3 text-xs text-[var(--axia-gold-light)] animate-pulse">
-              <Sparkles className="size-4" />
-              <span>جاري مضاهاة وقائع القضية مع نصوص القانون وأحكام النقض...</span>
-            </div>
-          )}
+          <div className="border-t border-[var(--border)] bg-[var(--accent)]/40 p-3 sm:p-4">
+            <form onSubmit={(event) => { event.preventDefault(); void handleSend(); }} className="flex items-end gap-2 rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-2 focus-within:border-[var(--axia-gold)]/60">
+              <textarea value={inputPrompt} onChange={(event) => setInputPrompt(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void handleSend(); } }} rows={2} placeholder="اكتب سؤالك القانوني أو اطلب تحليل مستند…" className="min-h-12 flex-1 resize-none bg-transparent px-2 py-2 text-sm leading-6 text-[var(--text)] outline-none placeholder:text-[var(--text-muted)]" />
+              <button type="submit" disabled={!inputPrompt.trim() || isTyping} aria-label="إرسال السؤال" className="grid size-11 shrink-0 place-items-center rounded-xl bg-[var(--axia-gold)] text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"><ArrowUp className="size-5" /></button>
+            </form>
+            <p className="mt-2 px-1 text-[10px] leading-5 text-[var(--text-muted)]"><Info className="mr-1 inline size-3" />راجح مساعد بحث فقط. راجع النص الساري والوقائع والمصادر مع محامٍ مختص قبل اتخاذ أي إجراء.</p>
+          </div>
         </div>
-
-        {/* Input Bar */}
-        <div className="border-t border-[var(--border)] p-4 bg-[var(--accent)]">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSend();
-            }}
-            className="flex items-center gap-2"
-          >
-            <input
-              type="text"
-              placeholder="اكتب استفسارك، أو اطلب صياغة دفع قانوني، أو ابحث عن مبدأ قضائي في محكمة النقض..."
-              value={inputPrompt}
-              onChange={(e) => setInputPrompt(e.target.value)}
-              className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-4 py-3 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--axia-gold)] focus:outline-none"
-            />
-            <button
-              type="submit"
-              disabled={!inputPrompt.trim() || isTyping}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[var(--axia-gold)] to-[#a77e16] px-5 py-3 text-xs font-bold text-white shadow-md transition hover:brightness-110 disabled:opacity-50"
-            >
-              <span>تحليل</span>
-              <Send className="size-3.5" />
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
