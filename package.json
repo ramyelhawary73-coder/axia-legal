@@ -9,6 +9,7 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "legal:parse": "node scripts/parse-legal-text.mjs",
+    "legal:clean": "node scripts/clean-legal-chunks.mjs",
     "legal:check-chunks": "node scripts/check-legal-chunks.mjs",
     "test:safety": "node --test tests/*.test.mjs",
     "check": "npm run typecheck && npm run lint && npm run test:safety && npm run build"
