@@ -74,16 +74,44 @@ async function retrieveApprovedSources(input: RajihRequest): Promise<{ userId: s
   if (documentError || !documents?.length) return { userId, citations: [] };
 
   const rows = documents as KnowledgeDocumentRow[];
-  const keywords = (input.prompt ?? "").split(/\s+/).filter((word) => word.length >= 3).slice(0, 8);
-  const searchFilter = keywords.length
-    ? keywords.map((word) => `content.ilike.%${word.replace(/[%,]/g, " ")}%`).join(",")
-    : undefined;
-  const chunkQuery = supabase
-    .from("legal_knowledge_chunks")
-    .select("id,document_id,content,heading,article_number")
-    .in("document_id", rows.map((row) => row.id))
-    .limit(8);
-  const { data: chunks, error: chunkError } = searchFilter ? await chunkQuery.or(searchFilter) : await chunkQuery;
+  const embeddingModel = process.env.RAJIH_EMBEDDING_MODEL;
+  let chunks: ChunkRow[] | null = null;
+  let chunkError: unknown = null;
+  if (embeddingModel && process.env.RAJIH_AI_BASE_URL && process.env.RAJIH_AI_API_KEY) {
+    const embeddingResponse = await fetch(`${process.env.RAJIH_AI_BASE_URL.replace(/\/$/, "")}/embeddings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.RAJIH_AI_API_KEY}` },
+      body: JSON.stringify({ model: embeddingModel, input: input.prompt }),
+      cache: "no-store",
+    });
+    if (embeddingResponse.ok) {
+      const embeddingData = (await embeddingResponse.json()) as { data?: Array<{ embedding?: number[] }> };
+      const vector = embeddingData.data?.[0]?.embedding;
+      if (vector?.length === 1536) {
+        const vectorResult = await supabase.rpc("match_legal_knowledge_chunks", {
+          query_embedding: vector,
+          match_threshold: 0.55,
+          match_count: 8,
+        });
+        chunks = vectorResult.data as ChunkRow[] | null;
+        chunkError = vectorResult.error;
+      }
+    }
+  }
+  if (!chunks?.length) {
+    const keywords = (input.prompt ?? "").split(/\s+/).filter((word) => word.length >= 3).slice(0, 8);
+    const searchFilter = keywords.length
+      ? keywords.map((word) => `content.ilike.%${word.replace(/[%,]/g, " ")}%`).join(",")
+      : undefined;
+    const chunkQuery = supabase
+      .from("legal_knowledge_chunks")
+      .select("id,document_id,content,heading,article_number")
+      .in("document_id", rows.map((row) => row.id))
+      .limit(8);
+    const lexicalResult = searchFilter ? await chunkQuery.or(searchFilter) : await chunkQuery;
+    chunks = lexicalResult.data as ChunkRow[] | null;
+    chunkError = lexicalResult.error;
+  }
   if (chunkError || !chunks?.length) return { userId, citations: [] };
 
   const sourceIds = [...new Set(rows.map((row) => row.source_id))];
