@@ -12,6 +12,7 @@
     "check": "npm run typecheck && npm run lint && npm run test:safety && npm run build"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.4",
     "glob": "^13.0.6",
     "html2canvas": "^1.4.1",
