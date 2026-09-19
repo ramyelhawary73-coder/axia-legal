@@ -24,6 +24,7 @@ type KnowledgeDocumentRow = {
   source_url: string | null;
   effective_from: string | null;
   effective_to: string | null;
+  is_test_only: boolean;
   status: "published";
 };
 
@@ -66,8 +67,9 @@ async function retrieveApprovedSources(input: RajihRequest): Promise<{ userId: s
 
   const { data: documents, error: documentError } = await supabase
     .from("legal_knowledge_documents")
-    .select("id,title,version,source_id,source_url,effective_from,effective_to,status")
+    .select("id,title,version,source_id,source_url,effective_from,effective_to,is_test_only,status")
     .eq("status", "published")
+    .eq("is_test_only", false)
     .or("effective_from.is.null,effective_from.lte." + new Date().toISOString().slice(0, 10))
     .or("effective_to.is.null,effective_to.gte." + new Date().toISOString().slice(0, 10))
     .limit(50);
