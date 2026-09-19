@@ -70,7 +70,6 @@ async function retrieveApprovedSources(input: RajihRequest): Promise<{ userId: s
     .select("id,title,version,source_id,source_url,effective_from,effective_to,is_test_only,status")
     .eq("status", "published")
     .eq("is_test_only", false)
-    .or("effective_from.is.null,effective_from.lte." + new Date().toISOString().slice(0, 10))
     .or("effective_to.is.null,effective_to.gte." + new Date().toISOString().slice(0, 10))
     .limit(50);
   if (documentError || !documents?.length) return { userId, citations: [] };
@@ -121,6 +120,7 @@ async function retrieveApprovedSources(input: RajihRequest): Promise<{ userId: s
   const sourceMap = new Map((sourceRows as SourceRow[] | null ?? []).map((source) => [source.id, source]));
   const documentMap = new Map(rows.map((document) => [document.id, document]));
 
+  const today = new Date().toISOString().slice(0, 10);
   const citations = (chunks as ChunkRow[]).flatMap((chunk) => {
     const document = documentMap.get(chunk.document_id);
     if (!document) return [];
@@ -133,7 +133,7 @@ async function retrieveApprovedSources(input: RajihRequest): Promise<{ userId: s
       version: document.version,
       effectiveFrom: document.effective_from ?? undefined,
       effectiveTo: document.effective_to ?? undefined,
-      excerpt: `${chunk.article_number ? `${chunk.article_number}: ` : ""}${chunk.content.slice(0, 900)}`,
+      excerpt: `${document.effective_from && document.effective_from > today ? `تنبيه: هذا النص منشور لكنه لا يبدأ السريان قبل ${document.effective_from}. ` : ""}${chunk.article_number ? `${chunk.article_number}: ` : ""}${chunk.content.slice(0, 900)}`,
     }];
   });
 
@@ -164,7 +164,7 @@ async function callConfiguredModel(prompt: string, sources: RajihCitation[]): Pr
       temperature: 0,
       messages: [
         { role: "system", content: RAJIH_SYSTEM_POLICY },
-        { role: "user", content: `Answer only from these approved sources:\n${JSON.stringify(sources)}\n\nQuestion:\n${prompt}` },
+        { role: "user", content: `Answer only from these approved sources. Distinguish publication from legal effectiveness: if effectiveFrom is later than today (${new Date().toISOString().slice(0, 10)}), state clearly that the text is published but not yet in force and do not present it as currently applicable. Include article numbers only when present in the source excerpts.\n${JSON.stringify(sources)}\n\nQuestion:\n${prompt}` },
       ],
     }),
     cache: "no-store",
