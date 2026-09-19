@@ -16,10 +16,18 @@ const normalizeDigits = (value) => value.replace(/[٠-٩]/g, (digit) => String(a
 const normalize = (value) => value.normalize("NFKC").replace(/[\u061C\u200E\u200F\u202A-\u202E]/g, "");
 const clean = (value) => value.replace(/\s+/g, " ").trim();
 
-const raw = normalize(fs.readFileSync(input, "utf8"));
+const raw = normalize(fs.readFileSync(input, "utf8"))
+  .replace(/مادة\s*\)\(\s*([0-9٠-٩]+)/g, "مادة ($1)")
+  .replace(/المادة\s+الأولى/g, "مادة (تمهيدي-1)")
+  .replace(/المادة\s+الثانية/g, "مادة (تمهيدي-2)")
+  .replace(/المادة\s+الثالثة/g, "مادة (تمهيدي-3)")
+  .replace(/المادة\s+الرابعة/g, "مادة (تمهيدي-4)")
+  .replace(/المادة\s+الخامسة/g, "مادة (تمهيدي-5)")
+  .replace(/المادة\s+السادسة/g, "مادة (تمهيدي-6)")
+  .replace(/\)مادة\s+\((تمهيدي-[1-6])\)\(/g, "مادة ($1)");
 const lines = raw.split(/\r?\n/).map(clean).filter(Boolean);
 const text = lines.join("\n");
-const articlePattern = /(?:^|\n)\s*مادة\s*(?:\([^\n)]{1,20}\)\s*)?(?:[-–—:]\s*)?([0-9٠-٩]{1,4})\s*[.،؛:)\-–—]?/g;
+const articlePattern = /(?:^|\n)\s*مادة\s*(?:\([^\n)]{1,20}\)\s*(?:[-–—:]\s*)?([0-9٠-٩]{1,4}|تمهيدي-[1-6])|\(\s*([0-9٠-٩]{1,4}|تمهيدي-[1-6])\s*\)|(?:[-–—:]\s*)?([0-9٠-٩]{1,4}|تمهيدي-[1-6]))\s*[.،؛:)\-–—]?/g;
 const matches = [...text.matchAll(articlePattern)];
 if (matches.length === 0) throw new Error("No article markers found after Unicode normalization");
 
@@ -29,7 +37,7 @@ for (let index = 0; index < matches.length; index += 1) {
   const start = match.index + match[0].indexOf("مادة");
   const end = index + 1 < matches.length ? matches[index + 1].index : text.length;
   const section = text.slice(start, end).trim();
-  const articleNumber = normalizeDigits(match[1]);
+  const articleNumber = normalizeDigits(match[1] ?? match[2] ?? match[3]);
   const headingLines = lines.filter((line) => line.length > 3 && line.length < 140 && !/مادة\s*[0-9٠-٩]/.test(line));
   const heading = headingLines.length ? headingLines[Math.min(index, headingLines.length - 1)] : null;
   chunks.push({
