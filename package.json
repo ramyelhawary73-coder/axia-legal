@@ -8,6 +8,8 @@
     "start": "next start -p 3000 -H 0.0.0.0",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
+    "legal:parse": "node scripts/parse-legal-text.mjs",
+    "legal:check-chunks": "node scripts/check-legal-chunks.mjs",
     "test:safety": "node --test tests/*.test.mjs",
     "check": "npm run typecheck && npm run lint && npm run test:safety && npm run build"
   },
