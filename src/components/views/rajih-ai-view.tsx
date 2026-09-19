@@ -93,7 +93,7 @@ export function RajihAiView() {
     {
       id: "msg-1",
       sender: "rajih",
-      text: "مرحباً بك يا أستاذنا المستشار. أنا «راجح RAJIH AI» - المساعد القانوني الذكي المتخصص في المنظومة القضائية والتشريعات المصرية وأحكام محكمة النقض. يمكنك سؤالي عن صياغة الدفوع، استخراج أرقام الطعون المطابقة لوقائع قضيتك، فحص بنود العقود، أو تلخيص صحف الدعاوى المعقدة.",
+      text: "مرحباً بك. أنا «راجح RAJIH AI» — مساعد بحث قانوني لا يحل محل المحامي. سأعتمد فقط على مصادر قانونية منشورة ومعتمدة، وسأمتنع عن الجزم إذا لم تتوافر مصادر كافية. يجب مراجعة كل نتيجة قانونية قبل الاعتماد عليها.",
       timestamp: "الآن",
     },
   ]);
@@ -101,7 +101,7 @@ export function RajihAiView() {
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const text = textToSend || inputPrompt;
     if (!text.trim()) return;
 
@@ -116,34 +116,43 @@ export function RajihAiView() {
     setInputPrompt("");
     setIsTyping(true);
 
-    // Look for matching sample prompt or generate structured response
-    setTimeout(() => {
-      const match = samplePrompts.find((p) => text.includes(p.title) || p.query.includes(text) || text.includes("تحكيم") || text.includes("بطلان"));
-      
-      const reply: Message = {
-        id: nextMsgId("raj"),
-        sender: "rajih",
-        text: match ? match.response : `**تحليل راجح القانوني للاستفسار:**
-
-بناءً على نصوص القانون المصري والمبادئ القضائية المستقرة:
-
-١. التكييف القانوني السليم للواقعة:
-يخضع هذا النزاع للقواعد العامة للمسؤولية العقدية والتقصيرية وفقاً لنصوص القانون المدني وقانون المرافعات المدنية والتجارية.
-
-٢. الدفوع الموصى بالتمسك بها في المذكرة:
-- الدفع بعدم قبول الدعوى لرفعها بغير الطريق الذي رسمه القانون.
-- الدفع بانعدام الخصومة لعدم اختصام ذوي الشأن الأصليين.
-- الدفع بسقوط الحق بالميعاد أو التقادم المسقط.
-
-٣. السوابق القضائية لمحكمة النقض:
-«المقرر في قضاء هذه المحكمة أن عبء إثبات الواقعة المنشئة للالتزام يقع على عاتق المدعي، فإذا عجز عن إثباتها تعين رفض الدعوى بحالتها» (نقض مدني طعن رقم ٧١٨ لسنة ٨٢ ق).`,
-        timestamp: "الآن",
-        citations: match ? match.citations : ["قانون المرافعات المصري", "القانون المدني المصري", "مبادئ الدوائر المدنية لمحكمة النقض"],
+    try {
+      const response = await fetch("/api/rajih", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: text }),
+      });
+      const result = (await response.json()) as {
+        answer?: string;
+        citations?: Array<{ title: string; version: string; sourceAuthority: string }>;
+        error?: string;
       };
-
-      setMessages((prev) => [...prev, reply]);
+      const citations = (result.citations ?? []).map(
+        (citation) => `${citation.title} — ${citation.sourceAuthority} — الإصدار ${citation.version}`,
+      );
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: nextMsgId("raj"),
+          sender: "rajih",
+          text: result.answer ?? result.error ?? "تعذر معالجة الطلب بشكل آمن.",
+          timestamp: "الآن",
+          citations,
+        },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: nextMsgId("raj"),
+          sender: "rajih",
+          text: "تعذر الاتصال بخادم راجح. لم يتم إنشاء إجابة قانونية بديلة.",
+          timestamp: "الآن",
+        },
+      ]);
+    } finally {
       setIsTyping(false);
-    }, 600);
+    }
   };
 
   const handleCopy = (id: string, text: string) => {
@@ -173,7 +182,7 @@ export function RajihAiView() {
           <div className="flex items-center gap-3">
             <div className="rounded-xl border border-[var(--border)] bg-[var(--accent)] px-4 py-2.5 text-right text-xs">
               <span className="text-[var(--text-muted)] block text-[10px]">قاعدة المعرفة النشطة:</span>
-              <strong className="text-[var(--axia-gold-light)] font-mono">١٢٠,٠٠٠+ مبدأ نقض رسمي</strong>
+              <strong className="text-[var(--axia-gold-light)] font-mono">مصادر منشورة معتمدة فقط</strong>
             </div>
           </div>
         </div>

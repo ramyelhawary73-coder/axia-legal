@@ -8,7 +8,8 @@
     "start": "next start -p 3000 -H 0.0.0.0",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run lint && npm run build"
+    "test:safety": "node --test tests/*.test.mjs",
+    "check": "npm run typecheck && npm run lint && npm run test:safety && npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
