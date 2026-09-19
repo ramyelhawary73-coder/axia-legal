@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FolderDown, X, ExternalLink } from "lucide-react";
+import { FolderDown, X, ExternalLink, Loader2 } from "lucide-react";
 
 interface DailySnapshotToastProps {
   notification: {
@@ -22,11 +22,13 @@ export function DailySnapshotToast({
 }: DailySnapshotToastProps) {
   const [prevFilename, setPrevFilename] = useState<string | null>(null);
   const [localDismissed, setLocalDismissed] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   const currentFilename = notification?.filename || null;
   if (currentFilename !== prevFilename) {
     setPrevFilename(currentFilename);
     setLocalDismissed(false);
+    setIsClosing(false);
   }
 
   if (!notification || !notification.visible || localDismissed) return null;
@@ -36,21 +38,35 @@ export function DailySnapshotToast({
       e.preventDefault();
       e.stopPropagation();
     }
+    if (isClosing) return;
+
     try {
-      // Instantly hide the toast locally to guarantee zero-latency UX
-      setLocalDismissed(true);
+      setIsClosing(true);
       
-      // Notify parent to update the global app state
+      // Provide a smooth 200ms transition time to let the close animation render
+      // This completely avoids any state-update deadlock or race condition
+      setTimeout(() => {
+        setLocalDismissed(true);
+        setIsClosing(false);
+        if (typeof onDismiss === "function") {
+          onDismiss();
+        }
+      }, 200);
+    } catch (error) {
+      console.error("Critical error in DailySnapshotToast dismiss handler:", error);
+      // Fail-safe path to prevent deadlock in case timeout fails
+      setLocalDismissed(true);
+      setIsClosing(false);
       if (typeof onDismiss === "function") {
         onDismiss();
       }
-    } catch (error) {
-      console.error("Critical error in DailySnapshotToast dismiss handler:", error);
     }
   };
 
   return (
-    <div className="fixed bottom-5 left-5 z-50 max-w-md w-[calc(100vw-2.5rem)] rounded-2xl border border-emerald-500/30 bg-[var(--panel)] p-4 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5 duration-300">
+    <div className={`fixed bottom-5 left-5 z-50 max-w-md w-[calc(100vw-2.5rem)] rounded-2xl border border-emerald-500/30 bg-[var(--panel)] p-4 shadow-2xl backdrop-blur-md transform transition-all duration-200 ease-out ${
+      isClosing ? "opacity-0 translate-y-4 scale-95 pointer-events-none" : "animate-in slide-in-from-bottom-5 duration-300 opacity-100 translate-y-0 scale-100"
+    }`}>
       <div className="flex items-start gap-3">
         <div className="grid size-9 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
           <FolderDown className="size-5" />
@@ -63,11 +79,18 @@ export function DailySnapshotToast({
             </h4>
             <button
               onClick={handleDismiss}
-              className="text-[var(--text-muted)] hover:text-[var(--text)] transition p-1 rounded-lg hover:bg-[var(--accent)] cursor-pointer"
+              disabled={isClosing}
+              className={`text-[var(--text-muted)] hover:text-[var(--text)] transition p-1 rounded-lg hover:bg-[var(--accent)] cursor-pointer flex items-center justify-center ${
+                isClosing ? "opacity-60" : ""
+              }`}
               aria-label="إغلاق التنبيه"
               type="button"
             >
-              <X className="size-3.5" />
+              {isClosing ? (
+                <Loader2 className="size-3.5 animate-spin text-emerald-400" />
+              ) : (
+                <X className="size-3.5" />
+              )}
             </button>
           </div>
 
