@@ -9,6 +9,10 @@ const tools = fs.readFileSync("src/lib/rajih/tools.ts", "utf8");
 const policy = fs.readFileSync("src/lib/rajih/policy.ts", "utf8");
 const retrieval = fs.readFileSync("src/lib/rajih/retrieval.ts", "utf8");
 const migration = fs.readFileSync("supabase/migrations/20260919091000_rajih_foundation.sql", "utf8");
+const actionLayerMigration = fs.readFileSync(
+  "supabase/migrations/20260920114631_rajih_action_layer_phase2a_foundation.sql",
+  "utf8",
+);
 const authProxy = fs.readFileSync("src/lib/supabase/proxy.ts", "utf8");
 const serverClient = fs.readFileSync("src/lib/supabase/server.ts", "utf8");
 
@@ -117,4 +121,39 @@ test("legal data migration includes tenant and matter isolation", () => {
   assert.match(migration, /enable row level security/);
   assert.match(migration, /can_access_matter/);
   assert.match(migration, /status public\.knowledge_status/);
+});
+
+
+test("RAJIH Action Layer Phase 2A creates tenant-safe persistent tasks", () => {
+  assert.match(actionLayerMigration, /create table public\.tasks/);
+  assert.match(actionLayerMigration, /organization_id uuid not null/);
+  assert.match(actionLayerMigration, /matter_id uuid null references public\.matters/);
+  assert.match(actionLayerMigration, /alter table public\.tasks enable row level security/);
+  assert.match(actionLayerMigration, /tasks_select_authorized/);
+  assert.match(actionLayerMigration, /tasks_insert_authorized/);
+  assert.match(actionLayerMigration, /tasks_update_authorized/);
+  assert.match(actionLayerMigration, /private\.has_organization_role/);
+  assert.match(actionLayerMigration, /created_by = \(select auth\.uid\(\)\)/);
+  assert.doesNotMatch(actionLayerMigration, /grant delete/i);
+  assert.doesNotMatch(actionLayerMigration, /for delete/i);
+});
+
+test("RAJIH action requests remain proposal-only in Phase 2A.1", () => {
+  assert.match(actionLayerMigration, /create table public\.rajih_action_requests/);
+  assert.match(actionLayerMigration, /action_type in \('create_task', 'update_task_status'\)/);
+  assert.match(actionLayerMigration, /status = 'proposed'/);
+  assert.match(actionLayerMigration, /grant select, insert on table public\.rajih_action_requests to authenticated/);
+  assert.doesNotMatch(actionLayerMigration, /grant update[^\n]*rajih_action_requests/i);
+  assert.doesNotMatch(actionLayerMigration, /for update[\s\S]*rajih_action_requests/i);
+  assert.doesNotMatch(actionLayerMigration, /for delete[\s\S]*rajih_action_requests/i);
+});
+
+test("RAJIH audit foundation is append-only for authenticated users", () => {
+  assert.match(actionLayerMigration, /revoke all on table public\.audit_logs from anon, authenticated/);
+  assert.match(actionLayerMigration, /grant select, insert on table public\.audit_logs to authenticated/);
+  assert.match(actionLayerMigration, /audit_logs_insert_self/);
+  assert.match(actionLayerMigration, /user_id = \(select auth\.uid\(\)\)/);
+  assert.doesNotMatch(actionLayerMigration, /grant update[^\n]*audit_logs/i);
+  assert.doesNotMatch(actionLayerMigration, /grant delete[^\n]*audit_logs/i);
+  assert.doesNotMatch(actionLayerMigration, /SUPABASE_SERVICE_ROLE_KEY/);
 });
