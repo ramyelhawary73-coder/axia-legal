@@ -139,7 +139,7 @@ export function ClientsView({ selectedClientId, onCloseClientDashboard }: Client
             title: newMatter.title,
             court: newMatter.court === "غير مسجل" ? undefined : newMatter.court,
             category: newMatter.category,
-            clientId: client.id,
+            clientId: selectedClient.id,
             caseYear: newMatter.year,
             circuit:
               newMatter.circuit === "غير مسجل" ? undefined : newMatter.circuit,
