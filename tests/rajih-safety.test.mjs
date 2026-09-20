@@ -21,6 +21,7 @@ const authProxy = fs.readFileSync("src/lib/supabase/proxy.ts", "utf8");
 const serverClient = fs.readFileSync("src/lib/supabase/server.ts", "utf8");
 const homePage = fs.readFileSync("src/app/page.tsx", "utf8");
 const tasksClient = fs.readFileSync("src/lib/tasks-client.ts", "utf8");
+const tasksRoute = fs.readFileSync("src/app/api/tasks/route.ts", "utf8");
 const taskModal = fs.readFileSync("src/components/task-creation-modal.tsx", "utf8");
 const tasksView = fs.readFileSync("src/components/views/tasks-view.tsx", "utf8");
 
@@ -179,19 +180,25 @@ test("RAJIH Action Layer Phase 2A indexes new foreign-key access paths", () => {
 });
 
 
-test("Phase 2A.2 loads and persists tasks through Supabase instead of mock state", () => {
+test("Phase 2A.2 loads and persists tasks through the SSR-authenticated API", () => {
   assert.match(homePage, /loadTaskWorkspace/);
   assert.match(homePage, /createPersistentTask/);
   assert.match(homePage, /updatePersistentTaskStatus/);
   assert.match(homePage, /useState<LegalTask\[]>\(\[\]\)/);
   assert.doesNotMatch(homePage, /mockTasks/);
 
-  assert.match(tasksClient, /from\("tasks"\)/);
-  assert.match(tasksClient, /\.insert\(/);
-  assert.match(tasksClient, /\.update\(/);
-  assert.match(tasksClient, /\.select\("id"\)/);
+  assert.match(tasksClient, /fetch\("\/api\/tasks"/);
+  assert.doesNotMatch(tasksClient, /getSupabaseBrowserClient/);
   assert.doesNotMatch(tasksClient, /\.delete\(/);
-  assert.doesNotMatch(tasksClient, /SUPABASE_SERVICE_ROLE_KEY/);
+
+  assert.match(tasksRoute, /createClient/);
+  assert.match(tasksRoute, /auth\.getClaims\(\)/);
+  assert.match(tasksRoute, /from\("tasks"\)/);
+  assert.match(tasksRoute, /\.insert\(/);
+  assert.match(tasksRoute, /\.update\(/);
+  assert.match(tasksRoute, /\.select\("id"\)/);
+  assert.doesNotMatch(tasksRoute, /\.delete\(/);
+  assert.doesNotMatch(tasksRoute, /SUPABASE_SERVICE_ROLE_KEY/);
 });
 
 test("Phase 2A.2 task creation uses accessible real matters and current user assignment", () => {
@@ -200,8 +207,8 @@ test("Phase 2A.2 task creation uses accessible real matters and current user ass
   assert.match(taskModal, /matchedMatter/);
   assert.match(taskModal, /اختر قضية من القضايا المتاحة/);
   assert.match(taskModal, /assigneeLabel/);
-  assert.match(tasksClient, /assigned_to: task\.assignedToUserId \?\? workspace\.userId/);
-  assert.match(tasksClient, /created_by: workspace\.userId/);
+  assert.match(tasksRoute, /assigned_to: workspace\.userId/);
+  assert.match(tasksRoute, /created_by: workspace\.userId/);
 });
 
 test("Phase 2A.2 keeps task deletion disabled for persistent task data", () => {
