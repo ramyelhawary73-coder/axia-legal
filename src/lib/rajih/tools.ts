@@ -12,7 +12,7 @@ export type RajihToolName =
 
 export type ToolExecutionResult = {
   ok: boolean;
-  tool: RajihToolName;
+  tool: RajihToolName | "unknown";
   data: unknown;
   citations?: RajihCitation[];
   error?: string;
@@ -170,25 +170,38 @@ async function findMatter(
   supabase: SupabaseClient,
   args: Record<string, unknown>,
 ): Promise<ToolExecutionResult> {
-  const query = readString(args, "query").replace(/[%,]/g, " ");
+  const query = readString(args, "query");
   if (!query) {
     return { ok: false, tool: "find_matter", data: null, error: "query is required" };
   }
 
-  const result = await supabase
-    .from("matters")
-    .select("id,case_number,title,court,category,status,client_id")
-    .or(`case_number.ilike.%${query}%,title.ilike.%${query}%`)
-    .limit(5);
+  const selectColumns = "id,case_number,title,court,category,status,client_id";
+  const [caseNumberResult, titleResult] = await Promise.all([
+    supabase
+      .from("matters")
+      .select(selectColumns)
+      .ilike("case_number", `%${query}%`)
+      .limit(5),
+    supabase
+      .from("matters")
+      .select(selectColumns)
+      .ilike("title", `%${query}%`)
+      .limit(5),
+  ]);
 
-  if (result.error) {
+  if (caseNumberResult.error || titleResult.error) {
     return { ok: false, tool: "find_matter", data: null, error: "Matter lookup failed." };
+  }
+
+  const unique = new Map<string, Record<string, unknown>>();
+  for (const matter of [...(caseNumberResult.data ?? []), ...(titleResult.data ?? [])]) {
+    unique.set(String(matter.id), matter as Record<string, unknown>);
   }
 
   return {
     ok: true,
     tool: "find_matter",
-    data: { matters: result.data ?? [] },
+    data: { matters: [...unique.values()].slice(0, 5) },
   };
 }
 
@@ -349,7 +362,7 @@ export async function executeRajihTool(input: {
     default:
       return {
         ok: false,
-        tool: "search_law",
+        tool: "unknown",
         data: null,
         error: "Unknown or non-approved tool.",
       };
