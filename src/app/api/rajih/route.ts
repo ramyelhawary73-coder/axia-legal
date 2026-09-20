@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { runRajihAgent } from "@/lib/rajih/agent";
-import { getProviderConfigSummary } from "@/lib/rajih/provider";
 import { createClient } from "@/lib/supabase/server";
 
 type RajihRequest = {
