@@ -42,6 +42,7 @@ import { TaskCreationModal } from "@/components/task-creation-modal";
 import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
 import { VoiceCommandModal } from "@/components/voice-command-modal";
 import { GlobalSearchBar } from "@/components/global-search-bar";
+import type { TaskMatterOption } from "@/lib/tasks-client";
 
 interface AppShellProps {
   activeTab: NavigationTab;
@@ -51,7 +52,9 @@ interface AppShellProps {
   onClearSubContext?: () => void;
   tasks?: LegalTask[];
   onToggleTaskStatus?: (taskId: string) => void;
-  onCreateTask?: (task: LegalTask) => void;
+  onCreateTask?: (task: LegalTask) => boolean | void | Promise<boolean | void>;
+  taskMatterOptions?: TaskMatterOption[];
+  taskAssigneeLabel?: string;
   matters?: Matter[];
   clients?: Client[];
   documents?: LegalDocument[];
@@ -85,6 +88,8 @@ export function AppShell({
   tasks,
   onToggleTaskStatus,
   onCreateTask,
+  taskMatterOptions = [],
+  taskAssigneeLabel = "المستخدم الحالي",
   matters,
   clients,
   documents,
@@ -120,14 +125,17 @@ export function AppShell({
     onNavigateTab: onNavigate,
   });
 
-  const handleCreateTaskFromModal = (task: LegalTask) => {
-    if (onCreateTask) {
-      onCreateTask(task);
-    }
+  const handleCreateTaskFromModal = async (task: LegalTask) => {
+    if (!onCreateTask) return false;
+
+    const result = await onCreateTask(task);
+    if (result === false) return false;
+
     setTaskCreatedToast({ id: task.id, title: task.title });
     setTimeout(() => {
       setTaskCreatedToast(null);
     }, 4500);
+    return true;
   };
   
   const activeTasks = tasks || mockTasks;
@@ -495,6 +503,8 @@ export function AppShell({
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
         onCreateTask={handleCreateTaskFromModal}
+        matterOptions={taskMatterOptions}
+        assigneeLabel={taskAssigneeLabel}
         sourceLabel="اختصار سريع (Ctrl+N)"
       />
 
@@ -510,7 +520,9 @@ export function AppShell({
         isOpen={isVoiceModalOpen}
         onClose={() => setIsVoiceModalOpen(false)}
         onNavigate={onNavigate}
-        onCreateTask={handleCreateTaskFromModal}
+        onCreateTask={(task) => {
+          void handleCreateTaskFromModal(task);
+        }}
       />
 
       {/* Quick Floating Toast on Task Creation */}
