@@ -36,6 +36,7 @@ import {
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 import { VoiceCommandModal } from "@/components/voice-command-modal";
 import { TaskCreationModal } from "@/components/task-creation-modal";
+import type { TaskMatterOption } from "@/lib/tasks-client";
 
 interface TasksEmptyStateProps {
   currentCategory: string;
@@ -141,8 +142,10 @@ function TasksEmptyState({
 interface TasksViewProps {
   tasks?: LegalTask[];
   onToggleTaskStatus?: (id: string) => void;
-  onCreateTask?: (task: LegalTask) => void;
-  onBulkUpdateTaskStatus?: (taskIds: string[], status: LegalTask["status"]) => void;
+  onCreateTask?: (task: LegalTask) => boolean | void | Promise<boolean | void>;
+  onBulkUpdateTaskStatus?: (taskIds: string[], status: LegalTask["status"]) => void | Promise<void>;
+  taskMatterOptions?: TaskMatterOption[];
+  taskAssigneeLabel?: string;
   onBulkDeleteTasks?: (taskIds: string[]) => void;
   onDeleteTask?: (taskId: string) => void;
   onNavigate?: (tab: NavigationTab) => void;
@@ -153,12 +156,16 @@ export function TasksView({
   onToggleTaskStatus: propToggleStatus,
   onCreateTask: propCreateTask,
   onBulkUpdateTaskStatus: propBulkUpdateStatus,
+  taskMatterOptions = [],
+  taskAssigneeLabel = "المستخدم الحالي",
   onBulkDeleteTasks: propBulkDelete,
   onDeleteTask: propDeleteTask,
   onNavigate,
 }: TasksViewProps = {}) {
   const [internalTasks, setInternalTasks] = useState<LegalTask[]>(mockTasks);
   const tasks = propTasks || internalTasks;
+  const deletionEnabled =
+    propTasks === undefined || Boolean(propBulkDelete || propDeleteTask);
 
   const [viewMode, setViewMode] = useState<"list" | "kanban">("kanban");
   const [hoveredColumn, setHoveredColumn] = useState<LegalTask["status"] | null>(null);
@@ -233,10 +240,18 @@ export function TasksView({
 
   const handleVoiceTaskCreated = (newTask: LegalTask) => {
     if (propCreateTask) {
-      propCreateTask(newTask);
-    } else {
-      setInternalTasks((prev) => [newTask, ...prev]);
+      void Promise.resolve(propCreateTask(newTask)).then((result) => {
+        if (result === false) {
+          setVoiceToastMessage("تعذر حفظ المهمة الصوتية.");
+          return;
+        }
+        setVoiceToastMessage(`تمت إضافة المهمة الصوتية بنجاح: "${newTask.title}"`);
+        setTimeout(() => setVoiceToastMessage(null), 4500);
+      });
+      return;
     }
+
+    setInternalTasks((prev) => [newTask, ...prev]);
     setVoiceToastMessage(`تمت إضافة المهمة الصوتية بنجاح: "${newTask.title}"`);
     setTimeout(() => setVoiceToastMessage(null), 4500);
   };
@@ -360,18 +375,19 @@ export function TasksView({
   };
 
   const handleRequestBulkDelete = () => {
-    if (selectedTaskIds.length === 0) return;
+    if (!deletionEnabled || selectedTaskIds.length === 0) return;
     setTaskIdsToDelete(selectedTaskIds);
     setIsDeleteConfirmOpen(true);
   };
 
   const handleRequestSingleDelete = (id: string) => {
+    if (!deletionEnabled) return;
     setTaskIdsToDelete([id]);
     setIsDeleteConfirmOpen(true);
   };
 
   const handleConfirmDelete = () => {
-    if (taskIdsToDelete.length === 0) return;
+    if (!deletionEnabled || taskIdsToDelete.length === 0) return;
     if (propBulkDelete) {
       propBulkDelete(taskIdsToDelete);
     } else if (propDeleteTask && taskIdsToDelete.length === 1) {
@@ -641,15 +657,17 @@ export function TasksView({
                 <span>تعيين كقيد التنفيذ</span>
               </button>
 
-              <button
-                type="button"
-                onClick={handleRequestBulkDelete}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/50 bg-red-600/20 px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-600/30 shadow-sm transition"
-                title="حذف المهام المحددة نهائياً"
-              >
-                <Trash2 className="size-3.5 text-red-400" />
-                <span>حذف المحدد ({selectedTaskIds.length})</span>
-              </button>
+              {deletionEnabled && (
+                <button
+                  type="button"
+                  onClick={handleRequestBulkDelete}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/50 bg-red-600/20 px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-600/30 shadow-sm transition"
+                  title="حذف المهام المحددة نهائياً"
+                >
+                  <Trash2 className="size-3.5 text-red-400" />
+                  <span>حذف المحدد ({selectedTaskIds.length})</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -680,7 +698,7 @@ export function TasksView({
           </div>
 
           <span className="text-[11px] text-[var(--text-muted)]">
-            حدد مربع الاختيار على أي مهمة للبدء في إجراءات التحديث أو الحذف الجماعي
+            حدد مربع الاختيار على أي مهمة للبدء في إجراءات التحديث الجماعي
           </span>
         </div>
       )}
