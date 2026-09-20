@@ -88,3 +88,10 @@ test("Write routes never trust organization id from request bodies", () => {
     assert.doesNotMatch(route, /body\.organization_id/, name);
   }
 });
+
+
+test("Mutable APIs parse JSON through the shared safe object reader", () => {
+  for (const name of ["clients", "matters", "hearings", "tasks", "finance"]) {
+    assert.match(routes[name], /readJsonObject\(request\)/, name);
+  }
+});
