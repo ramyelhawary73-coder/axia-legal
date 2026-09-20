@@ -44,7 +44,8 @@ export async function GET(request: Request) {
       createdAt: row.created_at,
     })),
     capabilities: {
-      upload: false,
+      upload: true,
+      download: true,
       update: false,
       delete: false,
     },
