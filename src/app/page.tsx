@@ -125,6 +125,19 @@ export default function HomePage() {
     }
   };
 
+  const handleMatterCreated = async () => {
+    try {
+      const workspace = await loadTaskWorkspace();
+      setTaskWorkspace(workspace);
+      setTasks(workspace.tasks);
+      setTaskSyncError(null);
+    } catch (error) {
+      setTaskSyncError(
+        error instanceof Error ? error.message : "تعذر تحديث قائمة القضايا للمهام.",
+      );
+    }
+  };
+
   const handleOpenMatter = (matterId: string) => {
     setSelectedMatterId(matterId);
     setActiveTab("matters");
@@ -203,6 +216,9 @@ export default function HomePage() {
           <MattersView 
             selectedMatterId={selectedMatterId}
             onCloseMatterModal={() => setSelectedMatterId(null)}
+            onMatterCreated={() => {
+              void handleMatterCreated();
+            }}
           />
         )}
         {activeTab === "hearings" && (
