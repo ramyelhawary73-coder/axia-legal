@@ -8,25 +8,21 @@ type RajihRequest = {
   matterId?: string;
 };
 
-function previewOnlyDiagnostics(value: Record<string, unknown>) {
-  return process.env.VERCEL_ENV === "production" ? undefined : value;
-}
-
 export async function POST(request: Request) {
   let payload: RajihRequest;
   try {
     payload = (await request.json()) as RajihRequest;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+    return NextResponse.json({ error: "تعذر قراءة الطلب." }, { status: 400 });
   }
 
   const prompt = payload.prompt?.trim();
   if (!prompt) {
-    return NextResponse.json({ error: "prompt is required" }, { status: 400 });
+    return NextResponse.json({ error: "اكتب سؤالك القانوني أولاً." }, { status: 400 });
   }
 
   if (prompt.length > 8_000) {
-    return NextResponse.json({ error: "prompt is too long" }, { status: 413 });
+    return NextResponse.json({ error: "السؤال أطول من الحد المسموح به." }, { status: 413 });
   }
 
   let supabase: Awaited<ReturnType<typeof createClient>>;
@@ -35,7 +31,7 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json(
       {
-        error: "إعدادات Supabase العامة اللازمة لراجح غير متاحة في بيئة التشغيل.",
+        error: "خدمة راجح غير متاحة مؤقتاً. أعد المحاولة بعد قليل.",
       },
       { status: 503 },
     );
@@ -47,7 +43,7 @@ export async function POST(request: Request) {
   if (claimsError || typeof userId !== "string") {
     return NextResponse.json(
       {
-        error: "جلسة الدخول غير صالحة أو منتهية. سجّل الدخول مرة أخرى ثم أعد المحاولة.",
+        error: "انتهت جلسة الدخول. سجّل الدخول مرة أخرى ثم أعد المحاولة.",
       },
       { status: 401 },
     );
@@ -101,30 +97,16 @@ export async function POST(request: Request) {
         status: "abstained",
         answer:
           result.citations.length > 0
-            ? "راجح جمع أدلة قانونية موثقة، لكن تعذر إكمال دورة التحليل الآلي بأمان. لم يتم إنشاء استنتاج بديل غير موثق."
-            : "تعذر على راجح إكمال دورة البحث والتحليل بأمان. لم يتم إنشاء إجابة بديلة غير موثقة.",
+            ? "تم العثور على مصادر قانونية مرتبطة بسؤالك، لكن تعذر استكمال التحليل الآن. أعد المحاولة بعد قليل، ولن أعرض استنتاجاً قانونياً غير مكتمل."
+            : "تعذر استكمال البحث القانوني الآن. أعد المحاولة بعد قليل، أو حدّد رقم القانون أو القضية أو المادة إن أمكن.",
         citations: result.citations,
         confidence: "low",
         needsLawyerReview: true,
-        missingInformation: ["إكمال دورة Agent والتحقق من مزود النموذج."],
-        agentTrace: result.trace,
-        diagnostics: previewOnlyDiagnostics({
-          code: result.code,
-          provider: result.provider,
-          attemptedModels: result.attemptedModels,
-          failedModel: result.failedModel,
-          httpStatus: result.httpStatus,
-          safeMessage: result.safeMessage,
-        }),
+        missingInformation: [],
       },
       { status: providerFailure ? 502 : 503 },
     );
   }
 
-  return NextResponse.json({
-    ...result.answer,
-    agentTrace: result.trace,
-    model: result.model,
-    attemptedModels: result.attemptedModels,
-  });
+  return NextResponse.json(result.answer);
 }
