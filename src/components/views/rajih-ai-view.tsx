@@ -79,6 +79,7 @@ export function RajihAiView() {
       const result = (await response.json().catch(() => null)) as {
         status?: "answered" | "abstained";
         answer?: string;
+        model?: string;
         citations?: Array<{
           title: string;
           version: string;
@@ -86,20 +87,39 @@ export function RajihAiView() {
           effectiveFrom?: string;
         }>;
         error?: string;
+        agentTrace?: Array<{
+          step: number;
+          tool: string;
+          ok: boolean;
+        }>;
         diagnostics?: {
-          code: string;
-          strategy?: string;
-          documentCount?: number;
-          chunkCount?: number;
-          runtimeProjectRef?: string;
+          code?: string;
+          httpStatus?: number;
+          safeMessage?: string;
+          provider?: {
+            configured?: boolean;
+            model?: string;
+            baseUrlKind?: string;
+          };
         };
       } | null;
 
+      const traceNote = result?.agentTrace?.length
+        ? `أدوات راجح: ${result.agentTrace
+            .map((step) => `${step.tool} ${step.ok ? "✓" : "✕"}`)
+            .join(" ← ")}`
+        : null;
+
       const diagnosticNote = result?.diagnostics
         ? [
-            `رمز التشخيص: ${result.diagnostics.code}`,
-            result.diagnostics.strategy ? `المسار: ${result.diagnostics.strategy}` : null,
-            result.diagnostics.runtimeProjectRef ? `Supabase: ${result.diagnostics.runtimeProjectRef}` : null,
+            result.diagnostics.code ? `رمز التشخيص: ${result.diagnostics.code}` : null,
+            result.diagnostics.httpStatus ? `HTTP ${result.diagnostics.httpStatus}` : null,
+            result.diagnostics.provider?.model
+              ? `Model: ${result.diagnostics.provider.model}`
+              : null,
+            result.diagnostics.safeMessage
+              ? `Provider: ${result.diagnostics.safeMessage}`
+              : null,
           ]
             .filter(Boolean)
             .join(" · ")
@@ -114,13 +134,17 @@ export function RajihAiView() {
         {
           id: nextMessageId("raj"),
           sender: "rajih",
-          text: diagnosticNote ? `${baseText}\n\n${diagnosticNote}` : baseText,
-          citations: (result?.citations ?? []).map((citation) => {
-            const effectiveLabel = citation.effectiveFrom
-              ? ` — يبدأ السريان: ${citation.effectiveFrom}`
-              : "";
-            return `${citation.title} — ${citation.sourceAuthority} — الإصدار ${citation.version}${effectiveLabel}`;
-          }),
+          text: [baseText, traceNote, diagnosticNote].filter(Boolean).join("\n\n"),
+          citations: Array.from(
+            new Set(
+              (result?.citations ?? []).map((citation) => {
+                const effectiveLabel = citation.effectiveFrom
+                  ? ` — يبدأ السريان: ${citation.effectiveFrom}`
+                  : "";
+                return `${citation.title} — ${citation.sourceAuthority} — الإصدار ${citation.version}${effectiveLabel}`;
+              }),
+            ),
+          ),
         },
       ]);
     } catch {
