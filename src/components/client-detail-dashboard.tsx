@@ -95,13 +95,24 @@ export function ClientDetailDashboard({
     return clientMatters.filter((m) => m.status === "مغلقة" || m.stage === "محكوم فيها");
   }, [clientMatters]);
 
-  const winCount = useMemo(() => {
-    return closedMatters.filter((m) => 
-      !m.verdictResult || m.verdictResult.includes("كسب") || m.verdictResult.includes("صالح") || m.verdictResult.includes("صلح")
-    ).length;
-  }, [closedMatters]);
+  const ratedClosedMatters = useMemo(
+    () => closedMatters.filter((matter) => Boolean(matter.verdictResult)),
+    [closedMatters],
+  );
 
-  const winRate = closedMatters.length > 0 ? Math.round((winCount / closedMatters.length) * 100) : 100;
+  const winCount = useMemo(() => {
+    return ratedClosedMatters.filter(
+      (matter) =>
+        matter.verdictResult?.includes("كسب") ||
+        matter.verdictResult?.includes("صالح") ||
+        matter.verdictResult?.includes("صلح"),
+    ).length;
+  }, [ratedClosedMatters]);
+
+  const winRate =
+    ratedClosedMatters.length > 0
+      ? Math.round((winCount / ratedClosedMatters.length) * 100)
+      : null;
 
   // Filtered matters for display
   const displayedMatters = useMemo(() => {
@@ -368,7 +379,9 @@ export function ClientDetailDashboard({
               نسبة كسب الدعاوى
             </span>
             <div className="mt-1 flex items-baseline gap-1.5">
-              <span className="text-xl font-bold text-emerald-500">{winRate}٪</span>
+              <span className="text-xl font-bold text-emerald-500">
+                {winRate === null ? "غير مسجل" : `${winRate}٪`}
+              </span>
               <span className="text-[10px] text-[var(--text-muted)]">أحكام صالحة للموكل</span>
             </div>
           </div>
