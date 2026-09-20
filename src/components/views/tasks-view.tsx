@@ -23,8 +23,7 @@ import {
   Kanban,
   GripVertical
 } from "lucide-react";
-import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
-import { NavigationTab, LegalTask } from "@/types/legal";
+import { NavigationTab, LegalTask, Matter } from "@/types/legal";
 import { analyzeTaskDeadline } from "@/lib/task-utils";
 import { 
   getNotificationPermissionStatus, 
@@ -162,8 +161,27 @@ export function TasksView({
   onDeleteTask: propDeleteTask,
   onNavigate,
 }: TasksViewProps = {}) {
-  const [internalTasks, setInternalTasks] = useState<LegalTask[]>(mockTasks);
-  const tasks = propTasks || internalTasks;
+  const [internalTasks, setInternalTasks] = useState<LegalTask[]>([]);
+  const tasks = propTasks ?? internalTasks;
+
+  const reportMatters: Matter[] = taskMatterOptions.map((matter) => ({
+    id: matter.id,
+    caseNumber: matter.caseNumber,
+    year: new Date().getFullYear(),
+    court: (matter.court || "غير مسجل") as Matter["court"],
+    circuit: "غير مسجل",
+    title: matter.title,
+    clientName: "غير مسجل",
+    clientRole: "غير مسجل",
+    opponentName: "غير مسجل",
+    assignedLawyer: "غير مسجل",
+    nextHearingDate: "غير مسجل",
+    nextHearingGoal: "غير مسجل",
+    stage: "غير مسجل",
+    agreedFees: "غير مسجل",
+    paidFees: "غير مسجل",
+    status: "مفتوحة",
+  }));
   const deletionEnabled =
     propTasks === undefined || Boolean(propBulkDelete || propDeleteTask);
 
@@ -252,26 +270,13 @@ export function TasksView({
       return;
     }
 
-    setInternalTasks((prev) => [newTask, ...prev]);
-    setVoiceToastMessage(`تمت إضافة المهمة الصوتية بنجاح: "${newTask.title}"`);
+    setVoiceToastMessage("إنشاء المهام غير متاح بدون Backend handler موثّق.");
     setTimeout(() => setVoiceToastMessage(null), 4500);
   };
 
   const handleToggleTaskStatus = (id: string) => {
     if (propToggleStatus) {
       propToggleStatus(id);
-    } else {
-      setInternalTasks((prev) =>
-        prev.map((t) => {
-          if (t.id === id) {
-            return {
-              ...t,
-              status: t.status === "مكتملة" ? "قيد التنفيذ" : "مكتملة",
-            };
-          }
-          return t;
-        })
-      );
     }
   };
 
@@ -1049,8 +1054,7 @@ export function TasksView({
             return propCreateTask(newTask);
           }
 
-          setInternalTasks((prev) => [newTask, ...prev]);
-          return true;
+          return false;
         }}
         matterOptions={taskMatterOptions}
         assigneeLabel={taskAssigneeLabel}
@@ -1060,7 +1064,7 @@ export function TasksView({
         isOpen={isPdfModalOpen}
         onClose={() => setIsPdfModalOpen(false)}
         defaultReportType="tasks"
-        matters={mockMatters}
+        matters={reportMatters}
         tasks={tasks}
       />
 
