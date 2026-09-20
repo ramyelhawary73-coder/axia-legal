@@ -8,7 +8,7 @@ import {
   CornerDownLeft 
 } from "lucide-react";
 import { LegalTask } from "@/types/legal";
-import { mockMatters } from "@/lib/mock-legal-data";
+import type { TaskMatterOption } from "@/lib/tasks-client";
 import { 
   getSpeechRecognitionConstructor, 
   IWindowSpeechRecognition, 
@@ -18,7 +18,9 @@ import {
 interface TaskCreationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateTask: (task: LegalTask) => void;
+  onCreateTask: (task: LegalTask) => boolean | void | Promise<boolean | void>;
+  matterOptions?: TaskMatterOption[];
+  assigneeLabel?: string;
   defaultCategory?: LegalTask["category"];
   defaultCaseNumber?: string;
   sourceLabel?: string;
@@ -28,6 +30,8 @@ export function TaskCreationModal({
   isOpen,
   onClose,
   onCreateTask,
+  matterOptions = [],
+  assigneeLabel = "المستخدم الحالي",
   defaultCategory = "قلم المحضرين",
   defaultCaseNumber = "",
   sourceLabel,
@@ -36,8 +40,9 @@ export function TaskCreationModal({
   const [category, setCategory] = useState<LegalTask["category"]>(defaultCategory);
   const [matterCaseNumber, setMatterCaseNumber] = useState(defaultCaseNumber);
   const [courtOrBailiffOffice, setCourtOrBailiffOffice] = useState("");
-  const [assignedTo, setAssignedTo] = useState("أ. مروان هاني (محام متدرب)");
   const [deadline, setDeadline] = useState(() => new Date().toISOString().slice(0, 10));
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [priority, setPriority] = useState<LegalTask["priority"]>("عاجلة");
   const [isDictatingTitle, setIsDictatingTitle] = useState(false);
   const [speechError, setSpeechError] = useState<string | null>(null);
@@ -126,29 +131,50 @@ export function TaskCreationModal({
     }
   };
 
-  const handleSubmit = (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || isSaving) return;
+
+    setSaveError(null);
+    setIsSaving(true);
+
+    const normalizedCaseNumber = matterCaseNumber.trim();
+    const matchedMatter = normalizedCaseNumber
+      ? matterOptions.find((matter) => matter.caseNumber.trim() === normalizedCaseNumber)
+      : undefined;
 
     const newTask: LegalTask = {
-      id: `task-${Date.now()}`,
+      id: `pending-${Date.now()}`,
       title: title.trim(),
       category,
       priority,
-      matterCaseNumber: matterCaseNumber.trim() || undefined,
-      courtOrBailiffOffice: courtOrBailiffOffice.trim() || "قلم محضرين المحكمة المختصة",
-      assignedTo: assignedTo.trim() || "فريق العمل الإجرائي",
+      matterId: matchedMatter?.id,
+      matterCaseNumber: matchedMatter?.caseNumber,
+      courtOrBailiffOffice:
+        courtOrBailiffOffice.trim() ||
+        matchedMatter?.court ||
+        "قلم محضرين المحكمة المختصة",
+      assignedTo: assigneeLabel,
       deadline,
       status: "قيد التنفيذ",
     };
 
-    onCreateTask(newTask);
+    try {
+      const result = await onCreateTask(newTask);
+      if (result === false) {
+        setSaveError("تعذر حفظ المهمة. راجع البيانات وحاول مرة أخرى.");
+        return;
+      }
 
-    // Reset fields
-    setTitle("");
-    setMatterCaseNumber("");
-    setCourtOrBailiffOffice("");
-    onClose();
+      setTitle("");
+      setMatterCaseNumber("");
+      setCourtOrBailiffOffice("");
+      onClose();
+    } catch {
+      setSaveError("تعذر حفظ المهمة. حاول مرة أخرى.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Keyboard shortcut inside modal: Ctrl+Enter or Cmd+Enter to submit
@@ -204,6 +230,11 @@ export function TaskCreationModal({
         {speechError && (
           <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs text-amber-400">
             {speechError}
+          </div>
+        )}
+        {saveError && (
+          <div className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-xs text-red-300">
+            {saveError}
           </div>
         )}
 
@@ -307,9 +338,9 @@ export function TaskCreationModal({
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] p-2.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)]/60 focus:border-[var(--axia-gold)] focus:outline-none"
               />
               <datalist id="matters-suggestions">
-                {mockMatters.map((m) => (
-                  <option key={m.id} value={m.caseNumber}>
-                    {m.clientName} — {m.court}
+                {matterOptions.map((matter) => (
+                  <option key={matter.id} value={matter.caseNumber}>
+                    {matter.title}{matter.court ? ` — ${matter.court}` : ""}
                   </option>
                 ))}
               </datalist>
@@ -337,11 +368,9 @@ export function TaskCreationModal({
               </label>
               <input
                 type="text"
-                required
-                placeholder="اسم المحامي أو المتدرب المسؤول"
-                value={assignedTo}
-                onChange={(e) => setAssignedTo(e.target.value)}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] p-2.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)]/60 focus:border-[var(--axia-gold)] focus:outline-none"
+                readOnly
+                value={assigneeLabel}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-xs text-[var(--text-muted)]"
               />
             </div>
           </div>
@@ -370,10 +399,11 @@ export function TaskCreationModal({
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[var(--axia-gold)] to-amber-500 px-5 py-2 text-xs font-extrabold text-black shadow-md hover:brightness-110 transition"
+                disabled={isSaving}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[var(--axia-gold)] to-amber-500 px-5 py-2 text-xs font-extrabold text-black shadow-md hover:brightness-110 transition disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <CornerDownLeft className="size-3.5" />
-                <span>حفظ وتكليف المهمة</span>
+                <span>{isSaving ? "جارٍ الحفظ..." : "حفظ وتكليف المهمة"}</span>
               </button>
             </div>
           </div>
