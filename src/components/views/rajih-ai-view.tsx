@@ -77,19 +77,50 @@ export function RajihAiView() {
         body: JSON.stringify({ prompt: text }),
       });
       const result = (await response.json().catch(() => null)) as {
+        status?: "answered" | "abstained";
         answer?: string;
-        citations?: Array<{ title: string; version: string; sourceAuthority: string }>;
+        citations?: Array<{
+          title: string;
+          version: string;
+          sourceAuthority: string;
+          effectiveFrom?: string;
+        }>;
         error?: string;
+        diagnostics?: {
+          code: string;
+          strategy?: string;
+          documentCount?: number;
+          chunkCount?: number;
+          runtimeProjectRef?: string;
+        };
       } | null;
+
+      const diagnosticNote = result?.diagnostics
+        ? [
+            `رمز التشخيص: ${result.diagnostics.code}`,
+            result.diagnostics.strategy ? `المسار: ${result.diagnostics.strategy}` : null,
+            result.diagnostics.runtimeProjectRef ? `Supabase: ${result.diagnostics.runtimeProjectRef}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        : null;
+
+      const baseText =
+        result?.answer ??
+        result?.error ??
+        `تعذر معالجة الطلب بشكل آمن (HTTP ${response.status}).`;
       setMessages((previous) => [
         ...previous,
         {
           id: nextMessageId("raj"),
           sender: "rajih",
-          text: result?.answer ?? result?.error ?? `تعذر معالجة الطلب بشكل آمن (HTTP ${response.status}).`,
-          citations: (result?.citations ?? []).map(
-            (citation) => `${citation.title} — ${citation.sourceAuthority} — الإصدار ${citation.version}`,
-          ),
+          text: diagnosticNote ? `${baseText}\n\n${diagnosticNote}` : baseText,
+          citations: (result?.citations ?? []).map((citation) => {
+            const effectiveLabel = citation.effectiveFrom
+              ? ` — يبدأ السريان: ${citation.effectiveFrom}`
+              : "";
+            return `${citation.title} — ${citation.sourceAuthority} — الإصدار ${citation.version}${effectiveLabel}`;
+          }),
         },
       ]);
     } catch {
