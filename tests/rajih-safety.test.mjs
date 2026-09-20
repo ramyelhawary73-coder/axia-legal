@@ -41,6 +41,18 @@ test("RAJIH provider supports OpenAI-compatible Gemini tool calling", () => {
   assert.doesNotMatch(provider, /console\.log\(.*apiKey/);
 });
 
+test("RAJIH uses stable model failover only for transient provider failures", () => {
+  assert.match(provider, /gemini-3\.8-flash/);
+  assert.match(provider, /gemini-3\.7-flash/);
+  assert.match(provider, /gemini-3\.6-flash/);
+  assert.match(provider, /getProviderModelCandidates/);
+  assert.match(provider, /isProviderFailoverEligible/);
+  assert.match(agent, /runSingleModelAgent/);
+  assert.match(agent, /attemptedModels/);
+  assert.match(agent, /for \(const model of modelCandidates\)/);
+  assert.match(agent, /isProviderFailoverEligible/);
+});
+
 test("RAJIH Agent Phase 1 exposes only approved read-only tools", () => {
   for (const toolName of [
     "search_law",
