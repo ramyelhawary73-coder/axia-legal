@@ -329,27 +329,23 @@ export function TaskCreationModal({
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-[var(--text-muted)] font-semibold">
-                  القضية المرتبطة (اختياري)
-                </label>
-                <span className="text-[10px] text-[var(--text-muted)]">اختر أو اكتب</span>
-              </div>
-              <input
-                type="text"
-                list="matters-suggestions"
-                placeholder="مثال: ٣٨٢ لسنة ٢٠٢٥ تجاري"
+              <label className="block text-[var(--text-muted)] mb-1.5 font-semibold">
+                القضية المرتبطة (اختياري)
+              </label>
+              <select
                 value={matterCaseNumber}
                 onChange={(e) => setMatterCaseNumber(e.target.value)}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] p-2.5 text-xs text-[var(--text)] placeholder:text-[var(--text-muted)]/60 focus:border-[var(--axia-gold)] focus:outline-none"
-              />
-              <datalist id="matters-suggestions">
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] p-2.5 text-xs text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
+              >
+                <option value="">
+                  {matterOptions.length ? "بدون ربط بقضية" : "لا توجد قضايا محفوظة بعد"}
+                </option>
                 {matterOptions.map((matter) => (
                   <option key={matter.id} value={matter.caseNumber}>
-                    {matter.title}{matter.court ? ` — ${matter.court}` : ""}
+                    {matter.caseNumber} — {matter.title}{matter.court ? ` — ${matter.court}` : ""}
                   </option>
                 ))}
-              </datalist>
+              </select>
             </div>
           </div>
 
