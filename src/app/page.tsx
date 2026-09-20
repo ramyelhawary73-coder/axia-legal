@@ -160,20 +160,11 @@ export default function HomePage() {
 
   let subContext: string | null = null;
   if (activeTab === "matters" && selectedMatterId) {
-    const matter = mockMatters.find(m => m.id === selectedMatterId);
-    if (matter) {
-      subContext = `قضية رقم ${matter.caseNumber}`;
-    }
+    subContext = "ملف قضية محدد";
   } else if (activeTab === "clients" && selectedClientId) {
-    const client = mockClients.find(c => c.id === selectedClientId);
-    if (client) {
-      subContext = `الموكل: ${client.name}`;
-    }
+    subContext = "ملف موكل محدد";
   } else if (activeTab === "documents" && selectedDocumentId) {
-    const doc = mockDocuments.find(d => d.id === selectedDocumentId);
-    if (doc) {
-      subContext = `مستند: ${doc.title}`;
-    }
+    subContext = "مستند محفوظ محدد";
   }
 
   return (
@@ -198,9 +189,6 @@ export default function HomePage() {
         onCreateTask={handleCreateTask}
         taskMatterOptions={taskWorkspace?.matters ?? []}
         taskAssigneeLabel={taskWorkspace?.assigneeLabel ?? "المستخدم الحالي"}
-        matters={mockMatters}
-        clients={mockClients}
-        documents={mockDocuments}
         onSelectMatter={handleSelectMatter}
         onSelectClient={handleSelectClient}
         onSelectDocument={handleSelectDocument}
@@ -257,9 +245,7 @@ export default function HomePage() {
           </>
         )}
         {activeTab === "documents" && (
-          <DocumentsView 
-            clients={mockClients} 
-            matters={mockMatters}
+          <DocumentsView
             selectedDocId={selectedDocumentId}
             onCloseDocModal={() => setSelectedDocumentId(null)}
           />
