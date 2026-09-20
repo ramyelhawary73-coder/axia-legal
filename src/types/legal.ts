@@ -114,22 +114,29 @@ export interface LegalTask {
 export interface LegalDocument {
   id: string;
   title: string;
-  type: "صحيفة دعوى" | "مذكرة دفاع" | "عقد واتفاقية" | "حكم قضائي" | "تقرير خبير" | "إنذار رسمي";
+  type: "صحيفة دعوى" | "مذكرة دفاع" | "عقد واتفاقية" | "حكم قضائي" | "تقرير خبير" | "إنذار رسمي" | "مستند قانوني";
   caseNumber?: string;
   clientName: string;
   date: string;
   fileSize: string;
-  status: "نهائي معتمد" | "مسودة قيد المراجعة" | "موقع رسمياً";
+  status: "نهائي معتمد" | "مسودة قيد المراجعة" | "موقع رسمياً" | "محفوظ بالأرشيف";
+  matterId?: string;
+  mimeType?: string;
+  downloadable?: boolean;
 }
 
 export interface FinancialRecord {
   id: string;
   clientName: string;
   matterCaseNumber: string;
-  type: "دفعة أتعاب" | "أمانة خبير" | "رسوم قضائية" | "مصروفات إدارية" | "أتعاب نجاح مؤخرة";
+  type: "دفعة أتعاب" | "أمانة خبير" | "رسوم قضائية" | "مصروفات إدارية" | "أتعاب نجاح مؤخرة" | "أخرى";
   amount: number;
   date: string;
-  status: "محصلة" | "مستحقة" | "مسددة للمحكمة";
+  status: "محصلة" | "مستحقة" | "مسددة للمحكمة" | "ملغاة";
+  clientId?: string;
+  matterId?: string;
+  direction?: "income" | "expense";
+  currency?: string;
   receiptNumber: string;
 }
 
