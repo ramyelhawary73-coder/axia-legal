@@ -1,181 +1,130 @@
 import { NextResponse } from "next/server";
 import { abstain, RAJIH_SYSTEM_POLICY, type RajihAnswer, type RajihCitation } from "@/lib/rajih/policy";
+import {
+  retrieveApprovedSources,
+  type RajihRequest,
+  type RetrievalDiagnosticCode,
+  type RetrievalStrategy,
+} from "@/lib/rajih/retrieval";
 import { createClient } from "@/lib/supabase/server";
 
-type RajihRequest = {
-  prompt?: string;
-  organizationId?: string;
-  matterId?: string;
+type RuntimeDiagnostics = {
+  code: RetrievalDiagnosticCode | "MODEL_NOT_CONFIGURED" | "MODEL_PROVIDER_ERROR";
+  strategy?: RetrievalStrategy;
+  documentCount?: number;
+  chunkCount?: number;
+  runtimeProjectRef?: string;
 };
 
-type SourceRow = {
-  id: string;
-  name: string;
-  authority: string;
-  source_url: string | null;
-};
+type ModelOutcome =
+  | { status: "ok"; answer: string }
+  | { status: "failed"; code: "MODEL_NOT_CONFIGURED" | "MODEL_PROVIDER_ERROR" };
 
-type KnowledgeDocumentRow = {
-  id: string;
-  title: string;
-  version: string;
-  source_id: string;
-  source_url: string | null;
-  effective_from: string | null;
-  effective_to: string | null;
-  is_test_only: boolean;
-  status: "published";
-};
+function getRuntimeProjectRef() {
+  if (process.env.VERCEL_ENV === "production") return undefined;
 
-type ChunkRow = {
-  id: string;
-  document_id: string;
-  content: string;
-  heading: string | null;
-  article_number: string | null;
-};
-
-type RetrievalResult =
-  | { status: "ok"; userId: string; citations: RajihCitation[] }
-  | { status: "authentication_required"; userId: null; citations: [] }
-  | { status: "configuration_missing"; userId: null; citations: [] };
-
-async function retrieveApprovedSources(input: RajihRequest): Promise<RetrievalResult> {
-  let supabase: Awaited<ReturnType<typeof createClient>>;
   try {
-    supabase = await createClient();
+    const hostname = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").hostname;
+    const [projectRef] = hostname.split(".");
+    return projectRef || undefined;
   } catch {
-    return { status: "configuration_missing", userId: null, citations: [] };
+    return undefined;
   }
-
-  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-  const userId = claimsData?.claims?.sub;
-  if (claimsError || typeof userId !== "string") {
-    return { status: "authentication_required", userId: null, citations: [] };
-  }
-
-  if (input.matterId) {
-    const { data: matter } = await supabase.from("matters").select("id").eq("id", input.matterId).maybeSingle();
-    if (!matter) return { status: "ok", userId, citations: [] };
-  }
-
-  const { data: documents, error: documentError } = await supabase
-    .from("legal_knowledge_documents")
-    .select("id,title,version,source_id,source_url,effective_from,effective_to,is_test_only,status")
-    .eq("status", "published")
-    .eq("is_test_only", false)
-    .or("effective_to.is.null,effective_to.gte." + new Date().toISOString().slice(0, 10))
-    .limit(50);
-  if (documentError || !documents?.length) return { status: "ok", userId, citations: [] };
-
-  const rows = documents as KnowledgeDocumentRow[];
-  const embeddingModel = process.env.RAJIH_EMBEDDING_MODEL;
-  let chunks: ChunkRow[] | null = null;
-  let chunkError: unknown = null;
-
-  if (embeddingModel && process.env.RAJIH_AI_BASE_URL && process.env.RAJIH_AI_API_KEY) {
-    const embeddingResponse = await fetch(`${process.env.RAJIH_AI_BASE_URL.replace(/\/$/, "")}/embeddings`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.RAJIH_AI_API_KEY}` },
-      body: JSON.stringify({ model: embeddingModel, input: input.prompt }),
-      cache: "no-store",
-    });
-
-    if (embeddingResponse.ok) {
-      const embeddingData = (await embeddingResponse.json()) as { data?: Array<{ embedding?: number[] }> };
-      const vector = embeddingData.data?.[0]?.embedding;
-      if (vector?.length === 1536) {
-        const vectorResult = await supabase.rpc("match_legal_knowledge_chunks", {
-          query_embedding: vector,
-          match_threshold: 0.55,
-          match_count: 8,
-        });
-        chunks = vectorResult.data as ChunkRow[] | null;
-        chunkError = vectorResult.error;
-      }
-    }
-  }
-
-  if (!chunks?.length) {
-    const keywords = (input.prompt ?? "").split(/\s+/).filter((word) => word.length >= 3).slice(0, 8);
-    const searchFilter = keywords.length
-      ? keywords.map((word) => `content.ilike.%${word.replace(/[%,]/g, " ")}%`).join(",")
-      : undefined;
-    const chunkQuery = supabase
-      .from("legal_knowledge_chunks")
-      .select("id,document_id,content,heading,article_number")
-      .in("document_id", rows.map((row) => row.id))
-      .limit(8);
-    const lexicalResult = searchFilter ? await chunkQuery.or(searchFilter) : await chunkQuery;
-    chunks = lexicalResult.data as ChunkRow[] | null;
-    chunkError = lexicalResult.error;
-  }
-
-  if (chunkError || !chunks?.length) return { status: "ok", userId, citations: [] };
-
-  const sourceIds = [...new Set(rows.map((row) => row.source_id))];
-  const { data: sourceRows } = await supabase.from("legal_sources").select("id,name,authority,source_url").in("id", sourceIds);
-  const sourceMap = new Map((sourceRows as SourceRow[] | null ?? []).map((source) => [source.id, source]));
-  const documentMap = new Map(rows.map((document) => [document.id, document]));
-
-  const today = new Date().toISOString().slice(0, 10);
-  const citations = (chunks as ChunkRow[]).flatMap((chunk) => {
-    const document = documentMap.get(chunk.document_id);
-    if (!document) return [];
-    const source = sourceMap.get(document.source_id);
-
-    return [{
-      documentId: document.id,
-      title: document.title,
-      sourceAuthority: source?.authority ?? "مصدر قانوني معتمد",
-      sourceUrl: document.source_url ?? source?.source_url ?? undefined,
-      version: document.version,
-      effectiveFrom: document.effective_from ?? undefined,
-      effectiveTo: document.effective_to ?? undefined,
-      excerpt: `${document.effective_from && document.effective_from > today ? `تنبيه: هذا النص منشور لكنه لا يبدأ السريان قبل ${document.effective_from}. ` : ""}${chunk.article_number ? `${chunk.article_number}: ` : ""}${chunk.content.slice(0, 900)}`,
-    }];
-  });
-
-  if (input.organizationId) {
-    await supabase.from("audit_logs").insert({
-      organization_id: input.organizationId,
-      user_id: userId,
-      action: "rajih.retrieval",
-      resource_type: input.matterId ? "matter" : "legal_knowledge",
-      resource_id: input.matterId ?? null,
-      metadata: { source_count: citations.length },
-    });
-  }
-
-  return { status: "ok", userId, citations };
 }
 
-async function callConfiguredModel(prompt: string, sources: RajihCitation[]): Promise<string | null> {
+function diagnosticsFor(
+  code: RuntimeDiagnostics["code"],
+  input?: {
+    strategy?: RetrievalStrategy;
+    documentCount?: number;
+    chunkCount?: number;
+  },
+): RuntimeDiagnostics {
+  return {
+    code,
+    strategy: input?.strategy,
+    documentCount: input?.documentCount,
+    chunkCount: input?.chunkCount,
+    runtimeProjectRef: getRuntimeProjectRef(),
+  };
+}
+
+async function callConfiguredModel(prompt: string, sources: RajihCitation[]): Promise<ModelOutcome> {
   const baseUrl = process.env.RAJIH_AI_BASE_URL;
   const apiKey = process.env.RAJIH_AI_API_KEY;
   const model = process.env.RAJIH_AI_MODEL;
-  if (!baseUrl || !apiKey || !model || sources.length === 0) return null;
 
-  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      temperature: 0,
-      messages: [
-        { role: "system", content: RAJIH_SYSTEM_POLICY },
-        {
-          role: "user",
-          content: `Answer only from these approved sources. Distinguish publication from legal effectiveness: if effectiveFrom is later than today (${new Date().toISOString().slice(0, 10)}), state clearly that the text is published but not yet in force and do not present it as currently applicable. Include article numbers only when present in the source excerpts.\n${JSON.stringify(sources)}\n\nQuestion:\n${prompt}`,
-        },
-      ],
-    }),
-    cache: "no-store",
-  });
+  if (!baseUrl || !apiKey || !model || sources.length === 0) {
+    return { status: "failed", code: "MODEL_NOT_CONFIGURED" };
+  }
 
-  if (!response.ok) return null;
-  const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  return data.choices?.[0]?.message?.content ?? null;
+  try {
+    const response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model,
+        temperature: 0,
+        messages: [
+          { role: "system", content: RAJIH_SYSTEM_POLICY },
+          {
+            role: "user",
+            content: `Answer only from these approved sources. Distinguish publication from legal effectiveness: if effectiveFrom is later than today (${new Date().toISOString().slice(0, 10)}), state clearly that the text is published but not yet in force and do not present it as currently applicable. Include article numbers only when present in the source excerpts.\n${JSON.stringify(sources)}\n\nQuestion:\n${prompt}`,
+          },
+        ],
+      }),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return { status: "failed", code: "MODEL_PROVIDER_ERROR" };
+    }
+
+    const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const answer = data.choices?.[0]?.message?.content?.trim();
+
+    if (!answer) {
+      return { status: "failed", code: "MODEL_PROVIDER_ERROR" };
+    }
+
+    return { status: "ok", answer };
+  } catch {
+    return { status: "failed", code: "MODEL_PROVIDER_ERROR" };
+  }
+}
+
+function retrievalFailureResponse(
+  code: RetrievalDiagnosticCode,
+  diagnostics: RuntimeDiagnostics,
+) {
+  if (code === "NO_DOCUMENTS") {
+    return NextResponse.json(
+      {
+        error:
+          "بيئة التشغيل الحالية لا ترى أي مصدر قانوني منشور. هذه مشكلة ربط أو صلاحية وصول وليست إجابة قانونية بعدم وجود النص.",
+        diagnostics,
+      },
+      { status: 503 },
+    );
+  }
+
+  if (code === "DOCUMENT_QUERY_ERROR" || code === "CHUNK_QUERY_ERROR" || code === "SOURCE_QUERY_ERROR") {
+    return NextResponse.json(
+      {
+        error:
+          "تعذر الوصول إلى فهرس المعرفة القانونية بصورة موثوقة. لم يتم إنشاء إجابة بديلة أو غير موثقة.",
+        diagnostics,
+      },
+      { status: 502 },
+    );
+  }
+
+  const result: RajihAnswer = abstain([
+    "تم الوصول إلى فهرس المصادر المنشورة، لكن لم يتم العثور على مقطع قانوني مطابق بدرجة كافية لهذا السؤال.",
+    "أعد صياغة السؤال أو حدّد رقم القانون أو المادة إن كان معروفاً.",
+  ]);
+
+  return NextResponse.json({ ...result, diagnostics });
 }
 
 export async function POST(request: Request) {
@@ -190,36 +139,103 @@ export async function POST(request: Request) {
   if (!prompt) return NextResponse.json({ error: "prompt is required" }, { status: 400 });
   if (prompt.length > 8_000) return NextResponse.json({ error: "prompt is too long" }, { status: 413 });
 
-  const retrieval = await retrieveApprovedSources(payload);
-
-  if (retrieval.status === "configuration_missing") {
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+  try {
+    supabase = await createClient();
+  } catch {
     return NextResponse.json(
-      { error: "إعدادات Supabase العامة اللازمة لراجح غير متاحة في بيئة التشغيل." },
+      {
+        error: "إعدادات Supabase العامة اللازمة لراجح غير متاحة في بيئة التشغيل.",
+        diagnostics: diagnosticsFor("DOCUMENT_QUERY_ERROR"),
+      },
       { status: 503 },
     );
   }
 
-  if (retrieval.status === "authentication_required") {
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
+  if (claimsError || typeof userId !== "string") {
     return NextResponse.json(
       { error: "جلسة الدخول غير صالحة أو منتهية. سجّل الدخول مرة أخرى ثم أعد المحاولة." },
       { status: 401 },
     );
   }
 
-  if (!retrieval.citations.length) {
-    const result: RajihAnswer = abstain([
-      "لا توجد حالياً مصادر قانونية منشورة ومصرح بها تطابق السؤال.",
-      "تأكد من اعتماد مصادر المعرفة القانونية وصلاحية الوصول قبل الاعتماد على النتيجة.",
-    ]);
-    return NextResponse.json(result);
+  const retrieval = await retrieveApprovedSources(supabase, { ...payload, prompt });
+
+  if (retrieval.status === "failed") {
+    const diagnostics = diagnosticsFor(retrieval.code, {
+      strategy: retrieval.strategy,
+      documentCount: retrieval.documentCount,
+      chunkCount: retrieval.chunkCount,
+    });
+
+    console.warn("[RAJIH retrieval failed]", {
+      code: diagnostics.code,
+      strategy: diagnostics.strategy,
+      documentCount: diagnostics.documentCount,
+      chunkCount: diagnostics.chunkCount,
+      runtimeProjectRef: diagnostics.runtimeProjectRef,
+    });
+
+    return retrievalFailureResponse(retrieval.code, diagnostics);
   }
 
-  const answer = await callConfiguredModel(prompt, retrieval.citations);
-  if (!answer) return NextResponse.json(abstain(["تعذر تشغيل مزود النموذج أو التحقق من الإجابة."]));
+  console.info("[RAJIH retrieval ok]", {
+    strategy: retrieval.strategy,
+    documentCount: retrieval.documentCount,
+    chunkCount: retrieval.chunkCount,
+    runtimeProjectRef: getRuntimeProjectRef(),
+  });
+
+  if (payload.organizationId) {
+    await supabase.from("audit_logs").insert({
+      organization_id: payload.organizationId,
+      user_id: userId,
+      action: "rajih.retrieval",
+      resource_type: payload.matterId ? "matter" : "legal_knowledge",
+      resource_id: payload.matterId ?? null,
+      metadata: {
+        source_count: retrieval.citations.length,
+        retrieval_strategy: retrieval.strategy,
+      },
+    });
+  }
+
+  const modelResult = await callConfiguredModel(prompt, retrieval.citations);
+
+  if (modelResult.status === "failed") {
+    const diagnostics = diagnosticsFor(modelResult.code, {
+      strategy: retrieval.strategy,
+      documentCount: retrieval.documentCount,
+      chunkCount: retrieval.chunkCount,
+    });
+
+    console.warn("[RAJIH model unavailable]", {
+      code: diagnostics.code,
+      strategy: diagnostics.strategy,
+      documentCount: diagnostics.documentCount,
+      chunkCount: diagnostics.chunkCount,
+    });
+
+    return NextResponse.json(
+      {
+        status: "abstained",
+        answer:
+          "تم العثور على المصدر القانوني المطابق والاستشهادات، لكن تعذر تشغيل مزود التحليل الآن. لم يتم إنشاء تحليل بديل غير موثق.",
+        citations: retrieval.citations,
+        confidence: "low",
+        needsLawyerReview: true,
+        missingInformation: ["تشغيل مزود النموذج والتحقق من الإجابة."],
+        diagnostics,
+      } satisfies RajihAnswer & { diagnostics: RuntimeDiagnostics },
+      { status: 502 },
+    );
+  }
 
   return NextResponse.json({
     status: "answered",
-    answer,
+    answer: modelResult.answer,
     citations: retrieval.citations,
     confidence: "medium",
     needsLawyerReview: true,
