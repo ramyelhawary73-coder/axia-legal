@@ -13,6 +13,10 @@ const actionLayerMigration = fs.readFileSync(
   "supabase/migrations/20260920114631_rajih_action_layer_phase2a_foundation.sql",
   "utf8",
 );
+const actionLayerIndexesMigration = fs.readFileSync(
+  "supabase/migrations/20260920114940_rajih_action_layer_phase2a_indexes.sql",
+  "utf8",
+);
 const authProxy = fs.readFileSync("src/lib/supabase/proxy.ts", "utf8");
 const serverClient = fs.readFileSync("src/lib/supabase/server.ts", "utf8");
 
@@ -156,4 +160,12 @@ test("RAJIH audit foundation is append-only for authenticated users", () => {
   assert.doesNotMatch(actionLayerMigration, /grant update[^\n]*audit_logs/i);
   assert.doesNotMatch(actionLayerMigration, /grant delete[^\n]*audit_logs/i);
   assert.doesNotMatch(actionLayerMigration, /SUPABASE_SERVICE_ROLE_KEY/);
+});
+
+
+test("RAJIH Action Layer Phase 2A indexes new foreign-key access paths", () => {
+  assert.match(actionLayerIndexesMigration, /tasks_created_by_idx/);
+  assert.match(actionLayerIndexesMigration, /tasks\(created_by\)/);
+  assert.match(actionLayerIndexesMigration, /rajih_action_requests_approved_by_idx/);
+  assert.match(actionLayerIndexesMigration, /rajih_action_requests\(approved_by\)/);
 });
