@@ -74,6 +74,8 @@ export async function POST(request: Request) {
           result.status === "ok"
             ? result.answer.citations.length
             : result.citations.length,
+        attempted_models: result.attemptedModels,
+        selected_model: result.status === "ok" ? result.model : null,
       },
     });
   }
@@ -83,6 +85,8 @@ export async function POST(request: Request) {
       code: result.code,
       trace: result.trace,
       provider: result.provider,
+      attemptedModels: result.attemptedModels,
+      failedModel: result.failedModel,
       httpStatus: result.httpStatus,
       safeMessage: result.safeMessage,
       citationCount: result.citations.length,
@@ -107,6 +111,8 @@ export async function POST(request: Request) {
         diagnostics: previewOnlyDiagnostics({
           code: result.code,
           provider: result.provider,
+          attemptedModels: result.attemptedModels,
+          failedModel: result.failedModel,
           httpStatus: result.httpStatus,
           safeMessage: result.safeMessage,
         }),
@@ -119,5 +125,6 @@ export async function POST(request: Request) {
     ...result.answer,
     agentTrace: result.trace,
     model: result.model,
+    attemptedModels: result.attemptedModels,
   });
 }
