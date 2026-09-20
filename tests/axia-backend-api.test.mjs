@@ -79,3 +79,12 @@ test("Shared validation bounds user-controlled API inputs", () => {
   assert.match(validation, /isCurrencyCode/);
   assert.match(validation, /readJsonObject/);
 });
+
+
+test("Write routes never trust organization id from request bodies", () => {
+  for (const name of ["clients", "matters", "hearings", "tasks", "finance"]) {
+    const route = routes[name];
+    assert.doesNotMatch(route, /body\.organizationId/, name);
+    assert.doesNotMatch(route, /body\.organization_id/, name);
+  }
+});
