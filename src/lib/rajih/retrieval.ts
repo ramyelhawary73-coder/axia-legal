@@ -112,6 +112,8 @@ export function normalizeArabic(value: string) {
     .toLowerCase();
 }
 
+const NORMALIZED_SEARCH_STOP_WORDS = new Set([...SEARCH_STOP_WORDS].map(normalizeArabic));
+
 function extractLawReference(prompt: string): LawReference {
   const normalized = normalizeArabic(prompt);
   const match = normalized.match(/(?:رقم\s*)?(\d{1,4})\s*(?:لسنه|سنه)\s*(\d{4})/);
@@ -123,15 +125,13 @@ function extractLawReference(prompt: string): LawReference {
 }
 
 function extractSearchTerms(prompt: string) {
-  const normalizedStopWords = new Set([...SEARCH_STOP_WORDS].map(normalizeArabic));
-
   return prompt
     .replace(/[،؛؟?!:()[\]{}"'“”]/g, " ")
     .split(/\s+/)
     .map((term) => term.replace(/[^\p{L}\p{N}-]/gu, "").trim())
     .filter(Boolean)
     .filter((term) => normalizeArabic(term).length >= 3)
-    .filter((term) => !normalizedStopWords.has(normalizeArabic(term)))
+    .filter((term) => !NORMALIZED_SEARCH_STOP_WORDS.has(normalizeArabic(term)))
     .sort((a, b) => b.length - a.length)
     .slice(0, 10);
 }
@@ -159,7 +159,7 @@ function scoreChunk(chunk: ChunkRow, prompt: string) {
   const normalizedContent = normalizeArabic(`${chunk.heading ?? ""} ${chunk.article_number ?? ""} ${chunk.content}`);
   const terms = normalizeArabic(prompt)
     .split(" ")
-    .filter((term) => term.length >= 3 && !SEARCH_STOP_WORDS.has(term));
+    .filter((term) => term.length >= 3 && !NORMALIZED_SEARCH_STOP_WORDS.has(term));
 
   let score = 0;
   for (const term of terms) {
