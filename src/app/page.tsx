@@ -113,7 +113,7 @@ export default function HomePage() {
     }
 
     try {
-      const persistedTask = await createPersistentTask(newTask, taskWorkspace);
+      const persistedTask = await createPersistentTask(newTask);
       setTasks((prev) => [persistedTask, ...prev]);
       setTaskSyncError(null);
       return true;
