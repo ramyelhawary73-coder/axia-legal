@@ -100,9 +100,11 @@ export interface LegalTask {
   id: string;
   title: string;
   category: "قلم المحضرين" | "سداد رسوم" | "إيداع مذكرات" | "استخراج شهادة" | "تنفيذ حكم" | "ميعاد طعن قانوني";
+  matterId?: string;
   matterCaseNumber?: string;
   courtOrBailiffOffice: string; // قلم محضرين الدقي / خزينة شمال القاهرة
   assignedTo: string;
+  assignedToUserId?: string;
   deadline: string;
   priority: "حرجة للغاية (ميعاد سقوط)" | "عاجلة" | "عادية";
   status: "قيد التنفيذ" | "مكتملة" | "معلقة";
