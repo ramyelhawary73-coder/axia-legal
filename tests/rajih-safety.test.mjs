@@ -53,6 +53,16 @@ test("RAJIH uses stable model failover only for transient provider failures", ()
   assert.match(agent, /isProviderFailoverEligible/);
 });
 
+test("RAJIH public response hides developer and provider internals", () => {
+  assert.doesNotMatch(route, /agentTrace:/);
+  assert.doesNotMatch(route, /diagnostics:/);
+  assert.doesNotMatch(route, /model: result\.model/);
+  assert.doesNotMatch(route, /attemptedModels: result\.attemptedModels/);
+  assert.match(agent, /Never mention model names, providers, APIs, tools/);
+  assert.match(agent, /الخلاصة القانونية/);
+  assert.match(agent, /الأساس القانوني/);
+});
+
 test("RAJIH Agent Phase 1 exposes only approved read-only tools", () => {
   for (const toolName of [
     "search_law",
