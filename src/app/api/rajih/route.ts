@@ -1,7 +1,6 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { abstain, RAJIH_SYSTEM_POLICY, type RajihAnswer, type RajihCitation } from "@/lib/rajih/policy";
+import { createClient } from "@/lib/supabase/server";
 
 type RajihRequest = {
   prompt?: string;
@@ -36,33 +35,28 @@ type ChunkRow = {
   article_number: string | null;
 };
 
-function createSupabaseServerClient(cookieStore: Awaited<ReturnType<typeof cookies>>) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return null;
-  return createServerClient(url, key, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
-      },
-      setAll() {
-        // Route handlers may not always be able to persist refreshed cookies.
-      },
-    },
-  });
-}
+type RetrievalResult =
+  | { status: "ok"; userId: string; citations: RajihCitation[] }
+  | { status: "authentication_required"; userId: null; citations: [] }
+  | { status: "configuration_missing"; userId: null; citations: [] };
 
-async function retrieveApprovedSources(input: RajihRequest): Promise<{ userId: string; citations: RajihCitation[] } | null> {
-  const supabase = createSupabaseServerClient(await cookies());
-  if (!supabase) return null;
+async function retrieveApprovedSources(input: RajihRequest): Promise<RetrievalResult> {
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+  try {
+    supabase = await createClient();
+  } catch {
+    return { status: "configuration_missing", userId: null, citations: [] };
+  }
 
-  const { data: userData } = await supabase.auth.getUser();
-  const userId = userData.user?.id;
-  if (!userId) return null;
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims?.sub;
+  if (claimsError || typeof userId !== "string") {
+    return { status: "authentication_required", userId: null, citations: [] };
+  }
 
   if (input.matterId) {
     const { data: matter } = await supabase.from("matters").select("id").eq("id", input.matterId).maybeSingle();
-    if (!matter) return null;
+    if (!matter) return { status: "ok", userId, citations: [] };
   }
 
   const { data: documents, error: documentError } = await supabase
@@ -72,12 +66,13 @@ async function retrieveApprovedSources(input: RajihRequest): Promise<{ userId: s
     .eq("is_test_only", false)
     .or("effective_to.is.null,effective_to.gte." + new Date().toISOString().slice(0, 10))
     .limit(50);
-  if (documentError || !documents?.length) return { userId, citations: [] };
+  if (documentError || !documents?.length) return { status: "ok", userId, citations: [] };
 
   const rows = documents as KnowledgeDocumentRow[];
   const embeddingModel = process.env.RAJIH_EMBEDDING_MODEL;
   let chunks: ChunkRow[] | null = null;
   let chunkError: unknown = null;
+
   if (embeddingModel && process.env.RAJIH_AI_BASE_URL && process.env.RAJIH_AI_API_KEY) {
     const embeddingResponse = await fetch(`${process.env.RAJIH_AI_BASE_URL.replace(/\/$/, "")}/embeddings`, {
       method: "POST",
@@ -85,6 +80,7 @@ async function retrieveApprovedSources(input: RajihRequest): Promise<{ userId: s
       body: JSON.stringify({ model: embeddingModel, input: input.prompt }),
       cache: "no-store",
     });
+
     if (embeddingResponse.ok) {
       const embeddingData = (await embeddingResponse.json()) as { data?: Array<{ embedding?: number[] }> };
       const vector = embeddingData.data?.[0]?.embedding;
@@ -99,6 +95,7 @@ async function retrieveApprovedSources(input: RajihRequest): Promise<{ userId: s
       }
     }
   }
+
   if (!chunks?.length) {
     const keywords = (input.prompt ?? "").split(/\s+/).filter((word) => word.length >= 3).slice(0, 8);
     const searchFilter = keywords.length
@@ -113,7 +110,8 @@ async function retrieveApprovedSources(input: RajihRequest): Promise<{ userId: s
     chunks = lexicalResult.data as ChunkRow[] | null;
     chunkError = lexicalResult.error;
   }
-  if (chunkError || !chunks?.length) return { userId, citations: [] };
+
+  if (chunkError || !chunks?.length) return { status: "ok", userId, citations: [] };
 
   const sourceIds = [...new Set(rows.map((row) => row.source_id))];
   const { data: sourceRows } = await supabase.from("legal_sources").select("id,name,authority,source_url").in("id", sourceIds);
@@ -125,6 +123,7 @@ async function retrieveApprovedSources(input: RajihRequest): Promise<{ userId: s
     const document = documentMap.get(chunk.document_id);
     if (!document) return [];
     const source = sourceMap.get(document.source_id);
+
     return [{
       documentId: document.id,
       title: document.title,
@@ -147,7 +146,8 @@ async function retrieveApprovedSources(input: RajihRequest): Promise<{ userId: s
       metadata: { source_count: citations.length },
     });
   }
-  return { userId, citations };
+
+  return { status: "ok", userId, citations };
 }
 
 async function callConfiguredModel(prompt: string, sources: RajihCitation[]): Promise<string | null> {
@@ -164,11 +164,15 @@ async function callConfiguredModel(prompt: string, sources: RajihCitation[]): Pr
       temperature: 0,
       messages: [
         { role: "system", content: RAJIH_SYSTEM_POLICY },
-        { role: "user", content: `Answer only from these approved sources. Distinguish publication from legal effectiveness: if effectiveFrom is later than today (${new Date().toISOString().slice(0, 10)}), state clearly that the text is published but not yet in force and do not present it as currently applicable. Include article numbers only when present in the source excerpts.\n${JSON.stringify(sources)}\n\nQuestion:\n${prompt}` },
+        {
+          role: "user",
+          content: `Answer only from these approved sources. Distinguish publication from legal effectiveness: if effectiveFrom is later than today (${new Date().toISOString().slice(0, 10)}), state clearly that the text is published but not yet in force and do not present it as currently applicable. Include article numbers only when present in the source excerpts.\n${JSON.stringify(sources)}\n\nQuestion:\n${prompt}`,
+        },
       ],
     }),
     cache: "no-store",
   });
+
   if (!response.ok) return null;
   const data = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
   return data.choices?.[0]?.message?.content ?? null;
@@ -187,10 +191,25 @@ export async function POST(request: Request) {
   if (prompt.length > 8_000) return NextResponse.json({ error: "prompt is too long" }, { status: 413 });
 
   const retrieval = await retrieveApprovedSources(payload);
-  if (!retrieval?.citations.length) {
+
+  if (retrieval.status === "configuration_missing") {
+    return NextResponse.json(
+      { error: "إعدادات Supabase العامة اللازمة لراجح غير متاحة في بيئة التشغيل." },
+      { status: 503 },
+    );
+  }
+
+  if (retrieval.status === "authentication_required") {
+    return NextResponse.json(
+      { error: "جلسة الدخول غير صالحة أو منتهية. سجّل الدخول مرة أخرى ثم أعد المحاولة." },
+      { status: 401 },
+    );
+  }
+
+  if (!retrieval.citations.length) {
     const result: RajihAnswer = abstain([
       "لا توجد حالياً مصادر قانونية منشورة ومصرح بها تطابق السؤال.",
-      "تأكد من تسجيل الدخول واعتماد مصادر المعرفة القانونية قبل الاعتماد على النتيجة.",
+      "تأكد من اعتماد مصادر المعرفة القانونية وصلاحية الوصول قبل الاعتماد على النتيجة.",
     ]);
     return NextResponse.json(result);
   }
