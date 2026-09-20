@@ -14,6 +14,10 @@ const migrationC = fs.readFileSync(
   "supabase/migrations/20260920162616_axia_core_data_foundation_v1_c.sql",
   "utf8",
 );
+const migrationD = fs.readFileSync(
+  "supabase/migrations/20260920164317_axia_core_data_foundation_v1_d_fk_indexes.sql",
+  "utf8",
+);
 
 test("AXIA Core Foundation A creates the approved legal ERP schema", () => {
   assert.match(migrationA, /alter table public\.clients/);
@@ -113,4 +117,26 @@ test("AXIA Core Foundation C preserves the approved role matrix", () => {
   );
   assert.match(migrationC, /private\.can_write_matter\(matter_id\)/);
   assert.match(migrationC, /grant select on table public\.documents to authenticated/);
+});
+
+
+test("AXIA Core Foundation D covers every new composite foreign-key path", () => {
+  for (const indexName of [
+    "client_poa_client_tenant_idx",
+    "client_poa_document_tenant_idx",
+    "documents_matter_tenant_idx",
+    "financial_records_client_tenant_idx",
+    "financial_records_matter_tenant_idx",
+    "hearings_matter_tenant_idx",
+    "matter_parties_matter_tenant_idx",
+    "matters_client_tenant_idx",
+    "rajih_action_requests_matter_tenant_idx",
+    "tasks_matter_tenant_idx",
+  ]) {
+    assert.match(migrationD, new RegExp(indexName));
+  }
+
+  assert.doesNotMatch(migrationD, /drop index/i);
+  assert.doesNotMatch(migrationD, /alter table/i);
+  assert.doesNotMatch(migrationD, /service_role/i);
 });
