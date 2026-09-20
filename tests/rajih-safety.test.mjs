@@ -4,21 +4,38 @@ import fs from "node:fs";
 
 const route = fs.readFileSync("src/app/api/rajih/route.ts", "utf8");
 const policy = fs.readFileSync("src/lib/rajih/policy.ts", "utf8");
+const retrieval = fs.readFileSync("src/lib/rajih/retrieval.ts", "utf8");
 const migration = fs.readFileSync("supabase/migrations/20260919091000_rajih_foundation.sql", "utf8");
 const authProxy = fs.readFileSync("src/lib/supabase/proxy.ts", "utf8");
 const serverClient = fs.readFileSync("src/lib/supabase/server.ts", "utf8");
 
-test("RAJIH fails closed when approved retrieval is unavailable", () => {
-  assert.match(route, /sources\.length === 0/);
+test("RAJIH fails closed without inventing legal answers", () => {
+  assert.match(route, /retrieveApprovedSources/);
+  assert.match(route, /retrieval\.status === "failed"/);
   assert.match(route, /abstain\(/);
   assert.doesNotMatch(route, /SUPABASE_SERVICE_ROLE_KEY/);
 });
 
 test("RAJIH requires verified authenticated claims", () => {
   assert.match(route, /auth\.getClaims\(\)/);
-  assert.match(route, /authentication_required/);
   assert.match(route, /status: 401/);
   assert.doesNotMatch(route, /auth\.getSession\(\)/);
+});
+
+test("RAJIH distinguishes retrieval failures from model failures", () => {
+  assert.match(route, /NO_DOCUMENTS/);
+  assert.match(route, /DOCUMENT_QUERY_ERROR/);
+  assert.match(route, /MODEL_PROVIDER_ERROR/);
+  assert.match(route, /تم العثور على المصدر القانوني المطابق/);
+});
+
+test("RAJIH uses metadata-first retrieval for identified laws", () => {
+  assert.match(retrieval, /extractLawReference/);
+  assert.match(retrieval, /scoreDocument/);
+  assert.match(retrieval, /retrieveByMetadata/);
+  assert.match(retrieval, /effective_from/);
+  assert.match(retrieval, /يعمل به/);
+  assert.match(retrieval, /NO_CHUNK_MATCH/);
 });
 
 test("Supabase SSR session is cookie-based and refreshed by proxy", () => {
