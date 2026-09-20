@@ -77,13 +77,29 @@ function mapTaskRow(
   };
 }
 
-async function getWorkspaceContext() {
+type WorkspaceError =
+  | "SESSION_EXPIRED"
+  | "WORKSPACE_UNAVAILABLE"
+  | "WORKSPACE_MISSING"
+  | "WORKSPACE_AMBIGUOUS";
+
+type WorkspaceContextResult =
+  | { ok: false; error: WorkspaceError }
+  | {
+      ok: true;
+      supabase: Awaited<ReturnType<typeof createClient>>;
+      userId: string;
+      organizationId: string;
+      assigneeLabel: string;
+    };
+
+async function getWorkspaceContext(): Promise<WorkspaceContextResult> {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub;
 
   if (claimsError || typeof userId !== "string") {
-    return { error: "SESSION_EXPIRED" as const };
+    return { ok: false, error: "SESSION_EXPIRED" };
   }
 
   const { data: memberships, error: membershipError } = await supabase
@@ -94,15 +110,15 @@ async function getWorkspaceContext() {
     .limit(2);
 
   if (membershipError) {
-    return { error: "WORKSPACE_UNAVAILABLE" as const };
+    return { ok: false, error: "WORKSPACE_UNAVAILABLE" };
   }
 
   if (!memberships?.length) {
-    return { error: "WORKSPACE_MISSING" as const };
+    return { ok: false, error: "WORKSPACE_MISSING" };
   }
 
   if (memberships.length > 1) {
-    return { error: "WORKSPACE_AMBIGUOUS" as const };
+    return { ok: false, error: "WORKSPACE_AMBIGUOUS" };
   }
 
   const organizationId = String(memberships[0].organization_id);
@@ -113,6 +129,7 @@ async function getWorkspaceContext() {
     .maybeSingle();
 
   return {
+    ok: true,
     supabase,
     userId,
     organizationId,
@@ -156,7 +173,7 @@ async function loadMatterOptions(
 
 export async function GET() {
   const workspace = await getWorkspaceContext();
-  if ("error" in workspace) return workspaceErrorResponse(workspace.error);
+  if (!workspace.ok) return workspaceErrorResponse(workspace.error);
 
   try {
     const matters = await loadMatterOptions(workspace.supabase, workspace.organizationId);
@@ -191,7 +208,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const workspace = await getWorkspaceContext();
-  if ("error" in workspace) return workspaceErrorResponse(workspace.error);
+  if (!workspace.ok) return workspaceErrorResponse(workspace.error);
 
   const body = (await request.json().catch(() => null)) as { task?: Partial<LegalTask> } | null;
   const task = body?.task;
@@ -259,7 +276,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   const workspace = await getWorkspaceContext();
-  if ("error" in workspace) return workspaceErrorResponse(workspace.error);
+  if (!workspace.ok) return workspaceErrorResponse(workspace.error);
 
   const body = (await request.json().catch(() => null)) as {
     taskIds?: string[];
