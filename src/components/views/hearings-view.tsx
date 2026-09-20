@@ -230,7 +230,7 @@ export function HearingsView({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    setIsOnline(navigator.onLine);
+    Promise.resolve().then(() => setIsOnline(navigator.onLine));
     const goOnline = () => setIsOnline(true);
     const goOffline = () => setIsOnline(false);
     window.addEventListener("online", goOnline);
@@ -625,7 +625,7 @@ export function HearingsView({
     try {
       const updated = await updatePersistentHearing(
         id,
-        { lastDecision: decision.trim(), status: "completed" },
+        { lastDecision: decision.trim(), status: "completed", isArchived: true },
         matters,
       );
       setHearings((current) =>
