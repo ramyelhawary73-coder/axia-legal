@@ -98,7 +98,11 @@ export async function POST(request: Request) {
   if (!workspace.ok) return workspaceErrorResponse(workspace.code);
 
   const body = await readJsonObject(request);
-  const matterId = body?.matterId;
+  if (!body) {
+    return apiError("VALIDATION_ERROR", "طلب إنشاء الجلسة غير صالح.", 400);
+  }
+
+  const matterId = body.matterId;
   const hearingDate = body?.hearingDate;
   const hearingTime = optionalText(body?.hearingTime, 20);
   const court = optionalText(body?.court, 300);
@@ -169,7 +173,11 @@ export async function PATCH(request: Request) {
   if (!workspace.ok) return workspaceErrorResponse(workspace.code);
 
   const body = await readJsonObject(request);
-  if (!isUuid(body?.id)) {
+  if (!body) {
+    return apiError("VALIDATION_ERROR", "طلب تحديث الجلسة غير صالح.", 400);
+  }
+
+  if (!isUuid(body.id)) {
     return apiError("VALIDATION_ERROR", "معرّف الجلسة غير صالح.", 400);
   }
 
