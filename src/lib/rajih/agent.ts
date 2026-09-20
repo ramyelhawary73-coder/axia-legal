@@ -4,6 +4,8 @@ import { RAJIH_SYSTEM_POLICY } from "@/lib/rajih/policy";
 import {
   callRajihProvider,
   getProviderConfigSummary,
+  getProviderModelCandidates,
+  isProviderFailoverEligible,
   type ProviderFailure,
   type ProviderMessage,
 } from "@/lib/rajih/provider";
@@ -25,6 +27,7 @@ export type RajihAgentSuccess = {
   answer: RajihAnswer;
   trace: AgentTraceStep[];
   model: string;
+  attemptedModels: string[];
 };
 
 export type RajihAgentFailure = {
@@ -35,12 +38,31 @@ export type RajihAgentFailure = {
     | "AGENT_NO_FINAL_ANSWER";
   trace: AgentTraceStep[];
   provider: ReturnType<typeof getProviderConfigSummary>;
+  attemptedModels: string[];
+  failedModel?: string;
   httpStatus?: number;
   safeMessage?: string;
   citations: RajihCitation[];
 };
 
 export type RajihAgentResult = RajihAgentSuccess | RajihAgentFailure;
+
+type SingleModelResult =
+  | {
+      status: "ok";
+      answer: RajihAnswer;
+      trace: AgentTraceStep[];
+      model: string;
+    }
+  | {
+      status: "failed";
+      code: RajihAgentFailure["code"];
+      trace: AgentTraceStep[];
+      failedModel: string;
+      httpStatus?: number;
+      safeMessage?: string;
+      citations: RajihCitation[];
+    };
 
 function agentSystemPrompt() {
   return [
@@ -63,6 +85,7 @@ function agentSystemPrompt() {
 
 function dedupeCitations(citations: RajihCitation[]) {
   const seen = new Set<string>();
+
   return citations.filter((citation) => {
     const key = [
       citation.documentId,
@@ -85,12 +108,13 @@ function safeToolPayload(value: unknown) {
   }
 }
 
-export async function runRajihAgent(input: {
+async function runSingleModelAgent(input: {
   supabase: SupabaseClient;
   prompt: string;
   matterId?: string;
   organizationId?: string;
-}): Promise<RajihAgentResult> {
+  model: string;
+}): Promise<SingleModelResult> {
   const messages: ProviderMessage[] = [
     { role: "system", content: agentSystemPrompt() },
     {
@@ -113,6 +137,7 @@ export async function runRajihAgent(input: {
     const providerResult = await callRajihProvider({
       messages,
       tools: RAJIH_TOOL_DEFINITIONS,
+      model: input.model,
     });
 
     if (providerResult.status === "failed") {
@@ -120,7 +145,7 @@ export async function runRajihAgent(input: {
         status: "failed",
         code: providerResult.code,
         trace,
-        provider: getProviderConfigSummary(),
+        failedModel: providerResult.model ?? input.model,
         httpStatus: providerResult.httpStatus,
         safeMessage: providerResult.safeMessage,
         citations: dedupeCitations(collectedCitations),
@@ -132,12 +157,13 @@ export async function runRajihAgent(input: {
 
     if (toolCalls.length === 0) {
       const finalText = assistantMessage.content?.trim();
+
       if (!finalText) {
         return {
           status: "failed",
           code: "AGENT_NO_FINAL_ANSWER",
           trace,
-          provider: getProviderConfigSummary(),
+          failedModel: input.model,
           citations: dedupeCitations(collectedCitations),
         };
       }
@@ -195,7 +221,79 @@ export async function runRajihAgent(input: {
     status: "failed",
     code: "AGENT_MAX_STEPS",
     trace,
-    provider: getProviderConfigSummary(),
+    failedModel: input.model,
     citations: dedupeCitations(collectedCitations),
+  };
+}
+
+export async function runRajihAgent(input: {
+  supabase: SupabaseClient;
+  prompt: string;
+  matterId?: string;
+  organizationId?: string;
+}): Promise<RajihAgentResult> {
+  const modelCandidates = getProviderModelCandidates();
+  const attemptedModels: string[] = [];
+  const collectedFailureCitations: RajihCitation[] = [];
+  let lastFailure: Extract<SingleModelResult, { status: "failed" }> | null = null;
+
+  if (modelCandidates.length === 0) {
+    return {
+      status: "failed",
+      code: "PROVIDER_NOT_CONFIGURED",
+      trace: [],
+      provider: getProviderConfigSummary(),
+      attemptedModels,
+      citations: [],
+    };
+  }
+
+  for (const model of modelCandidates) {
+    attemptedModels.push(model);
+
+    const attempt = await runSingleModelAgent({
+      ...input,
+      model,
+    });
+
+    if (attempt.status === "ok") {
+      return {
+        ...attempt,
+        attemptedModels,
+      };
+    }
+
+    lastFailure = attempt;
+    collectedFailureCitations.push(...attempt.citations);
+
+    const providerFailure: ProviderFailure = {
+      status: "failed",
+      model: attempt.failedModel,
+      code:
+        attempt.code.startsWith("PROVIDER_")
+          ? (attempt.code as ProviderFailure["code"])
+          : "PROVIDER_INVALID_RESPONSE",
+      httpStatus: attempt.httpStatus,
+      safeMessage: attempt.safeMessage,
+    };
+
+    if (
+      !attempt.code.startsWith("PROVIDER_") ||
+      !isProviderFailoverEligible(providerFailure)
+    ) {
+      break;
+    }
+  }
+
+  return {
+    status: "failed",
+    code: lastFailure?.code ?? "PROVIDER_UNAVAILABLE",
+    trace: lastFailure?.trace ?? [],
+    provider: getProviderConfigSummary(),
+    attemptedModels,
+    failedModel: lastFailure?.failedModel,
+    httpStatus: lastFailure?.httpStatus,
+    safeMessage: lastFailure?.safeMessage,
+    citations: dedupeCitations(collectedFailureCitations),
   };
 }
