@@ -98,16 +98,21 @@ async function resolveCurrentWorkspace() {
     .select("organization_id,created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: true })
-    .limit(1);
+    .limit(2);
 
   if (membershipError) {
     throw new Error("تعذر تحديد مساحة العمل الحالية.");
   }
 
-  const organizationId = memberships?.[0]?.organization_id;
-  if (!organizationId) {
+  if (!memberships?.length) {
     throw new Error("لا توجد مؤسسة مرتبطة بهذا الحساب.");
   }
+
+  if (memberships.length > 1) {
+    throw new Error("الحساب مرتبط بأكثر من مؤسسة. يلزم تحديد مساحة العمل قبل إدارة المهام.");
+  }
+
+  const organizationId = memberships[0].organization_id;
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -218,12 +223,17 @@ export async function updatePersistentTaskStatus(
   if (taskIds.length === 0) return;
 
   const supabase = getSupabaseBrowserClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("tasks")
     .update({ status: statusToDb[status] })
-    .in("id", taskIds);
+    .in("id", taskIds)
+    .select("id");
 
   if (error) {
     throw new Error("تعذر تحديث حالة المهمة.");
+  }
+
+  if ((data ?? []).length !== taskIds.length) {
+    throw new Error("لم يتم تحديث كل المهام المطلوبة بسبب قيود الوصول.");
   }
 }
