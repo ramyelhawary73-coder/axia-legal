@@ -143,6 +143,12 @@ export function TaskCreationModal({
       ? matterOptions.find((matter) => matter.caseNumber.trim() === normalizedCaseNumber)
       : undefined;
 
+    if (normalizedCaseNumber && !matchedMatter) {
+      setSaveError("اختر قضية من القضايا المتاحة أو اترك الحقل فارغاً.");
+      setIsSaving(false);
+      return;
+    }
+
     const newTask: LegalTask = {
       id: `pending-${Date.now()}`,
       title: title.trim(),
