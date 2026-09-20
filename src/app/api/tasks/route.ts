@@ -79,8 +79,13 @@ function mapTaskRow(
   };
 }
 
+type ResolvedWorkspace = Extract<
+  Awaited<ReturnType<typeof resolveWorkspace>>,
+  { ok: true }
+>;
+
 async function loadMatterOptions(
-  supabase: Awaited<ReturnType<typeof resolveWorkspace>> extends infer _T ? any : never,
+  supabase: ResolvedWorkspace["supabase"],
   organizationId: string,
 ): Promise<MatterOption[]> {
   const { data, error } = await supabase
