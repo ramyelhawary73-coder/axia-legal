@@ -76,18 +76,18 @@ export function RajihAiView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: text }),
       });
-      const result = (await response.json()) as {
+      const result = (await response.json().catch(() => null)) as {
         answer?: string;
         citations?: Array<{ title: string; version: string; sourceAuthority: string }>;
         error?: string;
-      };
+      } | null;
       setMessages((previous) => [
         ...previous,
         {
           id: nextMessageId("raj"),
           sender: "rajih",
-          text: result.answer ?? result.error ?? "تعذر معالجة الطلب بشكل آمن.",
-          citations: (result.citations ?? []).map(
+          text: result?.answer ?? result?.error ?? `تعذر معالجة الطلب بشكل آمن (HTTP ${response.status}).`,
+          citations: (result?.citations ?? []).map(
             (citation) => `${citation.title} — ${citation.sourceAuthority} — الإصدار ${citation.version}`,
           ),
         },
