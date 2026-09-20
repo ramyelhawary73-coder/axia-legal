@@ -79,8 +79,6 @@ export function RajihAiView() {
       const result = (await response.json().catch(() => null)) as {
         status?: "answered" | "abstained";
         answer?: string;
-        model?: string;
-        attemptedModels?: string[];
         citations?: Array<{
           title: string;
           version: string;
@@ -88,69 +86,18 @@ export function RajihAiView() {
           effectiveFrom?: string;
         }>;
         error?: string;
-        agentTrace?: Array<{
-          step: number;
-          tool: string;
-          ok: boolean;
-        }>;
-        diagnostics?: {
-          code?: string;
-          httpStatus?: number;
-          safeMessage?: string;
-          attemptedModels?: string[];
-          failedModel?: string;
-          provider?: {
-            configured?: boolean;
-            model?: string;
-            baseUrlKind?: string;
-            fallbackModels?: string[];
-          };
-        };
       } | null;
-
-      const traceNote = result?.agentTrace?.length
-        ? `أدوات راجح: ${result.agentTrace
-            .map((step) => `${step.tool} ${step.ok ? "✓" : "✕"}`)
-            .join(" ← ")}`
-        : null;
-
-      const modelNote = result?.model
-        ? result.attemptedModels && result.attemptedModels.length > 1
-          ? `النموذج المستخدم: ${result.model} · Failover: ${result.attemptedModels.join(" → ")}`
-          : `النموذج المستخدم: ${result.model}`
-        : null;
-
-      const diagnosticNote = result?.diagnostics
-        ? [
-            result.diagnostics.code ? `رمز التشخيص: ${result.diagnostics.code}` : null,
-            result.diagnostics.httpStatus ? `HTTP ${result.diagnostics.httpStatus}` : null,
-            result.diagnostics.failedModel
-              ? `Failed model: ${result.diagnostics.failedModel}`
-              : null,
-            result.diagnostics.attemptedModels?.length
-              ? `Tried: ${result.diagnostics.attemptedModels.join(" → ")}`
-              : null,
-            result.diagnostics.provider?.model
-              ? `Primary: ${result.diagnostics.provider.model}`
-              : null,
-            result.diagnostics.safeMessage
-              ? `Provider: ${result.diagnostics.safeMessage}`
-              : null,
-          ]
-            .filter(Boolean)
-            .join(" · ")
-        : null;
 
       const baseText =
         result?.answer ??
         result?.error ??
-        `تعذر معالجة الطلب بشكل آمن (HTTP ${response.status}).`;
+        "تعذر إتمام الطلب الآن. حاول مرة أخرى بعد قليل.";
       setMessages((previous) => [
         ...previous,
         {
           id: nextMessageId("raj"),
           sender: "rajih",
-          text: [baseText, traceNote, modelNote, diagnosticNote].filter(Boolean).join("\n\n"),
+          text: baseText,
           citations: Array.from(
             new Set(
               (result?.citations ?? []).map((citation) => {
