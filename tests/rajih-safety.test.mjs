@@ -56,8 +56,7 @@ test("RAJIH uses stable model failover only for transient provider failures", ()
 test("RAJIH public response hides developer and provider internals", () => {
   assert.doesNotMatch(route, /agentTrace:/);
   assert.doesNotMatch(route, /diagnostics:/);
-  assert.doesNotMatch(route, /model: result\.model/);
-  assert.doesNotMatch(route, /attemptedModels: result\.attemptedModels/);
+  assert.match(route, /return NextResponse\.json\(result\.answer\)/);
   assert.match(agent, /Never mention model names, providers, APIs, tools/);
   assert.match(agent, /الخلاصة القانونية/);
   assert.match(agent, /الأساس القانوني/);
