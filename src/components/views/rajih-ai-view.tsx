@@ -76,19 +76,37 @@ export function RajihAiView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: text }),
       });
-      const result = (await response.json()) as {
+      const result = (await response.json().catch(() => null)) as {
+        status?: "answered" | "abstained";
         answer?: string;
-        citations?: Array<{ title: string; version: string; sourceAuthority: string }>;
+        citations?: Array<{
+          title: string;
+          version: string;
+          sourceAuthority: string;
+          effectiveFrom?: string;
+        }>;
         error?: string;
-      };
+      } | null;
+
+      const baseText =
+        result?.answer ??
+        result?.error ??
+        "تعذر إتمام الطلب الآن. حاول مرة أخرى بعد قليل.";
       setMessages((previous) => [
         ...previous,
         {
           id: nextMessageId("raj"),
           sender: "rajih",
-          text: result.answer ?? result.error ?? "تعذر معالجة الطلب بشكل آمن.",
-          citations: (result.citations ?? []).map(
-            (citation) => `${citation.title} — ${citation.sourceAuthority} — الإصدار ${citation.version}`,
+          text: baseText,
+          citations: Array.from(
+            new Set(
+              (result?.citations ?? []).map((citation) => {
+                const effectiveLabel = citation.effectiveFrom
+                  ? ` — يبدأ السريان: ${citation.effectiveFrom}`
+                  : "";
+                return `${citation.title} — ${citation.sourceAuthority} — الإصدار ${citation.version}${effectiveLabel}`;
+              }),
+            ),
           ),
         },
       ]);
