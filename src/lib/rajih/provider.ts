@@ -3,6 +3,11 @@ export type ProviderRole = "system" | "user" | "assistant" | "tool";
 export type ProviderToolCall = {
   id: string;
   type: "function";
+  extra_content?: {
+    google?: {
+      thought_signature?: string;
+    };
+  };
   function: {
     name: string;
     arguments: string;
