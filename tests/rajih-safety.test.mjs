@@ -22,6 +22,13 @@ const serverClient = fs.readFileSync("src/lib/supabase/server.ts", "utf8");
 const homePage = fs.readFileSync("src/app/page.tsx", "utf8");
 const tasksClient = fs.readFileSync("src/lib/tasks-client.ts", "utf8");
 const tasksRoute = fs.readFileSync("src/app/api/tasks/route.ts", "utf8");
+const mattersRoute = fs.readFileSync("src/app/api/matters/route.ts", "utf8");
+const mattersClient = fs.readFileSync("src/lib/matters-client.ts", "utf8");
+const mattersView = fs.readFileSync("src/components/views/matters-view.tsx", "utf8");
+const matterInsertMigration = fs.readFileSync(
+  "supabase/migrations/20260920153903_matters_insert_policy_phase2a21.sql",
+  "utf8",
+);
 const taskModal = fs.readFileSync("src/components/task-creation-modal.tsx", "utf8");
 const tasksView = fs.readFileSync("src/components/views/tasks-view.tsx", "utf8");
 
@@ -216,4 +223,35 @@ test("Phase 2A.2 keeps task deletion disabled for persistent task data", () => {
   assert.match(tasksView, /deletionEnabled && isDeleteConfirmOpen/);
   assert.doesNotMatch(homePage, /handleDeleteTask/);
   assert.doesNotMatch(homePage, /handleBulkDeleteTasks/);
+});
+
+
+test("Phase 2A.2.1 matter creation policy is tenant and role constrained", () => {
+  assert.match(matterInsertMigration, /create policy matters_insert_authorized/);
+  assert.match(matterInsertMigration, /for insert/);
+  assert.match(matterInsertMigration, /owner','admin','lawyer/);
+  assert.match(matterInsertMigration, /c\.organization_id = matters\.organization_id/);
+  assert.doesNotMatch(matterInsertMigration, /for update/i);
+  assert.doesNotMatch(matterInsertMigration, /for delete/i);
+  assert.doesNotMatch(matterInsertMigration, /service_role/i);
+});
+
+test("Phase 2A.2.1 matters API is SSR authenticated and insert-only", () => {
+  assert.match(mattersRoute, /createClient/);
+  assert.match(mattersRoute, /auth\.getClaims\(\)/);
+  assert.match(mattersRoute, /from\("matters"\)/);
+  assert.match(mattersRoute, /\.insert\(/);
+  assert.doesNotMatch(mattersRoute, /\.update\(/);
+  assert.doesNotMatch(mattersRoute, /\.delete\(/);
+  assert.doesNotMatch(mattersRoute, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(mattersClient, /fetch\("\/api\/matters"/);
+});
+
+test("Phase 2A.2.1 replaces mock matters in matter registry and task picker", () => {
+  assert.doesNotMatch(mattersView, /mockMatters/);
+  assert.doesNotMatch(mattersView, /axia_matters/);
+  assert.match(mattersView, /loadMattersWorkspace/);
+  assert.match(mattersView, /createPersistentMatter/);
+  assert.match(taskModal, /لا توجد قضايا محفوظة بعد/);
+  assert.doesNotMatch(taskModal, /matters-suggestions/);
 });
