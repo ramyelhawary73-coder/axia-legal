@@ -61,6 +61,8 @@ export function ClientDetailDashboard({
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [createMatterError, setCreateMatterError] = useState<string | null>(null);
+  const [isCreatingMatter, setIsCreatingMatter] = useState(false);
 
   // New Matter Form State
   const [newCaseNumber, setNewCaseNumber] = useState("");
@@ -170,11 +172,25 @@ export function ClientDetailDashboard({
           : `تم قيد الدعوى مباشرة لصالح الموكل ${client.name} بموجب التوكيل ${client.poaNumber}.`,
     };
 
-    const persistedMatter = await onAddNewMatter(newMatter);
-    if (!persistedMatter) return;
+    setCreateMatterError(null);
+    setIsCreatingMatter(true);
 
-    setIsAddMatterModalOpen(false);
-    setSelectedMatterForDossier(persistedMatter);
+    try {
+      const persistedMatter = await onAddNewMatter(newMatter);
+      if (!persistedMatter) {
+        setCreateMatterError("تعذر حفظ القضية.");
+        return;
+      }
+
+      setIsAddMatterModalOpen(false);
+      setSelectedMatterForDossier(persistedMatter);
+    } catch (error) {
+      setCreateMatterError(
+        error instanceof Error ? error.message : "تعذر حفظ القضية.",
+      );
+    } finally {
+      setIsCreatingMatter(false);
+    }
   };
 
   return (
@@ -1142,6 +1158,12 @@ export function ClientDetailDashboard({
                 الجلسات والمحامي المسؤول والأتعاب تُسجل من وحداتها الحقيقية بعد حفظ القضية. هذه البيانات لن تُحفظ محلياً أو تُنشأ بقيم افتراضية.
               </div>
 
+              {createMatterError && (
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-[11px] font-semibold text-red-300">
+                  {createMatterError}
+                </div>
+              )}
+
               <div className="pt-4 border-t border-[var(--border)] flex justify-end gap-2">
                 <button
                   type="button"
@@ -1152,9 +1174,10 @@ export function ClientDetailDashboard({
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-[var(--axia-gold)] px-4 py-2 text-xs font-bold text-black shadow-md hover:bg-[var(--axia-gold-light)] transition"
+                  disabled={isCreatingMatter}
+                  className="rounded-lg bg-[var(--axia-gold)] px-4 py-2 text-xs font-bold text-black shadow-md hover:bg-[var(--axia-gold-light)] transition disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  قيد الدعوى وحفظ السجل
+                  {isCreatingMatter ? "جارٍ الحفظ..." : "قيد الدعوى وحفظ السجل"}
                 </button>
               </div>
             </form>
