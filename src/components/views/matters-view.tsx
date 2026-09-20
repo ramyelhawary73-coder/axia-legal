@@ -37,7 +37,12 @@ import {
   Legend,
   CartesianGrid
 } from "recharts";
-import { mockMatters, mockTasks } from "@/lib/mock-legal-data";
+import { mockTasks } from "@/lib/mock-legal-data";
+import {
+  createPersistentMatter,
+  loadMattersWorkspace,
+  type MatterClientOption,
+} from "@/lib/matters-client";
 import { Matter, CourtCategory } from "@/types/legal";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 
@@ -63,73 +68,43 @@ const getCategoryStyle = (cat: "مدني" | "جنائي" | "عمالي" | "تج�
 interface MattersViewProps {
   selectedMatterId?: string | null;
   onCloseMatterModal?: () => void;
+  onMatterCreated?: () => void;
 }
 
-export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersViewProps) {
-  const [matters, setMatters] = useState<Matter[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("axia_matters");
-        if (cached) return JSON.parse(cached);
-      } catch {}
-    }
-    const defaultMatters = mockMatters.map((m, idx) => {
-      let category: "مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة" = "مدني";
-      if (m.caseNumber.includes("جنايات") || m.court === "محكمة الجنايات" || m.title.includes("سرقة") || m.title.includes("اختلاس") || m.title.includes("قتل")) {
-        category = "جنائي";
-      } else if (m.caseNumber.includes("عمال") || m.title.includes("عمالي") || m.title.includes("مستحقات") || m.title.includes("طرد تعسفي") || m.title.includes("فصل تعسفي")) {
-        category = "عمالي";
-      } else if (m.caseNumber.includes("تجاري") || m.court === "المحكمة الاقتصادية" || m.title.includes("شركاء") || m.title.includes("خطاب ضمان") || m.title.includes("بطلان شرط التحكيم")) {
-        category = "تجاري";
-      } else if (m.court === "مجلس الدولة (القضاء الإداري)" || m.caseNumber.includes("إداري") || m.title.includes("قرار إداري")) {
-        category = "إداري";
-      } else if (m.court === "محكمة الأسرة" || m.title.includes("خلع") || m.title.includes("نفقة") || m.title.includes("طلاق")) {
-        category = "أسرة";
-      } else {
-        const cats: ("مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة")[] = ["مدني", "جنائي", "عمالي", "تجاري", "إداري", "أسرة"];
-        category = cats[idx % cats.length];
-      }
-      return { ...m, category };
-    });
-
-    if (defaultMatters[0]) {
-      defaultMatters[0].contacts = [
-        {
-          id: "con-1",
-          name: "م. شريف الألفي",
-          role: "خبير",
-          phone: "01002345678",
-          email: "sherif@experts.gov.eg",
-          notes: "الخبير الهندسي المنتدب لإعداد تقرير معاينة الموقع"
-        },
-        {
-          id: "con-2",
-          name: "اللواء محمد فتحي الراوي",
-          role: "شاهد",
-          phone: "01223456789",
-          notes: "شاهد إثبات على تسليم محاضر الاستلام الابتدائي للأعمال"
-        }
-      ];
-    }
-    if (defaultMatters[1]) {
-      defaultMatters[1].contacts = [
-        {
-          id: "con-3",
-          name: "أحمد منصور صابر",
-          role: "خصم",
-          phone: "01114567890",
-          notes: "المدعى عليه الأصلي الممتنع عن تسييل خطاب الضمان"
-        }
-      ];
-    }
-    return defaultMatters;
-  });
+export function MattersView({
+  selectedMatterId,
+  onCloseMatterModal,
+  onMatterCreated,
+}: MattersViewProps) {
+  const [matters, setMatters] = useState<Matter[]>([]);
+  const [matterClients, setMatterClients] = useState<MatterClientOption[]>([]);
+  const [mattersLoading, setMattersLoading] = useState(true);
+  const [mattersError, setMattersError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("axia_matters", JSON.stringify(matters));
-    }
-  }, [matters]);
+    let cancelled = false;
+
+    void loadMattersWorkspace()
+      .then((workspace) => {
+        if (cancelled) return;
+        setMatters(workspace.matters);
+        setMatterClients(workspace.clients);
+        setMattersError(null);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setMattersError(
+          error instanceof Error ? error.message : "تعذر تحميل القضايا الحقيقية.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setMattersLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const [activeTab, setActiveTab] = useState<"list" | "dashboard">("list");
   const [mounted, setMounted] = useState(false);
@@ -268,46 +243,41 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
   const [newCaseNumber, setNewCaseNumber] = useState("");
   const [newCourt, setNewCourt] = useState<CourtCategory>("محكمة النقض");
   const [newCategory, setNewCategory] = useState<"مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة">("مدني");
-  const [newCircuit, setNewCircuit] = useState("");
   const [newTitle, setNewTitle] = useState("");
-  const [newClientName, setNewClientName] = useState("");
-  const [newClientRole, setNewClientRole] = useState<Matter["clientRole"]>("مدعي");
-  const [newOpponentName, setNewOpponentName] = useState("");
-  const [newAssignedLawyer] = useState("د. رامي الهواري (محام بالنقض)");
-  const [newNextHearingDate, setNewNextHearingDate] = useState("2026-10-12");
-  const [newAgreedFees, setNewAgreedFees] = useState("١٠٠,٠٠٠ ج.م");
+  const [newClientId, setNewClientId] = useState("");
+  const [isCreatingMatter, setIsCreatingMatter] = useState(false);
+  const [createMatterError, setCreateMatterError] = useState<string | null>(null);
 
-  const handleCreateMatter = (e: React.FormEvent) => {
+  const handleCreateMatter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCaseNumber || !newTitle || !newClientName) return;
+    if (!newCaseNumber.trim() || !newTitle.trim() || !newClientId || isCreatingMatter) return;
 
-    const newMatter: Matter = {
-      id: `MAT-${Date.now()}`,
-      caseNumber: newCaseNumber,
-      year: 2026,
-      court: newCourt,
-      category: newCategory,
-      circuit: newCircuit || "الدائرة الأولى",
-      title: newTitle,
-      clientName: newClientName,
-      clientRole: newClientRole,
-      opponentName: newOpponentName || "الجهة المدعى عليها",
-      assignedLawyer: newAssignedLawyer,
-      nextHearingDate: newNextHearingDate,
-      nextHearingGoal: "إعلان الصحيفة وإيداع التوكيل",
-      stage: "متداولة",
-      agreedFees: newAgreedFees,
-      paidFees: "٠ ج.م",
-      notes: "تم قيد الدعوى حديثاً بقلم كتاب المحكمة.",
-    };
+    setCreateMatterError(null);
+    setIsCreatingMatter(true);
 
-    setMatters([newMatter, ...matters]);
-    setIsNewMatterOpen(false);
-    // Reset form
-    setNewCaseNumber("");
-    setNewTitle("");
-    setNewClientName("");
-    setNewCategory("مدني");
+    try {
+      const newMatter = await createPersistentMatter({
+        caseNumber: newCaseNumber,
+        title: newTitle,
+        court: newCourt,
+        category: newCategory,
+        clientId: newClientId,
+      });
+
+      setMatters((current) => [newMatter, ...current]);
+      setIsNewMatterOpen(false);
+      setNewCaseNumber("");
+      setNewTitle("");
+      setNewClientId("");
+      setNewCategory("مدني");
+      onMatterCreated?.();
+    } catch (error) {
+      setCreateMatterError(
+        error instanceof Error ? error.message : "تعذر قيد القضية.",
+      );
+    } finally {
+      setIsCreatingMatter(false);
+    }
   };
 
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -391,6 +361,17 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
           </button>
         </div>
       </div>
+
+      {mattersError && (
+        <div className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-semibold text-red-300">
+          {mattersError}
+        </div>
+      )}
+      {mattersLoading && (
+        <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 text-xs text-[var(--text-muted)]">
+          جارٍ تحميل القضايا المحفوظة...
+        </div>
+      )}
 
       {activeTab === "list" ? (
         <>
@@ -1270,82 +1251,35 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="sm:col-span-2">
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">اسم الموكل</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="اسم الشركة أو الموكل"
-                    value={newClientName}
-                    onChange={(e) => setNewClientName(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">صفة الموكل</label>
-                  <div className="relative">
-                    <select
-                      value={newClientRole}
-                      onChange={(e) => setNewClientRole(e.target.value as Matter["clientRole"])}
-                      className="appearance-none w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-                    >
-                      <option value="مدعي">مدعي</option>
-                      <option value="مدعى عليه">مدعى عليه</option>
-                      <option value="طاعن">طاعن</option>
-                      <option value="مطعون ضده">مطعون ضده</option>
-                      <option value="مستأنف">مستأنف</option>
-                      <option value="مستأنف ضده">مستأنف ضده</option>
-                    </select>
-                    <ChevronDown className="absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)] pointer-events-none" />
-                  </div>
-                </div>
+              <div>
+                <label className="block text-[var(--text-muted)] mb-1 font-medium">
+                  الموكل المرتبط بالقضية
+                </label>
+                <select
+                  required
+                  value={newClientId}
+                  onChange={(e) => setNewClientId(e.target.value)}
+                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                >
+                  <option value="">
+                    {matterClients.length ? "اختر موكلاً محفوظاً..." : "لا يوجد موكلون محفوظون في هذه المؤسسة"}
+                  </option>
+                  {matterClients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[10px] text-[var(--text-muted)]">
+                  في هذه المرحلة يتم حفظ الحقول الأساسية فقط: رقم القضية، الموضوع، المحكمة، التصنيف والموكل.
+                </p>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">الخصم في الدعوى</label>
-                  <input
-                    type="text"
-                    placeholder="اسم الخصم أو الجهة"
-                    value={newOpponentName}
-                    onChange={(e) => setNewOpponentName(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-                  />
+              {createMatterError && (
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">
+                  {createMatterError}
                 </div>
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">الدائرة / القاعة</label>
-                  <input
-                    type="text"
-                    placeholder="مثال: الدائرة ٧ مدني استثماري"
-                    value={newCircuit}
-                    onChange={(e) => setNewCircuit(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">تاريخ الجلسة القادمة</label>
-                  <input
-                    type="date"
-                    value={newNextHearingDate}
-                    onChange={(e) => setNewNextHearingDate(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)] [color-scheme:dark]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">الأتعاب المتفق عليها</label>
-                  <input
-                    type="text"
-                    placeholder="مثال: ١٥٠,٠٠٠ ج.م"
-                    value={newAgreedFees}
-                    onChange={(e) => setNewAgreedFees(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-                  />
-                </div>
-              </div>
+              )}
 
               <div className="pt-4 mt-4 border-t border-[var(--border)] flex justify-end gap-2">
                 <button
@@ -1357,9 +1291,10 @@ export function MattersView({ selectedMatterId, onCloseMatterModal }: MattersVie
                 </button>
                 <button
                   type="submit"
-                  className="rounded-md bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] hover:opacity-90 transition-opacity"
+                  disabled={isCreatingMatter || matterClients.length === 0}
+                  className="rounded-md bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] hover:opacity-90 transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  حفظ الدعوى
+                  {isCreatingMatter ? "جارٍ الحفظ..." : "حفظ الدعوى"}
                 </button>
               </div>
             </form>
