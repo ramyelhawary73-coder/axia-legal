@@ -38,10 +38,7 @@ export async function loadTaskWorkspace(): Promise<TaskWorkspace> {
   return readJsonResponse<TaskWorkspace>(response);
 }
 
-export async function createPersistentTask(
-  task: LegalTask,
-  _workspace: Pick<TaskWorkspace, "organizationId" | "userId" | "assigneeLabel" | "matters">,
-): Promise<LegalTask> {
+export async function createPersistentTask(task: LegalTask): Promise<LegalTask> {
   const response = await fetch("/api/tasks", {
     method: "POST",
     cache: "no-store",
