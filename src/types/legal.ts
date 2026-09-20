@@ -12,7 +12,7 @@ export type NavigationTab =
   | "reports"
   | "administration";
 
-export type MatterStage = "متداولة" | "حجز للحكم" | "مؤجلة لتقديم مستندات" | "محكوم فيها" | "طعن بالاستئناف" | "طعن بالنقض";
+export type MatterStage = "متداولة" | "حجز للحكم" | "مؤجلة لتقديم مستندات" | "محكوم فيها" | "طعن بالاستئناف" | "طعن بالنقض" | "غير مسجل";
 
 export type CourtCategory =
   | "محكمة النقض"
@@ -22,7 +22,8 @@ export type CourtCategory =
   | "مجلس الدولة (القضاء الإداري)"
   | "المحكمة الاقتصادية"
   | "محكمة الأسرة"
-  | "محكمة الجنايات";
+  | "محكمة الجنايات"
+  | "غير مسجل";
 
 export interface Matter {
   id: string;
@@ -34,7 +35,7 @@ export interface Matter {
   title: string; // e.g. "دعوى بطلان عقد بيع ومطالبة بتعويض"
   clientName: string;
   clientId?: string;
-  clientRole: "مدعي" | "مدعى عليه" | "طاعن" | "مطعون ضده" | "مستأنف" | "مستأنف ضده";
+  clientRole: "مدعي" | "مدعى عليه" | "طاعن" | "مطعون ضده" | "مستأنف" | "مستأنف ضده" | "غير مسجل";
   opponentName: string;
   opponentLawyer?: string;
   assignedLawyer: string;
