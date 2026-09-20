@@ -58,6 +58,10 @@ function normalizeOpenAIBaseUrl(configuredUrl: string) {
     return base;
   }
 
+  if (base.endsWith("/v1beta")) {
+    return `${base}/openai`;
+  }
+
   if (base === "https://generativelanguage.googleapis.com") {
     return `${base}/v1beta/openai`;
   }
