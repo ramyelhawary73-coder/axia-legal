@@ -52,6 +52,24 @@ export type ProviderFailure = {
 
 export type ProviderResult = ProviderSuccess | ProviderFailure;
 
+const MAX_PROVIDER_ATTEMPTS = 3;
+const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
+
+function wait(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function retryDelayMilliseconds(attempt: number, retryAfter: string | null) {
+  if (retryAfter) {
+    const seconds = Number(retryAfter);
+    if (Number.isFinite(seconds) && seconds >= 0) {
+      return Math.min(seconds * 1000, 8_000);
+    }
+  }
+
+  return Math.min(750 * 2 ** Math.max(0, attempt - 1), 4_000);
+}
+
 function normalizeOpenAIBaseUrl(configuredUrl: string) {
   let base = configuredUrl.trim().replace(/\/+$/, "");
 
@@ -148,73 +166,89 @@ export async function callRajihProvider(input: {
   const baseUrl = normalizeOpenAIBaseUrl(configuredUrl);
   const endpoint = `${baseUrl}/chat/completions`;
 
-  try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0,
-        messages: input.messages,
-        ...(input.tools?.length
-          ? {
-              tools: input.tools,
-              tool_choice: "auto",
-            }
-          : {}),
-      }),
-      cache: "no-store",
-    });
+  for (let attempt = 1; attempt <= MAX_PROVIDER_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0,
+          messages: input.messages,
+          ...(input.tools?.length
+            ? {
+                tools: input.tools,
+                tool_choice: "auto",
+              }
+            : {}),
+        }),
+        cache: "no-store",
+      });
 
-    const payload = (await response.json().catch(() => null)) as
-      | {
-          choices?: Array<{
-            message?: {
-              role?: unknown;
-              content?: unknown;
-              tool_calls?: unknown;
-            };
-          }>;
+      const payload = (await response.json().catch(() => null)) as
+        | {
+            choices?: Array<{
+              message?: {
+                role?: unknown;
+                content?: unknown;
+                tool_calls?: unknown;
+              };
+            }>;
+          }
+        | null;
+
+      if (!response.ok) {
+        const safeMessage = readSafeProviderMessage(payload);
+
+        if (RETRYABLE_STATUS_CODES.has(response.status) && attempt < MAX_PROVIDER_ATTEMPTS) {
+          await wait(retryDelayMilliseconds(attempt, response.headers.get("retry-after")));
+          continue;
         }
-      | null;
 
-    if (!response.ok) {
-      return mapProviderFailure(response.status, readSafeProviderMessage(payload));
+        return mapProviderFailure(response.status, safeMessage);
+      }
+
+      const rawMessage = payload?.choices?.[0]?.message;
+      if (!rawMessage) {
+        return { status: "failed", code: "PROVIDER_INVALID_RESPONSE" };
+      }
+
+      const toolCalls = Array.isArray(rawMessage.tool_calls)
+        ? rawMessage.tool_calls.filter(isToolCall)
+        : undefined;
+
+      const content =
+        typeof rawMessage.content === "string"
+          ? rawMessage.content
+          : rawMessage.content == null
+            ? null
+            : String(rawMessage.content);
+
+      if (!content && !toolCalls?.length) {
+        return { status: "failed", code: "PROVIDER_INVALID_RESPONSE" };
+      }
+
+      return {
+        status: "ok",
+        model,
+        message: {
+          role: "assistant",
+          content,
+          ...(toolCalls?.length ? { tool_calls: toolCalls } : {}),
+        },
+      };
+    } catch {
+      if (attempt < MAX_PROVIDER_ATTEMPTS) {
+        await wait(retryDelayMilliseconds(attempt, null));
+        continue;
+      }
+
+      return { status: "failed", code: "PROVIDER_UNAVAILABLE" };
     }
-
-    const rawMessage = payload?.choices?.[0]?.message;
-    if (!rawMessage) {
-      return { status: "failed", code: "PROVIDER_INVALID_RESPONSE" };
-    }
-
-    const toolCalls = Array.isArray(rawMessage.tool_calls)
-      ? rawMessage.tool_calls.filter(isToolCall)
-      : undefined;
-
-    const content =
-      typeof rawMessage.content === "string"
-        ? rawMessage.content
-        : rawMessage.content == null
-          ? null
-          : String(rawMessage.content);
-
-    if (!content && !toolCalls?.length) {
-      return { status: "failed", code: "PROVIDER_INVALID_RESPONSE" };
-    }
-
-    return {
-      status: "ok",
-      model,
-      message: {
-        role: "assistant",
-        content,
-        ...(toolCalls?.length ? { tool_calls: toolCalls } : {}),
-      },
-    };
-  } catch {
-    return { status: "failed", code: "PROVIDER_UNAVAILABLE" };
   }
+
+  return { status: "failed", code: "PROVIDER_UNAVAILABLE" };
 }
