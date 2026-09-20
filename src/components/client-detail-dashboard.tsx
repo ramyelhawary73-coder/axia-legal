@@ -68,12 +68,6 @@ export function ClientDetailDashboard({
   const [newCircuit, setNewCircuit] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [newClientRole, setNewClientRole] = useState<Matter["clientRole"]>("مدعي");
-  const [newOpponentName, setNewOpponentName] = useState("");
-  const [newAssignedLawyer, setNewAssignedLawyer] = useState("د. رامي الهواري");
-  const [newHearingDate, setNewHearingDate] = useState("2026-10-15");
-  const [newHearingGoal, setNewHearingGoal] = useState("جلسة افتتاحية وتقديم المستندات");
-  const [newAgreedFees, setNewAgreedFees] = useState("١٥٠,٠٠٠ ج.م");
-  const [newClaimAmount, setNewClaimAmount] = useState("");
 
   // Filter matters strictly belonging to this client
   const clientMatters = useMemo(() => {
@@ -149,7 +143,7 @@ export function ClientDetailDashboard({
 
   const handleCreateMatter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCaseNumber || !newTitle || !newOpponentName || !onAddNewMatter) return;
+    if (!newCaseNumber || !newTitle || !onAddNewMatter) return;
 
     const newMatter: Matter = {
       id: `MAT-${Date.now()}`,
@@ -161,16 +155,15 @@ export function ClientDetailDashboard({
       clientName: client.name,
       clientId: client.id,
       clientRole: newClientRole,
-      opponentName: newOpponentName,
-      assignedLawyer: newAssignedLawyer,
-      nextHearingDate: newHearingDate,
-      nextHearingGoal: newHearingGoal,
+      opponentName: "غير مسجل",
+      assignedLawyer: "غير مسجل",
+      nextHearingDate: "غير مسجل",
+      nextHearingGoal: "غير مسجل",
       stage: "متداولة",
       status: "مفتوحة",
       filingDate: new Date().toISOString().split("T")[0],
-      agreedFees: newAgreedFees || "١٠٠,٠٠٠ ج.م",
-      paidFees: "٥٠,٠٠٠ ج.م",
-      claimAmount: newClaimAmount || "غير مقدر القيمة",
+      agreedFees: "غير مسجل",
+      paidFees: "غير مسجل",
       notes:
         client.poaNumber === "غير مسجل"
           ? `تم قيد الدعوى مباشرة لصالح الموكل ${client.name}.`
@@ -977,7 +970,7 @@ export function ClientDetailDashboard({
 
               <div>
                 <span className="text-[var(--text-muted)] block text-[10px]">تاريخ القيد بالجداول:</span>
-                <span className="font-mono text-[var(--text)]">{selectedMatterForDossier.filingDate || "٢٠٢٥"}</span>
+                <span className="font-mono text-[var(--text)]">{selectedMatterForDossier.filingDate || "غير مسجل"}</span>
               </div>
             </div>
 
@@ -1064,7 +1057,9 @@ export function ClientDetailDashboard({
               {client.name}
             </h2>
             <p className="text-xs text-[var(--text-muted)] mt-0.5 border-b border-[var(--border)] pb-3">
-              بموجب التوكيل الرسمي: {client.poaNumber}
+              {client.poaNumber === "غير مسجل"
+                ? "بيانات التوكيل غير مسجلة حتى الآن"
+                : `بموجب التوكيل الرسمي: ${client.poaNumber}`}
             </p>
 
             <form onSubmit={handleCreateMatter} className="mt-4 space-y-4 text-xs">
@@ -1138,78 +1133,13 @@ export function ClientDetailDashboard({
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">اسم الخصم / الشركة المشكو في حقها</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="مثال: شركة النور للملاحة والتخليص"
-                    value={newOpponentName}
-                    onChange={(e) => setNewOpponentName(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                  />
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--accent)]/40 p-3 text-[11px] leading-relaxed text-[var(--text-muted)]">
+                  بيانات الخصوم تُسجل في سجل أطراف القضية المستقل. لن يتم اختلاق خصم داخل ملف القضية الأساسي، وستظهر القيمة «غير مسجل» لحين ربط واجهة الأطراف.
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">تاريخ الجلسة الافتتاحية</label>
-                  <input
-                    type="date"
-                    value={newHearingDate}
-                    onChange={(e) => setNewHearingDate(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">المطلوب بالجلسة (الهدف الإجرائي)</label>
-                  <input
-                    type="text"
-                    placeholder="مثال: تقديم أصل الصحيفة وإعلان الخصوم"
-                    value={newHearingGoal}
-                    onChange={(e) => setNewHearingGoal(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">المحامي المسؤول</label>
-                  <select
-                    value={newAssignedLawyer}
-                    onChange={(e) => setNewAssignedLawyer(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                  >
-                    <option value="د. رامي الهواري">د. رامي الهواري (نقض)</option>
-                    <option value="أ. طارق الشريف">أ. طارق الشريف (استئناف عالي)</option>
-                    <option value="أ. نرمين جلال">أ. نرمين جلال (مجلس دولة)</option>
-                    <option value="أ. خالد النمر">أ. خالد النمر (مدني واستئناف)</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">قيمة المطالبة المالية</label>
-                  <input
-                    type="text"
-                    placeholder="مثال: ٣,٥٠٠,٠٠٠ ج.م"
-                    value={newClaimAmount}
-                    onChange={(e) => setNewClaimAmount(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[var(--text-muted)] mb-1 font-medium">الأتعاب المقدرة</label>
-                <input
-                  type="text"
-                  placeholder="مثال: ١٨٠,٠٠٠ ج.م"
-                  value={newAgreedFees}
-                  onChange={(e) => setNewAgreedFees(e.target.value)}
-                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                />
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--accent)]/40 p-3 text-[11px] leading-relaxed text-[var(--text-muted)]">
+                الجلسات والمحامي المسؤول والأتعاب تُسجل من وحداتها الحقيقية بعد حفظ القضية. هذه البيانات لن تُحفظ محلياً أو تُنشأ بقيم افتراضية.
               </div>
 
               <div className="pt-4 border-t border-[var(--border)] flex justify-end gap-2">
