@@ -19,7 +19,9 @@ import {
   Users
 } from "lucide-react";
 import { Matter, Client, LegalDocument, NavigationTab } from "@/types/legal";
-import { mockMatters, mockClients, mockDocuments } from "@/lib/mock-legal-data";
+import { loadPersistentClients } from "@/lib/clients-client";
+import { loadMattersWorkspace } from "@/lib/matters-client";
+import { loadPersistentDocuments } from "@/lib/documents-client";
 
 export type SearchCategoryFilter = "all" | "matters" | "clients" | "documents" | "actions";
 
@@ -50,9 +52,9 @@ interface SearchItem {
 }
 
 export function GlobalSearchBar({
-  matters = mockMatters,
-  clients = mockClients,
-  documents = mockDocuments,
+  matters: providedMatters,
+  clients: providedClients,
+  documents: providedDocuments,
   onNavigate,
   onSelectMatter,
   onSelectClient,
@@ -67,20 +69,83 @@ export function GlobalSearchBar({
   const [categoryFilter, setCategoryFilter] = useState<SearchCategoryFilter>("all");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [quickPreviewItem, setQuickPreviewItem] = useState<SearchItem | null>(null);
+  const [liveMatters, setLiveMatters] = useState<Matter[]>([]);
+  const [liveClients, setLiveClients] = useState<Client[]>([]);
+  const [liveDocuments, setLiveDocuments] = useState<LegalDocument[]>([]);
+  const [searchSyncError, setSearchSyncError] = useState<string | null>(null);
+
+  const matters = providedMatters ?? liveMatters;
+  const clients = providedClients ?? liveClients;
+  const documents = providedDocuments ?? liveDocuments;
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const resultsContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Quick suggestions for empty state
-  const quickSuggestions = [
-    { label: "محكمة النقض", category: "matters", queryText: "النقض" },
-    { label: "شركة النيل للمقاولات", category: "clients", queryText: "شركة النيل" },
-    { label: "مجموعة المنصور", category: "clients", queryText: "المنصور" },
-    { label: "مذكرة الرد والطعن", category: "documents", queryText: "مذكرة" },
-    { label: "قضايا متداولة ٢٠٢٥", category: "matters", queryText: "٢٠٢٥" },
-    { label: "عقود مقاولة واتفاقيات", category: "documents", queryText: "عقد" },
-  ];
+  const quickSuggestions = useMemo(
+    () =>
+      [
+        matters[0]
+          ? {
+              label: matters[0].caseNumber,
+              category: "matters",
+              queryText: matters[0].caseNumber,
+            }
+          : null,
+        clients[0]
+          ? {
+              label: clients[0].name,
+              category: "clients",
+              queryText: clients[0].name,
+            }
+          : null,
+        documents[0]
+          ? {
+              label: documents[0].title,
+              category: "documents",
+              queryText: documents[0].title,
+            }
+          : null,
+      ].filter(
+        (
+          item,
+        ): item is { label: string; category: string; queryText: string } =>
+          Boolean(item),
+      ),
+    [matters, clients, documents],
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (providedMatters && providedClients && providedDocuments) return;
+
+    let cancelled = false;
+
+    void Promise.all([loadPersistentClients(), loadMattersWorkspace()])
+      .then(async ([loadedClients, matterWorkspace]) => {
+        if (cancelled) return;
+        setLiveClients(loadedClients);
+        setLiveMatters(matterWorkspace.matters);
+
+        const loadedDocuments = await loadPersistentDocuments(
+          matterWorkspace.matters,
+          loadedClients,
+        );
+        if (cancelled) return;
+        setLiveDocuments(loadedDocuments);
+        setSearchSyncError(null);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setSearchSyncError(
+          error instanceof Error ? error.message : "تعذر تحديث بيانات البحث.",
+        );
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, providedMatters, providedClients, providedDocuments]);
 
   // Close on outside click
   useEffect(() => {
@@ -190,7 +255,7 @@ export function GlobalSearchBar({
         subtitle: "استخدام النماذج القانونية الذكية المعتمدة وتوليد المستند فورا",
         badge: "محرر العقود والمستندات",
         badgeVariant: "purple",
-        details: "مزامنة سحابية فائقة وحفظ تلقائي بمجلد التنزيلات المحلي",
+        details: "فتح الأرشيف الخاص ومحرر المسودات القانونية",
         meta: "انتقال",
         rawItem: { description: "فتح محرر المستندات" }
       },
