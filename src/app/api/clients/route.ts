@@ -65,7 +65,11 @@ export async function POST(request: Request) {
   if (!workspace.ok) return workspaceErrorResponse(workspace.code);
 
   const body = await readJsonObject(request);
-  const name = requiredText(body?.name, 300);
+  if (!body) {
+    return apiError("VALIDATION_ERROR", "طلب إنشاء الموكل غير صالح.", 400);
+  }
+
+  const name = requiredText(body.name, 300);
   const type = body?.type;
   const nationalIdOrCr = optionalText(body?.nationalIdOrCr, 120);
   const phone = optionalText(body?.phone, 80);
@@ -115,7 +119,11 @@ export async function PATCH(request: Request) {
   if (!workspace.ok) return workspaceErrorResponse(workspace.code);
 
   const body = await readJsonObject(request);
-  if (!isUuid(body?.id)) {
+  if (!body) {
+    return apiError("VALIDATION_ERROR", "طلب تحديث الموكل غير صالح.", 400);
+  }
+
+  if (!isUuid(body.id)) {
     return apiError("VALIDATION_ERROR", "معرّف الموكل غير صالح.", 400);
   }
 
