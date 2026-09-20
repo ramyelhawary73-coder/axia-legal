@@ -265,7 +265,11 @@ export async function PATCH(request: Request) {
   if (!workspace.ok) return workspaceErrorResponse(workspace.code);
 
   const body = await readJsonObject(request);
-  const matterId = body?.id;
+  if (!body) {
+    return apiError("VALIDATION_ERROR", "طلب تحديث القضية غير صالح.", 400);
+  }
+
+  const matterId = body.id;
   if (!isUuid(matterId)) {
     return apiError("VALIDATION_ERROR", "معرّف القضية غير صالح.", 400);
   }
