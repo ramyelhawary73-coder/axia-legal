@@ -39,6 +39,7 @@ export type ProviderSuccess = {
 
 export type ProviderFailure = {
   status: "failed";
+  model?: string;
   code:
     | "PROVIDER_NOT_CONFIGURED"
     | "PROVIDER_UNAUTHORIZED"
@@ -54,6 +55,11 @@ export type ProviderResult = ProviderSuccess | ProviderFailure;
 
 const MAX_PROVIDER_ATTEMPTS = 3;
 const RETRYABLE_STATUS_CODES = new Set([429, 500, 502, 503, 504]);
+const GEMINI_MODEL_FAILOVER_CHAIN = [
+  "gemini-3.8-flash",
+  "gemini-3.7-flash",
+  "gemini-3.6-flash",
+] as const;
 
 function wait(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -92,20 +98,24 @@ function normalizeOpenAIBaseUrl(configuredUrl: string) {
   return base;
 }
 
-function mapProviderFailure(httpStatus: number, safeMessage?: string): ProviderFailure {
+function mapProviderFailure(
+  model: string,
+  httpStatus: number,
+  safeMessage?: string,
+): ProviderFailure {
   if (httpStatus === 401 || httpStatus === 403) {
-    return { status: "failed", code: "PROVIDER_UNAUTHORIZED", httpStatus, safeMessage };
+    return { status: "failed", model, code: "PROVIDER_UNAUTHORIZED", httpStatus, safeMessage };
   }
 
   if (httpStatus === 429) {
-    return { status: "failed", code: "PROVIDER_RATE_LIMITED", httpStatus, safeMessage };
+    return { status: "failed", model, code: "PROVIDER_RATE_LIMITED", httpStatus, safeMessage };
   }
 
   if (httpStatus >= 400 && httpStatus < 500) {
-    return { status: "failed", code: "PROVIDER_BAD_REQUEST", httpStatus, safeMessage };
+    return { status: "failed", model, code: "PROVIDER_BAD_REQUEST", httpStatus, safeMessage };
   }
 
-  return { status: "failed", code: "PROVIDER_UNAVAILABLE", httpStatus, safeMessage };
+  return { status: "failed", model, code: "PROVIDER_UNAVAILABLE", httpStatus, safeMessage };
 }
 
 function readSafeProviderMessage(payload: unknown) {
@@ -135,14 +145,44 @@ function isToolCall(value: unknown): value is ProviderToolCall {
   );
 }
 
+export function getProviderModelCandidates() {
+  const baseUrl = process.env.RAJIH_AI_BASE_URL?.trim();
+  const primaryModel = process.env.RAJIH_AI_MODEL?.trim();
+
+  if (!primaryModel) return [];
+
+  const isGeminiOpenAICompatible = Boolean(
+    baseUrl?.includes("generativelanguage.googleapis.com"),
+  );
+
+  if (!isGeminiOpenAICompatible) return [primaryModel];
+
+  const primaryIndex = GEMINI_MODEL_FAILOVER_CHAIN.indexOf(
+    primaryModel as (typeof GEMINI_MODEL_FAILOVER_CHAIN)[number],
+  );
+
+  if (primaryIndex < 0) return [primaryModel];
+
+  return [...GEMINI_MODEL_FAILOVER_CHAIN.slice(primaryIndex)];
+}
+
+export function isProviderFailoverEligible(failure: ProviderFailure) {
+  return (
+    failure.code === "PROVIDER_UNAVAILABLE" ||
+    failure.code === "PROVIDER_RATE_LIMITED"
+  );
+}
+
 export function getProviderConfigSummary() {
   const baseUrl = process.env.RAJIH_AI_BASE_URL?.trim();
-  const model = process.env.RAJIH_AI_MODEL?.trim();
+  const modelCandidates = getProviderModelCandidates();
+  const primaryModel = modelCandidates[0];
   const apiKeyPresent = Boolean(process.env.RAJIH_AI_API_KEY?.trim());
 
   return {
-    configured: Boolean(baseUrl && model && apiKeyPresent),
-    model: model || undefined,
+    configured: Boolean(baseUrl && primaryModel && apiKeyPresent),
+    model: primaryModel || undefined,
+    fallbackModels: modelCandidates.slice(1),
     baseUrlKind: baseUrl
       ? baseUrl.includes("generativelanguage.googleapis.com")
         ? "gemini-openai-compatible"
@@ -154,13 +194,15 @@ export function getProviderConfigSummary() {
 export async function callRajihProvider(input: {
   messages: ProviderMessage[];
   tools?: ProviderToolDefinition[];
+  model?: string;
 }): Promise<ProviderResult> {
   const configuredUrl = process.env.RAJIH_AI_BASE_URL?.trim();
   const apiKey = process.env.RAJIH_AI_API_KEY?.trim();
-  const model = process.env.RAJIH_AI_MODEL?.trim();
+  const configuredModel = process.env.RAJIH_AI_MODEL?.trim();
+  const model = input.model?.trim() || configuredModel;
 
   if (!configuredUrl || !apiKey || !model) {
-    return { status: "failed", code: "PROVIDER_NOT_CONFIGURED" };
+    return { status: "failed", model, code: "PROVIDER_NOT_CONFIGURED" };
   }
 
   const baseUrl = normalizeOpenAIBaseUrl(configuredUrl);
@@ -208,12 +250,12 @@ export async function callRajihProvider(input: {
           continue;
         }
 
-        return mapProviderFailure(response.status, safeMessage);
+        return mapProviderFailure(model, response.status, safeMessage);
       }
 
       const rawMessage = payload?.choices?.[0]?.message;
       if (!rawMessage) {
-        return { status: "failed", code: "PROVIDER_INVALID_RESPONSE" };
+        return { status: "failed", model, code: "PROVIDER_INVALID_RESPONSE" };
       }
 
       const toolCalls = Array.isArray(rawMessage.tool_calls)
@@ -228,7 +270,7 @@ export async function callRajihProvider(input: {
             : String(rawMessage.content);
 
       if (!content && !toolCalls?.length) {
-        return { status: "failed", code: "PROVIDER_INVALID_RESPONSE" };
+        return { status: "failed", model, code: "PROVIDER_INVALID_RESPONSE" };
       }
 
       return {
@@ -246,9 +288,9 @@ export async function callRajihProvider(input: {
         continue;
       }
 
-      return { status: "failed", code: "PROVIDER_UNAVAILABLE" };
+      return { status: "failed", model, code: "PROVIDER_UNAVAILABLE" };
     }
   }
 
-  return { status: "failed", code: "PROVIDER_UNAVAILABLE" };
+  return { status: "failed", model, code: "PROVIDER_UNAVAILABLE" };
 }
