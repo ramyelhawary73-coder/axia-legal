@@ -10,14 +10,13 @@ import {
 import {
   executeRajihTool,
   RAJIH_TOOL_DEFINITIONS,
-  type RajihToolName,
 } from "@/lib/rajih/tools";
 
 const MAX_AGENT_STEPS = 6;
 
 export type AgentTraceStep = {
   step: number;
-  tool: RajihToolName;
+  tool: string;
   ok: boolean;
 };
 
