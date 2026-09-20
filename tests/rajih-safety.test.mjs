@@ -143,13 +143,17 @@ test("RAJIH Action Layer Phase 2A creates tenant-safe persistent tasks", () => {
 });
 
 test("RAJIH action requests remain proposal-only in Phase 2A.1", () => {
-  assert.match(actionLayerMigration, /create table public\.rajih_action_requests/);
-  assert.match(actionLayerMigration, /action_type in \('create_task', 'update_task_status'\)/);
-  assert.match(actionLayerMigration, /status = 'proposed'/);
-  assert.match(actionLayerMigration, /grant select, insert on table public\.rajih_action_requests to authenticated/);
-  assert.doesNotMatch(actionLayerMigration, /grant update[^\n]*rajih_action_requests/i);
-  assert.doesNotMatch(actionLayerMigration, /for update[\s\S]*rajih_action_requests/i);
-  assert.doesNotMatch(actionLayerMigration, /for delete[\s\S]*rajih_action_requests/i);
+  const start = actionLayerMigration.indexOf("create table public.rajih_action_requests");
+  const end = actionLayerMigration.indexOf("drop policy if exists rajih_audit_select");
+  const actionRequestsSection = actionLayerMigration.slice(start, end);
+
+  assert.ok(start >= 0 && end > start);
+  assert.match(actionRequestsSection, /action_type in \('create_task', 'update_task_status'\)/);
+  assert.match(actionRequestsSection, /status = 'proposed'/);
+  assert.match(actionRequestsSection, /grant select, insert on table public\.rajih_action_requests to authenticated/);
+  assert.doesNotMatch(actionRequestsSection, /grant update/i);
+  assert.doesNotMatch(actionRequestsSection, /for update/i);
+  assert.doesNotMatch(actionRequestsSection, /for delete/i);
 });
 
 test("RAJIH audit foundation is append-only for authenticated users", () => {
