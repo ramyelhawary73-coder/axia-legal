@@ -35,6 +35,9 @@ test("RAJIH provider supports OpenAI-compatible Gemini tool calling", () => {
   assert.match(provider, /thought_signature/);
   assert.match(provider, /PROVIDER_UNAUTHORIZED/);
   assert.match(provider, /PROVIDER_RATE_LIMITED/);
+  assert.match(provider, /MAX_PROVIDER_ATTEMPTS = 3/);
+  assert.match(provider, /RETRYABLE_STATUS_CODES/);
+  assert.match(provider, /retry-after/);
   assert.doesNotMatch(provider, /console\.log\(.*apiKey/);
 });
 
