@@ -1425,8 +1425,8 @@ export function HearingsView({
                       </h3>
                       <p className="text-xs text-[var(--text-muted)]">جدول المواعيد والمهام الإجرائية المحددة لهذا اليوم</p>
                     </div>
-                    {formatDateStr(currentCalendarDate) === "2026-09-18" && (
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">اليوم المالي الحالي</span>
+                    {formatDateStr(currentCalendarDate) === formatDateStr(new Date()) && (
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">اليوم</span>
                     )}
                   </div>
 
