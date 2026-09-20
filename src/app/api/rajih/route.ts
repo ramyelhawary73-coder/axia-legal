@@ -13,21 +13,6 @@ function previewOnlyDiagnostics(value: Record<string, unknown>) {
   return process.env.VERCEL_ENV === "production" ? undefined : value;
 }
 
-export async function GET() {
-  return NextResponse.json({
-    service: "RAJIH Agent Core",
-    provider: getProviderConfigSummary(),
-    tools: [
-      "search_law",
-      "find_matter",
-      "get_matter_context",
-      "get_client_context",
-      "get_case_timeline",
-    ],
-    writeActionsEnabled: false,
-  });
-}
-
 export async function POST(request: Request) {
   let payload: RajihRequest;
   try {
