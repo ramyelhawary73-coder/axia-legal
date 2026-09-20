@@ -101,6 +101,10 @@ export async function POST(request: Request) {
   if (!workspace.ok) return workspaceErrorResponse(workspace.code);
 
   const body = await readJsonObject(request);
+  if (!body) {
+    return apiError("VALIDATION_ERROR", "طلب إنشاء السجل المالي غير صالح.", 400);
+  }
+
   const clientId =
     body?.clientId === undefined || body.clientId === null || body.clientId === ""
       ? null
@@ -183,7 +187,11 @@ export async function PATCH(request: Request) {
   if (!workspace.ok) return workspaceErrorResponse(workspace.code);
 
   const body = await readJsonObject(request);
-  if (!isUuid(body?.id)) {
+  if (!body) {
+    return apiError("VALIDATION_ERROR", "طلب تحديث السجل المالي غير صالح.", 400);
+  }
+
+  if (!isUuid(body.id)) {
     return apiError("VALIDATION_ERROR", "معرّف السجل المالي غير صالح.", 400);
   }
 
