@@ -1,152 +1,215 @@
 "use client";
 
-import { useState } from "react";
-import { 
-  DollarSign, 
-  TrendingUp, 
-  Clock, 
-  Receipt, 
-  Plus, 
+import { useEffect, useMemo, useState } from "react";
+import {
+  DollarSign,
+  TrendingUp,
+  Clock,
+  Receipt,
+  Plus,
   X,
-  ChevronDown
+  ChevronDown,
 } from "lucide-react";
-import { mockFinances } from "@/lib/mock-legal-data";
-import { FinancialRecord } from "@/types/legal";
+import type { Client, FinancialRecord, Matter } from "@/types/legal";
+import { loadPersistentClients } from "@/lib/clients-client";
+import { loadMattersWorkspace } from "@/lib/matters-client";
+import {
+  createPersistentFinanceRecord,
+  loadPersistentFinances,
+} from "@/lib/finance-client";
 
 export function FinanceView() {
-  const [finances, setFinances] = useState<FinancialRecord[]>(mockFinances);
+  const [finances, setFinances] = useState<FinancialRecord[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [matters, setMatters] = useState<Matter[]>([]);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [isNewEntryOpen, setIsNewEntryOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
-  // New transaction form
-  const [clientName, setClientName] = useState("");
-  const [matterCaseNumber, setMatterCaseNumber] = useState("");
+  const [clientId, setClientId] = useState("");
+  const [matterId, setMatterId] = useState("");
   const [type, setType] = useState<FinancialRecord["type"]>("دفعة أتعاب");
   const [amount, setAmount] = useState<number>(50000);
   const [status, setStatus] = useState<FinancialRecord["status"]>("محصلة");
 
-  const handleCreateTransaction = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!clientName || !amount) return;
+  useEffect(() => {
+    let cancelled = false;
 
-    const newRecord: FinancialRecord = {
-      id: `FIN-${Date.now()}`,
-      clientName,
-      matterCaseNumber: matterCaseNumber || "عام بالمكتب",
-      type,
-      amount,
-      date: "2026-09-15",
-      status,
-      receiptNumber: `REC-2026-${Math.floor(100 + Math.random() * 900)}`,
+    void Promise.all([loadPersistentClients(), loadMattersWorkspace()])
+      .then(async ([loadedClients, matterWorkspace]) => {
+        if (cancelled) return;
+        setClients(loadedClients);
+        setMatters(matterWorkspace.matters);
+
+        const loadedFinances = await loadPersistentFinances(
+          loadedClients,
+          matterWorkspace.matters,
+        );
+        if (cancelled) return;
+        setFinances(loadedFinances);
+        setSyncError(null);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setSyncError(
+          error instanceof Error ? error.message : "تعذر تحميل السجل المالي.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
     };
+  }, []);
 
-    setFinances([newRecord, ...finances]);
-    setIsNewEntryOpen(false);
-    setClientName("");
+  const selectedClientMatters = useMemo(
+    () =>
+      clientId
+        ? matters.filter((matter) => matter.clientId === clientId)
+        : matters,
+    [clientId, matters],
+  );
+
+  const handleCreateTransaction = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!amount || amount <= 0 || isSaving) return;
+
+    setIsSaving(true);
+    setSyncError(null);
+
+    try {
+      const record = await createPersistentFinanceRecord(
+        {
+          clientId: clientId || undefined,
+          matterId: matterId || undefined,
+          type,
+          amount,
+          status,
+        },
+        clients,
+        matters,
+      );
+
+      setFinances((current) => [record, ...current]);
+      setIsNewEntryOpen(false);
+      setClientId("");
+      setMatterId("");
+      setAmount(50000);
+    } catch (error) {
+      setSyncError(
+        error instanceof Error ? error.message : "تعذر حفظ الحركة المالية.",
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const totalCollected = finances
-    .filter((f) => f.status === "محصلة")
-    .reduce((acc, curr) => acc + curr.amount, 0);
+    .filter((item) => item.status === "محصلة")
+    .reduce((sum, item) => sum + item.amount, 0);
 
   const totalPending = finances
-    .filter((f) => f.status === "مستحقة")
-    .reduce((acc, curr) => acc + curr.amount, 0);
+    .filter((item) => item.status === "مستحقة")
+    .reduce((sum, item) => sum + item.amount, 0);
 
   const totalCourtDeposits = finances
-    .filter((f) => f.status === "مسددة للمحكمة")
-    .reduce((acc, curr) => acc + curr.amount, 0);
+    .filter((item) => item.status === "مسددة للمحكمة")
+    .reduce((sum, item) => sum + item.amount, 0);
 
-  const filteredFinances = finances.filter((f) => {
-    if (filterStatus === "all") return true;
-    return f.status === filterStatus;
-  });
+  const filteredFinances = finances.filter(
+    (item) => filterStatus === "all" || item.status === filterStatus,
+  );
 
   return (
-    <div className="flex flex-col h-full w-full">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-[var(--border)] shrink-0">
+    <div className="flex h-full w-full flex-col">
+      <div className="flex shrink-0 flex-col justify-between gap-4 border-b border-[var(--border)] pb-4 sm:flex-row sm:items-end">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[var(--text)]">
             الإدارة المالية والأتعاب
           </h1>
-          <p className="mt-1 text-xs text-[var(--text-muted)] flex items-center gap-1.5">
+          <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
             <DollarSign className="size-3.5" />
-            سجل المقبوضات، أتعاب المؤخر، وأمانات الخبراء
+            سجل مالي حقيقي محمي بصلاحيات المؤسسة
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsNewEntryOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-md bg-[var(--text)] px-3 py-1.5 text-xs font-medium text-[var(--bg)] shadow-sm hover:opacity-90 transition-opacity"
+        <button
+          onClick={() => setIsNewEntryOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-md bg-[var(--text)] px-3 py-1.5 text-xs font-medium text-[var(--bg)] shadow-sm hover:opacity-90"
+        >
+          <Plus className="size-3.5" />
+          <span>سند قبض / قيد حركة</span>
+        </button>
+      </div>
+
+      {syncError && (
+        <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-semibold text-red-300">
+          {syncError}
+        </div>
+      )}
+      {isLoading && (
+        <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 text-xs text-[var(--text-muted)]">
+          جارٍ تحميل السجل المالي المحفوظ...
+        </div>
+      )}
+
+      <div className="grid shrink-0 gap-4 py-4 sm:grid-cols-3">
+        {[
+          {
+            label: "الأتعاب المحصلة",
+            value: totalCollected,
+            icon: TrendingUp,
+          },
+          {
+            label: "مطالبات مستحقة",
+            value: totalPending,
+            icon: Clock,
+          },
+          {
+            label: "أمانات مسددة",
+            value: totalCourtDeposits,
+            icon: Receipt,
+          },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm"
           >
-            <Plus className="size-3.5" />
-            <span>سند قبض / قيد حركة</span>
-          </button>
-        </div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                {item.label}
+              </span>
+              <item.icon className="size-4 text-[var(--text-muted)]" />
+            </div>
+            <p className="text-2xl font-bold text-[var(--text)]">
+              {item.value.toLocaleString("ar-EG")}{" "}
+              <span className="text-xs font-normal text-[var(--text-muted)]">
+                ج.م
+              </span>
+            </p>
+          </div>
+        ))}
       </div>
 
-      {/* KPI Cards - Dense & Flat */}
-      <div className="grid gap-4 sm:grid-cols-3 py-4 shrink-0">
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">الأتعاب المحصلة</span>
-            <div className="grid size-6 place-items-center rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <TrendingUp className="size-3.5" />
-            </div>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-[var(--text)]">
-              {totalCollected.toLocaleString("ar-EG")} <span className="text-xs font-normal text-[var(--text-muted)]">ج.م</span>
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">مطالبات مستحقة</span>
-            <div className="grid size-6 place-items-center rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <Clock className="size-3.5" />
-            </div>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-[var(--text)]">
-              {totalPending.toLocaleString("ar-EG")} <span className="text-xs font-normal text-[var(--text-muted)]">ج.م</span>
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wider">أمانات مسددة</span>
-            <div className="grid size-6 place-items-center rounded bg-blue-500/10 text-blue-600 dark:text-blue-400">
-              <Receipt className="size-3.5" />
-            </div>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-[var(--text)]">
-              {totalCourtDeposits.toLocaleString("ar-EG")} <span className="text-xs font-normal text-[var(--text-muted)]">ج.م</span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 pb-3 shrink-0">
+      <div className="flex shrink-0 items-center gap-2 pb-3">
         {[
           { id: "all", label: "كافة السجلات" },
           { id: "محصلة", label: "مقبوضات" },
           { id: "مستحقة", label: "مطالبات" },
           { id: "مسددة للمحكمة", label: "أمانات" },
+          { id: "ملغاة", label: "ملغاة" },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setFilterStatus(tab.id)}
-            className={`px-3 py-1.5 text-[11px] font-medium rounded-md transition-colors ${
+            className={`rounded-md px-3 py-1.5 text-[11px] font-medium transition-colors ${
               filterStatus === tab.id
                 ? "bg-[var(--text)] text-[var(--bg)]"
-                : "bg-[var(--panel)] border border-[var(--border)] text-[var(--text)] hover:bg-[var(--accent)]"
+                : "border border-[var(--border)] bg-[var(--panel)] text-[var(--text)] hover:bg-[var(--accent)]"
             }`}
           >
             {tab.label}
@@ -154,56 +217,53 @@ export function FinanceView() {
         ))}
       </div>
 
-      {/* Financial Ledger Table */}
-      <div className="flex-1 overflow-hidden flex flex-col rounded-xl border border-[var(--border)] bg-[var(--panel)] shadow-sm">
-        <div className="overflow-x-auto flex-1">
+      <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--panel)] shadow-sm">
+        <div className="flex-1 overflow-x-auto">
           <table className="w-full text-right text-[11px]">
-            <thead className="sticky top-0 bg-[var(--panel)] z-10 shadow-[0_1px_0_var(--border)]">
-              <tr className="text-[var(--text-muted)] uppercase tracking-wider text-[10px]">
-                <th className="px-4 py-2 font-medium w-[15%]">السند / التاريخ</th>
-                <th className="px-4 py-2 font-medium w-[20%]">الموكل</th>
-                <th className="px-4 py-2 font-medium w-[25%]">القضية المرتبطة</th>
-                <th className="px-4 py-2 font-medium w-[15%]">نوع الحركة</th>
-                <th className="px-4 py-2 font-medium w-[15%]">المبلغ</th>
-                <th className="px-4 py-2 font-medium w-[10%]">الحالة</th>
+            <thead className="sticky top-0 z-10 bg-[var(--panel)] shadow-[0_1px_0_var(--border)]">
+              <tr className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+                <th className="px-4 py-2 font-medium">السند / التاريخ</th>
+                <th className="px-4 py-2 font-medium">الموكل</th>
+                <th className="px-4 py-2 font-medium">القضية المرتبطة</th>
+                <th className="px-4 py-2 font-medium">نوع الحركة</th>
+                <th className="px-4 py-2 font-medium">المبلغ</th>
+                <th className="px-4 py-2 font-medium">الحالة</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
-              {filteredFinances.map((rec) => (
-                <tr key={rec.id} className="hover:bg-[var(--accent)] transition-colors group cursor-default">
+              {filteredFinances.map((record) => (
+                <tr key={record.id} className="hover:bg-[var(--accent)]">
                   <td className="px-4 py-3 align-top">
-                    <div className="font-mono font-semibold text-[var(--text)] mb-0.5">{rec.receiptNumber}</div>
-                    <div className="text-[10px] text-[var(--text-muted)]">{rec.date}</div>
+                    <div className="font-mono font-semibold text-[var(--text)]">
+                      {record.receiptNumber}
+                    </div>
+                    <div className="text-[10px] text-[var(--text-muted)]">
+                      {record.date}
+                    </div>
                   </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="font-semibold text-[var(--text)]">{rec.clientName}</div>
+                  <td className="px-4 py-3 align-top font-semibold">
+                    {record.clientName}
                   </td>
                   <td className="px-4 py-3 align-top text-[var(--text-muted)]">
-                    {rec.matterCaseNumber}
+                    {record.matterCaseNumber}
                   </td>
-                  <td className="px-4 py-3 align-top text-[var(--text)]">
-                    {rec.type}
-                  </td>
-                  <td className="px-4 py-3 align-top font-bold text-[var(--text)]">
-                    {rec.amount.toLocaleString("ar-EG")} <span className="text-[9px] text-[var(--text-muted)] font-normal">ج.م</span>
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <span className={`inline-flex rounded px-1.5 py-0.5 text-[9px] font-medium border ${
-                      rec.status === "محصلة"
-                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                        : rec.status === "مستحقة"
-                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
-                        : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
-                    }`}>
-                      {rec.status}
+                  <td className="px-4 py-3 align-top">{record.type}</td>
+                  <td className="px-4 py-3 align-top font-bold">
+                    {record.amount.toLocaleString("ar-EG")}{" "}
+                    <span className="text-[9px] font-normal text-[var(--text-muted)]">
+                      {record.currency || "EGP"}
                     </span>
                   </td>
+                  <td className="px-4 py-3 align-top">{record.status}</td>
                 </tr>
               ))}
-              {filteredFinances.length === 0 && (
+              {!isLoading && filteredFinances.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-[var(--text-muted)] text-xs">
-                    لا يوجد سجلات مطابقة.
+                  <td
+                    colSpan={6}
+                    className="px-4 py-8 text-center text-xs text-[var(--text-muted)]"
+                  >
+                    لا توجد سجلات مالية محفوظة مطابقة.
                   </td>
                 </tr>
               )}
@@ -215,107 +275,131 @@ export function FinanceView() {
         </div>
       </div>
 
-      {/* New Transaction Modal */}
       {isNewEntryOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
-          <div className="relative h-[94vh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-lg overflow-y-auto rounded-t-[28px] sm:rounded-2xl border-t sm:border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl animate-in zoom-in-95 duration-200 custom-scrollbar">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+          <div className="relative max-h-[90vh] w-full overflow-y-auto rounded-t-[28px] border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl sm:max-w-lg sm:rounded-2xl">
             <button
               onClick={() => setIsNewEntryOpen(false)}
-              className="absolute left-4 top-4 grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
+              className="absolute left-4 top-4 grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)]"
             >
               <X className="size-4" />
             </button>
 
-            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider mb-2">
-              <Plus className="size-4 text-[var(--text)]" />
-              <span>إدراج سند مالي</span>
-            </div>
-            
-            <h2 className="text-xl font-bold text-[var(--text)] border-b border-[var(--border)] pb-4">قيد حركة أتعاب أو مصروفات</h2>
-            
+            <h2 className="border-b border-[var(--border)] pb-4 text-xl font-bold">
+              قيد حركة مالية حقيقية
+            </h2>
+
             <form onSubmit={handleCreateTransaction} className="mt-4 space-y-4 text-xs">
               <div>
-                <label className="block text-[var(--text-muted)] mb-1 font-medium">اسم الموكل</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="اسم الشركة أو الشخص"
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-                />
+                <label className="mb-1 block font-medium text-[var(--text-muted)]">
+                  الموكل
+                </label>
+                <select
+                  value={clientId}
+                  onChange={(e) => {
+                    setClientId(e.target.value);
+                    setMatterId("");
+                  }}
+                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2"
+                >
+                  <option value="">بدون ربط بموكل</option>
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
-                <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم القضية</label>
-                <input
-                  type="text"
-                  placeholder="مثال: ١٤٢٠ لسنة ٩٣ ق - نقض"
-                  value={matterCaseNumber}
-                  onChange={(e) => setMatterCaseNumber(e.target.value)}
-                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-                />
+                <label className="mb-1 block font-medium text-[var(--text-muted)]">
+                  القضية
+                </label>
+                <select
+                  value={matterId}
+                  onChange={(e) => setMatterId(e.target.value)}
+                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2"
+                >
+                  <option value="">عام بالمكتب / بدون قضية</option>
+                  {selectedClientMatters.map((matter) => (
+                    <option key={matter.id} value={matter.id}>
+                      {matter.caseNumber} — {matter.title}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">نوع البند</label>
+                  <label className="mb-1 block font-medium text-[var(--text-muted)]">
+                    نوع البند
+                  </label>
                   <div className="relative">
                     <select
                       value={type}
-                      onChange={(e) => setType(e.target.value as FinancialRecord["type"])}
-                      className="appearance-none w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                      onChange={(e) =>
+                        setType(e.target.value as FinancialRecord["type"])
+                      }
+                      className="w-full appearance-none rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2"
                     >
-                      <option value="دفعة أتعاب">دفعة أتعاب مقدمة</option>
+                      <option value="دفعة أتعاب">دفعة أتعاب</option>
                       <option value="أتعاب نجاح مؤخرة">أتعاب نجاح مؤخرة</option>
                       <option value="أمانة خبير">أمانة خبير</option>
-                      <option value="رسوم قضائية">رسوم قضائية وخزينة</option>
+                      <option value="رسوم قضائية">رسوم قضائية</option>
                       <option value="مصروفات إدارية">مصروفات إدارية</option>
+                      <option value="أخرى">أخرى</option>
                     </select>
-                    <ChevronDown className="absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)] pointer-events-none" />
+                    <ChevronDown className="pointer-events-none absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)]" />
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">الحالة</label>
-                  <div className="relative">
-                    <select
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value as FinancialRecord["status"])}
-                      className="appearance-none w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-                    >
-                      <option value="محصلة">محصلة فعلياً</option>
-                      <option value="مستحقة">مستحقة / لم تسدد</option>
-                      <option value="مسددة للمحكمة">مسددة للمحكمة</option>
-                    </select>
-                    <ChevronDown className="absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)] pointer-events-none" />
-                  </div>
+                  <label className="mb-1 block font-medium text-[var(--text-muted)]">
+                    الحالة
+                  </label>
+                  <select
+                    value={status}
+                    onChange={(e) =>
+                      setStatus(e.target.value as FinancialRecord["status"])
+                    }
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2"
+                  >
+                    <option value="محصلة">محصلة فعليًا</option>
+                    <option value="مستحقة">مستحقة</option>
+                    <option value="مسددة للمحكمة">مسددة للمحكمة</option>
+                  </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[var(--text-muted)] mb-1 font-medium">المبلغ بالجنيه (EGP)</label>
+                <label className="mb-1 block font-medium text-[var(--text-muted)]">
+                  المبلغ بالجنيه المصري
+                </label>
                 <input
                   type="number"
+                  min="0.01"
+                  step="0.01"
                   required
                   value={amount}
                   onChange={(e) => setAmount(Number(e.target.value))}
-                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)] font-mono"
+                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 font-mono"
                 />
               </div>
 
-              <div className="pt-4 mt-4 border-t border-[var(--border)] flex justify-end gap-2">
+              <div className="flex justify-end gap-2 border-t border-[var(--border)] pt-4">
                 <button
                   type="button"
                   onClick={() => setIsNewEntryOpen(false)}
-                  className="rounded-md border border-[var(--border)] bg-[var(--panel)] px-4 py-2 font-medium text-[var(--text)] hover:bg-[var(--accent)] transition-colors"
+                  className="rounded-md border border-[var(--border)] px-4 py-2"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
-                  className="rounded-md bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] hover:opacity-90 transition-opacity"
+                  disabled={isSaving}
+                  className="rounded-md bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  حفظ السند
+                  {isSaving ? "جارٍ الحفظ..." : "حفظ السند"}
                 </button>
               </div>
             </form>
