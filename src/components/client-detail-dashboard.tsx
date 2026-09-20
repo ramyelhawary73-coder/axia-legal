@@ -38,7 +38,7 @@ interface ClientDetailDashboardProps {
   matters: Matter[];
   onSelectClient: (client: Client) => void;
   onBack: () => void;
-  onAddNewMatter?: (matter: Matter) => void;
+  onAddNewMatter?: (matter: Matter) => Matter | void | Promise<Matter | void>;
 }
 
 export function ClientDetailDashboard({
@@ -136,9 +136,9 @@ export function ClientDetailDashboard({
     setTimeout(() => setCopiedText(null), 2000);
   };
 
-  const handleCreateMatter = (e: React.FormEvent) => {
+  const handleCreateMatter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCaseNumber || !newTitle || !newOpponentName) return;
+    if (!newCaseNumber || !newTitle || !newOpponentName || !onAddNewMatter) return;
 
     const newMatter: Matter = {
       id: `MAT-${Date.now()}`,
@@ -160,14 +160,17 @@ export function ClientDetailDashboard({
       agreedFees: newAgreedFees || "١٠٠,٠٠٠ ج.م",
       paidFees: "٥٠,٠٠٠ ج.م",
       claimAmount: newClaimAmount || "غير مقدر القيمة",
-      notes: `تم قيد الدعوى مباشرة لصالح الموكل ${client.name} بموجب التوكيل ${client.poaNumber}.`,
+      notes:
+        client.poaNumber === "غير مسجل"
+          ? `تم قيد الدعوى مباشرة لصالح الموكل ${client.name}.`
+          : `تم قيد الدعوى مباشرة لصالح الموكل ${client.name} بموجب التوكيل ${client.poaNumber}.`,
     };
 
-    if (onAddNewMatter) {
-      onAddNewMatter(newMatter);
-    }
+    const persistedMatter = await onAddNewMatter(newMatter);
+    if (!persistedMatter) return;
+
     setIsAddMatterModalOpen(false);
-    setSelectedMatterForDossier(newMatter);
+    setSelectedMatterForDossier(persistedMatter);
   };
 
   return (
@@ -264,7 +267,7 @@ export function ClientDetailDashboard({
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[11px] font-bold text-emerald-500">
                   <ShieldCheck className="size-3" />
-                  توكيل موثق وساري
+                  {client.poaExpiry === "غير مسجل" ? "بيانات التوكيل غير مسجلة" : "توكيل موثق وساري"}
                 </span>
               </div>
 
@@ -298,8 +301,11 @@ export function ClientDetailDashboard({
               </span>
               <button
                 type="button"
-                onClick={() => handleCopy(client.poaNumber)}
-                className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-0.5"
+                onClick={() => {
+                  if (client.poaNumber !== "غير مسجل") handleCopy(client.poaNumber);
+                }}
+                disabled={client.poaNumber === "غير مسجل"}
+                className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-0.5 disabled:cursor-not-allowed disabled:opacity-40"
                 title="نسخ رقم التوكيل"
               >
                 {copiedText === client.poaNumber ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
