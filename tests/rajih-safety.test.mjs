@@ -32,6 +32,7 @@ test("RAJIH provider supports OpenAI-compatible Gemini tool calling", () => {
   assert.match(provider, /chat\/completions/);
   assert.match(provider, /tool_choice: "auto"/);
   assert.match(provider, /tool_calls/);
+  assert.match(provider, /thought_signature/);
   assert.match(provider, /PROVIDER_UNAUTHORIZED/);
   assert.match(provider, /PROVIDER_RATE_LIMITED/);
   assert.doesNotMatch(provider, /console\.log\(.*apiKey/);
@@ -52,6 +53,7 @@ test("RAJIH Agent Phase 1 exposes only approved read-only tools", () => {
   assert.doesNotMatch(tools, /\.update\(/);
   assert.doesNotMatch(tools, /\.upsert\(/);
   assert.doesNotMatch(tools, /\.delete\(/);
+  assert.doesNotMatch(tools, /\.or\(.*query/);
   assert.doesNotMatch(tools, /SUPABASE_SERVICE_ROLE_KEY/);
 });
 
