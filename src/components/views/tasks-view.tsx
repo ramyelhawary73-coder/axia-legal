@@ -36,6 +36,7 @@ import {
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 import { VoiceCommandModal } from "@/components/voice-command-modal";
 import { TaskCreationModal } from "@/components/task-creation-modal";
+import type { TaskMatterOption } from "@/lib/tasks-client";
 
 interface TasksEmptyStateProps {
   currentCategory: string;
@@ -141,8 +142,10 @@ function TasksEmptyState({
 interface TasksViewProps {
   tasks?: LegalTask[];
   onToggleTaskStatus?: (id: string) => void;
-  onCreateTask?: (task: LegalTask) => void;
-  onBulkUpdateTaskStatus?: (taskIds: string[], status: LegalTask["status"]) => void;
+  onCreateTask?: (task: LegalTask) => boolean | void | Promise<boolean | void>;
+  onBulkUpdateTaskStatus?: (taskIds: string[], status: LegalTask["status"]) => void | Promise<void>;
+  taskMatterOptions?: TaskMatterOption[];
+  taskAssigneeLabel?: string;
   onBulkDeleteTasks?: (taskIds: string[]) => void;
   onDeleteTask?: (taskId: string) => void;
   onNavigate?: (tab: NavigationTab) => void;
@@ -153,25 +156,30 @@ export function TasksView({
   onToggleTaskStatus: propToggleStatus,
   onCreateTask: propCreateTask,
   onBulkUpdateTaskStatus: propBulkUpdateStatus,
+  taskMatterOptions = [],
+  taskAssigneeLabel = "المستخدم الحالي",
   onBulkDeleteTasks: propBulkDelete,
   onDeleteTask: propDeleteTask,
   onNavigate,
 }: TasksViewProps = {}) {
   const [internalTasks, setInternalTasks] = useState<LegalTask[]>(mockTasks);
   const tasks = propTasks || internalTasks;
+  const deletionEnabled =
+    propTasks === undefined || Boolean(propBulkDelete || propDeleteTask);
 
   const [viewMode, setViewMode] = useState<"list" | "kanban">("kanban");
   const [hoveredColumn, setHoveredColumn] = useState<LegalTask["status"] | null>(null);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
-  const handleUpdateTaskStatus = (id: string, newStatus: LegalTask["status"]) => {
+  const handleUpdateTaskStatus = async (id: string, newStatus: LegalTask["status"]) => {
     if (propBulkUpdateStatus) {
-      propBulkUpdateStatus([id], newStatus);
-    } else {
-      setInternalTasks((prev) =>
-        prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t))
-      );
+      await propBulkUpdateStatus([id], newStatus);
+      return;
     }
+
+    setInternalTasks((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t)),
+    );
   };
 
   const statuses: { id: LegalTask["status"]; label: string; bg: string; border: string; text: string; dot: string }[] = [
@@ -233,10 +241,18 @@ export function TasksView({
 
   const handleVoiceTaskCreated = (newTask: LegalTask) => {
     if (propCreateTask) {
-      propCreateTask(newTask);
-    } else {
-      setInternalTasks((prev) => [newTask, ...prev]);
+      void Promise.resolve(propCreateTask(newTask)).then((result) => {
+        if (result === false) {
+          setVoiceToastMessage("تعذر حفظ المهمة الصوتية.");
+          return;
+        }
+        setVoiceToastMessage(`تمت إضافة المهمة الصوتية بنجاح: "${newTask.title}"`);
+        setTimeout(() => setVoiceToastMessage(null), 4500);
+      });
+      return;
     }
+
+    setInternalTasks((prev) => [newTask, ...prev]);
     setVoiceToastMessage(`تمت إضافة المهمة الصوتية بنجاح: "${newTask.title}"`);
     setTimeout(() => setVoiceToastMessage(null), 4500);
   };
@@ -289,7 +305,7 @@ export function TasksView({
     e.preventDefault();
     const taskId = e.dataTransfer.getData("text/plain") || draggedTaskId;
     if (taskId) {
-      handleUpdateTaskStatus(taskId, targetStatus);
+      void handleUpdateTaskStatus(taskId, targetStatus);
     }
     setHoveredColumn(null);
     setDraggedTaskId(null);
@@ -339,39 +355,42 @@ export function TasksView({
     setSelectedTaskIds([]);
   };
 
-  const handleBulkUpdateStatus = (newStatus: LegalTask["status"]) => {
+  const handleBulkUpdateStatus = async (newStatus: LegalTask["status"]) => {
     if (selectedTaskIds.length === 0) return;
+
     if (propBulkUpdateStatus) {
-      propBulkUpdateStatus(selectedTaskIds, newStatus);
+      await propBulkUpdateStatus(selectedTaskIds, newStatus);
     } else {
       setInternalTasks((prev) =>
         prev.map((t) =>
-          selectedTaskIds.includes(t.id) ? { ...t, status: newStatus } : t
-        )
+          selectedTaskIds.includes(t.id) ? { ...t, status: newStatus } : t,
+        ),
       );
     }
+
     setVoiceToastMessage(
       `تم تحديث حالة ${selectedTaskIds.length} ${
         selectedTaskIds.length === 1 ? "مهمة" : "مهام"
-      } إلى "${newStatus}" بنجاح`
+      } إلى "${newStatus}" بنجاح`,
     );
     setTimeout(() => setVoiceToastMessage(null), 4000);
     setSelectedTaskIds([]);
   };
 
   const handleRequestBulkDelete = () => {
-    if (selectedTaskIds.length === 0) return;
+    if (!deletionEnabled || selectedTaskIds.length === 0) return;
     setTaskIdsToDelete(selectedTaskIds);
     setIsDeleteConfirmOpen(true);
   };
 
   const handleRequestSingleDelete = (id: string) => {
+    if (!deletionEnabled) return;
     setTaskIdsToDelete([id]);
     setIsDeleteConfirmOpen(true);
   };
 
   const handleConfirmDelete = () => {
-    if (taskIdsToDelete.length === 0) return;
+    if (!deletionEnabled || taskIdsToDelete.length === 0) return;
     if (propBulkDelete) {
       propBulkDelete(taskIdsToDelete);
     } else if (propDeleteTask && taskIdsToDelete.length === 1) {
@@ -623,7 +642,7 @@ export function TasksView({
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                onClick={() => handleBulkUpdateStatus("مكتملة")}
+                onClick={() => { void handleBulkUpdateStatus("مكتملة"); }}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 hover:bg-emerald-500/25 shadow-sm transition"
                 title="تحديث حالة كافة المهام المحددة إلى 'مكتملة'"
               >
@@ -633,7 +652,7 @@ export function TasksView({
 
               <button
                 type="button"
-                onClick={() => handleBulkUpdateStatus("قيد التنفيذ")}
+                onClick={() => { void handleBulkUpdateStatus("قيد التنفيذ"); }}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/15 px-3 py-1.5 text-xs font-bold text-amber-300 hover:bg-amber-500/25 shadow-sm transition"
                 title="تحديث حالة كافة المهام المحددة إلى 'قيد التنفيذ'"
               >
@@ -641,15 +660,17 @@ export function TasksView({
                 <span>تعيين كقيد التنفيذ</span>
               </button>
 
-              <button
-                type="button"
-                onClick={handleRequestBulkDelete}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/50 bg-red-600/20 px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-600/30 shadow-sm transition"
-                title="حذف المهام المحددة نهائياً"
-              >
-                <Trash2 className="size-3.5 text-red-400" />
-                <span>حذف المحدد ({selectedTaskIds.length})</span>
-              </button>
+              {deletionEnabled && (
+                <button
+                  type="button"
+                  onClick={handleRequestBulkDelete}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/50 bg-red-600/20 px-3 py-1.5 text-xs font-bold text-red-300 hover:bg-red-600/30 shadow-sm transition"
+                  title="حذف المهام المحددة نهائياً"
+                >
+                  <Trash2 className="size-3.5 text-red-400" />
+                  <span>حذف المحدد ({selectedTaskIds.length})</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -680,7 +701,7 @@ export function TasksView({
           </div>
 
           <span className="text-[11px] text-[var(--text-muted)]">
-            حدد مربع الاختيار على أي مهمة للبدء في إجراءات التحديث أو الحذف الجماعي
+            حدد مربع الاختيار على أي مهمة للبدء في إجراءات التحديث الجماعي
           </span>
         </div>
       )}
@@ -829,13 +850,15 @@ export function TasksView({
                                 >
                                   {isCompleted ? "تراجع" : "إكمال"}
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRequestSingleDelete(task.id)}
-                                  className="p-1 rounded text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition"
-                                >
-                                  <Trash2 className="size-3" />
-                                </button>
+                                {deletionEnabled && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRequestSingleDelete(task.id)}
+                                    className="p-1 rounded text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition"
+                                  >
+                                    <Trash2 className="size-3" />
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -997,14 +1020,16 @@ export function TasksView({
                         >
                           {isCompleted ? "إلغاء الإكمال" : "تحديد كمكتمل"}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRequestSingleDelete(task.id)}
-                          className="p-1 rounded-lg text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition"
-                          title="حذف هذه المهمة الإجرائية"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
+                        {deletionEnabled && (
+                          <button
+                            type="button"
+                            onClick={() => handleRequestSingleDelete(task.id)}
+                            className="p-1 rounded-lg text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 transition"
+                            title="حذف هذه المهمة الإجرائية"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1019,14 +1044,16 @@ export function TasksView({
       <TaskCreationModal
         isOpen={isNewTaskOpen}
         onClose={() => setIsNewTaskOpen(false)}
-        onCreateTask={(newTask) => {
+        onCreateTask={async (newTask) => {
           if (propCreateTask) {
-            propCreateTask(newTask);
-          } else {
-            setInternalTasks((prev) => [newTask, ...prev]);
+            return propCreateTask(newTask);
           }
-          setIsNewTaskOpen(false);
+
+          setInternalTasks((prev) => [newTask, ...prev]);
+          return true;
         }}
+        matterOptions={taskMatterOptions}
+        assigneeLabel={taskAssigneeLabel}
       />
       {/* Legal PDF Report Modal */}
       <LegalPdfReportModal
@@ -1050,7 +1077,7 @@ export function TasksView({
       />
 
       {/* Bulk & Single Delete Confirmation Modal */}
-      {isDeleteConfirmOpen && (
+      {deletionEnabled && isDeleteConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="relative w-full sm:max-w-md rounded-t-[28px] sm:rounded-3xl border-t sm:border border-red-500/40 bg-[var(--panel)] p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
             <div className="flex items-center gap-3 text-red-400">

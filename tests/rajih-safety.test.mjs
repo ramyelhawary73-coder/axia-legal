@@ -9,8 +9,28 @@ const tools = fs.readFileSync("src/lib/rajih/tools.ts", "utf8");
 const policy = fs.readFileSync("src/lib/rajih/policy.ts", "utf8");
 const retrieval = fs.readFileSync("src/lib/rajih/retrieval.ts", "utf8");
 const migration = fs.readFileSync("supabase/migrations/20260919091000_rajih_foundation.sql", "utf8");
+const actionLayerMigration = fs.readFileSync(
+  "supabase/migrations/20260920114631_rajih_action_layer_phase2a_foundation.sql",
+  "utf8",
+);
+const actionLayerIndexesMigration = fs.readFileSync(
+  "supabase/migrations/20260920114940_rajih_action_layer_phase2a_indexes.sql",
+  "utf8",
+);
 const authProxy = fs.readFileSync("src/lib/supabase/proxy.ts", "utf8");
 const serverClient = fs.readFileSync("src/lib/supabase/server.ts", "utf8");
+const homePage = fs.readFileSync("src/app/page.tsx", "utf8");
+const tasksClient = fs.readFileSync("src/lib/tasks-client.ts", "utf8");
+const tasksRoute = fs.readFileSync("src/app/api/tasks/route.ts", "utf8");
+const mattersRoute = fs.readFileSync("src/app/api/matters/route.ts", "utf8");
+const mattersClient = fs.readFileSync("src/lib/matters-client.ts", "utf8");
+const mattersView = fs.readFileSync("src/components/views/matters-view.tsx", "utf8");
+const matterInsertMigration = fs.readFileSync(
+  "supabase/migrations/20260920153903_matters_insert_policy_phase2a21.sql",
+  "utf8",
+);
+const taskModal = fs.readFileSync("src/components/task-creation-modal.tsx", "utf8");
+const tasksView = fs.readFileSync("src/components/views/tasks-view.tsx", "utf8");
 
 test("RAJIH route delegates to the bounded agent core", () => {
   assert.match(route, /runRajihAgent/);
@@ -117,4 +137,121 @@ test("legal data migration includes tenant and matter isolation", () => {
   assert.match(migration, /enable row level security/);
   assert.match(migration, /can_access_matter/);
   assert.match(migration, /status public\.knowledge_status/);
+});
+
+
+test("RAJIH Action Layer Phase 2A creates tenant-safe persistent tasks", () => {
+  assert.match(actionLayerMigration, /create table public\.tasks/);
+  assert.match(actionLayerMigration, /organization_id uuid not null/);
+  assert.match(actionLayerMigration, /matter_id uuid null references public\.matters/);
+  assert.match(actionLayerMigration, /alter table public\.tasks enable row level security/);
+  assert.match(actionLayerMigration, /tasks_select_authorized/);
+  assert.match(actionLayerMigration, /tasks_insert_authorized/);
+  assert.match(actionLayerMigration, /tasks_update_authorized/);
+  assert.match(actionLayerMigration, /private\.has_organization_role/);
+  assert.match(actionLayerMigration, /created_by = \(select auth\.uid\(\)\)/);
+  assert.doesNotMatch(actionLayerMigration, /grant delete/i);
+  assert.doesNotMatch(actionLayerMigration, /for delete/i);
+});
+
+test("RAJIH action requests remain proposal-only in Phase 2A.1", () => {
+  const start = actionLayerMigration.indexOf("create table public.rajih_action_requests");
+  const end = actionLayerMigration.indexOf("drop policy if exists rajih_audit_select");
+  const actionRequestsSection = actionLayerMigration.slice(start, end);
+
+  assert.ok(start >= 0 && end > start);
+  assert.match(actionRequestsSection, /action_type in \('create_task', 'update_task_status'\)/);
+  assert.match(actionRequestsSection, /status = 'proposed'/);
+  assert.match(actionRequestsSection, /grant select, insert on table public\.rajih_action_requests to authenticated/);
+  assert.doesNotMatch(actionRequestsSection, /grant update/i);
+  assert.doesNotMatch(actionRequestsSection, /for update/i);
+  assert.doesNotMatch(actionRequestsSection, /for delete/i);
+});
+
+test("RAJIH audit foundation is append-only for authenticated users", () => {
+  assert.match(actionLayerMigration, /revoke all on table public\.audit_logs from anon, authenticated/);
+  assert.match(actionLayerMigration, /grant select, insert on table public\.audit_logs to authenticated/);
+  assert.match(actionLayerMigration, /audit_logs_insert_self/);
+  assert.match(actionLayerMigration, /user_id = \(select auth\.uid\(\)\)/);
+  assert.doesNotMatch(actionLayerMigration, /grant update[^\n]*audit_logs/i);
+  assert.doesNotMatch(actionLayerMigration, /grant delete[^\n]*audit_logs/i);
+  assert.doesNotMatch(actionLayerMigration, /SUPABASE_SERVICE_ROLE_KEY/);
+});
+
+
+test("RAJIH Action Layer Phase 2A indexes new foreign-key access paths", () => {
+  assert.match(actionLayerIndexesMigration, /tasks_created_by_idx/);
+  assert.match(actionLayerIndexesMigration, /tasks\(created_by\)/);
+  assert.match(actionLayerIndexesMigration, /rajih_action_requests_approved_by_idx/);
+  assert.match(actionLayerIndexesMigration, /rajih_action_requests\(approved_by\)/);
+});
+
+
+test("Phase 2A.2 loads and persists tasks through the SSR-authenticated API", () => {
+  assert.match(homePage, /loadTaskWorkspace/);
+  assert.match(homePage, /createPersistentTask/);
+  assert.match(homePage, /updatePersistentTaskStatus/);
+  assert.match(homePage, /useState<LegalTask\[]>\(\[\]\)/);
+  assert.doesNotMatch(homePage, /mockTasks/);
+
+  assert.match(tasksClient, /fetch\("\/api\/tasks"/);
+  assert.doesNotMatch(tasksClient, /getSupabaseBrowserClient/);
+  assert.doesNotMatch(tasksClient, /\.delete\(/);
+
+  assert.match(tasksRoute, /createClient/);
+  assert.match(tasksRoute, /auth\.getClaims\(\)/);
+  assert.match(tasksRoute, /from\("tasks"\)/);
+  assert.match(tasksRoute, /\.insert\(/);
+  assert.match(tasksRoute, /\.update\(/);
+  assert.match(tasksRoute, /\.select\("id"\)/);
+  assert.doesNotMatch(tasksRoute, /\.delete\(/);
+  assert.doesNotMatch(tasksRoute, /SUPABASE_SERVICE_ROLE_KEY/);
+});
+
+test("Phase 2A.2 task creation uses accessible real matters and current user assignment", () => {
+  assert.doesNotMatch(taskModal, /mockMatters/);
+  assert.match(taskModal, /matterOptions/);
+  assert.match(taskModal, /matchedMatter/);
+  assert.match(taskModal, /اختر قضية من القضايا المتاحة/);
+  assert.match(taskModal, /assigneeLabel/);
+  assert.match(tasksRoute, /assigned_to: workspace\.userId/);
+  assert.match(tasksRoute, /created_by: workspace\.userId/);
+});
+
+test("Phase 2A.2 keeps task deletion disabled for persistent task data", () => {
+  assert.match(tasksView, /const deletionEnabled/);
+  assert.match(tasksView, /deletionEnabled && isDeleteConfirmOpen/);
+  assert.doesNotMatch(homePage, /handleDeleteTask/);
+  assert.doesNotMatch(homePage, /handleBulkDeleteTasks/);
+});
+
+
+test("Phase 2A.2.1 matter creation policy is tenant and role constrained", () => {
+  assert.match(matterInsertMigration, /create policy matters_insert_authorized/);
+  assert.match(matterInsertMigration, /for insert/);
+  assert.match(matterInsertMigration, /owner','admin','lawyer/);
+  assert.match(matterInsertMigration, /c\.organization_id = matters\.organization_id/);
+  assert.doesNotMatch(matterInsertMigration, /for update/i);
+  assert.doesNotMatch(matterInsertMigration, /for delete/i);
+  assert.doesNotMatch(matterInsertMigration, /service_role/i);
+});
+
+test("Phase 2A.2.1 matters API is SSR authenticated and insert-only", () => {
+  assert.match(mattersRoute, /createClient/);
+  assert.match(mattersRoute, /auth\.getClaims\(\)/);
+  assert.match(mattersRoute, /from\("matters"\)/);
+  assert.match(mattersRoute, /\.insert\(/);
+  assert.doesNotMatch(mattersRoute, /\.update\(/);
+  assert.doesNotMatch(mattersRoute, /\.delete\(/);
+  assert.doesNotMatch(mattersRoute, /SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(mattersClient, /fetch\("\/api\/matters"/);
+});
+
+test("Phase 2A.2.1 replaces mock matters in matter registry and task picker", () => {
+  assert.doesNotMatch(mattersView, /mockMatters/);
+  assert.doesNotMatch(mattersView, /axia_matters/);
+  assert.match(mattersView, /loadMattersWorkspace/);
+  assert.match(mattersView, /createPersistentMatter/);
+  assert.match(taskModal, /لا توجد قضايا محفوظة بعد/);
+  assert.doesNotMatch(taskModal, /matters-suggestions/);
 });
