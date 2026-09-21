@@ -73,12 +73,16 @@ interface MattersViewProps {
   selectedMatterId?: string | null;
   onCloseMatterModal?: () => void;
   onMatterCreated?: () => void;
+  onRequestAddHearing?: (matterId: string) => void;
+  onRequestRescheduleHearing?: (matterId: string) => void;
 }
 
 export function MattersView({
   selectedMatterId,
   onCloseMatterModal,
   onMatterCreated,
+  onRequestAddHearing,
+  onRequestRescheduleHearing,
 }: MattersViewProps) {
   const [matters, setMatters] = useState<Matter[]>([]);
   const [matterClients, setMatterClients] = useState<MatterClientOption[]>([]);
@@ -214,6 +218,16 @@ export function MattersView({
         id: "open",
         label: "فتح ملف القضية",
         onSelect: () => setLocalActiveMatterId(matter.id),
+      },
+      {
+        id: "add-hearing",
+        label: "إضافة جلسة للقضية",
+        onSelect: () => onRequestAddHearing?.(matter.id),
+      },
+      {
+        id: "reschedule-hearing",
+        label: "إعادة جدولة جلسة مرتبطة",
+        onSelect: () => onRequestRescheduleHearing?.(matter.id),
       },
       {
         id: matter.status === "مفتوحة" ? "close" : "reopen",
