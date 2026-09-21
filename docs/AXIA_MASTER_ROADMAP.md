@@ -1837,7 +1837,7 @@ Required response: evidence-based codebase inventory and incremental deduplicati
 ## KR-016 — Main/Production deployment drift due Vercel build-rate limit
 
 Priority: P1 release-process blocker  
-Status: Open — rechecked; Vercel still reports the previous build-rate-limit failure and no current-main Production deployment exists. The available connector does not expose live quota/reset telemetry, so quota renewal cannot be proven without a new deployment attempt.
+Status: Open — Production remains behind main. A newer Preview build succeeded, but the connected Vercel Production redeploy action is unavailable at execution time.
 
 Current evidence:
 
@@ -2432,39 +2432,37 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PR #24 MERGED — VERCEL QUOTA STATUS RECHECKED / PRODUCTION STILL BEHIND MAIN**
+**Current mode: PR #24 MERGED — PRODUCTION STILL BEHIND MAIN / REDEPLOY ACTION UNAVAILABLE IN CONNECTOR**
 
-Latest no-cost recheck result:
+Latest verification:
 
 - GitHub `main`: `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
 - PR #24: merged successfully;
-- Vercel combined status for current `main`: `failure`;
-- Vercel target still points to the prior `build-rate-limit` failure;
-- no Production deployment exists yet for merge SHA `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
+- Vercel combined status on the merge SHA still reflects the prior `build-rate-limit` failure;
 - latest verified Production deployment remains `eee3ba657ad69e07faca27eeabbd9d60b12142cc`;
-- the available connector exposes no live quota/reset counter, so quota renewal cannot be proven without a new deployment attempt;
-- no redeploy was attempted in this check;
-- no code/configuration/environment variable was changed;
-- no paid upgrade or resource was used.
+- a newer documentation-branch Preview deployment succeeded and is `READY`, which indicates Vercel build capacity is available for at least Preview builds at the time of this check;
+- the connected Vercel redeploy action is currently unavailable at execution time (`deploy_to_vercel not found`);
+- no alternative connected action exists for Production promote/redeploy of the exact current main SHA;
+- no deployment was triggered, no code/configuration changed, and no paid resource was used.
 
 ### Next correct action
 
-1. Do **not** start Phase 4B.1 or any new implementation phase.
-2. Recheck Vercel build availability later.
-3. When the no-cost quota is available:
-   - deploy/retry the exact current `main` SHA `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
-   - verify Production reaches `READY`;
-   - verify Production SHA equals current `main`;
-   - verify runtime health;
-   - verify Development migration parity;
-   - update this roadmap.
-4. Do not purchase or upgrade infrastructure solely to bypass the current quota unless the owner explicitly changes that decision.
+1. Do **not** start Phase 4B.1 or another implementation phase yet.
+2. Reconcile Production with current `main` using a safe Production redeploy mechanism that preserves the exact code content:
+   - preferred: Vercel redeploy/promote action when the connector supports it;
+   - alternative: owner performs the Production redeploy in Vercel UI for the current `main` Git commit, without changing code/settings.
+3. After a Production deployment exists, verify:
+   - deployment state = `READY`;
+   - Git commit SHA = current `main`;
+   - runtime health is clean;
+   - Development migration parity remains intact.
+4. Update this roadmap and then request approval for the next phase.
 
 ### Current stop condition
 
-**WAIT FOR A SAFE NO-COST VERCEL REDEPLOY ATTEMPT / AVAILABILITY CONFIRMATION.**
+**WAIT FOR PRODUCTION RECONCILIATION.**
 
-No next phase is authorized while Production remains behind `main`.
+No next implementation phase is authorized while Production remains behind `main`.
 
 ---
 
