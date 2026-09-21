@@ -113,10 +113,14 @@ Statements under **Current State** should be treated as verified only when a liv
 
 - AXIA production project is deployed and reachable.
 - PR #24 final Preview on exact head `3cbd8efdb74de8424a395d926d37ee85c90507cc` was verified `READY`.
-- After PR #24 merge, Vercel rejected the automatic deployment for merge SHA `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d` because the account hit the Vercel build-rate limit.
-- Therefore GitHub `main` is newer than the currently verified Production deployment. Production remains on the prior main deployment `eee3ba657ad69e07faca27eeabbd9d60b12142cc` until a no-cost deployment can run after quota availability.
-- This is an infrastructure quota blocker, not a verified application build failure: PR #24 exact-head CI and Preview were both successful.
-- Do not purchase/upgrade infrastructure solely to bypass this blocker unless the owner later approves cost.
+- Production was manually deployed from the exact merged `main` commit after the prior Vercel build-rate-limit failure.
+- Verified Production deployment: `dpl_3reCzQgMksqmrXPCQJtzCws3EAzS`.
+- Production state: `READY`.
+- Production Git SHA: `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`.
+- Production branch: `main`.
+- Production aliases include `axia-legal-psi.vercel.app`.
+- Runtime verification after deployment found no grouped runtime errors and no error/fatal/warning logs in the checked window.
+- GitHub `main` and Vercel Production are now reconciled on the same SHA.
 - Production Supabase isolation from Development remains a required verification item before real client data.
 
 ## Real Development data last observed
@@ -249,11 +253,15 @@ Verification:
 - Core audit trigger count: 6;
 - remaining test fixture count: 0.
 
-Post-merge limitation:
+Post-merge reconciliation:
 
-- Vercel Production auto-deployment for merge SHA `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d` was blocked by account build-rate limit.
-- GitHub push-CI for the merge SHA was not visible through the connected GitHub workflow query at the verification time.
-- Do not start the next implementation phase until Production deployment state is reconciled or explicitly accepted as a temporary quota limitation.
+- the automatic Production deployment was initially blocked by Vercel build-rate limit;
+- owner manually created a Production deployment from the exact merged `main` commit without changing code or settings;
+- deployment `dpl_3reCzQgMksqmrXPCQJtzCws3EAzS` reached `READY`;
+- Production SHA was verified as `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
+- GitHub combined Vercel status is now `success`;
+- runtime error inspection found no current errors in the checked window;
+- Development migration parity remains intact with migration `20260921111252`, six audit triggers, zero fixtures, and zero residual test audit rows.
 
 ---
 
@@ -843,7 +851,7 @@ The sequence below is now the canonical implementation order unless a fresh live
 
 ## Phase 4B — Data Integrity & Security Hardening
 
-**Status:** `MERGED — 4B-A VERIFIED / 4B-B VERIFIED / PRODUCTION DEPLOYMENT BLOCKED BY VERCEL QUOTA`
+**Status:** `VERIFIED — 4B-A COMPLETE / 4B-B MERGED / DEVELOPMENT VERIFIED / PRODUCTION RECONCILED`
 
 Objective: establish a safe commercial data/security baseline before major product expansion.
 
@@ -1837,24 +1845,20 @@ Required response: evidence-based codebase inventory and incremental deduplicati
 ## KR-016 — Main/Production deployment drift due Vercel build-rate limit
 
 Priority: P1 release-process blocker  
-Status: Open — Production remains behind main. A newer Preview build succeeded, but the connected Vercel Production redeploy action is unavailable at execution time.
+Status: Resolved — 2026-09-21
 
-Current evidence:
+Resolution evidence:
 
 - GitHub `main`: `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
-- latest verified Production deployment remains on `eee3ba657ad69e07faca27eeabbd9d60b12142cc`;
-- Vercel status for the new merge SHA reports build-rate-limit failure.
+- Production deployment: `dpl_3reCzQgMksqmrXPCQJtzCws3EAzS`;
+- Production deployment state: `READY`;
+- Production Git SHA exactly matches `main`;
+- GitHub Vercel status: `success`;
+- runtime verification found no current errors in the checked window.
 
-Required response:
+Lesson:
 
-- wait for no-cost quota availability;
-- deploy/retry the current `main` without changing code or buying infrastructure;
-- verify exact Production SHA and runtime health;
-- close this risk before starting the next implementation phase.
-
----
-
-# 19. Decisions Register
+If Vercel auto-deploy is blocked by account quota, do not change code merely to retrigger deployment. Prefer a no-cost deployment of the exact intended Git commit once build capacity is available.
 
 ## DR-001
 
@@ -2432,37 +2436,34 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PR #24 MERGED — PRODUCTION STILL BEHIND MAIN / REDEPLOY ACTION UNAVAILABLE IN CONNECTOR**
+**Current mode: PHASE 4B-B COMPLETE — PRODUCTION RECONCILED — DOCUMENTATION CLOSEOUT**
 
-Latest verification:
+Completed:
 
+- PR #24 merged using merge commit only;
 - GitHub `main`: `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
-- PR #24: merged successfully;
-- Vercel combined status on the merge SHA still reflects the prior `build-rate-limit` failure;
-- latest verified Production deployment remains `eee3ba657ad69e07faca27eeabbd9d60b12142cc`;
-- a newer documentation-branch Preview deployment succeeded and is `READY`, which indicates Vercel build capacity is available for at least Preview builds at the time of this check;
-- the connected Vercel redeploy action is currently unavailable at execution time (`deploy_to_vercel not found`);
-- no alternative connected action exists for Production promote/redeploy of the exact current main SHA;
-- no deployment was triggered, no code/configuration changed, and no paid resource was used.
+- Development migration `20260921111252 axia_phase4b_audit_trail_foundation` verified;
+- six Core audit triggers verified;
+- no smoke fixtures remain;
+- no residual test audit rows remain;
+- Production deployment `dpl_3reCzQgMksqmrXPCQJtzCws3EAzS` is `READY`;
+- Production Git SHA exactly matches current `main`;
+- GitHub Vercel status is `success`;
+- runtime verification found no current errors in the checked window;
+- no paid infrastructure was created;
+- Production/Development Supabase isolation remains the previously documented P0 for future real-client onboarding.
 
 ### Next correct action
 
-1. Do **not** start Phase 4B.1 or another implementation phase yet.
-2. Reconcile Production with current `main` using a safe Production redeploy mechanism that preserves the exact code content:
-   - preferred: Vercel redeploy/promote action when the connector supports it;
-   - alternative: owner performs the Production redeploy in Vercel UI for the current `main` Git commit, without changing code/settings.
-3. After a Production deployment exists, verify:
-   - deployment state = `READY`;
-   - Git commit SHA = current `main`;
-   - runtime health is clean;
-   - Development migration parity remains intact.
-4. Update this roadmap and then request approval for the next phase.
+1. Merge this documentation-only closeout into `main` after owner approval so the canonical roadmap on `main` reflects the verified state.
+2. After documentation closeout is merged, perform a fresh **read-only** scope review for `Phase 4B.1 — Codebase Baseline, Deduplication & Architecture Cleanup`.
+3. Do not implement Phase 4B.1 until its findings, exact scope, affected files, risks, and verification plan are presented and explicitly approved.
 
 ### Current stop condition
 
-**WAIT FOR PRODUCTION RECONCILIATION.**
+**WAITING FOR OWNER APPROVAL TO MERGE DOCUMENTATION CLOSEOUT.**
 
-No next implementation phase is authorized while Production remains behind `main`.
+No next implementation phase has started.
 
 ---
 
