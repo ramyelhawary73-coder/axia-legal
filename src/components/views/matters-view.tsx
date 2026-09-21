@@ -45,7 +45,10 @@ import {
 } from "@/lib/matters-client";
 import { Matter, CourtCategory } from "@/types/legal";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
-import { useActionContextMenu } from "@/components/action-context-menu";
+import {
+  useActionContextMenu,
+  type ActionContextMenuItem,
+} from "@/components/action-context-menu";
 
 const getCategoryStyle = (cat: "مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة" | string) => {
   switch (cat) {
@@ -205,37 +208,63 @@ export function MattersView({
     }
   };
 
-  const getMatterActions = (matter: Matter) => [
-    {
-      id: "open",
-      label: "فتح ملف القضية",
-      onSelect: () => setLocalActiveMatterId(matter.id),
-    },
-    {
-      id: matter.status === "مفتوحة" ? "close" : "reopen",
-      label: matter.status === "مفتوحة" ? "إغلاق القضية" : "إعادة فتح القضية",
-      onSelect: () =>
-        handleSetMatterStatus(
-          matter,
-          matter.status === "مفتوحة" ? "closed" : "open",
-        ),
-    },
-    {
-      id: "report",
-      label: "تصدير تقرير القضية PDF",
-      onSelect: () => {
-        setPdfSelectedMatter(matter);
-        setIsPdfModalOpen(true);
+  const getMatterActions = (matter: Matter): ActionContextMenuItem[] => {
+    const actions: ActionContextMenuItem[] = [
+      {
+        id: "open",
+        label: "فتح ملف القضية",
+        onSelect: () => setLocalActiveMatterId(matter.id),
       },
-    },
-    {
-      id: "copy-case-number",
-      label: "نسخ رقم القضية",
-      onSelect: async () => {
-        await navigator.clipboard.writeText(matter.caseNumber);
+      {
+        id: matter.status === "مفتوحة" ? "close" : "reopen",
+        label:
+          matter.status === "مفتوحة" ? "إغلاق القضية" : "إعادة فتح القضية",
+        onSelect: () =>
+          handleSetMatterStatus(
+            matter,
+            matter.status === "مفتوحة" ? "closed" : "open",
+          ),
       },
-    },
-  ];
+      {
+        id: "report",
+        label: "تصدير تقرير القضية PDF",
+        onSelect: () => {
+          setPdfSelectedMatter(matter);
+          setIsPdfModalOpen(true);
+        },
+      },
+      {
+        id: "copy-case-number",
+        label: "نسخ رقم القضية",
+        onSelect: async () => {
+          await navigator.clipboard.writeText(matter.caseNumber);
+        },
+      },
+    ];
+
+    if (matter.notes) {
+      actions.push({
+        id: "clear-note",
+        label: "مسح ملاحظات القضية",
+        tone: "danger",
+        onSelect: async () => {
+          const confirmed = window.confirm(
+            "هل تريد مسح ملاحظات القضية فقط؟ لن يتم حذف القضية أو أي مستند.",
+          );
+          if (!confirmed) return;
+          const updated = await updatePersistentMatter(matter.id, {
+            notes: null,
+          });
+          setMatters((current) =>
+            current.map((item) => (item.id === matter.id ? updated : item)),
+          );
+          await onMatterCreated?.();
+        },
+      });
+    }
+
+    return actions;
+  };
 
   // New contact form states
   const [contactName, setContactName] = useState("");
