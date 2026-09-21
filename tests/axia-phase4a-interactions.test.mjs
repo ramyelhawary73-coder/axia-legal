@@ -137,7 +137,7 @@ test("Matter context actions add or reschedule real linked hearings without matt
 
 test("Core shell and matter contacts no longer fall back to fake business mutations", () => {
   assert.doesNotMatch(appShell, /mockTasks/);
-  assert.match(appShell, /const activeTasks = tasks \?\? \[\]/);
+  assert.match(appShell, /useMemo\(\(\) => tasks \?\? \[\], \[tasks\]\)/);
   assert.doesNotMatch(mattersView, /handleAddContact/);
   assert.doesNotMatch(mattersView, /handleRemoveContact/);
   assert.match(mattersView, /لا يتم[\s\S]{0,120}جهة اتصال محلية وهمية/);
