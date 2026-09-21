@@ -36,6 +36,10 @@ import {
 } from "@/lib/hearings-client";
 import { loadMattersWorkspace } from "@/lib/matters-client";
 import { loadTaskWorkspace } from "@/lib/tasks-client";
+import {
+  useActionContextMenu,
+  type ActionContextMenuItem,
+} from "@/components/action-context-menu";
 
 // Arabic Days and Months
 const ARABIC_DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
@@ -228,6 +232,10 @@ export function HearingsView({
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isSavingHearing, setIsSavingHearing] = useState(false);
+  const [reschedulingHearingId, setReschedulingHearingId] = useState<string | null>(null);
+  const [rescheduleModalHearingId, setRescheduleModalHearingId] = useState<string | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const hearingActionMenu = useActionContextMenu();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -436,6 +444,63 @@ export function HearingsView({
     setTimeout(() => setToast(null), 4000);
   };
 
+  const persistHearingReschedule = async (
+    hearingId: string,
+    targetDateStr: string,
+  ): Promise<boolean> => {
+    const original = hearings.find((item) => item.id === hearingId);
+    if (!original || !isValidDateStr(targetDateStr)) return false;
+    if (original.hearingDate === targetDateStr) return true;
+
+    setReschedulingHearingId(hearingId);
+    setSyncError(null);
+
+    // Optimistic move for immediate feedback. Any API/read-back failure rolls back.
+    setHearings((current) =>
+      current.map((item) =>
+        item.id === hearingId ? { ...item, hearingDate: targetDateStr } : item,
+      ),
+    );
+
+    try {
+      await updatePersistentHearing(
+        hearingId,
+        { hearingDate: targetDateStr },
+        matters,
+      );
+
+      const refreshed = await loadPersistentHearings(matters);
+      const confirmed = refreshed.find((item) => item.id === hearingId);
+      if (!confirmed || confirmed.hearingDate !== targetDateStr) {
+        throw new Error("لم يتم تأكيد التاريخ الجديد من قاعدة البيانات.");
+      }
+
+      setHearings(refreshed);
+      await onHearingsChanged?.();
+      triggerToast(
+        "تمت إعادة جدولة الجلسة وتأكيد الحفظ من قاعدة البيانات",
+        targetDateStr,
+        "hearing",
+      );
+      return true;
+    } catch (error) {
+      setHearings((current) =>
+        current.map((item) => (item.id === hearingId ? original : item)),
+      );
+      const message =
+        error instanceof Error ? error.message : "تعذر إعادة جدولة الجلسة.";
+      setSyncError(message);
+      triggerToast(
+        "فشل حفظ إعادة الجدولة وتمت إعادة الجلسة لموعدها السابق",
+        original.hearingDate,
+        "hearing",
+      );
+      return false;
+    } finally {
+      setReschedulingHearingId(null);
+    }
+  };
+
   const handleToggleArchive = async (hearingId: string) => {
     const hearing = hearings.find((item) => item.id === hearingId);
     if (!hearing) return;
@@ -468,6 +533,44 @@ export function HearingsView({
         error instanceof Error ? error.message : "تعذر تحديث حالة الجلسة.",
       );
     }
+  };
+
+  const openRescheduleDialog = (hearing: Hearing) => {
+    setRescheduleModalHearingId(hearing.id);
+    setRescheduleDate(hearing.hearingDate);
+  };
+
+  const getHearingActions = (hearing: Hearing): ActionContextMenuItem[] => {
+    const actions: ActionContextMenuItem[] = [
+      {
+        id: "reschedule",
+        label: "إعادة جدولة الجلسة",
+        onSelect: () => openRescheduleDialog(hearing),
+      },
+      {
+        id: hearing.isArchived ? "restore" : "archive",
+        label: hearing.isArchived ? "استعادة الجلسة" : "أرشفة الجلسة",
+        onSelect: () => handleToggleArchive(hearing.id),
+      },
+    ];
+
+    if (hearing.pleadingNotes) {
+      actions.push({
+        id: "clear-note",
+        label: "مسح ملاحظات الجلسة",
+        tone: "danger",
+        onSelect: async () => {
+          const confirmed = window.confirm(
+            "هل تريد مسح ملاحظات هذه الجلسة؟ لن يتم حذف الجلسة نفسها.",
+          );
+          if (!confirmed) return;
+          await handleUpdateHearingNotes(hearing.id, "");
+          triggerToast("تم مسح ملاحظات الجلسة", hearing.hearingDate, "hearing");
+        },
+      });
+    }
+
+    return actions;
   };
 
   // iCal parsing and export helpers
@@ -596,28 +699,11 @@ export function HearingsView({
         type: "hearing" | "task" | "matter";
       };
 
-      if (type !== "hearing") {
-        triggerToast(
-          "غيّر موعد المهمة أو القضية من وحدتها الأصلية حتى يتم الحفظ بشكل صحيح",
-          targetDateStr,
-          type,
-        );
-        return;
-      }
-
-      const updated = await updatePersistentHearing(
-        id,
-        { hearingDate: targetDateStr },
-        matters,
-      );
-      setHearings((current) =>
-        current.map((hearing) => (hearing.id === id ? updated : hearing)),
-      );
-      setSyncError(null);
-      triggerToast("تمت إعادة جدولة الجلسة وحفظها", targetDateStr, "hearing");
+      if (type !== "hearing") return;
+      await persistHearingReschedule(id, targetDateStr);
     } catch (error) {
       setSyncError(
-        error instanceof Error ? error.message : "تعذر إعادة جدولة الجلسة.",
+        error instanceof Error ? error.message : "تعذر قراءة بيانات السحب.",
       );
     }
   };
@@ -1125,16 +1211,36 @@ export function HearingsView({
                   unifiedCalendarItems.slice(0, 7).map((item) => (
                     <div
                       key={item.id}
-                      draggable={item.type === "hearing"}
+                      {...(item.type === "hearing"
+                        ? hearingActionMenu.bind(
+                            getHearingActions(item.original as Hearing),
+                            `الجلسة ${item.title}`,
+                          )
+                        : {})}
+                      draggable={
+                        item.type === "hearing" &&
+                        reschedulingHearingId !== item.id
+                      }
                       onDragStart={(e) => handleDragStart(e, { id: item.id, type: item.type })}
-                      className={`p-3 rounded-xl border text-right cursor-grab active:cursor-grabbing hover:border-[var(--axia-gold)]/40 hover:bg-[var(--accent)]/50 transition-all shadow-sm flex flex-col gap-1.5 ${
+                      className={`p-3 rounded-xl border text-right hover:border-[var(--axia-gold)]/40 hover:bg-[var(--accent)]/50 transition-all shadow-sm flex flex-col gap-1.5 ${
+                        item.type === "hearing"
+                          ? "cursor-grab active:cursor-grabbing"
+                          : "cursor-default"
+                      } ${
                         item.type === "hearing" ? "border-amber-500/15 bg-amber-500/[0.02]" :
                         item.type === "task" ? "border-teal-500/15 bg-teal-500/[0.02]" :
                         "border-blue-500/15 bg-blue-500/[0.02]"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                        <div className="flex items-center gap-1">
+                          {item.type === "hearing" &&
+                            hearingActionMenu.triggerButton(
+                              getHearingActions(item.original as Hearing),
+                              `الجلسة ${item.title}`,
+                              "bg-[var(--panel)]/80",
+                            )}
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
                           item.type === "hearing" ? "bg-amber-500/10 text-amber-400" :
                           item.type === "task" ? "bg-teal-500/10 text-teal-400" :
                           "bg-blue-500/10 text-blue-400"
@@ -1142,7 +1248,8 @@ export function HearingsView({
                           {item.type === "hearing" ? "جلسة" :
                            item.type === "task" ? "مهمة إدارية" :
                            "قضية"}
-                        </span>
+                          </span>
+                        </div>
                         <span className="text-[9px] font-mono text-[var(--text-muted)]">{item.date}</span>
                       </div>
                       
@@ -1293,10 +1400,23 @@ export function HearingsView({
                             {dayItems.map((item) => (
                               <div
                                 key={item.id}
-                                draggable
+                                {...(item.type === "hearing"
+                                  ? hearingActionMenu.bind(
+                                      getHearingActions(item.original as Hearing),
+                                      `الجلسة ${item.title}`,
+                                    )
+                                  : {})}
+                                draggable={
+                                  item.type === "hearing" &&
+                                  reschedulingHearingId !== item.id
+                                }
                                 onDragStart={(e) => handleDragStart(e, { id: item.id, type: item.type })}
                                 title={`${item.title} \n (${item.sub})`}
-                                className={`text-[9px] py-1 px-1.5 rounded-lg border cursor-grab active:cursor-grabbing font-medium transition-all hover:brightness-110 flex items-center gap-1.5 truncate ${
+                                className={`text-[9px] py-1 px-1.5 rounded-lg border font-medium transition-all hover:brightness-110 flex items-center gap-1.5 truncate ${
+                                  item.type === "hearing"
+                                    ? "cursor-grab active:cursor-grabbing"
+                                    : "cursor-default"
+                                } ${
                                   item.type === "hearing" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
                                   item.type === "task" ? (item.priority === "حرجة للغاية (ميعاد سقوط)" ? "bg-red-500/10 text-red-400 border-red-500/20" : "bg-teal-500/10 text-teal-400 border-teal-500/20") :
                                   "bg-blue-500/10 text-blue-400 border-blue-500/20"
@@ -1367,9 +1487,22 @@ export function HearingsView({
                             dayItems.map((item) => (
                               <div
                                 key={item.id}
-                                draggable
+                                {...(item.type === "hearing"
+                                  ? hearingActionMenu.bind(
+                                      getHearingActions(item.original as Hearing),
+                                      `الجلسة ${item.title}`,
+                                    )
+                                  : {})}
+                                draggable={
+                                  item.type === "hearing" &&
+                                  reschedulingHearingId !== item.id
+                                }
                                 onDragStart={(e) => handleDragStart(e, { id: item.id, type: item.type })}
-                                className={`p-2.5 rounded-xl border text-right cursor-grab active:cursor-grabbing hover:brightness-105 transition flex flex-col gap-1 shadow-sm ${
+                                className={`p-2.5 rounded-xl border text-right hover:brightness-105 transition flex flex-col gap-1 shadow-sm ${
+                                  item.type === "hearing"
+                                    ? "cursor-grab active:cursor-grabbing"
+                                    : "cursor-default"
+                                } ${
                                   item.type === "hearing" ? "border-amber-500/15 bg-amber-500/10 text-amber-400" :
                                   item.type === "task" ? (item.priority === "حرجة للغاية (ميعاد سقوط)" ? "border-red-500/15 bg-red-500/10 text-red-400" : "border-teal-500/15 bg-teal-500/10 text-teal-400") :
                                   "border-blue-500/15 bg-blue-500/10 text-blue-400"
@@ -1976,6 +2109,73 @@ export function HearingsView({
           </div>
         </div>
       )}
+
+      {rescheduleModalHearingId && (
+        <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4">
+          <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-[var(--text)]">
+                  إعادة جدولة الجلسة
+                </h3>
+                <p className="mt-1 text-[11px] text-[var(--text-muted)]">
+                  سيتم حفظ التاريخ الجديد في Supabase ثم قراءته مرة أخرى للتأكيد.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRescheduleModalHearingId(null)}
+                className="grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)]"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <label className="mt-5 block text-xs font-semibold text-[var(--text-muted)]">
+              التاريخ الجديد
+            </label>
+            <input
+              type="date"
+              value={rescheduleDate}
+              onChange={(event) => setRescheduleDate(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
+            />
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setRescheduleModalHearingId(null)}
+                className="rounded-xl border border-[var(--border)] px-4 py-2 text-xs font-semibold text-[var(--text)]"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                disabled={
+                  !rescheduleDate ||
+                  reschedulingHearingId === rescheduleModalHearingId
+                }
+                onClick={async () => {
+                  const hearingId = rescheduleModalHearingId;
+                  if (!hearingId) return;
+                  const saved = await persistHearingReschedule(
+                    hearingId,
+                    rescheduleDate,
+                  );
+                  if (saved) setRescheduleModalHearingId(null);
+                }}
+                className="rounded-xl bg-[var(--axia-gold)] px-4 py-2 text-xs font-bold text-black disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {reschedulingHearingId === rescheduleModalHearingId
+                  ? "جارٍ الحفظ..."
+                  : "حفظ الموعد"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {hearingActionMenu.menuNode}
 
       {/* HIDDEN COURTROOM-READY PRINTABLE PDF REPORT CONTAINER */}
       <div 
