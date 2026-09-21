@@ -312,15 +312,17 @@ export default function HomePage() {
           />
         )}
         {activeTab === "hearings" && (
-          <HearingsView 
-            isFocusMode={isFocusMode} 
-            onToggleFocusMode={() => setIsFocusMode(!isFocusMode)} 
+          <HearingsView
+            isFocusMode={isFocusMode}
+            onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
+            onHearingsChanged={refreshCoreWorkspace}
           />
         )}
         {activeTab === "clients" && (
-          <ClientsView 
+          <ClientsView
             selectedClientId={selectedClientId}
             onCloseClientDashboard={() => setSelectedClientId(null)}
+            onWorkspaceChanged={refreshCoreWorkspace}
           />
         )}
         {activeTab === "tasks" && (
