@@ -40,6 +40,7 @@ import {
 } from "@/lib/matters-client";
 import {
   loadTaskWorkspace,
+  updatePersistentTaskDeadline,
   updatePersistentTaskStatus,
 } from "@/lib/tasks-client";
 import {
@@ -227,12 +228,14 @@ export function HearingsView({
   isFocusMode = false,
   onToggleFocusMode,
   onHearingsChanged,
+  onTasksChanged,
   onOpenMatter,
   onOpenTasks,
 }: {
   isFocusMode?: boolean;
   onToggleFocusMode?: () => void;
   onHearingsChanged?: () => void | Promise<void>;
+  onTasksChanged?: () => void | Promise<void>;
   onOpenMatter?: (matterId: string) => void;
   onOpenTasks?: () => void;
 } = {}) {
@@ -245,6 +248,7 @@ export function HearingsView({
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isSavingHearing, setIsSavingHearing] = useState(false);
   const [reschedulingHearingId, setReschedulingHearingId] = useState<string | null>(null);
+  const [reschedulingTaskId, setReschedulingTaskId] = useState<string | null>(null);
   const [rescheduleModalHearingId, setRescheduleModalHearingId] = useState<string | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
   const hearingActionMenu = useActionContextMenu();
@@ -513,6 +517,60 @@ export function HearingsView({
     }
   };
 
+  const persistTaskReschedule = async (
+    taskId: string,
+    targetDateStr: string,
+  ): Promise<boolean> => {
+    const original = tasks.find((item) => item.id === taskId);
+    if (!original || !isValidDateStr(targetDateStr)) return false;
+    if (getDateOnly(original.deadline) === targetDateStr) return true;
+
+    setReschedulingTaskId(taskId);
+    setSyncError(null);
+
+    setTasks((current) =>
+      current.map((item) =>
+        item.id === taskId ? { ...item, deadline: targetDateStr } : item,
+      ),
+    );
+
+    try {
+      await updatePersistentTaskDeadline(taskId, targetDateStr);
+
+      const refreshedWorkspace = await loadTaskWorkspace();
+      const confirmed = refreshedWorkspace.tasks.find(
+        (item) => item.id === taskId,
+      );
+      if (!confirmed || getDateOnly(confirmed.deadline) !== targetDateStr) {
+        throw new Error("لم يتم تأكيد الموعد الجديد للمهمة من قاعدة البيانات.");
+      }
+
+      setTasks(refreshedWorkspace.tasks);
+      await onTasksChanged?.();
+      triggerToast(
+        "تم نقل المهمة وتأكيد الموعد الجديد من قاعدة البيانات",
+        targetDateStr,
+        "task",
+      );
+      return true;
+    } catch (error) {
+      setTasks((current) =>
+        current.map((item) => (item.id === taskId ? original : item)),
+      );
+      const message =
+        error instanceof Error ? error.message : "تعذر إعادة جدولة المهمة.";
+      setSyncError(message);
+      triggerToast(
+        "فشل حفظ موعد المهمة وتمت إعادتها لتاريخها السابق",
+        getDateOnly(original.deadline),
+        "task",
+      );
+      return false;
+    } finally {
+      setReschedulingTaskId(null);
+    }
+  };
+
   const handleToggleArchive = async (hearingId: string) => {
     const hearing = hearings.find((item) => item.id === hearingId);
     if (!hearing) return;
@@ -668,11 +726,40 @@ export function HearingsView({
     }
 
     const matter = item.original as Matter;
+    const linkedHearings = hearings
+      .filter((hearing) => hearing.matterId === matter.id && !hearing.isArchived)
+      .sort((a, b) => a.hearingDate.localeCompare(b.hearingDate));
+    const today = formatDateStr(new Date());
+    const linkedHearing =
+      linkedHearings.find((hearing) => hearing.hearingDate >= today) ??
+      linkedHearings.at(-1);
+
     return [
       {
         id: "open-matter",
         label: "فتح ملف القضية",
         onSelect: () => onOpenMatter?.(matter.id),
+      },
+      {
+        id: "add-hearing",
+        label: "إضافة جلسة للقضية",
+        onSelect: () => {
+          setNewMatterId(matter.id);
+          setNewCourt(matter.court !== "غير مسجل" ? matter.court : "");
+          setNewCircuit(matter.circuit !== "غير مسجل" ? matter.circuit : "");
+          setNewDate(formatDateStr(new Date()));
+          setIsNewHearingOpen(true);
+        },
+      },
+      {
+        id: "reschedule-linked-hearing",
+        label: linkedHearing
+          ? "إعادة جدولة الجلسة المرتبطة"
+          : "لا توجد جلسة مرتبطة لإعادة جدولتها",
+        disabled: !linkedHearing,
+        onSelect: () => {
+          if (linkedHearing) openRescheduleDialog(linkedHearing);
+        },
       },
       {
         id: matter.status === "مفتوحة" ? "close-matter" : "reopen-matter",
@@ -786,12 +873,12 @@ export function HearingsView({
     triggerToast("تم إنشاء وتصدير ملف التقومة بنجاح", formatDateStr(new Date()), "matter");
   };
 
-  // Drag & Drop persists hearing rescheduling only.
+  // Calendar drag persists hearings and tasks only. Matters stay navigation/action records.
   const handleDragStart = (
     e: React.DragEvent,
     item: { id: string; type: "hearing" | "task" | "matter" },
   ) => {
-    if (item.type !== "hearing") {
+    if (item.type === "matter") {
       e.preventDefault();
       return;
     }
@@ -832,18 +919,23 @@ export function HearingsView({
       const { id, type } = payload;
 
       if (typeof id !== "string") {
-        setSyncError("معرّف الجلسة في عملية السحب غير صالح.");
+        setSyncError("معرّف عنصر التقويم في عملية السحب غير صالح.");
         return;
       }
 
-      if (type !== "hearing") {
-        setSyncError("عنصر السحب غير صالح لإعادة جدولة جلسة.");
+      if (type === "hearing") {
+        await persistHearingReschedule(id, targetDateStr);
         return;
       }
 
-      await persistHearingReschedule(id, targetDateStr);
+      if (type === "task") {
+        await persistTaskReschedule(id, targetDateStr);
+        return;
+      }
+
+      setSyncError("القضايا لا تُنقل بالسحب؛ استخدم إضافة أو إعادة جدولة جلسة مرتبطة.");
     } catch {
-      setSyncError("تعذر قراءة بيانات سحب الجلسة. حاول السحب من بطاقة الجلسة نفسها.");
+      setSyncError("تعذر قراءة بيانات السحب. حاول السحب من بطاقة الجلسة أو المهمة نفسها.");
     }
   };
 
@@ -1355,12 +1447,14 @@ export function HearingsView({
                         getCalendarItemMenuLabel(item),
                       )}
                       draggable={
-                        item.type === "hearing" &&
-                        reschedulingHearingId !== item.id
+                        (item.type === "hearing" &&
+                          reschedulingHearingId !== item.id) ||
+                        (item.type === "task" &&
+                          reschedulingTaskId !== item.id)
                       }
                       onDragStart={(e) => handleDragStart(e, { id: item.id, type: item.type })}
                       className={`p-3 rounded-xl border text-right hover:border-[var(--axia-gold)]/40 hover:bg-[var(--accent)]/50 transition-all shadow-sm flex flex-col gap-1.5 ${
-                        item.type === "hearing"
+                        item.type === "hearing" || item.type === "task"
                           ? "cursor-grab active:cursor-grabbing"
                           : "cursor-default"
                       } ${
@@ -1541,13 +1635,15 @@ export function HearingsView({
                                   getCalendarItemMenuLabel(item),
                                 )}
                                 draggable={
-                                  item.type === "hearing" &&
-                                  reschedulingHearingId !== item.id
+                                  (item.type === "hearing" &&
+                                    reschedulingHearingId !== item.id) ||
+                                  (item.type === "task" &&
+                                    reschedulingTaskId !== item.id)
                                 }
                                 onDragStart={(e) => handleDragStart(e, { id: item.id, type: item.type })}
                                 title={`${item.title} \n (${item.sub})`}
                                 className={`text-[9px] py-1 px-1.5 rounded-lg border font-medium transition-all hover:brightness-110 flex items-center gap-1.5 truncate ${
-                                  item.type === "hearing"
+                                  item.type === "hearing" || item.type === "task"
                                     ? "cursor-grab active:cursor-grabbing"
                                     : "cursor-default"
                                 } ${
@@ -1631,12 +1727,14 @@ export function HearingsView({
                                   getCalendarItemMenuLabel(item),
                                 )}
                                 draggable={
-                                  item.type === "hearing" &&
-                                  reschedulingHearingId !== item.id
+                                  (item.type === "hearing" &&
+                                    reschedulingHearingId !== item.id) ||
+                                  (item.type === "task" &&
+                                    reschedulingTaskId !== item.id)
                                 }
                                 onDragStart={(e) => handleDragStart(e, { id: item.id, type: item.type })}
                                 className={`p-2.5 rounded-xl border text-right hover:brightness-105 transition flex flex-col gap-1 shadow-sm ${
-                                  item.type === "hearing"
+                                  item.type === "hearing" || item.type === "task"
                                     ? "cursor-grab active:cursor-grabbing"
                                     : "cursor-default"
                                 } ${
