@@ -36,6 +36,7 @@ import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 import { VoiceCommandModal } from "@/components/voice-command-modal";
 import { TaskCreationModal } from "@/components/task-creation-modal";
 import type { TaskMatterOption } from "@/lib/tasks-client";
+import { useActionContextMenu } from "@/components/action-context-menu";
 
 interface TasksEmptyStateProps {
   currentCategory: string;
@@ -188,6 +189,7 @@ export function TasksView({
   const [viewMode, setViewMode] = useState<"list" | "kanban">("kanban");
   const [hoveredColumn, setHoveredColumn] = useState<LegalTask["status"] | null>(null);
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+  const taskActionMenu = useActionContextMenu();
 
   const handleUpdateTaskStatus = async (id: string, newStatus: LegalTask["status"]) => {
     if (propBulkUpdateStatus) {
@@ -343,6 +345,25 @@ export function TasksView({
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
+
+  const getTaskActions = (task: LegalTask) => [
+    {
+      id: task.status === "مكتملة" ? "reopen" : "complete",
+      label: task.status === "مكتملة" ? "إعادة فتح المهمة" : "تحديد كمكتملة",
+      onSelect: () =>
+        handleUpdateTaskStatus(
+          task.id,
+          task.status === "مكتملة" ? "قيد التنفيذ" : "مكتملة",
+        ),
+    },
+    {
+      id: "select",
+      label: selectedTaskIds.includes(task.id)
+        ? "إلغاء تحديد المهمة"
+        : "تحديد المهمة",
+      onSelect: () => handleToggleSelectTask(task.id),
+    },
+  ];
 
   const handleToggleSelectAll = () => {
     if (isAllFilteredSelected) {
@@ -766,6 +787,10 @@ export function TasksView({
                       return (
                         <div
                           key={task.id}
+                          {...taskActionMenu.bind(
+                            getTaskActions(task),
+                            `المهمة ${task.title}`,
+                          )}
                           draggable={true}
                           onDragStart={(e) => handleDragStart(e, task.id)}
                           onDragEnd={handleDragEnd}
@@ -783,6 +808,11 @@ export function TasksView({
                               : "border-[var(--border)] bg-[var(--panel)] hover:border-[var(--border-strong)] hover:shadow-sm"
                           }`}
                         >
+                          {taskActionMenu.triggerButton(
+                            getTaskActions(task),
+                            `المهمة ${task.title}`,
+                            "absolute left-2 top-2 z-10 bg-[var(--panel)]/90",
+                          )}
                           <div className="space-y-3">
                             <div className="flex items-start justify-between gap-1.5">
                               <div className="flex flex-wrap gap-1.5 items-center">
@@ -900,6 +930,10 @@ export function TasksView({
               return (
                 <div
                   key={task.id}
+                  {...taskActionMenu.bind(
+                    getTaskActions(task),
+                    `المهمة ${task.title}`,
+                  )}
                   className={`rounded-2xl border p-4 sm:p-4.5 transition relative ${
                     isSelected
                       ? "border-[var(--axia-gold)] bg-gradient-to-r from-[var(--panel)] via-[var(--accent)] to-[var(--panel)] ring-2 ring-[var(--axia-gold)]/60 shadow-md"
@@ -914,6 +948,11 @@ export function TasksView({
                       : "border-[var(--border)] bg-[var(--panel)] hover:border-[var(--border-strong)]"
                   }`}
                 >
+                  {taskActionMenu.triggerButton(
+                    getTaskActions(task),
+                    `المهمة ${task.title}`,
+                    "absolute left-2 top-2 z-10 bg-[var(--panel)]/90",
+                  )}
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex items-start gap-3">
                       {/* Multi-Select Checkbox */}
@@ -1081,6 +1120,8 @@ export function TasksView({
       />
 
       {/* Bulk & Single Delete Confirmation Modal */}
+      {taskActionMenu.menuNode}
+
       {deletionEnabled && isDeleteConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-150">
           <div className="relative w-full sm:max-w-md rounded-t-[28px] sm:rounded-3xl border-t sm:border border-red-500/40 bg-[var(--panel)] p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
