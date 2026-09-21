@@ -1837,7 +1837,7 @@ Required response: evidence-based codebase inventory and incremental deduplicati
 ## KR-016 — Main/Production deployment drift due Vercel build-rate limit
 
 Priority: P1 release-process blocker  
-Status: Open
+Status: Open — rechecked; Vercel build-rate-limit still active and no current-main Production deployment exists
 
 Current evidence:
 
@@ -2432,43 +2432,38 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PR #24 MERGED — POST-MERGE PRODUCTION VERIFICATION BLOCKED BY VERCEL QUOTA**
+**Current mode: PR #24 MERGED — VERCEL QUOTA RECHECKED / STILL BLOCKED**
 
-Completed:
+Latest no-cost recheck result:
 
-- PR #24 converted from Draft to Ready;
-- PR #24 merged to `main` using **merge commit only**;
-- merge SHA: `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
-- tested PR content matches merged `main` exactly;
-- Development migration parity verified;
-- six Core audit triggers verified;
-- no test fixtures remain;
-- no paid resource created;
-- no Vercel Environment Variable changed.
-
-Current blocker:
-
-- Vercel did not produce a Production deployment for the merge SHA because the account hit the build-rate limit.
-- Production therefore remains on the previous verified main deployment.
-- GitHub merge-sha push-CI was not visible at the verification time, while exact-head PR CI #158 was successful.
+- GitHub `main`: `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
+- PR #24: merged successfully;
+- Vercel combined status for current `main`: `failure`;
+- Vercel target still points to `build-rate-limit`;
+- no Production deployment exists yet for merge SHA `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
+- latest verified Production deployment remains `eee3ba657ad69e07faca27eeabbd9d60b12142cc`;
+- no redeploy was attempted because the quota condition is still active;
+- no code/configuration/environment variable was changed;
+- no paid upgrade or resource was used.
 
 ### Next correct action
 
-1. Do **not** start Phase 4B.1 or any new implementation work yet.
-2. Wait for Vercel no-cost build quota to become available.
-3. Retry/deploy the current `main` SHA `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d` without changing code and without purchasing an upgrade.
-4. Verify:
-   - Production deployment is `READY`;
-   - deployment SHA exactly equals current `main`;
-   - runtime health is clean;
-   - Development migration parity remains intact.
-5. After successful Production reconciliation, update this roadmap again and then perform a fresh read-only scope review for the next phase.
+1. Do **not** start Phase 4B.1 or any new implementation phase.
+2. Recheck Vercel build availability later.
+3. When the no-cost quota is available:
+   - deploy/retry the exact current `main` SHA `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
+   - verify Production reaches `READY`;
+   - verify Production SHA equals current `main`;
+   - verify runtime health;
+   - verify Development migration parity;
+   - update this roadmap.
+4. Do not purchase or upgrade infrastructure solely to bypass the current quota unless the owner explicitly changes that decision.
 
 ### Current stop condition
 
-**STOP BEFORE NEXT PHASE.**
+**WAIT FOR NO-COST VERCEL BUILD AVAILABILITY.**
 
-No new implementation phase is authorized while Production is behind `main`.
+No next phase is authorized while Production remains behind `main`.
 
 ---
 
