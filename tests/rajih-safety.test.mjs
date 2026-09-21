@@ -19,6 +19,7 @@ const actionLayerIndexesMigration = fs.readFileSync(
 );
 const authProxy = fs.readFileSync("src/lib/supabase/proxy.ts", "utf8");
 const serverClient = fs.readFileSync("src/lib/supabase/server.ts", "utf8");
+const apiWorkspace = fs.readFileSync("src/lib/api/workspace.ts", "utf8");
 const homePage = fs.readFileSync("src/app/page.tsx", "utf8");
 const tasksClient = fs.readFileSync("src/lib/tasks-client.ts", "utf8");
 const tasksRoute = fs.readFileSync("src/app/api/tasks/route.ts", "utf8");
@@ -198,8 +199,9 @@ test("Phase 2A.2 loads and persists tasks through the SSR-authenticated API", ()
   assert.doesNotMatch(tasksClient, /getSupabaseBrowserClient/);
   assert.doesNotMatch(tasksClient, /\.delete\(/);
 
-  assert.match(tasksRoute, /createClient/);
-  assert.match(tasksRoute, /auth\.getClaims\(\)/);
+  assert.match(tasksRoute, /resolveWorkspace/);
+  assert.match(apiWorkspace, /createClient/);
+  assert.match(apiWorkspace, /auth\.getClaims\(\)/);
   assert.match(tasksRoute, /from\("tasks"\)/);
   assert.match(tasksRoute, /\.insert\(/);
   assert.match(tasksRoute, /\.update\(/);
@@ -236,12 +238,13 @@ test("Phase 2A.2.1 matter creation policy is tenant and role constrained", () =>
   assert.doesNotMatch(matterInsertMigration, /service_role/i);
 });
 
-test("Phase 2A.2.1 matters API is SSR authenticated and insert-only", () => {
-  assert.match(mattersRoute, /createClient/);
-  assert.match(mattersRoute, /auth\.getClaims\(\)/);
+test("Phase 2A.2.1 matters API stays SSR authenticated with no delete surface", () => {
+  assert.match(mattersRoute, /resolveWorkspace/);
+  assert.match(apiWorkspace, /createClient/);
+  assert.match(apiWorkspace, /auth\.getClaims\(\)/);
   assert.match(mattersRoute, /from\("matters"\)/);
   assert.match(mattersRoute, /\.insert\(/);
-  assert.doesNotMatch(mattersRoute, /\.update\(/);
+  assert.match(mattersRoute, /\.update\(/);
   assert.doesNotMatch(mattersRoute, /\.delete\(/);
   assert.doesNotMatch(mattersRoute, /SUPABASE_SERVICE_ROLE_KEY/);
   assert.match(mattersClient, /fetch\("\/api\/matters"/);
