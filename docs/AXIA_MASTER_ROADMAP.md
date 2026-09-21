@@ -812,7 +812,7 @@ The sequence below is now the canonical implementation order unless a fresh live
 
 ## Phase 4B — Data Integrity & Security Hardening
 
-**Status:** `IN_PROGRESS — 4B-A VERIFIED / 4B-B APPLIED TO DEVELOPMENT / DB TESTS PASS / CI VERIFICATION PENDING`
+**Status:** `IN_PROGRESS — 4B-A VERIFIED / 4B-B DEVELOPMENT VERIFIED / CI PASS / NOT MERGED`
 
 Objective: establish a safe commercial data/security baseline before major product expansion.
 
@@ -1035,6 +1035,16 @@ Post-DDL Supabase Security Advisor findings remain limited to the pre-existing w
 - Leaked Password Protection disabled.
 
 No new Security Advisor finding was introduced by Phase 4B-B.
+
+GitHub CI verification:
+
+- run: `AXIA Legal CI #156`;
+- exact tested head before this documentation-only status update: `b40347cb690df6742df2641be331c19424b160cc`;
+- Install dependencies: SUCCESS;
+- Typecheck: SUCCESS;
+- Lint: SUCCESS;
+- Safety tests: SUCCESS;
+- Production build: SUCCESS.
 
 Performance Advisor findings remain the previously known Legal Knowledge/ingestion items:
 
@@ -2351,7 +2361,7 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PHASE 4B-B — DEVELOPMENT APPLIED / DB TESTS PASS / CI VERIFICATION**
+**Current mode: PHASE 4B-B — DEVELOPMENT VERIFIED / CI PASS / OWNER REVIEW / NOT MERGED**
 
 Completed:
 
@@ -2359,19 +2369,16 @@ Completed:
 - 4B-B migration applied to `AXIA Legal Development` only;
 - runtime audit/RLS/rollback smoke tests passed;
 - post-DDL Supabase Security/Performance Advisors rerun;
+- GitHub CI #156 passed Typecheck/Lint/Safety/Production build;
 - no paid resource created;
 - no Production environment changed;
 - no Merge performed.
 
 Current required action:
 
-1. Run/verify CI on the exact final branch head:
-   - Typecheck;
-   - Lint;
-   - Safety tests;
-   - Production build.
-2. Review exact branch diff.
-3. Stop after CI/reporting. Do not merge without explicit owner approval.
+1. Verify CI on the final documentation-updated branch head.
+2. Review exact branch diff and PR #24.
+3. Stop after reporting. Do not merge without explicit owner approval.
 4. Do not continue to the next Phase 4B sub-scope until owner approves it.
 5. Production Supabase/cost lookup remains deferred.
 
