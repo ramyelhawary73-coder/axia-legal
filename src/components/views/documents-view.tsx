@@ -45,7 +45,8 @@ export function DocumentsView({
 }: DocumentsViewProps = {}) {
   const [activeTab, setActiveTab] =
     useState<"archive" | "editor" | "templates">(initialTab);
-  const [docs, setDocs] = useState<LegalDocument[]>(documents ?? []);
+  const [internalDocs, setInternalDocs] = useState<LegalDocument[]>([]);
+  const docs = documents ?? internalDocs;
   const [search, setSearch] = useState("");
   const [localSelectedDocId, setLocalSelectedDocId] =
     useState<string | null>(null);
@@ -65,17 +66,13 @@ export function DocumentsView({
     : null;
 
   useEffect(() => {
-    if (documents !== undefined) {
-      setDocs(documents);
-      setIsLoading(false);
-      return;
-    }
+    if (documents !== undefined) return;
 
     let cancelled = false;
     void loadPersistentDocuments(matters, clients)
       .then((loaded) => {
         if (cancelled) return;
-        setDocs(loaded);
+        setInternalDocs(loaded);
         setSyncError(null);
       })
       .catch((error: unknown) => {
@@ -94,7 +91,9 @@ export function DocumentsView({
   }, [clients, documents, matters]);
 
   const publishDocs = (nextDocs: LegalDocument[]) => {
-    setDocs(nextDocs);
+    if (documents === undefined) {
+      setInternalDocs(nextDocs);
+    }
     onDocumentsChange?.(nextDocs);
   };
 
