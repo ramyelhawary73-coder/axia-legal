@@ -213,10 +213,12 @@ function PleadingNotesEditor({
 
 export function HearingsView({
   isFocusMode = false,
-  onToggleFocusMode
+  onToggleFocusMode,
+  onHearingsChanged,
 }: {
   isFocusMode?: boolean;
   onToggleFocusMode?: () => void;
+  onHearingsChanged?: () => void | Promise<void>;
 } = {}) {
   // Master states for persisted business data
   const [hearings, setHearings] = useState<Hearing[]>([]);
@@ -452,6 +454,7 @@ export function HearingsView({
       setHearings((current) =>
         current.map((item) => (item.id === hearingId ? updated : item)),
       );
+      await onHearingsChanged?.();
       setSyncError(null);
       triggerToast(
         nextArchived
@@ -631,6 +634,7 @@ export function HearingsView({
       setHearings((current) =>
         current.map((hearing) => (hearing.id === id ? updated : hearing)),
       );
+      await onHearingsChanged?.();
       setDecisionNotes((current) => ({ ...current, [id]: "" }));
       setSyncError(null);
     } catch (error) {
@@ -669,6 +673,7 @@ export function HearingsView({
       );
 
       setHearings((current) => [hearing, ...current]);
+      await onHearingsChanged?.();
       setIsNewHearingOpen(false);
       setNewMatterId("");
       triggerToast("تم إدراج الجلسة وحفظها في قاعدة البيانات", newDate, "hearing");

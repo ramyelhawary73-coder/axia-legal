@@ -31,9 +31,14 @@ import { ClientDetailDashboard } from "@/components/client-detail-dashboard";
 interface ClientsViewProps {
   selectedClientId?: string | null;
   onCloseClientDashboard?: () => void;
+  onWorkspaceChanged?: () => void | Promise<void>;
 }
 
-export function ClientsView({ selectedClientId, onCloseClientDashboard }: ClientsViewProps = {}) {
+export function ClientsView({
+  selectedClientId,
+  onCloseClientDashboard,
+  onWorkspaceChanged,
+}: ClientsViewProps = {}) {
   const [clients, setClients] = useState<Client[]>([]);
   const [matters, setMatters] = useState<Matter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,6 +102,7 @@ export function ClientsView({ selectedClientId, onCloseClientDashboard }: Client
       });
 
       setClients((current) => [newClient, ...current]);
+      await onWorkspaceChanged?.();
       setIsNewClientOpen(false);
       setName("");
       setPhone("");
@@ -148,6 +154,7 @@ export function ClientsView({ selectedClientId, onCloseClientDashboard }: Client
             filingDate: newMatter.filingDate,
           });
           setMatters((current) => [persistedMatter, ...current]);
+          await onWorkspaceChanged?.();
           return persistedMatter;
         }}
       />
