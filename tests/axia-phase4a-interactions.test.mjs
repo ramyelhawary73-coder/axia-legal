@@ -22,6 +22,18 @@ const tasksView = fs.readFileSync(
   "src/components/views/tasks-view.tsx",
   "utf8",
 );
+const tasksClient = fs.readFileSync(
+  "src/lib/tasks-client.ts",
+  "utf8",
+);
+const tasksApi = fs.readFileSync(
+  "src/app/api/tasks/route.ts",
+  "utf8",
+);
+const appShell = fs.readFileSync(
+  "src/components/app-shell.tsx",
+  "utf8",
+);
 const clientsView = fs.readFileSync(
   "src/components/views/clients-view.tsx",
   "utf8",
@@ -68,7 +80,7 @@ test("Unified action menu supports desktop context click, long press and kebab t
   assert.match(actionMenu, /createPortal/);
 });
 
-test("Calendar drag only accepts AXIA hearing payloads", () => {
+test("Calendar drag accepts only AXIA hearing/task payloads and blocks matter dragging", () => {
   assert.match(
     hearingsView,
     /application\/x-axia-calendar-hearing/,
@@ -78,6 +90,9 @@ test("Calendar drag only accepts AXIA hearing payloads", () => {
     hearingsView,
     /getData\(AXIA_CALENDAR_DRAG_TYPE\)/,
   );
+  assert.match(hearingsView, /if \(item\.type === "matter"\)/);
+  assert.match(hearingsView, /type === "hearing"/);
+  assert.match(hearingsView, /type === "task"/);
   assert.doesNotMatch(
     hearingsView,
     /getData\("text\/plain"\)/,
@@ -91,6 +106,41 @@ test("Calendar exposes actions for hearing, task and matter items", () => {
   assert.match(hearingsView, /فتح ملف القضية/);
   assert.match(hearingsView, /إغلاق القضية/);
   assert.match(hearingsView, /getCalendarItemMenuLabel/);
+});
+
+test("Task deadline drag persists through PATCH, read-back and rollback", () => {
+  assert.match(tasksApi, /isIsoDate/);
+  assert.match(tasksApi, /updates\.deadline = deadline/);
+  assert.match(tasksClient, /updatePersistentTaskDeadline/);
+  assert.match(tasksClient, /body: JSON\.stringify\(\{ taskIds: \[taskId\], deadline \}\)/);
+  assert.match(hearingsView, /persistTaskReschedule/);
+  assert.match(hearingsView, /await updatePersistentTaskDeadline/);
+  assert.match(hearingsView, /await loadTaskWorkspace\(\)/);
+  assert.match(
+    hearingsView,
+    /getDateOnly\(confirmed\.deadline\) !== targetDateStr/,
+  );
+  assert.match(
+    hearingsView,
+    /فشل حفظ موعد المهمة وتمت إعادتها لتاريخها السابق/,
+  );
+});
+
+test("Matter context actions add or reschedule real linked hearings without matter drag", () => {
+  assert.match(hearingsView, /إضافة جلسة للقضية/);
+  assert.match(hearingsView, /إعادة جدولة الجلسة المرتبطة/);
+  assert.match(hearingsView, /hearing\.matterId === matter\.id/);
+  assert.match(mattersView, /onRequestAddHearing/);
+  assert.match(mattersView, /onRequestRescheduleHearing/);
+  assert.match(hearingsView, /if \(item\.type === "matter"\)/);
+});
+
+test("Core shell and matter contacts no longer fall back to fake business mutations", () => {
+  assert.doesNotMatch(appShell, /mockTasks/);
+  assert.match(appShell, /const activeTasks = tasks \?\? \[\]/);
+  assert.doesNotMatch(mattersView, /handleAddContact/);
+  assert.doesNotMatch(mattersView, /handleRemoveContact/);
+  assert.match(mattersView, /لا يتم[\s\S]{0,120}جهة اتصال محلية وهمية/);
 });
 
 test("Hearing reschedule is persisted, read back and rolled back on failure", () => {
