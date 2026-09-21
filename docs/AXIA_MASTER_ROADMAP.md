@@ -87,8 +87,9 @@ Statements under **Current State** should be treated as verified only when a liv
 
 - Repository: `ramyelhawary73-coder/axia-legal`
 - Default branch: `main`
-- Verified main SHA: `840b99d54ef037ffd6a7cde63dd5a90032eb0e60`
-- Latest merged feature chain through PR #21 is present in `main`.
+- Verified main SHA: `34e70a3a054760645f3c641f6ccb94ade707b7ab`
+- PR #22 (documentation-only Master Roadmap) is merged into `main`.
+- Latest merged functional feature chain through PR #21 is present in `main`.
 - Merge commits are the approved merge strategy for completed AXIA phases.
 - The CI workflow runs:
   - Typecheck
@@ -1334,6 +1335,236 @@ The following high-level requirements have already been accepted and mapped abov
 - subscriptions;
 - full professional product completion.
 
+### Owner-confirmed Requirements Batch 01 — Productization & Commercial Readiness
+
+**Status:** `CONFIRMED_FOR_ROADMAP`  
+**Captured:** 2026-09-21  
+**Owner intent:** turn AXIA from a working legal ERP into a distinctive commercial Egyptian legal product that can be installed, demonstrated, sold, subscribed to, and centrally operated.
+
+#### A. Premium branded login
+
+Required outcome:
+
+- AXIA-specific visual identity, not a generic template;
+- professional login composition comparable in polish to premium global SaaS products;
+- animated brand reveal such as particles/points/lines assembling into the AXIA symbol;
+- animation must remain fast, subtle, accessible, and non-blocking;
+- visible AXIA Legal name and legal product positioning;
+- responsive from mobile through large desktop;
+- no public self-registration unless separately approved.
+
+Acceptance criteria:
+
+- login remains usable before/while animation completes;
+- no layout shift that blocks credentials;
+- no hard-coded personal office identity;
+- passes keyboard and mobile interaction testing;
+- Preview approved visually by owner before merge.
+
+#### B. Brand asset system and install icon
+
+Required outcome:
+
+- one recognizable AXIA symbol that works at both hero size and tiny app-icon size;
+- wordmark and lockup variants;
+- dark/light/monochrome variants;
+- favicon;
+- PWA icons including maskable variants;
+- desktop shortcut/application icon;
+- reusable design tokens so brand identity stays consistent across the product.
+
+Acceptance criteria:
+
+- icon remains legible at small sizes;
+- no separate unrelated logos for login/PWA/desktop;
+- asset ownership/originality must be clear for commercial use.
+
+#### C. Installable application experience
+
+Required outcome:
+
+- AXIA can be installed from supported browsers on mobile, laptop, and desktop;
+- standalone launch experience with AXIA icon/name;
+- install prompt or guided install UX where browser rules permit;
+- safe update notification;
+- safe offline/error shell;
+- authoritative legal data remains server-controlled.
+
+Acceptance criteria:
+
+- manifest validates;
+- installability verified on at least one desktop Chromium environment and one Android/mobile environment;
+- installed app launches standalone;
+- app upgrade does not silently break existing sessions or cached shell.
+
+#### D. Full responsive system
+
+Required outcome:
+
+- product designed intentionally for mobile, tablet, laptop, desktop, and large desktop;
+- no page-by-page emergency CSS patches;
+- shared layout rules for AppShell, navigation, cards, forms, modals, calendars, tables, documents, search, RAJIH, and profile areas;
+- touch-safe targets and readable Arabic typography.
+
+Acceptance criteria:
+
+- no critical horizontal overflow on supported widths;
+- key workflows remain usable with touch;
+- tables degrade to scrollable/card-based layouts where appropriate;
+- modal and context-action behavior works on small screens.
+
+#### E. Sidebar / navigation redesign
+
+Required outcome:
+
+- larger, clearer Arabic labels;
+- stronger section grouping and visual hierarchy;
+- consistent iconography;
+- live counters instead of hard-coded badges;
+- good collapsed desktop mode;
+- proper mobile navigation;
+- naming aligned with Egyptian legal-office workflows.
+
+Initial grouping remains:
+
+- Legal Work;
+- Documents & Intelligence;
+- Management.
+
+Final Arabic section names are owner-approved before implementation lock.
+
+#### F. Office profile and owner/user profile
+
+Required outcome:
+
+Office profile:
+
+- office name;
+- logo;
+- contact information;
+- address;
+- document/invoice identity;
+- optional business/tax fields when needed;
+- branding/preferences.
+
+User profile:
+
+- name;
+- avatar;
+- role/title;
+- email;
+- phone;
+- notification preferences;
+- appearance/preferences;
+- security/session controls where supported.
+
+Acceptance criteria:
+
+- no reusable shell element depends on a hard-coded office/user identity;
+- editable fields are tenant/user scoped and audited where appropriate.
+
+#### G. Product module expansion
+
+Goal:
+
+AXIA should become a comprehensive legal-office operating system for Egypt.
+
+Accepted candidate module families:
+
+- CRM / prospects / consultations;
+- execution and bailiff workflows;
+- powers of attorney;
+- correspondence / notices;
+- finance / collections;
+- branches;
+- activity / audit center;
+- archive / trash;
+- legal templates / drafts;
+- real legal library;
+- reports / analytics;
+- future legal deadline automation.
+
+Rule:
+
+No module is implemented only because it appears in this list. Each module gets a separate domain/schema/security scope before implementation.
+
+#### H. Sales Demo
+
+Required outcome:
+
+- dedicated Demo tenant/environment;
+- realistic but fictitious Egyptian legal data;
+- clearly marked demo mode;
+- safe reset strategy;
+- representative end-to-end workflows;
+- no real customer records;
+- no uncontrolled external email/payment/destructive actions.
+
+Commercial objective:
+
+A prospective law office can experience AXIA safely before purchase.
+
+#### I. AXIA Developer / Owner Control Center
+
+Required outcome:
+
+A product-owner control plane separate from ordinary Office Administration.
+
+Required capabilities:
+
+- list/manage organizations;
+- activate/suspend tenant;
+- trial state and dates;
+- subscription plan;
+- seat limits;
+- storage limits;
+- enabled/disabled modules;
+- RAJIH entitlement;
+- feature flags;
+- system announcements;
+- usage visibility;
+- release/version visibility;
+- support/operational controls;
+- strong audit trail.
+
+Security rule:
+
+Control Center privileges must be enforced server-side and must never rely only on hidden UI.
+
+#### J. Subscription and entitlement architecture
+
+Required outcome:
+
+- support commercial tiers without hard-coding offices;
+- separate plan, subscription status, feature entitlements, usage limits, and payment integration;
+- module-level enable/disable;
+- future payment-provider flexibility.
+
+Possible conceptual tiers remain:
+
+- Starter;
+- Professional;
+- Enterprise.
+
+Pricing and final packaging remain owner business decisions.
+
+### Recommended productization sequence for Batch 01
+
+1. Data Integrity & Security Hardening.
+2. Brand Identity + Premium Login.
+3. PWA / Installability.
+4. Responsive System + AppShell/Sidebar redesign.
+5. Office/User Profiles.
+6. Core ERP CRUD completion + persistent legal drafts.
+7. Safe Delete/Trash.
+8. Real Legal Library + deeper RAJIH context.
+9. Demo Environment.
+10. Control Center + Subscription/Entitlements.
+11. Expanded modules in separately scoped sub-phases.
+12. Commercial Release Hardening.
+
+**Reason for this order:** do not build a polished commercial shell, demo, or subscription control plane on top of unresolved audit/data-integrity gaps.
+
 **Owner may continue adding requirements before the implementation roadmap is locked.**
 
 ---
@@ -1401,21 +1632,29 @@ Before marking a PR ready:
 
 **Current mode: Requirements Collection + Roadmap Locking**
 
-Do not begin a broad implementation phase yet.
+Requirements Batch 01 is confirmed and recorded. Do not begin broad implementation yet.
 
 Next owner action:
 
-1. Continue providing all desired AXIA product changes and features.
-2. Add them to **Requirements Inbox**.
-3. Map each request to the audit findings and target architecture.
-4. When the owner confirms the requirements list is complete enough, finalize the ordered implementation roadmap.
-5. Start only the first approved phase on a new branch from the then-current `main`.
+1. Continue sending all desired AXIA changes, even if they are not organized.
+2. Append each batch to this requirements-intake branch.
+3. Engineering maps each request to the audit findings, dependencies, security impact, and target phase.
+4. Do not open functional implementation branches while the owner is still actively defining the product unless a separate urgent fix is explicitly approved.
+5. When the owner says **"خلصت تعديلاتي"** (or explicitly asks to lock the requirements), perform a roadmap-lock review:
+   - remove duplicates;
+   - identify conflicts;
+   - finalize phase ordering;
+   - define acceptance criteria;
+   - define DB/Auth/Production-sensitive gates;
+   - identify what is required before first Demo;
+   - identify what is required before first paying client.
+6. After roadmap lock, start only the first approved implementation phase from the then-current `main`.
 
 ### Tentative first implementation phase after requirements lock
 
 `Phase 4B — Data Integrity & Security Hardening`
 
-This tentative ordering can change if a newly supplied owner requirement creates a safer dependency order.
+This remains tentative until all owner requirement batches are collected.
 
 ---
 
