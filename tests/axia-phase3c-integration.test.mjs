@@ -6,6 +6,10 @@ const migration = fs.readFileSync(
   "supabase/migrations/20260921025345_axia_phase3c_profiles_same_org_read.sql",
   "utf8",
 );
+const consolidationMigration = fs.readFileSync(
+  "supabase/migrations/20260921030155_axia_phase3c_profiles_select_consolidation.sql",
+  "utf8",
+);
 const teamApi = fs.readFileSync("src/app/api/team/route.ts", "utf8");
 const administrationApi = fs.readFileSync(
   "src/app/api/administration/route.ts",
@@ -116,4 +120,17 @@ test("Home passes real hearings and documents into Reports and uses read-only Ad
   assert.match(page, /hearings=\{hearings\}/);
   assert.match(page, /documents=\{documents\}/);
   assert.match(page, /<AdministrationView \/>/);
+});
+
+
+test("Phase 3C consolidates profile SELECT policies without expanding writes", () => {
+  assert.match(consolidationMigration, /profiles_select_self_or_same_org/);
+  assert.match(consolidationMigration, /drop policy if exists profiles_select_self/);
+  assert.match(consolidationMigration, /drop policy if exists profiles_select_same_org/);
+  assert.match(consolidationMigration, /for select/i);
+  assert.match(consolidationMigration, /\(select auth\.uid\(\)\) = id/);
+  assert.match(consolidationMigration, /private\.is_organization_member/);
+  assert.doesNotMatch(consolidationMigration, /for update/i);
+  assert.doesNotMatch(consolidationMigration, /for insert/i);
+  assert.doesNotMatch(consolidationMigration, /for delete/i);
 });
