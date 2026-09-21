@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { MoreVertical } from "lucide-react";
@@ -31,18 +31,18 @@ export function useActionContextMenu() {
   const longPressStart = useRef<{ x: number; y: number } | null>(null);
   const suppressNextClick = useRef(false);
 
-  const clearLongPress = () => {
+  const clearLongPress = useCallback(() => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
     longPressStart.current = null;
-  };
+  }, []);
 
-  const close = () => {
+  const close = useCallback(() => {
     clearLongPress();
     setMenu(null);
-  };
+  }, [clearLongPress]);
 
   const openAt = (
     x: number,
@@ -84,7 +84,7 @@ export function useActionContextMenu() {
       window.removeEventListener("resize", handleViewportChange);
       window.removeEventListener("scroll", handleViewportChange, true);
     };
-  }, [menu]);
+  }, [menu, close]);
 
   const bind = (items: ActionContextMenuItem[], label: string) => ({
     onContextMenu: (event: ReactMouseEvent<HTMLElement>) => {
