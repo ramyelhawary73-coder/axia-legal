@@ -812,7 +812,7 @@ The sequence below is now the canonical implementation order unless a fresh live
 
 ## Phase 4B — Data Integrity & Security Hardening
 
-**Status:** `READY_FOR_SCOPE`
+**Status:** `READY_FOR_MERGE — 4B-A VERIFIED / 4B-B DEVELOPMENT VERIFIED / PRE-MERGE PASS`
 
 Objective: establish a safe commercial data/security baseline before major product expansion.
 
@@ -827,6 +827,266 @@ Primary scope:
 - make CI dependency installation reproducible;
 - define document-upload orphan recovery;
 - verify security advisors after changes.
+
+### Phase 4B-A — Environment Isolation Verification
+
+**Verification date:** 2026-09-21  
+**Branch:** `feat/axia-phase4b-audit-foundation-v1`  
+**Mode:** Read-only
+
+Confirmed:
+
+- current `main`: `eee3ba657ad69e07faca27eeabbd9d60b12142cc`;
+- Vercel Production deployment for that SHA is `READY`;
+- connected Supabase organization: `ramyelhawary73-coder's Org`;
+- organization plan: `free`;
+- connected Supabase projects include:
+  - `AXIA Legal Development` — `qshgczulivsxztgrbqew` — `ACTIVE_HEALTHY`;
+  - unrelated/inactive `noormexa-platform-2026`;
+- no Supabase development branches currently exist for AXIA;
+- no separate `AXIA Legal Production` Supabase project is visible in the connected organization;
+- Vercel connector available to this workflow does not expose Environment Variable values, therefore the exact Production→Supabase binding cannot be proven from Vercel metadata alone;
+- public Production HTML/bundles checked did not expose the Development project ref, but absence from fetched client bundles is not proof of environment separation.
+
+**Environment conclusion:** Production/Development Supabase isolation remains **UNVERIFIED / P0**. Do not onboard real paying-customer data until a separate production boundary is explicitly established and verified.
+
+Recommended architecture:
+
+- keep `AXIA Legal Development` as Development;
+- create a separate `AXIA Legal Production` project when approved;
+- do not copy Development data into Production;
+- apply reviewed production-safe schema/migrations only;
+- explicitly exclude test/demo seed data from Production;
+- map Vercel `Production` variables to Production Supabase and `Preview/Development` to non-production resources;
+- verify migration/RLS parity before first real customer.
+
+**Cost / Production project decision:** DEFERRED BY OWNER. Do not query project cost, create a paid Supabase Production project, or introduce any new paid infrastructure at this stage. Continue only with no-additional-cost hardening on the existing Development environment. Revisit Production project creation only when the owner explicitly reopens the decision near Demo/commercial onboarding.
+
+### Phase 4B-B — Audit Trail Foundation Design
+
+**State:** APPLIED TO AXIA LEGAL DEVELOPMENT — VERIFIED — NOT MERGED
+
+Root causes confirmed:
+
+- `public.audit_logs` exists but currently contains `0` rows;
+- Core APIs for Clients, Matters, Hearings, Tasks, Finance, and Documents do not write audit events;
+- no Core audit triggers exist;
+- `authenticated` currently has direct `INSERT + SELECT` grants on `audit_logs`;
+- current insert policy allows a logged-in user to submit their own audit rows if organization membership checks pass;
+- current select policy allows any member of an organization to read organization audit rows;
+- this is insufficient for an authoritative commercial legal audit trail because Core audit events can be omitted by application code and direct user-generated audit rows are possible.
+
+#### Proposed authoritative Core audit architecture
+
+Use database-enforced auditing for existing Core mutations.
+
+Target tables in this foundation:
+
+- `clients`;
+- `matters`;
+- `hearings`;
+- `tasks`;
+- `financial_records`;
+- `documents`.
+
+Proposed database objects:
+
+1. `private.audit_core_row()` — trigger function.
+2. AFTER INSERT / AFTER UPDATE triggers on approved Core tables.
+3. Additional audit indexes for organization/time and resource history if query review confirms they are needed.
+4. Tightened `audit_logs` RLS so direct user insertion cannot impersonate Core system actions.
+
+Trigger behavior:
+
+- actor: `auth.uid()`;
+- organization: row `organization_id`;
+- resource id: row `id`;
+- resource type: stable singular domain label;
+- event names:
+  - `client.created`, `client.updated`;
+  - `matter.created`, `matter.updated`;
+  - `hearing.created`, `hearing.updated`;
+  - `task.created`, `task.updated`;
+  - `finance.created`, `finance.updated`;
+  - `document.created`.
+- UPDATE audit metadata stores **changed field names only**, not full before/after client/legal content;
+- auto-maintained fields such as `updated_at` are excluded from meaningful-change detection;
+- no-op updates should not generate a business audit event;
+- audit rows participate in the same DB transaction, so a rolled-back business mutation also rolls back its audit event;
+- no DELETE audit is added in this phase because generic Core DELETE remains intentionally unavailable. Delete/archive lifecycle auditing belongs to the Safe Delete/Trash phase.
+
+Privacy rule:
+
+Do not duplicate full National IDs, phone numbers, emails, legal notes, pleading notes, document paths/content hashes, or full financial notes into audit metadata unless a future explicitly approved compliance requirement needs them.
+
+#### RAJIH compatibility
+
+Current RAJIH API writes `rajih.agent.run` to `audit_logs`.
+
+To avoid breaking it while making Core audit authoritative:
+
+- keep direct authenticated INSERT only through a narrowly constrained RLS path for `action = 'rajih.agent.run'`;
+- validate `user_id = auth.uid()`;
+- validate organization membership;
+- if the event targets a matter, validate access to that matter;
+- Core event namespaces such as `client.*`, `matter.*`, `hearing.*`, `task.*`, `finance.*`, `document.*` must **not** be directly insertable by authenticated users;
+- deeper RAJIH event architecture can be revisited in Phase 16.
+
+#### Proposed audit read access
+
+Initial recommendation:
+
+- owner/admin: organization-wide audit visibility;
+- individual user: own audit rows;
+- other organization members: no organization-wide audit visibility by default.
+
+Final Audit Center UX remains a later product phase.
+
+#### Proposed verification matrix
+
+Before any migration can be considered complete:
+
+- same-tenant INSERT creates exactly one correct audit row;
+- same-tenant meaningful UPDATE creates one audit row;
+- no-op UPDATE does not create a false business event;
+- cross-tenant mutation remains blocked and creates no audit row;
+- rolled-back mutation leaves no audit row;
+- authenticated direct insert of a fake Core event is rejected;
+- constrained `rajih.agent.run` insert still works for authorized user/org context;
+- unauthorized RAJIH org/matter event is rejected;
+- owner/admin audit read works;
+- ordinary member cannot read another member's organization-wide audit;
+- document metadata INSERT generates `document.created` only after DB metadata succeeds;
+- no Service Role is introduced;
+- Supabase Security Advisor and relevant performance checks are rerun.
+
+#### Prepared implementation artifacts
+
+Prepared on branch `feat/axia-phase4b-audit-foundation-v1`:
+
+- `supabase/migrations/20260921105916_axia_phase4b_audit_trail_foundation.sql`
+- `tests/axia-phase4b-audit-foundation.test.mjs`
+
+The migration was applied **only** to `AXIA Legal Development` (`qshgczulivsxztgrbqew`) with Supabase migration version `20260921111252`. No Production environment was changed.
+
+Prepared migration behavior:
+
+- creates `private.audit_core_row()` as a `SECURITY DEFINER` trigger function with empty `search_path`;
+- revokes direct execution from `public`, `anon`, and `authenticated`;
+- adds AFTER INSERT/UPDATE triggers for Clients, Matters, Hearings, Tasks, and Finance;
+- adds AFTER INSERT trigger for Documents;
+- does not add DELETE triggers or Core DELETE grants;
+- changes `audit_logs` INSERT RLS from broad self-insert to constrained `rajih.agent.run` only;
+- narrows organization-wide audit SELECT to owner/admin while ordinary users can read their own rows subject to current organization membership;
+- stores only `source` and `changed_fields` metadata for Core trigger events;
+- introduces no Service Role and no environment-variable changes.
+
+#### Expected implementation impact if approved
+
+Database changes:
+
+- one new migration;
+- one private trigger function;
+- six Core table audit triggers;
+- revised `audit_logs` insert/select policies;
+- no business-table schema rewrite;
+- no new paid infrastructure.
+
+Application changes:
+
+- none currently required for the Core trigger path;
+- existing RAJIH route remains compatible with the constrained `rajih.agent.run` policy if its organization/matter context is authorized.
+
+No expected business-schema rewrite.
+
+#### Development application & verification result
+
+Migration applied successfully to:
+
+- project: `AXIA Legal Development`;
+- project ref: `qshgczulivsxztgrbqew`;
+- migration version: `20260921111252`;
+- migration name: `axia_phase4b_audit_trail_foundation`.
+
+Post-application verification confirmed:
+
+- `private.audit_core_row()` exists as `SECURITY DEFINER`;
+- empty function `search_path` is enforced;
+- direct EXECUTE is unavailable to `public`, `anon`, and `authenticated`;
+- Core audit triggers exist on Clients, Matters, Hearings, Tasks, Finance, and Documents;
+- authenticated direct fake Core audit insert is rejected by RLS;
+- authorized `rajih.agent.run` insert remains permitted;
+- unauthorized cross-organization RAJIH audit insert is rejected;
+- same-tenant Client create/update generates one expected event each;
+- no-op update that changes only `updated_at` does not generate a false business event;
+- runtime create/update events were successfully generated for Clients, Matters, Hearings, Tasks, and Finance;
+- `document.created` was generated on document metadata insert;
+- all tested Core trigger events recorded the expected actor and `database_trigger` source;
+- cross-tenant Client update was blocked and generated no audit event;
+- normal staff member can read own audit events but not another member's events;
+- owner can read another member's organization event;
+- all smoke fixtures and temporary memberships were rolled back;
+- final fixture count: `0`;
+- final `audit_logs` count after rollback tests: `0`.
+
+Post-DDL Supabase Security Advisor findings remain limited to the pre-existing warnings:
+
+- `vector` extension in `public`;
+- Leaked Password Protection disabled.
+
+No new Security Advisor finding was introduced by Phase 4B-B.
+
+GitHub CI verification:
+
+- run: `AXIA Legal CI #156`;
+- tested head: `b40347cb690df6742df2641be331c19424b160cc`;
+- Install dependencies: SUCCESS;
+- Typecheck: SUCCESS;
+- Lint: SUCCESS;
+- Safety tests: SUCCESS;
+- Production build: SUCCESS.
+
+Final pre-merge verification before roadmap status update:
+
+- PR: `#24`;
+- PR state: Open / Draft / Not Merged;
+- mergeable: `true`;
+- base main SHA: `eee3ba657ad69e07faca27eeabbd9d60b12142cc`;
+- verified branch head before this documentation-only status update: `df7d9b98e235a381d33636e9aae693605ea9ea05`;
+- branch: `ahead 11 / behind 0`;
+- changed files: exactly 3;
+- GitHub CI #157: SUCCESS;
+- Typecheck: SUCCESS;
+- Lint: SUCCESS;
+- Safety tests: SUCCESS;
+- Production build: SUCCESS;
+- Development migration `20260921111252 axia_phase4b_audit_trail_foundation`: present;
+- Core audit trigger count: `6`;
+- audit trigger function exists as non-executable by `public`, `anon`, and `authenticated`;
+- remaining smoke fixture count: `0`;
+- remaining test audit row count after rollback tests: `0`;
+- Vercel functional Preview for pre-documentation head `b40347c...`: READY;
+- final documentation-only head could not receive a new Vercel Preview because the account hit Vercel build-rate limit; this is an infrastructure quota condition, not a code/build failure.
+
+Performance Advisor findings remain the previously known Legal Knowledge/ingestion items:
+
+- 6 unindexed foreign-key notices;
+- 6 RLS init-plan warnings;
+- unused-index informational notices.
+
+These are not changed in 4B-B.
+
+#### Rollback strategy
+
+If rollback is required, use a follow-up migration that:
+
+- drops the six Core audit triggers;
+- drops `private.audit_core_row()` if no longer referenced;
+- restores the previous `audit_logs` INSERT/SELECT policies and grants if required;
+- leaves business rows untouched;
+- does not rewrite historical records.
+
+Do not edit or remove the already-applied migration from history.
 
 Exit criteria:
 
@@ -1607,6 +1867,11 @@ Required response: evidence-based codebase inventory and incremental deduplicati
 **Decision:** Demo Ready and First Paying Client Ready are separate milestones.  
 **Reason:** a safe sales Demo can showcase a focused set of workflows before every future module exists, while real customer data requires a higher security, persistence, recovery, and operational standard.
 
+## DR-013
+
+**Decision:** no new paid Supabase Production project or other paid infrastructure will be created or cost-queried at this stage.  
+**Reason:** owner has explicitly deferred new infrastructure cost. Phase 4B should continue with no-additional-cost hardening in Development, while Production/Development isolation remains a known P0 that must be resolved before real paying-customer data is onboarded.
+
 ---
 
 # 20. Requirements Inbox
@@ -2118,31 +2383,34 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: ROADMAP LOCKED v1 — Documentation Review Before Implementation**
+**Current mode: PHASE 4B-B — PRE-MERGE VERIFIED / OWNER MERGE DECISION**
 
-Requirements Batches 01–02 are closed into Roadmap Lock v1.
+Completed:
 
-Immediate next steps:
+- 4B-A environment verification;
+- 4B-B migration applied to `AXIA Legal Development` only;
+- runtime audit/RLS/rollback smoke tests passed;
+- post-DDL Supabase advisors rerun;
+- PR #24 diff verified at exactly 3 files;
+- branch verified ahead of `main` with no behind commits;
+- GitHub CI #157 passed Typecheck/Lint/Safety/Production build;
+- no paid resource created;
+- no Production environment changed.
 
-1. Review the locked roadmap on `docs/axia-requirements-intake-v1`.
-2. Merge this documentation-only roadmap update into `main` after explicit owner approval.
-3. After the roadmap is on `main`, begin **Phase 4B — Data Integrity & Security Hardening** with a fresh read-only verification only.
-4. Before any Phase 4B mutation, present:
-   - exact root causes/findings;
-   - files/tables/policies affected;
-   - migration/Auth/Production impact;
-   - rollback/verification plan.
-5. Wait for explicit approval before implementing Phase 4B changes.
+Next correct action:
 
-### First implementation target
+1. Verify CI on this final roadmap-only head.
+2. If CI remains green, request explicit owner approval to:
+   - mark PR #24 ready for review;
+   - merge PR #24 to `main` using **merge commit only**;
+   - verify `main`, GitHub CI, Vercel Production auto-deployment, and Development migration parity after merge.
+3. Do not begin Phase 4B.1 or any new Phase 4B sub-scope until PR #24 is merged and post-merge verified.
 
-`Phase 4B — Data Integrity & Security Hardening`
+### Current stop condition
 
-### Following target
+**WAITING FOR OWNER MERGE APPROVAL.**
 
-`Phase 4B.1 — Codebase Baseline, Deduplication & Architecture Cleanup`
-
-Do not begin Brand/Login/PWA work until the Phase 4B/4B.1 baseline is safe enough to support product expansion.
+No merge has been performed yet.
 
 ---
 
