@@ -1837,7 +1837,7 @@ Required response: evidence-based codebase inventory and incremental deduplicati
 ## KR-016 — Main/Production deployment drift due Vercel build-rate limit
 
 Priority: P1 release-process blocker  
-Status: Open — rechecked; Vercel build-rate-limit still active and no current-main Production deployment exists
+Status: Open — rechecked; Vercel still reports the previous build-rate-limit failure and no current-main Production deployment exists. The available connector does not expose live quota/reset telemetry, so quota renewal cannot be proven without a new deployment attempt.
 
 Current evidence:
 
@@ -2432,17 +2432,18 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PR #24 MERGED — VERCEL QUOTA RECHECKED / STILL BLOCKED**
+**Current mode: PR #24 MERGED — VERCEL QUOTA STATUS RECHECKED / PRODUCTION STILL BEHIND MAIN**
 
 Latest no-cost recheck result:
 
 - GitHub `main`: `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
 - PR #24: merged successfully;
 - Vercel combined status for current `main`: `failure`;
-- Vercel target still points to `build-rate-limit`;
+- Vercel target still points to the prior `build-rate-limit` failure;
 - no Production deployment exists yet for merge SHA `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
 - latest verified Production deployment remains `eee3ba657ad69e07faca27eeabbd9d60b12142cc`;
-- no redeploy was attempted because the quota condition is still active;
+- the available connector exposes no live quota/reset counter, so quota renewal cannot be proven without a new deployment attempt;
+- no redeploy was attempted in this check;
 - no code/configuration/environment variable was changed;
 - no paid upgrade or resource was used.
 
@@ -2461,7 +2462,7 @@ Latest no-cost recheck result:
 
 ### Current stop condition
 
-**WAIT FOR NO-COST VERCEL BUILD AVAILABILITY.**
+**WAIT FOR A SAFE NO-COST VERCEL REDEPLOY ATTEMPT / AVAILABILITY CONFIRMATION.**
 
 No next phase is authorized while Production remains behind `main`.
 
