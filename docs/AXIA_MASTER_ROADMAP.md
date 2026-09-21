@@ -87,8 +87,9 @@ Statements under **Current State** should be treated as verified only when a liv
 
 - Repository: `ramyelhawary73-coder/axia-legal`
 - Default branch: `main`
-- Verified main SHA: `840b99d54ef037ffd6a7cde63dd5a90032eb0e60`
-- Latest merged feature chain through PR #21 is present in `main`.
+- Verified main SHA: `34e70a3a054760645f3c641f6ccb94ade707b7ab`
+- PR #22 (documentation-only Master Roadmap) is merged into `main`.
+- Latest merged functional feature chain through PR #21 is present in `main`.
 - Merge commits are the approved merge strategy for completed AXIA phases.
 - The CI workflow runs:
   - Typecheck
@@ -801,240 +802,518 @@ Must have a stronger authorization boundary than ordinary tenant administration.
 
 ---
 
-# 11. Planned Product Roadmap
+# 11. Locked Product Roadmap v1
 
-The exact phase numbers may be refined after all remaining owner requirements are collected. Scope must remain small enough for safe review and rollback.
+**Roadmap lock date:** 2026-09-21  
+**Requirements included:** Owner-confirmed Batches 01–02  
+**Change-control rule:** new ideas after this lock are recorded as a new requirements batch and must not silently expand an in-progress phase.
+
+The sequence below is now the canonical implementation order unless a fresh live audit discovers a safety dependency that requires reordering.
 
 ## Phase 4B — Data Integrity & Security Hardening
 
 **Status:** `READY_FOR_SCOPE`
 
-Primary goals:
+Objective: establish a safe commercial data/security baseline before major product expansion.
 
-- formal Production/Development Supabase isolation verification;
-- core audit trail design + implementation;
-- dynamic sidebar counters;
-- legal knowledge least-privilege grants;
-- replace deprecated legal knowledge `auth.role()` policy patterns;
-- security-header/CORS review;
-- CI reproducibility improvement;
-- document orphan-recovery strategy;
-- update this roadmap with final architecture decisions.
+Primary scope:
 
-## Phase 4C — Safe Delete & Trash
+- formally verify Production vs Development Supabase isolation;
+- design and implement consistent audit logging for core mutations;
+- remove hard-coded business counters from commercial UI paths;
+- reduce Legal Knowledge grants to least privilege;
+- replace deprecated legal-knowledge `auth.role()` policy patterns safely;
+- review wildcard CORS and security headers;
+- make CI dependency installation reproducible;
+- define document-upload orphan recovery;
+- verify security advisors after changes.
+
+Exit criteria:
+
+- Production/Development data boundary is documented and verified;
+- core mutation audit design is working on approved resources;
+- no tenant-isolation regression;
+- Typecheck/Lint/Safety/Build pass;
+- Supabase/RLS smoke tests pass;
+- Preview/verification evidence recorded in this roadmap.
+
+## Phase 4B.1 — Codebase Baseline, Deduplication & Architecture Cleanup
 
 **Status:** `PLANNED`
 
-Primary goals:
+Objective: remove confirmed technical duplication and obsolete paths without rewriting stable functionality.
 
-- archive/trash lifecycle;
-- restore;
-- dependency preview;
-- owner/admin authorization;
-- guarded purge;
-- audit events;
-- no casual legal-record destruction.
+Primary scope:
+
+- repository dependency and duplication inventory;
+- dead-code candidate inventory;
+- stale mock/fake/local-only business path inventory;
+- canonical Client/Matter/Hearing/Task/API/client-helper mapping;
+- shared validation/type/helper consolidation where justified;
+- remove confirmed obsolete code only after callers migrate;
+- improve code-quality gates;
+- create/maintain a Technical Debt Register.
+
+Exit criteria:
+
+- no broad destructive cleanup based on guesswork;
+- every removed production path has evidence of replacement or non-use;
+- no regression in core workflows;
+- no tenant-isolation regression;
+- relevant characterization/regression tests pass;
+- build/bundle remains healthy.
 
 ## Phase 5 — AXIA Brand Identity & Premium Login
 
 **Status:** `PLANNED`
 
-Primary goals:
+Objective: establish the distinctive commercial identity of AXIA.
 
-- AXIA symbol/wordmark system;
-- premium login;
-- lightweight branded entry animation;
-- favicon and app icon foundation;
-- accessibility and performance.
+Primary scope:
 
-## Phase 6 — Installable PWA
+- AXIA symbol;
+- wordmark and lockup;
+- light/dark/monochrome variants;
+- favicon/app icon foundation;
+- premium full-screen login;
+- subtle AXIA-specific animated brand reveal;
+- accessibility, performance, responsive login behavior.
+
+Exit criteria:
+
+- original reusable AXIA identity approved by owner;
+- icon remains recognizable at small sizes;
+- login is usable without waiting for animation;
+- keyboard/mobile login works;
+- Preview visually approved before merge.
+
+## Phase 6 — Installable AXIA PWA
 
 **Status:** `PLANNED`
 
-Primary goals:
+Objective: make AXIA installable as a first-class app experience.
 
-- manifest;
-- icons;
-- standalone mode;
-- install UX;
+Primary scope:
+
+- Web App Manifest;
+- app/maskable icons;
+- standalone display;
+- mobile/desktop install UX;
 - update UX;
-- mobile/desktop installation verification;
-- safe offline/error shell.
+- theme/splash behavior;
+- safe offline/error shell;
+- preserve server-controlled legal data.
+
+Exit criteria:
+
+- manifest/installability validation passes;
+- installation verified on a desktop Chromium environment;
+- installation verified on Android/mobile;
+- installed app launches standalone;
+- update/session behavior verified.
 
 ## Phase 7 — Responsive Product System
 
 **Status:** `PLANNED`
 
-Primary goals:
+Objective: create one coherent responsive system rather than page-specific patches.
 
-- responsive tokens/layout rules;
-- mobile navigation;
-- desktop/laptop layouts;
-- table/card adaptation;
-- modal/calendar/search/RAJIH responsive QA.
+Primary scope:
 
-## Phase 8 — Sidebar & AppShell Product Redesign
+- layout/breakpoint rules;
+- mobile/tablet/laptop/desktop/large-desktop behavior;
+- tables/cards/forms/modals;
+- calendar;
+- search;
+- RAJIH;
+- documents;
+- touch-safe interactions;
+- Arabic typography readability.
+
+Exit criteria:
+
+- no critical horizontal overflow on supported widths;
+- core workflows remain usable by touch and keyboard;
+- high-density tables have deliberate small-screen behavior;
+- modal/context-menu flows work on mobile.
+
+## Phase 8 — AppShell, Sidebar & Navigation Redesign
 
 **Status:** `PLANNED`
 
-Primary goals:
+Objective: make navigation commercially polished, readable, and data-driven.
 
-- information architecture;
-- clearer section names;
-- typography and spacing;
-- live badges;
-- collapsed state;
-- mobile state;
-- remove hard-coded office chrome.
+Primary scope:
+
+- clearer Arabic labels;
+- information grouping;
+- larger readable typography;
+- consistent icons;
+- live counters;
+- collapsed desktop mode;
+- mobile navigation;
+- remove hard-coded office/user chrome;
+- consistent top-bar/search/profile affordances.
+
+Exit criteria:
+
+- no hard-coded business badges remain in production navigation;
+- mobile and desktop navigation are both fully usable;
+- final Arabic section names approved by owner.
 
 ## Phase 9 — Office & User Profiles
 
 **Status:** `PLANNED`
 
-Primary goals:
+Objective: make AXIA genuinely configurable per office and user.
 
-- office profile;
-- user profile;
-- avatar/logo;
-- contact/settings;
-- notification preferences;
-- secure editable fields;
-- remove static office identity from reusable UI.
+Primary scope:
+
+- office name/logo/contact/address;
+- office document/invoice identity;
+- appropriate business/tax fields;
+- branding/preferences;
+- user avatar/name/title/contact details;
+- notification/display preferences;
+- supported security/session controls.
+
+Exit criteria:
+
+- reusable product shell contains no hard-coded office identity;
+- edits persist server-side;
+- tenant/user scope is enforced;
+- sensitive profile changes are audited where appropriate.
 
 ## Phase 10 — Core Legal ERP Completion
 
 **Status:** `PLANNED`
 
-Primary goals:
+Objective: complete the main daily legal-office workflows.
 
-- full client edit;
-- matter parties CRUD;
+Primary scope:
+
+- full persistent Client edit;
+- Matter Parties CRUD;
 - POA management;
-- matter members;
-- finance edit/reversal workflows;
+- Matter Members/assignments;
+- Finance edit/correction/reversal workflows;
 - document metadata;
-- archive/restore;
-- audit history;
-- matter timeline.
+- matter timeline;
+- remaining safe context actions;
+- Team/Administration capabilities needed for office operation.
 
-## Phase 11 — Legal Document Workspace
+Exit criteria:
+
+- no UI-only business mutation in core modules;
+- create/edit/refresh persistence verified;
+- tenant isolation verified for every new mutable resource;
+- critical core workflows covered by regression/E2E tests.
+
+## Phase 11 — Persistent Legal Document Workspace
 
 **Status:** `PLANNED`
 
-Primary goals:
+Objective: remove authoritative legal drafting from browser-local storage.
 
-- remove legal-business draft dependence on browser localStorage;
-- persisted drafts;
+Primary scope:
+
+- server-persisted drafts;
 - versions;
 - authorship;
 - audit;
-- document archive integration;
+- matter/client linking;
+- final document/archive integration;
 - replacement/version lifecycle;
-- remove unsupported “officially approved” product claims unless backed by verified review data.
+- remove unsupported “officially approved” claims unless supported by verified review metadata.
 
-## Phase 12 — Module Expansion
+Exit criteria:
 
-**Status:** `PLANNED`
+- legal draft survives browser/device changes;
+- version history is durable;
+- no authoritative legal draft depends on localStorage;
+- document security and tenant scope verified.
 
-Candidate sub-phases:
-
-- CRM & consultations;
-- execution/bailiff workflow;
-- correspondence/notices;
-- powers of attorney;
-- office branches;
-- archive/activity center;
-- advanced finance.
-
-Each module requires separate schema/security/product scoping.
-
-## Phase 13 — Real Legal Library
+## Phase 12 — Safe Delete, Trash & Record Lifecycle
 
 **Status:** `PLANNED`
 
-Primary goals:
+Objective: give users practical record control without unsafe hard deletion.
 
-- remove visible mock precedent data;
+Primary scope:
+
+- Archive;
+- Trash;
+- Restore;
+- dependency preview;
+- owner/admin authorization;
+- guarded purge only where legally/product-wise appropriate;
+- audit all lifecycle actions.
+
+Exit criteria:
+
+- matter deletion cannot silently cascade critical legal data;
+- blocking dependencies are shown;
+- restore path works;
+- purge is separately authorized and audited.
+
+## Phase 13 — AXIA Demo Environment v1
+
+**Status:** `PLANNED`
+
+Objective: provide a safe, premium sales experience before full commercial launch.
+
+Primary scope:
+
+- isolated Demo tenant/environment;
+- realistic fictitious Egyptian legal data;
+- visible Demo identity;
+- reset strategy;
+- representative Client/Matter/Hearing/Task/Documents/Finance flows;
+- optional RAJIH showcase only where data/source quality is suitable;
+- block uncontrolled external/destructive actions.
+
+Exit criteria:
+
+- Demo contains no real client data;
+- Demo cannot mutate paying-customer/control-plane state;
+- reset works;
+- sales walkthrough is repeatable;
+- product is visually coherent on desktop and mobile.
+
+## Phase 14 — AXIA Control Center Foundation & Subscription Entitlements
+
+**Status:** `PLANNED`
+
+Objective: give the AXIA product owner safe commercial control over tenants and plans.
+
+Primary scope:
+
+- tenant registry;
+- activate/suspend;
+- trial state/dates;
+- plan assignment;
+- seat/storage limits;
+- module entitlements;
+- RAJIH entitlement;
+- feature flags;
+- usage visibility;
+- system announcements;
+- release/version visibility;
+- support operations;
+- strong control-plane audit.
+
+Exit criteria:
+
+- authorization is server-side;
+- normal office admins cannot gain product-owner privileges;
+- entitlements are enforced server-side;
+- tenant suspension/reactivation is tested;
+- control actions are audited.
+
+## Phase 15 — Real Legal Library
+
+**Status:** `PLANNED`
+
+Objective: replace visible mock legal knowledge with real source-backed legal content.
+
+Primary scope:
+
 - real source browsing;
-- document/source/version metadata;
-- review status;
+- legal document/source/version metadata;
+- review/approval state;
 - effective dates;
+- source links/references;
 - legal search UX;
-- shared knowledge basis with RAJIH.
+- remove `mockPrecedents` from commercial paths;
+- align knowledge basis with RAJIH.
 
-## Phase 14 — RAJIH Deep Integration
+Exit criteria:
+
+- no visible commercial Legal Library relies on mock precedent data;
+- every displayed legal source has traceable metadata;
+- access/performance policies verified.
+
+## Phase 16 — RAJIH Deep Context Integration
 
 **Status:** `PLANNED`
 
-Primary goals:
+Objective: turn RAJIH into a contextual legal copilot inside AXIA.
 
-- active matter/client/document context;
-- richer matter timeline;
+Primary scope:
+
+- active Matter/Client/Document context;
+- richer timeline including hearings/tasks/documents/parties;
 - citation/source UX;
-- audit every meaningful run;
+- audit meaningful runs;
 - proposal-based write actions;
 - human confirmation before mutation.
 
-## Phase 15 — Demo Environment
+Exit criteria:
+
+- RAJIH can identify the active matter context reliably;
+- citations/sources are visible when applicable;
+- no autonomous destructive mutation;
+- tenant isolation and tool authorization verified.
+
+## Phase 17 — Expanded Legal Operations Modules
 
 **Status:** `PLANNED`
 
-Primary goals:
+Objective: expand AXIA into a broader Egyptian law-office operating system.
 
-- separate demo tenant/environment;
-- seeded realistic data;
-- reset strategy;
-- restricted external/destructive actions;
-- sales-ready walkthrough.
+Candidate sub-phases:
 
-## Phase 16 — AXIA Control Center & Subscription Entitlements
+- CRM / prospects / consultations;
+- execution and bailiff workflows;
+- powers of attorney;
+- correspondence / notices;
+- branches;
+- advanced finance / collections;
+- activity/audit center;
+- advanced reporting/analytics.
 
-**Status:** `PLANNED`
+Rule:
 
-Primary goals:
+Each module receives a separate domain/schema/security scope and may be split into multiple PRs/phases.
 
-- tenant registry;
-- plans;
-- subscription state;
-- trials;
-- seat/storage limits;
-- module entitlements;
-- feature flags;
-- tenant suspension/reactivation;
-- usage/operations;
-- secure owner-only control plane.
-
-## Phase 17 — Notifications & Deadline Engine
+## Phase 18 — Notifications & Legal Deadline Engine
 
 **Status:** `PLANNED`
 
-Primary goals:
+Objective: make critical reminders reliable beyond an open browser tab.
+
+Primary scope:
 
 - server-side scheduled reminders;
 - in-app notifications;
-- browser/email channel policy;
-- critical deadline reliability;
-- user/office notification preferences.
+- browser/email delivery policy;
+- critical legal deadlines;
+- office/user notification preferences;
+- failure/retry visibility.
 
-## Phase 18 — Commercial Release Hardening
+Exit criteria:
+
+- critical reminders do not depend solely on client polling;
+- tenant/user targeting verified;
+- delivery failures are observable;
+- no sensitive data leaks through notification channels.
+
+## Phase 19 — Commercial Release Hardening
 
 **Status:** `PLANNED`
 
-Primary goals:
+Objective: qualify AXIA for the first paying customer and repeatable commercial operation.
 
-- E2E workflows;
-- tenant isolation tests;
-- migration drift check;
+Primary scope:
+
+- full browser E2E suite for critical flows;
+- tenant-isolation regression suite;
+- migration drift checks;
 - backups;
 - recovery drill;
-- production/dev isolation;
-- security advisor remediation;
-- performance indexes;
-- PWA QA;
-- mobile/desktop QA;
-- demo QA;
-- subscription enforcement QA;
+- production/development isolation confirmation;
+- security-advisor remediation;
+- performance/index review based on evidence;
+- PWA/mobile/desktop QA;
+- Demo QA;
+- subscription/entitlement QA;
+- observability/error-boundary checks;
 - zero mock business data in commercial paths.
+
+Exit criteria:
+
+- First Paying Client Gate below is fully satisfied;
+- release candidate is owner-approved;
+- production deployment and rollback procedure are documented.
+
+---
+
+# 11A. Commercial Milestone Gates
+
+## Gate A — Engineering Baseline Stable
+
+Target after Phases 4B + 4B.1.
+
+Required:
+
+- Production/Development environment boundary understood;
+- tenant isolation remains verified;
+- core audit strategy established;
+- major duplicate/dead-path inventory completed;
+- CI baseline reproducible;
+- no known P0 code/data-integrity issue ignored.
+
+## Gate B — Demo Ready
+
+Minimum target after Phases 5–13.
+
+Required:
+
+- premium AXIA identity/login;
+- installable PWA experience;
+- responsive AppShell/navigation;
+- office/user identity no longer hard-coded;
+- core Client/Matter/Hearing/Task/Document/Finance flows are real and persistent;
+- legal drafts used in the Demo are durable, not browser-only;
+- safe record lifecycle available or destructive Demo actions restricted;
+- isolated fictitious Demo data;
+- repeatable Demo reset;
+- no real customer data;
+- no critical mock business data presented as real.
+
+**A Demo may launch before every future module exists.** It should demonstrate a smaller set of workflows extremely well rather than expose unfinished modules.
+
+## Gate C — First Paying Client Ready
+
+Required before onboarding real paying-customer data:
+
+- Gate A complete;
+- Production Supabase/environment isolation formally verified;
+- core mutation audit trail operational;
+- durable legal document drafts/versions;
+- core CRUD complete for the workflows sold in the initial plan;
+- Safe Delete/Trash lifecycle or an explicitly safe restricted alternative;
+- office/user/team access model sufficient for real office operation;
+- backup and recovery procedure verified;
+- critical E2E and tenant-isolation tests passing;
+- security issues classified with no unresolved P0;
+- support/error visibility available;
+- commercial tenant activation/entitlement mechanism available;
+- no fake/mock business data in sold production paths.
+
+## Gate D — Scalable Commercial Product
+
+Target after Phases 14–19 plus selected Phase 17 modules.
+
+Required:
+
+- Control Center;
+- subscription/entitlement enforcement;
+- repeatable tenant onboarding;
+- Demo-to-paid operational process;
+- controlled releases;
+- support tooling;
+- observability;
+- advanced legal knowledge/RAJIH where sold;
+- notification/deadline reliability where sold;
+- documented upgrade/backward-compatibility process.
+
+---
+
+# 11B. Roadmap Lock Change Control
+
+After Roadmap Lock v1:
+
+1. Do not silently add scope to an in-progress phase.
+2. New owner requests are recorded as Batch 03+.
+3. A new request is classified as:
+   - current-phase blocker;
+   - next-phase requirement;
+   - later roadmap item;
+   - commercial/business decision.
+4. DB/Auth/RLS/Production changes always require explicit implementation approval.
+5. Urgent defects may be handled separately on a focused branch without unlocking the whole roadmap.
+6. Every merged phase updates Current State, Completed History, risks, and NEXT ACTION.
 
 ---
 
@@ -1257,6 +1536,13 @@ Status: Open
 Priority: P2  
 Status: Open
 
+## KR-015 — Accumulated duplicate/dead/overlapping code can increase release risk
+
+Priority: P1 before broad product expansion  
+Status: Open
+
+Required response: evidence-based codebase inventory and incremental deduplication; no blind mass cleanup.
+
 ---
 
 # 19. Decisions Register
@@ -1301,6 +1587,26 @@ Status: Open
 **Decision:** PWA installation is a product requirement, but authoritative legal data remains server-controlled.  
 **Reason:** installability does not imply unsafe offline data ownership.
 
+## DR-009
+
+**Decision:** codebase cleanliness and maintainability are commercial product requirements, not optional technical polish.  
+**Reason:** AXIA is intended for recurring commercial operation; duplicate/dead/patch-on-patch code increases support cost, regression risk, and slows safe product evolution.
+
+## DR-010
+
+**Decision:** cleanup must be incremental and test-backed rather than a repository-wide rewrite.  
+**Reason:** preserve stable functionality while converging on canonical implementations.
+
+## DR-011
+
+**Decision:** Requirements Batches 01–02 are locked into Roadmap v1 as of 2026-09-21.  
+**Reason:** implementation should now proceed in controlled phases; future ideas use change control rather than silently expanding active scope.
+
+## DR-012
+
+**Decision:** Demo Ready and First Paying Client Ready are separate milestones.  
+**Reason:** a safe sales Demo can showcase a focused set of workflows before every future module exists, while real customer data requires a higher security, persistence, recovery, and operational standard.
+
 ---
 
 # 20. Requirements Inbox
@@ -1333,6 +1639,419 @@ The following high-level requirements have already been accepted and mapped abov
 - developer/owner Control Center;
 - subscriptions;
 - full professional product completion.
+
+### Owner-confirmed Requirements Batch 01 — Productization & Commercial Readiness
+
+**Status:** `LOCKED_IN_ROADMAP_V1`  
+**Captured:** 2026-09-21  
+**Owner intent:** turn AXIA from a working legal ERP into a distinctive commercial Egyptian legal product that can be installed, demonstrated, sold, subscribed to, and centrally operated.
+
+#### A. Premium branded login
+
+Required outcome:
+
+- AXIA-specific visual identity, not a generic template;
+- professional login composition comparable in polish to premium global SaaS products;
+- animated brand reveal such as particles/points/lines assembling into the AXIA symbol;
+- animation must remain fast, subtle, accessible, and non-blocking;
+- visible AXIA Legal name and legal product positioning;
+- responsive from mobile through large desktop;
+- no public self-registration unless separately approved.
+
+Acceptance criteria:
+
+- login remains usable before/while animation completes;
+- no layout shift that blocks credentials;
+- no hard-coded personal office identity;
+- passes keyboard and mobile interaction testing;
+- Preview approved visually by owner before merge.
+
+#### B. Brand asset system and install icon
+
+Required outcome:
+
+- one recognizable AXIA symbol that works at both hero size and tiny app-icon size;
+- wordmark and lockup variants;
+- dark/light/monochrome variants;
+- favicon;
+- PWA icons including maskable variants;
+- desktop shortcut/application icon;
+- reusable design tokens so brand identity stays consistent across the product.
+
+Acceptance criteria:
+
+- icon remains legible at small sizes;
+- no separate unrelated logos for login/PWA/desktop;
+- asset ownership/originality must be clear for commercial use.
+
+#### C. Installable application experience
+
+Required outcome:
+
+- AXIA can be installed from supported browsers on mobile, laptop, and desktop;
+- standalone launch experience with AXIA icon/name;
+- install prompt or guided install UX where browser rules permit;
+- safe update notification;
+- safe offline/error shell;
+- authoritative legal data remains server-controlled.
+
+Acceptance criteria:
+
+- manifest validates;
+- installability verified on at least one desktop Chromium environment and one Android/mobile environment;
+- installed app launches standalone;
+- app upgrade does not silently break existing sessions or cached shell.
+
+#### D. Full responsive system
+
+Required outcome:
+
+- product designed intentionally for mobile, tablet, laptop, desktop, and large desktop;
+- no page-by-page emergency CSS patches;
+- shared layout rules for AppShell, navigation, cards, forms, modals, calendars, tables, documents, search, RAJIH, and profile areas;
+- touch-safe targets and readable Arabic typography.
+
+Acceptance criteria:
+
+- no critical horizontal overflow on supported widths;
+- key workflows remain usable with touch;
+- tables degrade to scrollable/card-based layouts where appropriate;
+- modal and context-action behavior works on small screens.
+
+#### E. Sidebar / navigation redesign
+
+Required outcome:
+
+- larger, clearer Arabic labels;
+- stronger section grouping and visual hierarchy;
+- consistent iconography;
+- live counters instead of hard-coded badges;
+- good collapsed desktop mode;
+- proper mobile navigation;
+- naming aligned with Egyptian legal-office workflows.
+
+Initial grouping remains:
+
+- Legal Work;
+- Documents & Intelligence;
+- Management.
+
+Final Arabic section names are owner-approved before implementation lock.
+
+#### F. Office profile and owner/user profile
+
+Required outcome:
+
+Office profile:
+
+- office name;
+- logo;
+- contact information;
+- address;
+- document/invoice identity;
+- optional business/tax fields when needed;
+- branding/preferences.
+
+User profile:
+
+- name;
+- avatar;
+- role/title;
+- email;
+- phone;
+- notification preferences;
+- appearance/preferences;
+- security/session controls where supported.
+
+Acceptance criteria:
+
+- no reusable shell element depends on a hard-coded office/user identity;
+- editable fields are tenant/user scoped and audited where appropriate.
+
+#### G. Product module expansion
+
+Goal:
+
+AXIA should become a comprehensive legal-office operating system for Egypt.
+
+Accepted candidate module families:
+
+- CRM / prospects / consultations;
+- execution and bailiff workflows;
+- powers of attorney;
+- correspondence / notices;
+- finance / collections;
+- branches;
+- activity / audit center;
+- archive / trash;
+- legal templates / drafts;
+- real legal library;
+- reports / analytics;
+- future legal deadline automation.
+
+Rule:
+
+No module is implemented only because it appears in this list. Each module gets a separate domain/schema/security scope before implementation.
+
+#### H. Sales Demo
+
+Required outcome:
+
+- dedicated Demo tenant/environment;
+- realistic but fictitious Egyptian legal data;
+- clearly marked demo mode;
+- safe reset strategy;
+- representative end-to-end workflows;
+- no real customer records;
+- no uncontrolled external email/payment/destructive actions.
+
+Commercial objective:
+
+A prospective law office can experience AXIA safely before purchase.
+
+#### I. AXIA Developer / Owner Control Center
+
+Required outcome:
+
+A product-owner control plane separate from ordinary Office Administration.
+
+Required capabilities:
+
+- list/manage organizations;
+- activate/suspend tenant;
+- trial state and dates;
+- subscription plan;
+- seat limits;
+- storage limits;
+- enabled/disabled modules;
+- RAJIH entitlement;
+- feature flags;
+- system announcements;
+- usage visibility;
+- release/version visibility;
+- support/operational controls;
+- strong audit trail.
+
+Security rule:
+
+Control Center privileges must be enforced server-side and must never rely only on hidden UI.
+
+#### J. Subscription and entitlement architecture
+
+Required outcome:
+
+- support commercial tiers without hard-coding offices;
+- separate plan, subscription status, feature entitlements, usage limits, and payment integration;
+- module-level enable/disable;
+- future payment-provider flexibility.
+
+Possible conceptual tiers remain:
+
+- Starter;
+- Professional;
+- Enterprise.
+
+Pricing and final packaging remain owner business decisions.
+
+### Recommended productization sequence for Batch 01
+
+1. Data Integrity & Security Hardening.
+2. Brand Identity + Premium Login.
+3. PWA / Installability.
+4. Responsive System + AppShell/Sidebar redesign.
+5. Office/User Profiles.
+6. Core ERP CRUD completion + persistent legal drafts.
+7. Safe Delete/Trash.
+8. Real Legal Library + deeper RAJIH context.
+9. Demo Environment.
+10. Control Center + Subscription/Entitlements.
+11. Expanded modules in separately scoped sub-phases.
+12. Commercial Release Hardening.
+
+**Reason for this order:** do not build a polished commercial shell, demo, or subscription control plane on top of unresolved audit/data-integrity gaps.
+
+### Owner-confirmed Requirements Batch 02 — Codebase Excellence, Maintainability & Premium Commercial Quality
+
+**Status:** `LOCKED_IN_ROADMAP_V1`  
+**Captured:** 2026-09-21  
+**Owner intent:** AXIA must become a premium commercial product that can be maintained and expanded for years as a recurring-income software business. The internal codebase must be as disciplined as the external product experience.
+
+#### A. No patch-on-patch engineering
+
+Required rule:
+
+- do not solve new problems by stacking duplicate handlers/components/helpers over old ones;
+- identify Root Cause first;
+- prefer one canonical implementation per business capability;
+- replace obsolete paths rather than leaving old and new versions active together;
+- temporary compatibility code must be explicitly marked and scheduled for removal.
+
+#### B. Whole-system codebase cleanup
+
+Before commercial release, perform a structured repository audit covering:
+
+- dead code;
+- unused exports/imports;
+- duplicate components;
+- duplicate API/client helpers;
+- duplicate validation/business rules;
+- stale feature branches reflected in code;
+- old mock/fake business data;
+- local-only business state;
+- hard-coded business values;
+- abandoned UI states/modals;
+- unused assets;
+- obsolete styles;
+- duplicated icons/branding assets;
+- deprecated APIs;
+- stale comments/TODOs;
+- unnecessary dependencies;
+- oversized components that contain unrelated responsibilities.
+
+Cleanup must be evidence-based. Do not mass-delete code, indexes, packages, tables, migrations, or assets merely because they appear unused in a quick scan.
+
+#### C. Single-source-of-truth architecture
+
+Required direction:
+
+- one domain model per business entity;
+- one validation contract per operation;
+- shared types where appropriate;
+- shared permission/tenant rules;
+- shared status/date mapping;
+- shared UI primitives for repeated patterns;
+- no competing implementations for the same Client/Matter/Hearing/Task behavior;
+- authoritative business data must come from the server/database, not browser state.
+
+#### D. Safe refactoring strategy
+
+Refactoring sequence:
+
+1. inventory and dependency map;
+2. characterize current behavior with tests;
+3. identify duplicate/dead paths;
+4. choose canonical path;
+5. migrate callers;
+6. remove obsolete path;
+7. run Typecheck/Lint/Safety/Build/E2E as applicable;
+8. verify Preview;
+9. only then merge.
+
+Large “rewrite everything” refactors are prohibited unless separately justified and approved.
+
+#### E. Code quality gates
+
+Commercial AXIA should progressively enforce:
+
+- reproducible dependency install;
+- strict TypeScript;
+- lint without ignored new warnings;
+- safety/security contract tests;
+- browser E2E for critical flows;
+- tenant-isolation regression tests;
+- API validation tests;
+- no new mock business data in production paths;
+- no new authoritative legal data in localStorage;
+- dependency vulnerability review;
+- bundle/performance review for major UI phases;
+- accessible keyboard/touch behavior;
+- roadmap update on every material PR.
+
+#### F. Performance and maintainability
+
+Required direction:
+
+- remove unnecessary rerenders only where measured/relevant;
+- avoid giant components becoming permanent architecture;
+- split by domain responsibility, not arbitrary file size;
+- lazy-load heavy optional surfaces where appropriate;
+- avoid duplicate data fetching;
+- keep API contracts explicit;
+- prevent N+1-style database patterns where relevant;
+- index only based on query/RLS needs and evidence;
+- monitor bundle growth and slow workflows.
+
+#### G. Production observability and supportability
+
+A commercial recurring-income product needs operational visibility.
+
+Planned capabilities:
+
+- structured server error logging;
+- correlation/request identifiers where useful;
+- safe application error boundaries;
+- user-friendly failure states;
+- operational audit trail;
+- release/version identification;
+- health visibility for owner/control center;
+- no leakage of secrets or sensitive client data in logs.
+
+#### H. Premium product quality definition
+
+“Premium” for AXIA means all of the following together:
+
+- distinctive visual identity;
+- fast and responsive interaction;
+- reliable persistence;
+- clear Arabic UX;
+- no fake or placeholder business data;
+- secure tenant separation;
+- auditable legal operations;
+- installable app experience;
+- stable upgrades;
+- clean maintainable code;
+- sales-ready Demo;
+- subscription/entitlement control;
+- supportable production operations.
+
+Premium does **not** mean visual effects at the expense of stability, security, performance, or legal-data integrity.
+
+#### I. Recurring-income product objective
+
+AXIA is intended to become a sustainable commercial software product, not a one-off internal system.
+
+Engineering therefore must support:
+
+- repeatable onboarding of new offices;
+- tenant isolation;
+- configurable plans;
+- feature entitlements;
+- controlled upgrades;
+- data migration discipline;
+- support tooling;
+- Demo-to-paid conversion workflow;
+- measurable usage where privacy permits;
+- low-risk maintenance and releases;
+- long-term backward compatibility strategy.
+
+### Proposed dedicated engineering phase
+
+Add a dedicated implementation phase after initial security/data-integrity hardening and before broad visual/product expansion:
+
+`Phase 4B.1 — Codebase Baseline, Deduplication & Architecture Cleanup`
+
+Scope should include:
+
+- repository dependency/duplication inventory;
+- stale mock/local-only path inventory;
+- dead-code candidates;
+- canonical domain/client/API mapping;
+- safe deduplication in small batches;
+- removal of confirmed obsolete code;
+- CI quality-gate improvements;
+- technical-debt register;
+- no business-feature scope expansion unless needed to safely consolidate duplicate logic.
+
+### Acceptance criteria for Phase 4B.1
+
+- no functional regression in existing core workflows;
+- no tenant-isolation regression;
+- no broad destructive cleanup based on guesswork;
+- all removed code has evidence of replacement/non-use;
+- no duplicate production path remains for any refactored capability;
+- CI and relevant E2E tests pass;
+- bundle/build remains healthy;
+- roadmap records removed technical debt and remaining debt.
 
 **Owner may continue adding requirements before the implementation roadmap is locked.**
 
@@ -1399,23 +2118,31 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: Requirements Collection + Roadmap Locking**
+**Current mode: ROADMAP LOCKED v1 — Documentation Review Before Implementation**
 
-Do not begin a broad implementation phase yet.
+Requirements Batches 01–02 are closed into Roadmap Lock v1.
 
-Next owner action:
+Immediate next steps:
 
-1. Continue providing all desired AXIA product changes and features.
-2. Add them to **Requirements Inbox**.
-3. Map each request to the audit findings and target architecture.
-4. When the owner confirms the requirements list is complete enough, finalize the ordered implementation roadmap.
-5. Start only the first approved phase on a new branch from the then-current `main`.
+1. Review the locked roadmap on `docs/axia-requirements-intake-v1`.
+2. Merge this documentation-only roadmap update into `main` after explicit owner approval.
+3. After the roadmap is on `main`, begin **Phase 4B — Data Integrity & Security Hardening** with a fresh read-only verification only.
+4. Before any Phase 4B mutation, present:
+   - exact root causes/findings;
+   - files/tables/policies affected;
+   - migration/Auth/Production impact;
+   - rollback/verification plan.
+5. Wait for explicit approval before implementing Phase 4B changes.
 
-### Tentative first implementation phase after requirements lock
+### First implementation target
 
 `Phase 4B — Data Integrity & Security Hardening`
 
-This tentative ordering can change if a newly supplied owner requirement creates a safer dependency order.
+### Following target
+
+`Phase 4B.1 — Codebase Baseline, Deduplication & Architecture Cleanup`
+
+Do not begin Brand/Login/PWA work until the Phase 4B/4B.1 baseline is safe enough to support product expansion.
 
 ---
 
@@ -1431,12 +2158,13 @@ If the roadmap is newer on an unmerged documentation branch, explicitly identify
 
 # 25. Documentation Branch Scope
 
-For `docs/axia-master-roadmap-v1`:
+For `docs/axia-requirements-intake-v1`:
 
 Allowed:
 
-- create this Master Roadmap;
-- update README to point to it.
+- capture owner requirements;
+- perform Roadmap Lock review;
+- update phase ordering, milestone gates, risks, decisions, and NEXT ACTION.
 
 Not allowed:
 
@@ -1448,4 +2176,4 @@ Not allowed:
 - Auth changes;
 - feature implementation.
 
-The branch must be reviewed by the owner before merge.
+This branch is documentation-only and must be reviewed by the owner before merge.
