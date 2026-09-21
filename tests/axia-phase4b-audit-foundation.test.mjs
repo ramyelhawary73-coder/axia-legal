@@ -49,17 +49,19 @@ test("Phase 4B-B audits only approved Core INSERT and UPDATE operations", () => 
 });
 
 test("Phase 4B-B records stable Core action namespaces", () => {
-  for (const action of [
-    "client",
-    "matter",
-    "hearing",
-    "task",
-    "finance",
-    "document",
-  ]) {
+  const mappings = [
+    ["clients", "client"],
+    ["matters", "matter"],
+    ["hearings", "hearing"],
+    ["tasks", "task"],
+    ["financial_records", "finance"],
+    ["documents", "document"],
+  ];
+
+  for (const [table, action] of mappings) {
     assert.match(
       migration,
-      new RegExp("when '[^']+' then '" + action + "'|action_prefix :=", "i"),
+      new RegExp("when '" + table + "' then '" + action + "'", "i"),
     );
   }
 
@@ -81,8 +83,10 @@ test("Phase 4B-B stores changed field names instead of full before-after busines
     "content_hash",
     "storage_path",
   ]) {
-    const pattern = "'" + sensitiveField + "'\\s*,\\s*(old_row|new_row)";
-    assert.doesNotMatch(migration, new RegExp(pattern, "i"));
+    assert.doesNotMatch(
+      migration,
+      new RegExp("'" + sensitiveField + "'", "i"),
+    );
   }
 });
 
