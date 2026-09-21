@@ -864,7 +864,7 @@ Recommended architecture:
 
 ### Phase 4B-B — Audit Trail Foundation Design
 
-**State:** DESIGN COMPLETE — NO MIGRATION APPLIED
+**State:** PREPARED ON BRANCH — MIGRATION NOT APPLIED
 
 Root causes confirmed:
 
@@ -960,20 +960,42 @@ Before any migration can be considered complete:
 - no Service Role is introduced;
 - Supabase Security Advisor and relevant performance checks are rerun.
 
+#### Prepared implementation artifacts
+
+Prepared on branch `feat/axia-phase4b-audit-foundation-v1`:
+
+- `supabase/migrations/20260921105916_axia_phase4b_audit_trail_foundation.sql`
+- `tests/axia-phase4b-audit-foundation.test.mjs`
+
+The migration has **not** been applied to Supabase.
+
+Prepared migration behavior:
+
+- creates `private.audit_core_row()` as a `SECURITY DEFINER` trigger function with empty `search_path`;
+- revokes direct execution from `public`, `anon`, and `authenticated`;
+- adds AFTER INSERT/UPDATE triggers for Clients, Matters, Hearings, Tasks, and Finance;
+- adds AFTER INSERT trigger for Documents;
+- does not add DELETE triggers or Core DELETE grants;
+- changes `audit_logs` INSERT RLS from broad self-insert to constrained `rajih.agent.run` only;
+- narrows organization-wide audit SELECT to owner/admin while ordinary users can read their own rows subject to current organization membership;
+- stores only `source` and `changed_fields` metadata for Core trigger events;
+- introduces no Service Role and no environment-variable changes.
+
 #### Expected implementation impact if approved
 
-Likely database changes:
+Database changes:
 
 - one new migration;
-- trigger function in `private`;
-- Core table audit triggers;
+- one private trigger function;
+- six Core table audit triggers;
 - revised `audit_logs` insert/select policies;
-- possible non-destructive audit indexes.
+- no business-table schema rewrite;
+- no new paid infrastructure.
 
-Likely application changes:
+Application changes:
 
-- `src/app/api/rajih/route.ts` only if the final RLS contract requires request-shape adjustment;
-- Core API routes should **not** require duplicated audit calls if DB triggers are adopted.
+- none currently required for the Core trigger path;
+- existing RAJIH route remains compatible with the constrained `rajih.agent.run` policy if its organization/matter context is authorized.
 
 No expected business-schema rewrite.
 
@@ -2284,38 +2306,32 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PHASE 4B — NO-COST HARDENING / OWNER REVIEW GATE BEFORE MUTATION**
+**Current mode: PHASE 4B-B — PREPARED / OWNER SQL-DIFF REVIEW / NOT APPLIED**
 
-Owner decision: no new paid infrastructure at this stage. Do not query Supabase project cost and do not create `AXIA Legal Production` yet.
+Prepared artifacts on `feat/axia-phase4b-audit-foundation-v1`:
 
-Current state:
+- `supabase/migrations/20260921105916_axia_phase4b_audit_trail_foundation.sql`
+- `tests/axia-phase4b-audit-foundation.test.mjs`
 
-- Phase 4B-A environment isolation verification is complete.
-- Production/Development Supabase isolation remains `UNVERIFIED / P0`.
-- Phase 4B-B Audit Trail Foundation design is complete.
-- No migration has been created or applied.
-- No Vercel Environment Variable has been changed.
-- No paid resource has been created.
+No migration has been applied to Supabase. No Vercel Environment Variable has been changed. No paid resource has been created.
 
-Recommended next step:
+Required next steps:
 
-1. Continue Phase 4B-B using the existing Development project only.
-2. If owner explicitly approves Audit Trail implementation:
-   - create the migration file on this branch;
-   - show the exact SQL/diff before application;
-   - request a separate explicit approval to apply it to Development;
-   - run tenant/audit smoke tests;
+1. Present the complete migration SQL and branch diff to the owner.
+2. Review any requested changes.
+3. Do **not** apply the migration until the owner explicitly approves Development application.
+4. After approval to apply:
+   - apply only to `AXIA Legal Development`;
+   - run the documented audit/tenant smoke matrix;
+   - rerun Supabase advisors;
    - run Typecheck/Lint/Safety/Build;
-   - deploy Preview only;
-   - update this roadmap.
-3. Defer Production Supabase creation, cost lookup, and Vercel Production environment remapping until the owner explicitly reopens that decision.
-4. Do not onboard real paying-customer data while Production/Development isolation is unresolved.
+   - publish Preview only;
+   - update this roadmap before any merge request.
+5. Production Supabase creation/cost lookup remains deferred.
 
 ### Current stop condition
 
 **STOP BEFORE DATABASE MUTATION.**
-
-No migration application, no paid project creation, no environment-variable change, and no Production configuration change is authorized yet.
 
 ---
 
