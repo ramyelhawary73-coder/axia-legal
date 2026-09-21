@@ -68,6 +68,31 @@ test("Unified action menu supports desktop context click, long press and kebab t
   assert.match(actionMenu, /createPortal/);
 });
 
+test("Calendar drag only accepts AXIA hearing payloads", () => {
+  assert.match(
+    hearingsView,
+    /application\/x-axia-calendar-hearing/,
+  );
+  assert.match(hearingsView, /hasAxiaCalendarDrag/);
+  assert.match(
+    hearingsView,
+    /getData\(AXIA_CALENDAR_DRAG_TYPE\)/,
+  );
+  assert.doesNotMatch(
+    hearingsView,
+    /getData\("text\/plain"\)/,
+  );
+});
+
+test("Calendar exposes actions for hearing, task and matter items", () => {
+  assert.match(hearingsView, /getCalendarItemActions/);
+  assert.match(hearingsView, /فتح قسم المهام/);
+  assert.match(hearingsView, /تحديد المهمة كمكتملة/);
+  assert.match(hearingsView, /فتح ملف القضية/);
+  assert.match(hearingsView, /إغلاق القضية/);
+  assert.match(hearingsView, /getCalendarItemMenuLabel/);
+});
+
 test("Hearing reschedule is persisted, read back and rolled back on failure", () => {
   assert.match(hearingsView, /persistHearingReschedule/);
   assert.match(hearingsView, /await updatePersistentHearing/);
