@@ -812,7 +812,7 @@ The sequence below is now the canonical implementation order unless a fresh live
 
 ## Phase 4B — Data Integrity & Security Hardening
 
-**Status:** `IN_PROGRESS — 4B-A VERIFIED / 4B-B DEVELOPMENT VERIFIED / CI PASS / NOT MERGED`
+**Status:** `READY_FOR_MERGE — 4B-A VERIFIED / 4B-B DEVELOPMENT VERIFIED / PRE-MERGE PASS`
 
 Objective: establish a safe commercial data/security baseline before major product expansion.
 
@@ -1039,12 +1039,34 @@ No new Security Advisor finding was introduced by Phase 4B-B.
 GitHub CI verification:
 
 - run: `AXIA Legal CI #156`;
-- exact tested head before this documentation-only status update: `b40347cb690df6742df2641be331c19424b160cc`;
+- tested head: `b40347cb690df6742df2641be331c19424b160cc`;
 - Install dependencies: SUCCESS;
 - Typecheck: SUCCESS;
 - Lint: SUCCESS;
 - Safety tests: SUCCESS;
 - Production build: SUCCESS.
+
+Final pre-merge verification before roadmap status update:
+
+- PR: `#24`;
+- PR state: Open / Draft / Not Merged;
+- mergeable: `true`;
+- base main SHA: `eee3ba657ad69e07faca27eeabbd9d60b12142cc`;
+- verified branch head before this documentation-only status update: `df7d9b98e235a381d33636e9aae693605ea9ea05`;
+- branch: `ahead 11 / behind 0`;
+- changed files: exactly 3;
+- GitHub CI #157: SUCCESS;
+- Typecheck: SUCCESS;
+- Lint: SUCCESS;
+- Safety tests: SUCCESS;
+- Production build: SUCCESS;
+- Development migration `20260921111252 axia_phase4b_audit_trail_foundation`: present;
+- Core audit trigger count: `6`;
+- audit trigger function exists as non-executable by `public`, `anon`, and `authenticated`;
+- remaining smoke fixture count: `0`;
+- remaining test audit row count after rollback tests: `0`;
+- Vercel functional Preview for pre-documentation head `b40347c...`: READY;
+- final documentation-only head could not receive a new Vercel Preview because the account hit Vercel build-rate limit; this is an infrastructure quota condition, not a code/build failure.
 
 Performance Advisor findings remain the previously known Legal Knowledge/ingestion items:
 
@@ -2361,30 +2383,34 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PHASE 4B-B — DEVELOPMENT VERIFIED / CI PASS / OWNER REVIEW / NOT MERGED**
+**Current mode: PHASE 4B-B — PRE-MERGE VERIFIED / OWNER MERGE DECISION**
 
 Completed:
 
 - 4B-A environment verification;
 - 4B-B migration applied to `AXIA Legal Development` only;
 - runtime audit/RLS/rollback smoke tests passed;
-- post-DDL Supabase Security/Performance Advisors rerun;
-- GitHub CI #156 passed Typecheck/Lint/Safety/Production build;
+- post-DDL Supabase advisors rerun;
+- PR #24 diff verified at exactly 3 files;
+- branch verified ahead of `main` with no behind commits;
+- GitHub CI #157 passed Typecheck/Lint/Safety/Production build;
 - no paid resource created;
-- no Production environment changed;
-- no Merge performed.
+- no Production environment changed.
 
-Current required action:
+Next correct action:
 
-1. Verify CI on the final documentation-updated branch head.
-2. Review exact branch diff and PR #24.
-3. Stop after reporting. Do not merge without explicit owner approval.
-4. Do not continue to the next Phase 4B sub-scope until owner approves it.
-5. Production Supabase/cost lookup remains deferred.
+1. Verify CI on this final roadmap-only head.
+2. If CI remains green, request explicit owner approval to:
+   - mark PR #24 ready for review;
+   - merge PR #24 to `main` using **merge commit only**;
+   - verify `main`, GitHub CI, Vercel Production auto-deployment, and Development migration parity after merge.
+3. Do not begin Phase 4B.1 or any new Phase 4B sub-scope until PR #24 is merged and post-merge verified.
 
 ### Current stop condition
 
-**NO MERGE / NO PRODUCTION / NO PAID INFRASTRUCTURE.**
+**WAITING FOR OWNER MERGE APPROVAL.**
+
+No merge has been performed yet.
 
 ---
 
