@@ -17,7 +17,7 @@ security definer
 set search_path = ''
 as $function$
 declare
-  actor_id uuid := (select auth.uid());
+  actor_id uuid := auth.uid();
   organization_id_value uuid;
   resource_id_value uuid;
   resource_type_value text;
