@@ -136,7 +136,7 @@ export function LegalPdfReportModal({
   };
 
   const handleShare = async () => {
-    const text = `📄 تقرير رسمي صادر من مكتب أكسيا للمحاماة\nالموضوع: ${reportTitle}\nالرقم المرجعي: ${reportRef}\nتاريخ الإصدار: ${reportDate}`;
+    const text = `📄 تقرير صادر من AXIA Legal ERP\nالموضوع: ${reportTitle}\nالرقم المرجعي: ${reportRef}\nتاريخ الإنشاء: ${reportDate}`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -173,14 +173,14 @@ export function LegalPdfReportModal({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="font-bold text-sm sm:text-base text-[var(--text)]">
-                  تصدير تقرير رسمي معتمد (PDF)
+                  تصدير تقرير PDF من بيانات AXIA
                 </h2>
                 <span className="rounded bg-[var(--axia-gold-dim)] border border-[var(--axia-gold)]/40 px-2 py-0.5 text-[10px] font-bold text-[var(--axia-gold)]">
                   نسخة جاهزة للطباعة والمشاركة
                 </span>
               </div>
               <p className="text-[11px] text-[var(--text-muted)]">
-                المرجع: {reportRef} — تنسيق مطابق للترويسة الرسمية المعتمدة لمحاكم النقض والاستئناف
+                المرجع: {reportRef} — التقرير يعكس البيانات المتاحة في مساحة العمل الحالية
               </p>
             </div>
           </div>
@@ -366,7 +366,7 @@ export function LegalPdfReportModal({
                   onChange={(e) => setIncludeSignature(e.target.checked)}
                   className="rounded border-[var(--border)] text-[var(--axia-gold)]"
                 />
-                <span>الختم والتوقيع</span>
+                <span>تذييل النظام</span>
               </label>
             </div>
           </div>
@@ -396,34 +396,32 @@ export function LegalPdfReportModal({
             className="mx-auto max-w-[840px] bg-white text-slate-900 shadow-2xl p-8 sm:p-10 rounded-sm border border-slate-200 print:shadow-none print:border-none print:p-0"
             style={{ direction: "rtl", fontFamily: "inherit" }}
           >
-            {/* Top Official Letterhead */}
+            {/* AXIA system report header */}
             <div className="border-b-2 border-amber-600/40 pb-5 mb-6">
               <div className="flex items-start justify-between gap-4">
-                {/* Right Side: Law Firm Title */}
                 <div className="text-right">
                   <span className="text-[11px] font-bold text-slate-500 block">
-                    جمهورية مصر العربية — نقابة المحامين
+                    AXIA Legal ERP
                   </span>
                   <h1 className="text-xl font-black text-slate-900 tracking-tight mt-0.5">
-                    مكتب أكسيا للمحاماة والاستشارات القانونية والتحكيم
+                    تقرير من بيانات مساحة العمل
                   </h1>
                   <span className="text-[11px] font-semibold text-amber-700 tracking-wider block">
-                    AXIA LAW FIRM & INTERNATIONAL ARBITRATION
+                    DATA-DRIVEN LEGAL WORKSPACE REPORT
                   </span>
                   <p className="text-[11px] text-slate-600 mt-1">
-                    إشراف: <strong className="text-slate-900">د. رامي الهواري</strong> — محام مقيد بالنقض والدستورية العليا والإدارية العليا
+                    لا يتضمن هذا القالب بيانات قيد مهني أو توقيعًا أو ختمًا غير مخزن في النظام.
                   </p>
                 </div>
 
-                {/* Center / Left Emblem & Metadata */}
                 <div className="text-left flex flex-col items-end">
                   <div className="grid size-12 place-items-center rounded-full bg-amber-50 border border-amber-300 text-amber-700 mb-2">
                     <Scale className="size-6 text-amber-700" />
                   </div>
                   <div className="text-[10px] text-slate-500 font-mono space-y-0.5 text-left">
-                    <div>مرجع الوثيقة: <strong className="text-slate-800">{reportRef}</strong></div>
-                    <div>تاريخ الإصدار: <span className="text-slate-700">{reportDate}</span></div>
-                    <div>الحالة: <span className="text-emerald-700 font-bold">معتمد إلكترونياً ✓</span></div>
+                    <div>مرجع التقرير: <strong className="text-slate-800">{reportRef}</strong></div>
+                    <div>تاريخ الإنشاء: <span className="text-slate-700">{reportDate}</span></div>
+                    <div>المصدر: <span className="text-slate-700 font-bold">AXIA workspace data</span></div>
                   </div>
                 </div>
               </div>
@@ -437,7 +435,7 @@ export function LegalPdfReportModal({
                     {reportTitle}
                   </h2>
                   <p className="text-[11px] text-slate-600 mt-0.5">
-                    مستخرج رسمي من المنظومة القضائية لمكتب أكسيا — يتضمن كافة بيانات الدعاوى والإجراءات الواجبة
+                    تقرير نظامي يعرض السجلات المتاحة للمستخدم الحالي دون إضافة بيانات غير مسجلة
                   </p>
                 </div>
                 <span className="rounded bg-amber-100 border border-amber-300 px-2 py-1 text-[10px] font-bold text-amber-900">
@@ -551,7 +549,7 @@ export function LegalPdfReportModal({
 
                 {includeNotes && selectedMatter.notes && (
                   <div className="rounded border border-amber-200 bg-amber-50/60 p-4 text-xs">
-                    <span className="font-bold text-amber-900 block mb-1">ملاحظات ودفوع الدفاع المعتمدة:</span>
+                    <span className="font-bold text-amber-900 block mb-1">ملاحظات القضية المسجلة:</span>
                     <p className="text-slate-800 leading-relaxed">{selectedMatter.notes}</p>
                   </div>
                 )}
@@ -711,36 +709,23 @@ export function LegalPdfReportModal({
               </div>
             )}
 
-            {/* Official Signature & Stamp Footer */}
+            {/* AXIA system footer */}
             {includeSignature && (
               <div className="mt-8 pt-6 border-t-2 border-slate-200 page-break-avoid">
-                <div className="flex items-end justify-between">
-                  {/* Law firm legal disclaimer */}
-                  <div className="max-w-[420px] text-[9px] text-slate-500 leading-relaxed">
+                <div className="flex items-start justify-between gap-6">
+                  <div className="max-w-[560px] text-[9px] text-slate-500 leading-relaxed">
                     <div className="flex items-center gap-1 text-slate-700 font-bold mb-1">
                       <ShieldCheck className="size-3 text-amber-700" />
-                      <span>إفادة رسمية معتمدة من إدارة القضايا</span>
+                      <span>تنبيه استخدام التقرير</span>
                     </div>
-                    تم استخراج هذا التقرير آلياً وفقاً لبيانات الجداول القضائية المحدثة بمكتب أكسيا للمحاماة، وتعتبر المواعيد المدونة حجة إجرائية في مواجهة فريق العمل لمراعاة مواعيد الطعن والسقوط القانونية المقررة بقانون المرافعات المصري.
+                    تم إنشاء هذا التقرير آلياً من البيانات المسجلة والمتاحة للمستخدم الحالي في AXIA.
+                    يجب مراجعة المواعيد والبيانات القانونية قبل الاعتماد عليها في إجراء قضائي أو تقديم رسمي.
                   </div>
 
-                  {/* Stamp & Signature Box */}
-                  <div className="flex items-center gap-6 text-center">
-                    {/* Circle Official Stamp */}
-                    <div className="relative size-24 rounded-full border-2 border-dashed border-amber-700 flex flex-col items-center justify-center p-1 bg-amber-50/40 text-amber-900 rotate-[-4deg]">
-                      <Scale className="size-4 text-amber-800 mb-0.5" />
-                      <span className="text-[8px] font-black tracking-tighter">أكسيا للمحاماة</span>
-                      <span className="text-[6px] font-bold text-amber-700">معتمد - قيد النقض</span>
-                      <span className="text-[7px] text-amber-900 font-mono">القاهرة - مصر</span>
-                      <div className="absolute inset-0 rounded-full border border-amber-600/30 m-1 pointer-events-none" />
-                    </div>
-
-                    {/* Signature */}
-                    <div className="text-right">
-                      <span className="text-[10px] text-slate-500 block">الشريك المسؤول بالنقض:</span>
-                      <span className="font-bold text-sm text-slate-900 block mt-0.5">د. رامي الهواري</span>
-                      <div className="font-serif italic text-amber-800 text-xs mt-1">R. El-Hawary</div>
-                    </div>
+                  <div className="rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 text-center">
+                    <Scale className="mx-auto mb-1 size-4 text-amber-800" />
+                    <span className="block text-[8px] font-black text-slate-800">AXIA LEGAL ERP</span>
+                    <span className="block text-[7px] text-slate-500">SYSTEM GENERATED REPORT</span>
                   </div>
                 </div>
               </div>
@@ -748,7 +733,7 @@ export function LegalPdfReportModal({
 
             {/* Footer Metadata */}
             <div className="mt-6 pt-3 border-t border-slate-200 text-center text-[9px] text-slate-400 flex justify-between">
-              <span>أكسيا للمحاماة والاستشارات القانونية — برج النيل الإداري، القاهرة، ج.م.ع</span>
+              <span>AXIA Legal ERP — تقرير مولد من مساحة العمل الحالية</span>
               <span>صفحة 1 من 1 — رقم المرجع: {reportRef}</span>
             </div>
 
@@ -759,7 +744,7 @@ export function LegalPdfReportModal({
         <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--bg)] px-5 py-2.5 text-xs text-[var(--text-muted)] shrink-0">
           <div className="flex items-center gap-2">
             <span className="inline-block size-2 rounded-full bg-emerald-500" />
-            <span>جاهز للتصدير: يتم حفظ التقرير بصيغة PDF عالية الدقة بدعم كامل للغة العربية والترويسة القضائية.</span>
+            <span>جاهز للتصدير: يتم حفظ التقرير بصيغة PDF من البيانات المعروضة في مساحة العمل الحالية.</span>
           </div>
           <button
             type="button"

@@ -362,8 +362,15 @@ export default function HomePage() {
         {activeTab === "library" && <LibraryView />}
         {activeTab === "rajih" && <RajihAiView />}
         {activeTab === "team" && <TeamView />}
-        {activeTab === "reports" && <ReportsView matters={matters} tasks={tasks} />}
-        {activeTab === "administration" && <AdministrationView matters={matters} tasks={tasks} />}
+        {activeTab === "reports" && (
+          <ReportsView
+            matters={matters}
+            tasks={tasks}
+            hearings={hearings}
+            documents={documents}
+          />
+        )}
+        {activeTab === "administration" && <AdministrationView />}
       </AppShell>
 
       {/* Floating Notification for Daily Snapshot Auto-Export */}
