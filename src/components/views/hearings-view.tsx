@@ -390,40 +390,49 @@ export function HearingsView({
   useEffect(() => {
     if (!actionRequest || isDataLoading) return;
 
-    const matter = matters.find((item) => item.id === actionRequest.matterId);
-    if (!matter) {
-      setSyncError("القضية المطلوبة غير متاحة في مساحة العمل الحالية.");
+    let cancelled = false;
+    void Promise.resolve().then(() => {
+      if (cancelled) return;
+
+      const matter = matters.find((item) => item.id === actionRequest.matterId);
+      if (!matter) {
+        setSyncError("القضية المطلوبة غير متاحة في مساحة العمل الحالية.");
+        onActionRequestHandled?.();
+        return;
+      }
+
+      if (actionRequest.action === "add") {
+        setNewMatterId(matter.id);
+        setNewCourt(matter.court !== "غير مسجل" ? matter.court : "");
+        setNewCircuit(matter.circuit !== "غير مسجل" ? matter.circuit : "");
+        setNewDate(formatDateStr(new Date()));
+        setIsNewHearingOpen(true);
+        onActionRequestHandled?.();
+        return;
+      }
+
+      const linkedHearings = hearings
+        .filter((hearing) => hearing.matterId === matter.id && !hearing.isArchived)
+        .sort((a, b) => a.hearingDate.localeCompare(b.hearingDate));
+      const today = formatDateStr(new Date());
+      const linkedHearing =
+        linkedHearings.find((hearing) => hearing.hearingDate >= today) ??
+        linkedHearings.at(-1);
+
+      if (!linkedHearing) {
+        setSyncError("لا توجد جلسة مرتبطة بالقضية لإعادة جدولتها.");
+        onActionRequestHandled?.();
+        return;
+      }
+
+      setRescheduleModalHearingId(linkedHearing.id);
+      setRescheduleDate(linkedHearing.hearingDate);
       onActionRequestHandled?.();
-      return;
-    }
+    });
 
-    if (actionRequest.action === "add") {
-      setNewMatterId(matter.id);
-      setNewCourt(matter.court !== "غير مسجل" ? matter.court : "");
-      setNewCircuit(matter.circuit !== "غير مسجل" ? matter.circuit : "");
-      setNewDate(formatDateStr(new Date()));
-      setIsNewHearingOpen(true);
-      onActionRequestHandled?.();
-      return;
-    }
-
-    const linkedHearings = hearings
-      .filter((hearing) => hearing.matterId === matter.id && !hearing.isArchived)
-      .sort((a, b) => a.hearingDate.localeCompare(b.hearingDate));
-    const today = formatDateStr(new Date());
-    const linkedHearing =
-      linkedHearings.find((hearing) => hearing.hearingDate >= today) ??
-      linkedHearings.at(-1);
-
-    if (!linkedHearing) {
-      setSyncError("لا توجد جلسة مرتبطة بالقضية لإعادة جدولتها.");
-      onActionRequestHandled?.();
-      return;
-    }
-
-    setRescheduleModalHearingId(linkedHearing.id);
-    setRescheduleDate(linkedHearing.hearingDate);
-    onActionRequestHandled?.();
+    return () => {
+      cancelled = true;
+    };
   }, [
     actionRequest,
     hearings,
