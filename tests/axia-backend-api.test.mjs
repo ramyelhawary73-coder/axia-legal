@@ -61,13 +61,15 @@ test("Matters API fixes the created_by RLS contract and supports safe updates", 
   assert.match(routes.matters, /databaseErrorCode/);
 });
 
-test("Documents API remains read-only and does not expose storage internals", () => {
+test("Documents API allows RLS-backed upload without update or delete surface", () => {
   assert.match(routes.documents, /export async function GET/);
-  assert.doesNotMatch(routes.documents, /export async function POST/);
+  assert.match(routes.documents, /export async function POST/);
   assert.doesNotMatch(routes.documents, /export async function PATCH/);
-  assert.doesNotMatch(routes.documents, /storage_path/);
-  assert.doesNotMatch(routes.documents, /content_hash/);
-  assert.match(routes.documents, /upload: false/);
+  assert.doesNotMatch(routes.documents, /export async function DELETE/);
+  assert.match(routes.documents, /storage_path: objectName/);
+  assert.match(routes.documents, /content_hash: hash/);
+  assert.doesNotMatch(routes.documents, /storagePath:/);
+  assert.match(routes.documents, /upload: true/);
   assert.match(routes.documents, /delete: false/);
 });
 
