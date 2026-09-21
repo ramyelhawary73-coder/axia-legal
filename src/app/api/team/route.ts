@@ -63,43 +63,48 @@ export async function GET(request: Request) {
   const members = (membersData ?? []) as MemberRow[];
   const userIds = members.map((member) => member.user_id);
 
-  const [profilesResult, matterMembersResult, mattersResult, tasksResult] =
-    await Promise.all([
-      userIds.length
-        ? workspace.supabase
-            .from("profiles")
-            .select("id,full_name")
-            .in("id", userIds)
-        : Promise.resolve({ data: [], error: null }),
-      workspace.supabase
-        .from("matter_members")
-        .select("matter_id,user_id,access_level"),
-      workspace.supabase
-        .from("matters")
-        .select("id,case_number,title,court")
-        .eq("organization_id", workspace.organizationId),
-      workspace.supabase
-        .from("tasks")
-        .select(
-          "id,title,assigned_to,matter_id,deadline,priority,status,court_or_office",
-        )
-        .eq("organization_id", workspace.organizationId)
-        .order("deadline", { ascending: true }),
-    ]);
+  const [profilesResult, mattersResult, tasksResult] = await Promise.all([
+    userIds.length
+      ? workspace.supabase
+          .from("profiles")
+          .select("id,full_name")
+          .in("id", userIds)
+      : Promise.resolve({ data: [], error: null }),
+    workspace.supabase
+      .from("matters")
+      .select("id,case_number,title,court")
+      .eq("organization_id", workspace.organizationId),
+    workspace.supabase
+      .from("tasks")
+      .select(
+        "id,title,assigned_to,matter_id,deadline,priority,status,court_or_office",
+      )
+      .eq("organization_id", workspace.organizationId)
+      .order("deadline", { ascending: true }),
+  ]);
 
-  if (
-    profilesResult.error ||
-    matterMembersResult.error ||
-    mattersResult.error ||
-    tasksResult.error
-  ) {
+  if (profilesResult.error || mattersResult.error || tasksResult.error) {
     return apiError("QUERY_FAILED", "تعذر تحميل بيانات فريق العمل.", 502);
   }
 
   const profiles = (profilesResult.data ?? []) as ProfileRow[];
-  const matterMembers = (matterMembersResult.data ?? []) as MatterMemberRow[];
   const matters = (mattersResult.data ?? []) as MatterRow[];
   const tasks = (tasksResult.data ?? []) as TaskRow[];
+  const matterIds = matters.map((matter) => matter.id);
+
+  const matterMembersResult = matterIds.length
+    ? await workspace.supabase
+        .from("matter_members")
+        .select("matter_id,user_id,access_level")
+        .in("matter_id", matterIds)
+    : { data: [], error: null };
+
+  if (matterMembersResult.error) {
+    return apiError("QUERY_FAILED", "تعذر تحميل تكليفات القضايا.", 502);
+  }
+
+  const matterMembers =
+    (matterMembersResult.data ?? []) as MatterMemberRow[];
 
   const profileByUser = new Map(
     profiles.map((profile) => [profile.id, profile.full_name?.trim() || null]),
