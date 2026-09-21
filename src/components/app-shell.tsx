@@ -137,7 +137,7 @@ export function AppShell({
     return true;
   };
   
-  const activeTasks = tasks ?? [];
+  const activeTasks = useMemo(() => tasks ?? [], [tasks]);
   const upcomingTasksCount = getUpcomingDeadlineTasks(activeTasks).length;
   
   // High-priority legal tasks due within <= 1 hour
