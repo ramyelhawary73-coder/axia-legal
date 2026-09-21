@@ -1138,18 +1138,30 @@ export function HearingsView({
     }
 
     if (showMatters) {
-      matters.forEach(m => {
-        const d = getDateOnly(m.nextHearingDate);
-        if (isValidDateStr(d)) {
+      const today = formatDateStr(new Date());
+      matters.forEach((matter) => {
+        const linkedHearings = hearings
+          .filter(
+            (hearing) =>
+              hearing.matterId === matter.id &&
+              !hearing.isArchived &&
+              isValidDateStr(getDateOnly(hearing.hearingDate)),
+          )
+          .sort((a, b) => a.hearingDate.localeCompare(b.hearingDate));
+        const linkedHearing =
+          linkedHearings.find((hearing) => hearing.hearingDate >= today) ??
+          linkedHearings.at(-1);
+
+        if (linkedHearing) {
           items.push({
-            id: m.id,
-            title: `جلسة قريبة: ${m.caseNumber}`,
-            sub: m.title,
-            time: "جلسة قضائية",
-            date: d,
+            id: matter.id,
+            title: `قضية: ${matter.caseNumber}`,
+            sub: matter.title,
+            time: "مرتبطة بجلسة",
+            date: getDateOnly(linkedHearing.hearingDate),
             type: "matter",
             priority: "عادية",
-            original: m
+            original: matter,
           });
         }
       });
