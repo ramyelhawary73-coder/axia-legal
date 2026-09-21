@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiError, databaseErrorCode, workspaceErrorResponse } from "@/lib/api/errors";
-import { readJsonObject } from "@/lib/api/validation";
+import { isIsoDate, readJsonObject } from "@/lib/api/validation";
 import { resolveWorkspace } from "@/lib/api/workspace";
 import type { LegalTask } from "@/types/legal";
 
@@ -243,14 +243,44 @@ export async function PATCH(request: Request) {
     typeof body?.status === "string"
       ? (body.status as LegalTask["status"])
       : undefined;
+  const deadline =
+    body?.deadline === undefined
+      ? undefined
+      : isIsoDate(body.deadline)
+        ? body.deadline
+        : null;
 
-  if (!taskIds.length || !status || !(status in statusToDb)) {
+  if (!taskIds.length) {
     return apiError("VALIDATION_ERROR", "طلب تحديث المهمة غير صالح.", 400);
   }
 
+  if (status === undefined && deadline === undefined) {
+    return apiError("VALIDATION_ERROR", "لا توجد بيانات لتحديث المهمة.", 400);
+  }
+
+  if (status !== undefined && !(status in statusToDb)) {
+    return apiError("VALIDATION_ERROR", "حالة المهمة غير صالحة.", 400);
+  }
+
+  if (deadline === null) {
+    return apiError("VALIDATION_ERROR", "تاريخ المهمة غير صالح.", 400);
+  }
+
+  if (deadline !== undefined && taskIds.length !== 1) {
+    return apiError(
+      "VALIDATION_ERROR",
+      "تغيير تاريخ المهمة بالسحب متاح لمهمة واحدة في كل مرة.",
+      400,
+    );
+  }
+
+  const updates: Partial<Pick<TaskRow, "status" | "deadline">> = {};
+  if (status !== undefined) updates.status = statusToDb[status];
+  if (deadline !== undefined) updates.deadline = deadline;
+
   const { data, error } = await workspace.supabase
     .from("tasks")
-    .update({ status: statusToDb[status] })
+    .update(updates)
     .eq("organization_id", workspace.organizationId)
     .in("id", taskIds)
     .select("id");
@@ -258,7 +288,9 @@ export async function PATCH(request: Request) {
   if (error) {
     return apiError(
       databaseErrorCode(error),
-      "تعذر تحديث حالة المهمة.",
+      deadline !== undefined
+        ? "تعذر تحديث موعد المهمة."
+        : "تعذر تحديث حالة المهمة.",
       403,
     );
   }

@@ -70,12 +70,12 @@ test("Hearings UI persists create update archive decision and notes", () => {
   assert.doesNotMatch(hearingsView, /2026-09-18/);
 });
 
-test("Hearings drag and drop does not fake task or matter persistence", () => {
-  assert.match(hearingsView, /if \(type !== "hearing"\)/);
-  assert.doesNotMatch(
-    hearingsView,
-    /setTasks\(prev => prev\.map\(t => t\.id === id/,
-  );
+test("Calendar drag persists hearings and tasks while matters remain action-only", () => {
+  assert.match(hearingsView, /if \(item\.type === "matter"\)/);
+  assert.match(hearingsView, /type === "hearing"/);
+  assert.match(hearingsView, /type === "task"/);
+  assert.match(hearingsView, /persistHearingReschedule/);
+  assert.match(hearingsView, /persistTaskReschedule/);
   assert.doesNotMatch(
     hearingsView,
     /setMatters\(prev => prev\.map\(m => m\.id === id/,

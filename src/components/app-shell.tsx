@@ -28,7 +28,6 @@ import {
   type LucideIcon 
 } from "lucide-react";
 import { NavigationTab, LegalTask, Matter, Client, LegalDocument } from "@/types/legal";
-import { mockTasks } from "@/lib/mock-legal-data";
 import { NotificationsPopover } from "@/components/notifications-popover";
 import { getUpcomingDeadlineTasks, getHighPriorityTasksDueWithinHour } from "@/lib/task-utils";
 import { 
@@ -138,7 +137,7 @@ export function AppShell({
     return true;
   };
   
-  const activeTasks = tasks || mockTasks;
+  const activeTasks = useMemo(() => tasks ?? [], [tasks]);
   const upcomingTasksCount = getUpcomingDeadlineTasks(activeTasks).length;
   
   // High-priority legal tasks due within <= 1 hour

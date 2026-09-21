@@ -34,8 +34,19 @@ import {
   loadPersistentHearings,
   updatePersistentHearing,
 } from "@/lib/hearings-client";
-import { loadMattersWorkspace } from "@/lib/matters-client";
-import { loadTaskWorkspace } from "@/lib/tasks-client";
+import {
+  loadMattersWorkspace,
+  updatePersistentMatter,
+} from "@/lib/matters-client";
+import {
+  loadTaskWorkspace,
+  updatePersistentTaskDeadline,
+  updatePersistentTaskStatus,
+} from "@/lib/tasks-client";
+import {
+  useActionContextMenu,
+  type ActionContextMenuItem,
+} from "@/components/action-context-menu";
 
 // Arabic Days and Months
 const ARABIC_DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
@@ -43,6 +54,8 @@ const ARABIC_MONTHS = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
 ];
+
+const AXIA_CALENDAR_DRAG_TYPE = "application/x-axia-calendar-hearing";
 
 // Helper to extract YYYY-MM-DD from various date string formats
 const getDateOnly = (dateStr: string): string => {
@@ -215,10 +228,24 @@ export function HearingsView({
   isFocusMode = false,
   onToggleFocusMode,
   onHearingsChanged,
+  onTasksChanged,
+  onOpenMatter,
+  onOpenTasks,
+  actionRequest,
+  onActionRequestHandled,
 }: {
   isFocusMode?: boolean;
   onToggleFocusMode?: () => void;
   onHearingsChanged?: () => void | Promise<void>;
+  onTasksChanged?: () => void | Promise<void>;
+  onOpenMatter?: (matterId: string) => void;
+  onOpenTasks?: () => void;
+  actionRequest?: {
+    action: "add" | "reschedule";
+    matterId: string;
+    requestId: number;
+  } | null;
+  onActionRequestHandled?: () => void;
 } = {}) {
   // Master states for persisted business data
   const [hearings, setHearings] = useState<Hearing[]>([]);
@@ -228,6 +255,11 @@ export function HearingsView({
   const [isDataLoading, setIsDataLoading] = useState(true);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [isSavingHearing, setIsSavingHearing] = useState(false);
+  const [reschedulingHearingId, setReschedulingHearingId] = useState<string | null>(null);
+  const [reschedulingTaskId, setReschedulingTaskId] = useState<string | null>(null);
+  const [rescheduleModalHearingId, setRescheduleModalHearingId] = useState<string | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const hearingActionMenu = useActionContextMenu();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -355,6 +387,60 @@ export function HearingsView({
   const [newPurpose, setNewPurpose] = useState("المرافعة وتقديم المستندات");
   const [decisionNotes, setDecisionNotes] = useState<{ [id: string]: string }>({});
 
+  useEffect(() => {
+    if (!actionRequest || isDataLoading) return;
+
+    let cancelled = false;
+    void Promise.resolve().then(() => {
+      if (cancelled) return;
+
+      const matter = matters.find((item) => item.id === actionRequest.matterId);
+      if (!matter) {
+        setSyncError("القضية المطلوبة غير متاحة في مساحة العمل الحالية.");
+        onActionRequestHandled?.();
+        return;
+      }
+
+      if (actionRequest.action === "add") {
+        setNewMatterId(matter.id);
+        setNewCourt(matter.court !== "غير مسجل" ? matter.court : "");
+        setNewCircuit(matter.circuit !== "غير مسجل" ? matter.circuit : "");
+        setNewDate(formatDateStr(new Date()));
+        setIsNewHearingOpen(true);
+        onActionRequestHandled?.();
+        return;
+      }
+
+      const linkedHearings = hearings
+        .filter((hearing) => hearing.matterId === matter.id && !hearing.isArchived)
+        .sort((a, b) => a.hearingDate.localeCompare(b.hearingDate));
+      const today = formatDateStr(new Date());
+      const linkedHearing =
+        linkedHearings.find((hearing) => hearing.hearingDate >= today) ??
+        linkedHearings.at(-1);
+
+      if (!linkedHearing) {
+        setSyncError("لا توجد جلسة مرتبطة بالقضية لإعادة جدولتها.");
+        onActionRequestHandled?.();
+        return;
+      }
+
+      setRescheduleModalHearingId(linkedHearing.id);
+      setRescheduleDate(linkedHearing.hearingDate);
+      onActionRequestHandled?.();
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    actionRequest,
+    hearings,
+    isDataLoading,
+    matters,
+    onActionRequestHandled,
+  ]);
+
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Filter hearings for print based on calendar view
@@ -436,6 +522,117 @@ export function HearingsView({
     setTimeout(() => setToast(null), 4000);
   };
 
+  const persistHearingReschedule = async (
+    hearingId: string,
+    targetDateStr: string,
+  ): Promise<boolean> => {
+    const original = hearings.find((item) => item.id === hearingId);
+    if (!original || !isValidDateStr(targetDateStr)) return false;
+    if (original.hearingDate === targetDateStr) return true;
+
+    setReschedulingHearingId(hearingId);
+    setSyncError(null);
+
+    // Optimistic move for immediate feedback. Any API/read-back failure rolls back.
+    setHearings((current) =>
+      current.map((item) =>
+        item.id === hearingId ? { ...item, hearingDate: targetDateStr } : item,
+      ),
+    );
+
+    try {
+      await updatePersistentHearing(
+        hearingId,
+        { hearingDate: targetDateStr },
+        matters,
+      );
+
+      const refreshed = await loadPersistentHearings(matters);
+      const confirmed = refreshed.find((item) => item.id === hearingId);
+      if (!confirmed || confirmed.hearingDate !== targetDateStr) {
+        throw new Error("لم يتم تأكيد التاريخ الجديد من قاعدة البيانات.");
+      }
+
+      setHearings(refreshed);
+      await onHearingsChanged?.();
+      triggerToast(
+        "تمت إعادة جدولة الجلسة وتأكيد الحفظ من قاعدة البيانات",
+        targetDateStr,
+        "hearing",
+      );
+      return true;
+    } catch (error) {
+      setHearings((current) =>
+        current.map((item) => (item.id === hearingId ? original : item)),
+      );
+      const message =
+        error instanceof Error ? error.message : "تعذر إعادة جدولة الجلسة.";
+      setSyncError(message);
+      triggerToast(
+        "فشل حفظ إعادة الجدولة وتمت إعادة الجلسة لموعدها السابق",
+        original.hearingDate,
+        "hearing",
+      );
+      return false;
+    } finally {
+      setReschedulingHearingId(null);
+    }
+  };
+
+  const persistTaskReschedule = async (
+    taskId: string,
+    targetDateStr: string,
+  ): Promise<boolean> => {
+    const original = tasks.find((item) => item.id === taskId);
+    if (!original || !isValidDateStr(targetDateStr)) return false;
+    if (getDateOnly(original.deadline) === targetDateStr) return true;
+
+    setReschedulingTaskId(taskId);
+    setSyncError(null);
+
+    setTasks((current) =>
+      current.map((item) =>
+        item.id === taskId ? { ...item, deadline: targetDateStr } : item,
+      ),
+    );
+
+    try {
+      await updatePersistentTaskDeadline(taskId, targetDateStr);
+
+      const refreshedWorkspace = await loadTaskWorkspace();
+      const confirmed = refreshedWorkspace.tasks.find(
+        (item) => item.id === taskId,
+      );
+      if (!confirmed || getDateOnly(confirmed.deadline) !== targetDateStr) {
+        throw new Error("لم يتم تأكيد الموعد الجديد للمهمة من قاعدة البيانات.");
+      }
+
+      setTasks(refreshedWorkspace.tasks);
+      await onTasksChanged?.();
+      triggerToast(
+        "تم نقل المهمة وتأكيد الموعد الجديد من قاعدة البيانات",
+        targetDateStr,
+        "task",
+      );
+      return true;
+    } catch (error) {
+      setTasks((current) =>
+        current.map((item) => (item.id === taskId ? original : item)),
+      );
+      const message =
+        error instanceof Error ? error.message : "تعذر إعادة جدولة المهمة.";
+      setSyncError(message);
+      triggerToast(
+        "فشل حفظ موعد المهمة وتمت إعادتها لتاريخها السابق",
+        getDateOnly(original.deadline),
+        "task",
+      );
+      return false;
+    } finally {
+      setReschedulingTaskId(null);
+    }
+  };
+
   const handleToggleArchive = async (hearingId: string) => {
     const hearing = hearings.find((item) => item.id === hearingId);
     if (!hearing) return;
@@ -468,6 +665,179 @@ export function HearingsView({
         error instanceof Error ? error.message : "تعذر تحديث حالة الجلسة.",
       );
     }
+  };
+
+  const openRescheduleDialog = (hearing: Hearing) => {
+    setRescheduleModalHearingId(hearing.id);
+    setRescheduleDate(hearing.hearingDate);
+  };
+
+  const getHearingActions = (hearing: Hearing): ActionContextMenuItem[] => {
+    const actions: ActionContextMenuItem[] = [
+      {
+        id: "reschedule",
+        label: "إعادة جدولة الجلسة",
+        onSelect: () => openRescheduleDialog(hearing),
+      },
+      {
+        id: hearing.isArchived ? "restore" : "archive",
+        label: hearing.isArchived ? "استعادة الجلسة" : "أرشفة الجلسة",
+        onSelect: () => handleToggleArchive(hearing.id),
+      },
+    ];
+
+    if (hearing.pleadingNotes) {
+      actions.push({
+        id: "clear-note",
+        label: "مسح ملاحظات الجلسة",
+        tone: "danger",
+        onSelect: async () => {
+          const confirmed = window.confirm(
+            "هل تريد مسح ملاحظات هذه الجلسة؟ لن يتم حذف الجلسة نفسها.",
+          );
+          if (!confirmed) return;
+          await handleUpdateHearingNotes(hearing.id, "");
+          triggerToast("تم مسح ملاحظات الجلسة", hearing.hearingDate, "hearing");
+        },
+      });
+    }
+
+    return actions;
+  };
+
+  type CalendarActionItem = {
+    id: string;
+    title: string;
+    type: "hearing" | "task" | "matter";
+    original: Hearing | LegalTask | Matter;
+  };
+
+  const handleCalendarTaskStatus = async (task: LegalTask) => {
+    const nextStatus: LegalTask["status"] =
+      task.status === "مكتملة" ? "قيد التنفيذ" : "مكتملة";
+    try {
+      await updatePersistentTaskStatus([task.id], nextStatus);
+      setTasks((current) =>
+        current.map((item) =>
+          item.id === task.id ? { ...item, status: nextStatus } : item,
+        ),
+      );
+      setSyncError(null);
+      triggerToast(
+        nextStatus === "مكتملة"
+          ? "تم إكمال المهمة وحفظ التغيير"
+          : "تمت إعادة فتح المهمة وحفظ التغيير",
+        getDateOnly(task.deadline),
+        "task",
+      );
+    } catch (error) {
+      setSyncError(
+        error instanceof Error ? error.message : "تعذر تحديث حالة المهمة.",
+      );
+    }
+  };
+
+  const handleCalendarMatterStatus = async (matter: Matter) => {
+    const nextStatus = matter.status === "مفتوحة" ? "closed" : "open";
+    try {
+      const updated = await updatePersistentMatter(matter.id, {
+        status: nextStatus,
+      });
+      setMatters((current) =>
+        current.map((item) => (item.id === matter.id ? updated : item)),
+      );
+      setSyncError(null);
+      triggerToast(
+        nextStatus === "closed"
+          ? "تم إغلاق القضية وحفظ التغيير"
+          : "تمت إعادة فتح القضية وحفظ التغيير",
+        formatDateStr(new Date()),
+        "matter",
+      );
+    } catch (error) {
+      setSyncError(
+        error instanceof Error ? error.message : "تعذر تحديث حالة القضية.",
+      );
+    }
+  };
+
+  const getCalendarItemActions = (
+    item: CalendarActionItem,
+  ): ActionContextMenuItem[] => {
+    if (item.type === "hearing") {
+      return getHearingActions(item.original as Hearing);
+    }
+
+    if (item.type === "task") {
+      const task = item.original as LegalTask;
+      return [
+        {
+          id: "open-task-module",
+          label: "فتح قسم المهام",
+          onSelect: () => onOpenTasks?.(),
+        },
+        {
+          id: task.status === "مكتملة" ? "reopen-task" : "complete-task",
+          label:
+            task.status === "مكتملة"
+              ? "إعادة فتح المهمة"
+              : "تحديد المهمة كمكتملة",
+          onSelect: () => handleCalendarTaskStatus(task),
+        },
+      ];
+    }
+
+    const matter = item.original as Matter;
+    const linkedHearings = hearings
+      .filter((hearing) => hearing.matterId === matter.id && !hearing.isArchived)
+      .sort((a, b) => a.hearingDate.localeCompare(b.hearingDate));
+    const today = formatDateStr(new Date());
+    const linkedHearing =
+      linkedHearings.find((hearing) => hearing.hearingDate >= today) ??
+      linkedHearings.at(-1);
+
+    return [
+      {
+        id: "open-matter",
+        label: "فتح ملف القضية",
+        onSelect: () => onOpenMatter?.(matter.id),
+      },
+      {
+        id: "add-hearing",
+        label: "إضافة جلسة للقضية",
+        onSelect: () => {
+          setNewMatterId(matter.id);
+          setNewCourt(matter.court !== "غير مسجل" ? matter.court : "");
+          setNewCircuit(matter.circuit !== "غير مسجل" ? matter.circuit : "");
+          setNewDate(formatDateStr(new Date()));
+          setIsNewHearingOpen(true);
+        },
+      },
+      {
+        id: "reschedule-linked-hearing",
+        label: linkedHearing
+          ? "إعادة جدولة الجلسة المرتبطة"
+          : "لا توجد جلسة مرتبطة لإعادة جدولتها",
+        disabled: !linkedHearing,
+        onSelect: () => {
+          if (linkedHearing) openRescheduleDialog(linkedHearing);
+        },
+      },
+      {
+        id: matter.status === "مفتوحة" ? "close-matter" : "reopen-matter",
+        label:
+          matter.status === "مفتوحة"
+            ? "إغلاق القضية"
+            : "إعادة فتح القضية",
+        onSelect: () => handleCalendarMatterStatus(matter),
+      },
+    ];
+  };
+
+  const getCalendarItemMenuLabel = (item: CalendarActionItem) => {
+    if (item.type === "hearing") return `الجلسة ${item.title}`;
+    if (item.type === "task") return `المهمة ${item.title}`;
+    return `القضية ${item.title}`;
   };
 
   // iCal parsing and export helpers
@@ -565,60 +935,69 @@ export function HearingsView({
     triggerToast("تم إنشاء وتصدير ملف التقومة بنجاح", formatDateStr(new Date()), "matter");
   };
 
-  // Drag & Drop persists hearing rescheduling only.
+  // Calendar drag persists hearings and tasks only. Matters stay navigation/action records.
   const handleDragStart = (
     e: React.DragEvent,
     item: { id: string; type: "hearing" | "task" | "matter" },
   ) => {
-    if (item.type !== "hearing") {
+    if (item.type === "matter") {
       e.preventDefault();
       return;
     }
 
-    e.dataTransfer.setData("text/plain", JSON.stringify(item));
+    e.dataTransfer.setData(AXIA_CALENDAR_DRAG_TYPE, JSON.stringify(item));
     e.dataTransfer.effectAllowed = "move";
   };
 
+  const hasAxiaCalendarDrag = (e: React.DragEvent) =>
+    Array.from(e.dataTransfer.types).includes(AXIA_CALENDAR_DRAG_TYPE);
+
   const handleDragOver = (e: React.DragEvent) => {
+    if (!hasAxiaCalendarDrag(e)) return;
     e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDragEnter = (e: React.DragEvent, targetDateStr: string) => {
+    if (!hasAxiaCalendarDrag(e)) return;
+    e.preventDefault();
+    setDragOverDate(targetDateStr);
   };
 
   const handleDrop = async (e: React.DragEvent, targetDateStr: string) => {
+    if (!hasAxiaCalendarDrag(e)) return;
+
     e.preventDefault();
     setDragOverDate(null);
 
     try {
-      const dataStr = e.dataTransfer.getData("text/plain");
+      const dataStr = e.dataTransfer.getData(AXIA_CALENDAR_DRAG_TYPE);
       if (!dataStr) return;
 
-      const { id, type } = JSON.parse(dataStr) as {
-        id: string;
-        type: "hearing" | "task" | "matter";
+      const payload = JSON.parse(dataStr) as {
+        id?: unknown;
+        type?: unknown;
       };
+      const { id, type } = payload;
 
-      if (type !== "hearing") {
-        triggerToast(
-          "غيّر موعد المهمة أو القضية من وحدتها الأصلية حتى يتم الحفظ بشكل صحيح",
-          targetDateStr,
-          type,
-        );
+      if (typeof id !== "string") {
+        setSyncError("معرّف عنصر التقويم في عملية السحب غير صالح.");
         return;
       }
 
-      const updated = await updatePersistentHearing(
-        id,
-        { hearingDate: targetDateStr },
-        matters,
-      );
-      setHearings((current) =>
-        current.map((hearing) => (hearing.id === id ? updated : hearing)),
-      );
-      setSyncError(null);
-      triggerToast("تمت إعادة جدولة الجلسة وحفظها", targetDateStr, "hearing");
-    } catch (error) {
-      setSyncError(
-        error instanceof Error ? error.message : "تعذر إعادة جدولة الجلسة.",
-      );
+      if (type === "hearing") {
+        await persistHearingReschedule(id, targetDateStr);
+        return;
+      }
+
+      if (type === "task") {
+        await persistTaskReschedule(id, targetDateStr);
+        return;
+      }
+
+      setSyncError("القضايا لا تُنقل بالسحب؛ استخدم إضافة أو إعادة جدولة جلسة مرتبطة.");
+    } catch {
+      setSyncError("تعذر قراءة بيانات السحب. حاول السحب من بطاقة الجلسة أو المهمة نفسها.");
     }
   };
 
@@ -768,18 +1147,30 @@ export function HearingsView({
     }
 
     if (showMatters) {
-      matters.forEach(m => {
-        const d = getDateOnly(m.nextHearingDate);
-        if (isValidDateStr(d)) {
+      const today = formatDateStr(new Date());
+      matters.forEach((matter) => {
+        const linkedHearings = hearings
+          .filter(
+            (hearing) =>
+              hearing.matterId === matter.id &&
+              !hearing.isArchived &&
+              isValidDateStr(getDateOnly(hearing.hearingDate)),
+          )
+          .sort((a, b) => a.hearingDate.localeCompare(b.hearingDate));
+        const linkedHearing =
+          linkedHearings.find((hearing) => hearing.hearingDate >= today) ??
+          linkedHearings.at(-1);
+
+        if (linkedHearing) {
           items.push({
-            id: m.id,
-            title: `جلسة قريبة: ${m.caseNumber}`,
-            sub: m.title,
-            time: "جلسة قضائية",
-            date: d,
+            id: matter.id,
+            title: `قضية: ${matter.caseNumber}`,
+            sub: matter.title,
+            time: "مرتبطة بجلسة",
+            date: getDateOnly(linkedHearing.hearingDate),
             type: "matter",
             priority: "عادية",
-            original: m
+            original: matter,
           });
         }
       });
@@ -1125,16 +1516,35 @@ export function HearingsView({
                   unifiedCalendarItems.slice(0, 7).map((item) => (
                     <div
                       key={item.id}
-                      draggable={item.type === "hearing"}
+                      {...hearingActionMenu.bind(
+                        getCalendarItemActions(item),
+                        getCalendarItemMenuLabel(item),
+                      )}
+                      draggable={
+                        (item.type === "hearing" &&
+                          reschedulingHearingId !== item.id) ||
+                        (item.type === "task" &&
+                          reschedulingTaskId !== item.id)
+                      }
                       onDragStart={(e) => handleDragStart(e, { id: item.id, type: item.type })}
-                      className={`p-3 rounded-xl border text-right cursor-grab active:cursor-grabbing hover:border-[var(--axia-gold)]/40 hover:bg-[var(--accent)]/50 transition-all shadow-sm flex flex-col gap-1.5 ${
+                      className={`p-3 rounded-xl border text-right hover:border-[var(--axia-gold)]/40 hover:bg-[var(--accent)]/50 transition-all shadow-sm flex flex-col gap-1.5 ${
+                        item.type === "hearing" || item.type === "task"
+                          ? "cursor-grab active:cursor-grabbing"
+                          : "cursor-default"
+                      } ${
                         item.type === "hearing" ? "border-amber-500/15 bg-amber-500/[0.02]" :
                         item.type === "task" ? "border-teal-500/15 bg-teal-500/[0.02]" :
                         "border-blue-500/15 bg-blue-500/[0.02]"
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                        <div className="flex items-center gap-1">
+                          {hearingActionMenu.triggerButton(
+                            getCalendarItemActions(item),
+                            getCalendarItemMenuLabel(item),
+                            "bg-[var(--panel)]/80",
+                          )}
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
                           item.type === "hearing" ? "bg-amber-500/10 text-amber-400" :
                           item.type === "task" ? "bg-teal-500/10 text-teal-400" :
                           "bg-blue-500/10 text-blue-400"
@@ -1142,7 +1552,8 @@ export function HearingsView({
                           {item.type === "hearing" ? "جلسة" :
                            item.type === "task" ? "مهمة إدارية" :
                            "قضية"}
-                        </span>
+                          </span>
+                        </div>
                         <span className="text-[9px] font-mono text-[var(--text-muted)]">{item.date}</span>
                       </div>
                       
@@ -1265,7 +1676,7 @@ export function HearingsView({
                         <div
                           key={index}
                           onDragOver={handleDragOver}
-                          onDragEnter={() => setDragOverDate(dateStr)}
+                          onDragEnter={(e) => handleDragEnter(e, dateStr)}
                           onDragLeave={() => setDragOverDate(null)}
                           onDrop={(e) => handleDrop(e, dateStr)}
                           className={`min-h-[110px] p-2 border-l border-b border-[var(--border)] transition-all flex flex-col gap-1 text-right relative overflow-y-auto custom-scrollbar ${
@@ -1293,10 +1704,23 @@ export function HearingsView({
                             {dayItems.map((item) => (
                               <div
                                 key={item.id}
-                                draggable
+                                {...hearingActionMenu.bind(
+                                  getCalendarItemActions(item),
+                                  getCalendarItemMenuLabel(item),
+                                )}
+                                draggable={
+                                  (item.type === "hearing" &&
+                                    reschedulingHearingId !== item.id) ||
+                                  (item.type === "task" &&
+                                    reschedulingTaskId !== item.id)
+                                }
                                 onDragStart={(e) => handleDragStart(e, { id: item.id, type: item.type })}
                                 title={`${item.title} \n (${item.sub})`}
-                                className={`text-[9px] py-1 px-1.5 rounded-lg border cursor-grab active:cursor-grabbing font-medium transition-all hover:brightness-110 flex items-center gap-1.5 truncate ${
+                                className={`text-[9px] py-1 px-1.5 rounded-lg border font-medium transition-all hover:brightness-110 flex items-center gap-1.5 truncate ${
+                                  item.type === "hearing" || item.type === "task"
+                                    ? "cursor-grab active:cursor-grabbing"
+                                    : "cursor-default"
+                                } ${
                                   item.type === "hearing" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
                                   item.type === "task" ? (item.priority === "حرجة للغاية (ميعاد سقوط)" ? "bg-red-500/10 text-red-400 border-red-500/20" : "bg-teal-500/10 text-teal-400 border-teal-500/20") :
                                   "bg-blue-500/10 text-blue-400 border-blue-500/20"
@@ -1306,6 +1730,11 @@ export function HearingsView({
                                  item.type === "task" ? <CheckSquare className="size-2.5 shrink-0" /> :
                                  <Briefcase className="size-2.5 shrink-0" />}
                                 <span className="truncate flex-1">{item.title}</span>
+                                {hearingActionMenu.triggerButton(
+                                  getCalendarItemActions(item),
+                                  getCalendarItemMenuLabel(item),
+                                  "size-5 shrink-0 bg-[var(--panel)]/70",
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1336,7 +1765,7 @@ export function HearingsView({
                       <div
                         key={idx}
                         onDragOver={handleDragOver}
-                        onDragEnter={() => setDragOverDate(dateStr)}
+                        onDragEnter={(e) => handleDragEnter(e, dateStr)}
                         onDragLeave={() => setDragOverDate(null)}
                         onDrop={(e) => handleDrop(e, dateStr)}
                         className={`p-4 min-h-[300px] flex flex-col gap-3 transition-all ${
@@ -1367,9 +1796,22 @@ export function HearingsView({
                             dayItems.map((item) => (
                               <div
                                 key={item.id}
-                                draggable
+                                {...hearingActionMenu.bind(
+                                  getCalendarItemActions(item),
+                                  getCalendarItemMenuLabel(item),
+                                )}
+                                draggable={
+                                  (item.type === "hearing" &&
+                                    reschedulingHearingId !== item.id) ||
+                                  (item.type === "task" &&
+                                    reschedulingTaskId !== item.id)
+                                }
                                 onDragStart={(e) => handleDragStart(e, { id: item.id, type: item.type })}
-                                className={`p-2.5 rounded-xl border text-right cursor-grab active:cursor-grabbing hover:brightness-105 transition flex flex-col gap-1 shadow-sm ${
+                                className={`p-2.5 rounded-xl border text-right hover:brightness-105 transition flex flex-col gap-1 shadow-sm ${
+                                  item.type === "hearing" || item.type === "task"
+                                    ? "cursor-grab active:cursor-grabbing"
+                                    : "cursor-default"
+                                } ${
                                   item.type === "hearing" ? "border-amber-500/15 bg-amber-500/10 text-amber-400" :
                                   item.type === "task" ? (item.priority === "حرجة للغاية (ميعاد سقوط)" ? "border-red-500/15 bg-red-500/10 text-red-400" : "border-teal-500/15 bg-teal-500/10 text-teal-400") :
                                   "border-blue-500/15 bg-blue-500/10 text-blue-400"
@@ -1385,9 +1827,16 @@ export function HearingsView({
                                      "مراجعة دعوى"}
                                   </span>
                                 </div>
-                                <h4 className="text-xs font-bold leading-snug line-clamp-2">
-                                  {item.title}
-                                </h4>
+                                <div className="flex items-start justify-between gap-1">
+                                  <h4 className="text-xs font-bold leading-snug line-clamp-2 flex-1">
+                                    {item.title}
+                                  </h4>
+                                  {hearingActionMenu.triggerButton(
+                                    getCalendarItemActions(item),
+                                    getCalendarItemMenuLabel(item),
+                                    "size-6 shrink-0 bg-[var(--panel)]/70",
+                                  )}
+                                </div>
                                 <span className="text-[10px] opacity-80 block truncate">
                                   {item.sub}
                                 </span>
@@ -1976,6 +2425,73 @@ export function HearingsView({
           </div>
         </div>
       )}
+
+      {rescheduleModalHearingId && (
+        <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4">
+          <div className="w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl border border-[var(--border)] bg-[var(--panel)] p-6 shadow-2xl">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-[var(--text)]">
+                  إعادة جدولة الجلسة
+                </h3>
+                <p className="mt-1 text-[11px] text-[var(--text-muted)]">
+                  سيتم حفظ التاريخ الجديد في Supabase ثم قراءته مرة أخرى للتأكيد.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRescheduleModalHearingId(null)}
+                className="grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)]"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <label className="mt-5 block text-xs font-semibold text-[var(--text-muted)]">
+              التاريخ الجديد
+            </label>
+            <input
+              type="date"
+              value={rescheduleDate}
+              onChange={(event) => setRescheduleDate(event.target.value)}
+              className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
+            />
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setRescheduleModalHearingId(null)}
+                className="rounded-xl border border-[var(--border)] px-4 py-2 text-xs font-semibold text-[var(--text)]"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                disabled={
+                  !rescheduleDate ||
+                  reschedulingHearingId === rescheduleModalHearingId
+                }
+                onClick={async () => {
+                  const hearingId = rescheduleModalHearingId;
+                  if (!hearingId) return;
+                  const saved = await persistHearingReschedule(
+                    hearingId,
+                    rescheduleDate,
+                  );
+                  if (saved) setRescheduleModalHearingId(null);
+                }}
+                className="rounded-xl bg-[var(--axia-gold)] px-4 py-2 text-xs font-bold text-black disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {reschedulingHearingId === rescheduleModalHearingId
+                  ? "جارٍ الحفظ..."
+                  : "حفظ الموعد"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {hearingActionMenu.menuNode}
 
       {/* HIDDEN COURTROOM-READY PRINTABLE PDF REPORT CONTAINER */}
       <div 

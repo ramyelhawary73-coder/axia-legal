@@ -52,6 +52,11 @@ export default function HomePage() {
   const [tasksLoading, setTasksLoading] = useState(true);
   const [isSnapshotManagerOpen, setIsSnapshotManagerOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [hearingActionRequest, setHearingActionRequest] = useState<{
+    action: "add" | "reschedule";
+    matterId: string;
+    requestId: number;
+  } | null>(null);
 
   // Background Auto-Export: automatically exports daily snapshot to Downloads / Cloud Sync on app startup
   const { toastNotification, dismissToast } = useDailySnapshotAutoExport(matters, tasks);
@@ -80,6 +85,19 @@ export default function HomePage() {
       cancelled = true;
     };
   }, []);
+
+  const refreshTaskWorkspace = async () => {
+    try {
+      const workspace = await loadTaskWorkspace();
+      setTaskWorkspace(workspace);
+      setTasks(workspace.tasks);
+      setTaskSyncError(null);
+    } catch (error) {
+      setTaskSyncError(
+        error instanceof Error ? error.message : "تعذر تحديث بيانات المهام.",
+      );
+    }
+  };
 
   const refreshCoreWorkspace = async () => {
     const [loadedClients, matterWorkspace] = await Promise.all([
@@ -216,6 +234,19 @@ export default function HomePage() {
     setActiveTab("matters");
   };
 
+  const handleRequestHearingAction = (
+    matterId: string,
+    action: "add" | "reschedule",
+  ) => {
+    setHearingActionRequest({
+      matterId,
+      action,
+      requestId: Date.now(),
+    });
+    setSelectedMatterId(null);
+    setActiveTab("hearings");
+  };
+
   const handleSelectMatter = (matterId: string) => {
     setSelectedMatterId(matterId);
     setActiveTab("matters");
@@ -309,6 +340,12 @@ export default function HomePage() {
             onMatterCreated={() => {
               void handleMatterCreated();
             }}
+            onRequestAddHearing={(matterId) =>
+              handleRequestHearingAction(matterId, "add")
+            }
+            onRequestRescheduleHearing={(matterId) =>
+              handleRequestHearingAction(matterId, "reschedule")
+            }
           />
         )}
         {activeTab === "hearings" && (
@@ -316,6 +353,11 @@ export default function HomePage() {
             isFocusMode={isFocusMode}
             onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
             onHearingsChanged={refreshCoreWorkspace}
+            onTasksChanged={refreshTaskWorkspace}
+            onOpenMatter={handleOpenMatter}
+            onOpenTasks={() => setActiveTab("tasks")}
+            actionRequest={hearingActionRequest}
+            onActionRequestHandled={() => setHearingActionRequest(null)}
           />
         )}
         {activeTab === "clients" && (

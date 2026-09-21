@@ -50,6 +50,23 @@ export async function createPersistentTask(task: LegalTask): Promise<LegalTask> 
   return payload.task;
 }
 
+export async function updatePersistentTaskDeadline(
+  taskId: string,
+  deadline: string,
+): Promise<void> {
+  const response = await fetch("/api/tasks", {
+    method: "PATCH",
+    cache: "no-store",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ taskIds: [taskId], deadline }),
+  });
+
+  const payload = await readJsonResponse<{ updatedIds: string[] }>(response);
+  if (!payload.updatedIds.includes(taskId)) {
+    throw new Error("لم يتم تأكيد تحديث موعد المهمة.");
+  }
+}
+
 export async function updatePersistentTaskStatus(
   taskIds: string[],
   status: LegalTask["status"],

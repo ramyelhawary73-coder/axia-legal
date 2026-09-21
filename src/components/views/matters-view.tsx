@@ -12,10 +12,7 @@ import {
   FileText,
   Users,
   Phone,
-  Mail,
-  UserPlus,
-  Trash2,
-  Copy,
+  Mail,Copy,
   Check,
   BarChart3,
   PieChart as PieChartIcon,
@@ -40,10 +37,15 @@ import {
 import {
   createPersistentMatter,
   loadMattersWorkspace,
+  updatePersistentMatter,
   type MatterClientOption,
 } from "@/lib/matters-client";
 import { Matter, CourtCategory } from "@/types/legal";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
+import {
+  useActionContextMenu,
+  type ActionContextMenuItem,
+} from "@/components/action-context-menu";
 
 const getCategoryStyle = (cat: "مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة" | string) => {
   switch (cat) {
@@ -68,17 +70,22 @@ interface MattersViewProps {
   selectedMatterId?: string | null;
   onCloseMatterModal?: () => void;
   onMatterCreated?: () => void;
+  onRequestAddHearing?: (matterId: string) => void;
+  onRequestRescheduleHearing?: (matterId: string) => void;
 }
 
 export function MattersView({
   selectedMatterId,
   onCloseMatterModal,
   onMatterCreated,
+  onRequestAddHearing,
+  onRequestRescheduleHearing,
 }: MattersViewProps) {
   const [matters, setMatters] = useState<Matter[]>([]);
   const [matterClients, setMatterClients] = useState<MatterClientOption[]>([]);
   const [mattersLoading, setMattersLoading] = useState(true);
   const [mattersError, setMattersError] = useState<string | null>(null);
+  const matterActionMenu = useActionContextMenu();
 
   useEffect(() => {
     let cancelled = false;
@@ -184,58 +191,93 @@ export function MattersView({
   const effectiveMatterId = selectedMatterId ?? localActiveMatterId;
   const activeMatter = effectiveMatterId ? matters.find((m) => m.id === effectiveMatterId) || null : null;
 
-  // New contact form states
-  const [contactName, setContactName] = useState("");
-  const [contactRole, setContactRole] = useState<"شاهد" | "خصم" | "خبير" | "أخرى">("شاهد");
-  const [contactPhone, setContactPhone] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
-  const [contactNotes, setContactNotes] = useState("");
+  const handleSetMatterStatus = async (
+    matter: Matter,
+    status: "open" | "closed",
+  ) => {
+    try {
+      const updated = await updatePersistentMatter(matter.id, { status });
+      setMatters((current) =>
+        current.map((item) => (item.id === matter.id ? updated : item)),
+      );
+      setMattersError(null);
+      await onMatterCreated?.();
+    } catch (error) {
+      setMattersError(
+        error instanceof Error ? error.message : "تعذر تحديث حالة القضية.",
+      );
+    }
+  };
+
+  const getMatterActions = (matter: Matter): ActionContextMenuItem[] => {
+    const actions: ActionContextMenuItem[] = [
+      {
+        id: "open",
+        label: "فتح ملف القضية",
+        onSelect: () => setLocalActiveMatterId(matter.id),
+      },
+      {
+        id: "add-hearing",
+        label: "إضافة جلسة للقضية",
+        onSelect: () => onRequestAddHearing?.(matter.id),
+      },
+      {
+        id: "reschedule-hearing",
+        label: "إعادة جدولة جلسة مرتبطة",
+        onSelect: () => onRequestRescheduleHearing?.(matter.id),
+      },
+      {
+        id: matter.status === "مفتوحة" ? "close" : "reopen",
+        label:
+          matter.status === "مفتوحة" ? "إغلاق القضية" : "إعادة فتح القضية",
+        onSelect: () =>
+          handleSetMatterStatus(
+            matter,
+            matter.status === "مفتوحة" ? "closed" : "open",
+          ),
+      },
+      {
+        id: "report",
+        label: "تصدير تقرير القضية PDF",
+        onSelect: () => {
+          setPdfSelectedMatter(matter);
+          setIsPdfModalOpen(true);
+        },
+      },
+      {
+        id: "copy-case-number",
+        label: "نسخ رقم القضية",
+        onSelect: async () => {
+          await navigator.clipboard.writeText(matter.caseNumber);
+        },
+      },
+    ];
+
+    if (matter.notes) {
+      actions.push({
+        id: "clear-note",
+        label: "مسح ملاحظات القضية",
+        tone: "danger",
+        onSelect: async () => {
+          const confirmed = window.confirm(
+            "هل تريد مسح ملاحظات القضية فقط؟ لن يتم حذف القضية أو أي مستند.",
+          );
+          if (!confirmed) return;
+          const updated = await updatePersistentMatter(matter.id, {
+            notes: null,
+          });
+          setMatters((current) =>
+            current.map((item) => (item.id === matter.id ? updated : item)),
+          );
+          await onMatterCreated?.();
+        },
+      });
+    }
+
+    return actions;
+  };
+
   const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  const handleAddContact = (matterId: string) => {
-    if (!contactName || !contactPhone) return;
-
-    const newContact = {
-      id: `con-${Date.now()}`,
-      name: contactName,
-      role: contactRole,
-      phone: contactPhone,
-      email: contactEmail || undefined,
-      notes: contactNotes || undefined,
-    };
-
-    setMatters((prevMatters) =>
-      prevMatters.map((m) => {
-        if (m.id === matterId) {
-          return {
-            ...m,
-            contacts: [...(m.contacts || []), newContact],
-          };
-        }
-        return m;
-      })
-    );
-
-    // Reset inputs
-    setContactName("");
-    setContactPhone("");
-    setContactEmail("");
-    setContactNotes("");
-  };
-
-  const handleRemoveContact = (matterId: string, contactId: string) => {
-    setMatters((prevMatters) =>
-      prevMatters.map((m) => {
-        if (m.id === matterId) {
-          return {
-            ...m,
-            contacts: (m.contacts || []).filter((c) => c.id !== contactId),
-          };
-        }
-        return m;
-      })
-    );
-  };
 
   // Modal for new case
   const [isNewMatterOpen, setIsNewMatterOpen] = useState(false);
@@ -454,7 +496,11 @@ export function MattersView({
                 <tbody className="divide-y divide-[var(--border)]">
                   {filteredMatters.map((matter) => (
                     <tr 
-                      key={matter.id} 
+                      key={matter.id}
+                      {...matterActionMenu.bind(
+                        getMatterActions(matter),
+                        `القضية ${matter.caseNumber}`,
+                      )}
                       className="hover:bg-[var(--accent)] transition-colors group cursor-default"
                       onDoubleClick={() => setLocalActiveMatterId(matter.id)}
                     >
@@ -504,13 +550,21 @@ export function MattersView({
                          {matter.assignedLawyer.split(" ")[0]} {matter.assignedLawyer.split(" ")[1]}
                       </td>
                       <td className="px-4 py-3 align-top text-center">
-                        <button
-                          onClick={() => setLocalActiveMatterId(matter.id)}
-                          className="p-1 rounded-md text-[var(--text-muted)] hover:bg-[var(--border)] hover:text-[var(--text)] transition-colors opacity-0 group-hover:opacity-100 mx-auto"
-                          title="فتح الملف"
-                        >
-                          <ArrowUpRight className="size-4" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setLocalActiveMatterId(matter.id)}
+                            className="p-1 rounded-md text-[var(--text-muted)] hover:bg-[var(--border)] hover:text-[var(--text)] transition-colors opacity-0 group-hover:opacity-100"
+                            title="فتح الملف"
+                          >
+                            <ArrowUpRight className="size-4" />
+                          </button>
+                          {matterActionMenu.triggerButton(
+                            getMatterActions(matter),
+                            `القضية ${matter.caseNumber}`,
+                            "opacity-70 group-hover:opacity-100",
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1056,90 +1110,18 @@ export function MattersView({
                             <Copy className="size-3" />
                           )}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveContact(activeMatter.id, contact.id)}
-                          className="p-1 rounded bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition"
-                          title="حذف الارتباط"
-                        >
-                          <Trash2 className="size-3" />
-                        </button>
                       </div>
                     </div>
                   ))
                 )}
               </div>
 
-              {/* Add New Contact Form */}
               <div className="border-t border-[var(--border)] pt-3 mt-3">
-                <h4 className="font-bold text-[11px] text-[var(--text)] mb-2 flex items-center gap-1">
-                  <UserPlus className="size-3 text-[var(--axia-gold)]" />
-                  <span>ربط جهة اتصال جديدة بالملف</span>
-                </h4>
-                
-                <div className="grid gap-2 sm:grid-cols-2 mb-2">
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="الاسم الكامل لجهة الاتصال"
-                      value={contactName}
-                      onChange={(e) => setContactName(e.target.value)}
-                      className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5 text-[11px] text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--axia-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--axia-gold)]"
-                    />
-                  </div>
-                  <div>
-                    <select
-                      value={contactRole}
-                      onChange={(e) => setContactRole(e.target.value as "شاهد" | "خصم" | "خبير" | "أخرى")}
-                      className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5 text-[11px] text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--axia-gold)]"
-                    >
-                      <option value="شاهد">شاهد إثبات / نفي</option>
-                      <option value="خصم">الخصم المباشر / ممثله</option>
-                      <option value="خبير">خبير المحكمة المنتدب</option>
-                      <option value="أخرى">صفة أخرى</option>
-                    </select>
-                  </div>
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-[11px] leading-5 text-[var(--text-muted)]">
+                  إدارة أطراف القضية من إضافة أو فك ارتباط متوقفة مؤقتًا حتى يتم ربطها
+                  بسجل أطراف القضية الحقيقي. البيانات المعروضة هنا للقراءة فقط ولا يتم
+                  إنشاء أي جهة اتصال محلية وهمية.
                 </div>
-
-                <div className="grid gap-2 sm:grid-cols-2 mb-2">
-                  <div>
-                    <input
-                      type="text"
-                      placeholder="رقم الهاتف والاتصال"
-                      value={contactPhone}
-                      onChange={(e) => setContactPhone(e.target.value)}
-                      className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5 text-[11px] text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--axia-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--axia-gold)]"
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="email"
-                      placeholder="البريد الإلكتروني (اختياري)"
-                      value={contactEmail}
-                      onChange={(e) => setContactEmail(e.target.value)}
-                      className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5 text-[11px] text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--axia-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--axia-gold)]"
-                    />
-                  </div>
-                </div>
-
-                <div className="mb-2">
-                  <input
-                    type="text"
-                    placeholder="ملاحظات توضيحية لجهة الاتصال"
-                    value={contactNotes}
-                    onChange={(e) => setContactNotes(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5 text-[11px] text-[var(--text)] placeholder:text-[var(--text-muted)] focus:border-[var(--axia-gold)] focus:outline-none focus:ring-1 focus:ring-[var(--axia-gold)]"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleAddContact(activeMatter.id)}
-                  className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[var(--text)] text-[var(--bg)] font-bold text-[11px] hover:opacity-90 transition cursor-pointer"
-                >
-                  <Plus className="size-3" />
-                  <span>تأكيد ربط جهة الاتصال بالقضية</span>
-                </button>
               </div>
             </div>
 
@@ -1312,6 +1294,7 @@ export function MattersView({
         tasks={[]}
         selectedMatter={pdfSelectedMatter}
       />
+      {matterActionMenu.menuNode}
     </div>
   );
 }
