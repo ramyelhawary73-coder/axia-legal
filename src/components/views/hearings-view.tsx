@@ -829,16 +829,19 @@ export function HearingsView({
         id?: unknown;
         type?: unknown;
       };
+      const { id, type } = payload;
 
-      if (
-        typeof payload.id !== "string" ||
-        payload.type !== "hearing"
-      ) {
+      if (typeof id !== "string") {
+        setSyncError("معرّف الجلسة في عملية السحب غير صالح.");
+        return;
+      }
+
+      if (type !== "hearing") {
         setSyncError("عنصر السحب غير صالح لإعادة جدولة جلسة.");
         return;
       }
 
-      await persistHearingReschedule(payload.id, targetDateStr);
+      await persistHearingReschedule(id, targetDateStr);
     } catch {
       setSyncError("تعذر قراءة بيانات سحب الجلسة. حاول السحب من بطاقة الجلسة نفسها.");
     }
