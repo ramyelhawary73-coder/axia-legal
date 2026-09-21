@@ -87,10 +87,11 @@ Statements under **Current State** should be treated as verified only when a liv
 
 - Repository: `ramyelhawary73-coder/axia-legal`
 - Default branch: `main`
-- Verified main SHA: `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`
-- PR #24 — AXIA Phase 4B Audit Trail Foundation — is merged into `main` with merge commit `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`.
+- Verified main SHA: `e2c96618ad649efdd66b54a7f5431a18292ac6b5`
+- PR #25 — Phase 4B documentation closeout — is merged into `main` with merge commit `e2c96618ad649efdd66b54a7f5431a18292ac6b5`.
+- PR #24 — AXIA Phase 4B Audit Trail Foundation — is merged with merge commit `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`.
 - PR #23 Roadmap Lock v1 and PR #22 Master Roadmap documentation are also merged.
-- Exact-content verification from PR #24 head to merged `main`: 0 file differences; `main` is ahead by the single merge commit only.
+- Exact-content verification from PR #25 head to merged `main`: 0 file differences; `main` is ahead by the single merge commit only.
 - Merge commits are the approved merge strategy for completed AXIA phases.
 - The CI workflow runs:
   - Typecheck
@@ -113,14 +114,15 @@ Statements under **Current State** should be treated as verified only when a liv
 
 - AXIA production project is deployed and reachable.
 - PR #24 final Preview on exact head `3cbd8efdb74de8424a395d926d37ee85c90507cc` was verified `READY`.
-- Production was manually deployed from the exact merged `main` commit after the prior Vercel build-rate-limit failure.
-- Verified Production deployment: `dpl_3reCzQgMksqmrXPCQJtzCws3EAzS`.
+- PR #25 documentation closeout triggered a normal Production auto-deployment from `main`.
+- Verified Production deployment: `dpl_2RTDztrxRtBGpwukTdMz6AJSUcVH`.
 - Production state: `READY`.
-- Production Git SHA: `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`.
+- Production Git SHA: `e2c96618ad649efdd66b54a7f5431a18292ac6b5`.
 - Production branch: `main`.
 - Production aliases include `axia-legal-psi.vercel.app`.
-- Runtime verification after deployment found no grouped runtime errors and no error/fatal/warning logs in the checked window.
-- GitHub `main` and Vercel Production are now reconciled on the same SHA.
+- GitHub Vercel status for the merge SHA is `success`.
+- Runtime verification after deployment found no grouped runtime errors in the checked window.
+- GitHub `main` and Vercel Production are reconciled on the same SHA.
 - Production Supabase isolation from Development remains a required verification item before real client data.
 
 ## Real Development data last observed
@@ -1138,29 +1140,101 @@ Exit criteria:
 
 ## Phase 4B.1 — Codebase Baseline, Deduplication & Architecture Cleanup
 
-**Status:** `PLANNED`
+**Status:** `PLANNED — READ-ONLY AUDIT PLAN READY / NOT STARTED`
 
-Objective: remove confirmed technical duplication and obsolete paths without rewriting stable functionality.
+Objective: create an evidence-based baseline of duplicate, obsolete, mock, local-only, and structurally risky code before any cleanup implementation.
 
-Primary scope:
+### Read-only audit plan
 
-- repository dependency and duplication inventory;
-- dead-code candidate inventory;
-- stale mock/fake/local-only business path inventory;
-- canonical Client/Matter/Hearing/Task/API/client-helper mapping;
-- shared validation/type/helper consolidation where justified;
-- remove confirmed obsolete code only after callers migrate;
-- improve code-quality gates;
-- create/maintain a Technical Debt Register.
+The audit must remain strictly non-mutating and produce evidence before any refactor branch is authorized.
 
-Exit criteria:
+Audit areas:
 
-- no broad destructive cleanup based on guesswork;
-- every removed production path has evidence of replacement or non-use;
-- no regression in core workflows;
-- no tenant-isolation regression;
-- relevant characterization/regression tests pass;
-- build/bundle remains healthy.
+1. **Repository structure and dependency map**
+   - identify domain boundaries and major dependency paths;
+   - map app routes, API routes, client helpers, shared types, views, and reusable components;
+   - identify unusually large or mixed-responsibility modules.
+
+2. **Duplicate implementation inventory**
+   - duplicate API/client helpers;
+   - duplicate validation logic;
+   - duplicate status/date mapping;
+   - competing implementations for Client/Matter/Hearing/Task/Document/Finance behavior;
+   - duplicate UI primitives and action patterns.
+
+3. **Mock/fake/local-only business-path inventory**
+   - production imports from mock data modules;
+   - hard-coded business records or counters;
+   - authoritative business state stored only in localStorage/sessionStorage;
+   - UI-only mutations that do not persist;
+   - fallback data that can mask backend failures.
+
+4. **Dead/obsolete code candidates**
+   - unused exports/imports;
+   - abandoned components/views/helpers;
+   - stale compatibility paths;
+   - obsolete assets/styles;
+   - TODO/FIXME items that represent unfinished production behavior.
+
+5. **Dependency and build hygiene**
+   - package.json / lockfile consistency;
+   - unnecessary or duplicate dependencies;
+   - CI install reproducibility;
+   - deprecated package/API usage;
+   - bundle-risk candidates.
+
+6. **Security-sensitive architecture review**
+   - ensure cleanup candidates do not bypass Auth/RLS/tenant boundaries;
+   - identify duplicated permission/workspace resolution logic;
+   - identify any Service Role or privileged-code risk;
+   - do not change DB/RLS/Auth during the audit.
+
+7. **Canonical-path recommendations**
+   - for each duplicate/obsolete area, identify the canonical implementation to keep;
+   - classify each candidate as KEEP / CONSOLIDATE / REMOVE-LATER / NEEDS-DEEPER-TEST;
+   - define dependency order for safe cleanup batches.
+
+### Required audit output before implementation approval
+
+Produce a report containing:
+
+- confirmed findings;
+- inferred findings requiring deeper proof;
+- false positives / items intentionally retained;
+- exact files/symbols affected;
+- risk level;
+- canonical replacement path;
+- test coverage required before removal;
+- proposed cleanup batches in safest order;
+- files/systems that must **not** be changed in Phase 4B.1.
+
+### Explicit non-goals for the read-only audit
+
+Do not:
+
+- delete files;
+- rename modules;
+- refactor components;
+- change dependencies;
+- change migrations;
+- change Supabase policies/grants;
+- change Auth;
+- change Vercel configuration;
+- change Production;
+- remove indexes;
+- remove historical migrations;
+- touch real data.
+
+### Audit completion gate
+
+The read-only audit is complete only when:
+
+- the repository map is documented;
+- duplicate/dead/mock/local-only candidates are listed with evidence;
+- risky false-positive deletions are explicitly avoided;
+- cleanup is split into small reviewable implementation batches;
+- owner receives the findings, risks, and recommended first cleanup batch;
+- no implementation has occurred.
 
 ## Phase 5 — AXIA Brand Identity & Premium Login
 
@@ -2436,34 +2510,41 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PHASE 4B-B COMPLETE — PRODUCTION RECONCILED — DOCUMENTATION CLOSEOUT**
+**Current mode: PHASE 4B COMPLETE — PHASE 4B.1 READ-ONLY AUDIT PLAN READY / NOT STARTED**
 
 Completed:
 
-- PR #24 merged using merge commit only;
-- GitHub `main`: `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
-- Development migration `20260921111252 axia_phase4b_audit_trail_foundation` verified;
-- six Core audit triggers verified;
-- no smoke fixtures remain;
-- no residual test audit rows remain;
-- Production deployment `dpl_3reCzQgMksqmrXPCQJtzCws3EAzS` is `READY`;
+- PR #24 merged and Development audit foundation verified;
+- PR #25 documentation closeout merged using merge commit only;
+- current GitHub `main`: `e2c96618ad649efdd66b54a7f5431a18292ac6b5`;
+- PR #25 merged content matches its tested head with 0 file differences;
+- Vercel Production deployment `dpl_2RTDztrxRtBGpwukTdMz6AJSUcVH` is `READY`;
 - Production Git SHA exactly matches current `main`;
 - GitHub Vercel status is `success`;
-- runtime verification found no current errors in the checked window;
-- no paid infrastructure was created;
-- Production/Development Supabase isolation remains the previously documented P0 for future real-client onboarding.
+- runtime verification found no current grouped errors in the checked window;
+- no next implementation phase has started.
 
-### Next correct action
+### Proposed next action — requires owner approval
 
-1. Merge this documentation-only closeout into `main` after owner approval so the canonical roadmap on `main` reflects the verified state.
-2. After documentation closeout is merged, perform a fresh **read-only** scope review for `Phase 4B.1 — Codebase Baseline, Deduplication & Architecture Cleanup`.
-3. Do not implement Phase 4B.1 until its findings, exact scope, affected files, risks, and verification plan are presented and explicitly approved.
+Perform **Phase 4B.1 Read-only Audit only**, using the plan recorded in the Phase 4B.1 section.
+
+The audit may inspect GitHub source, package/dependency structure, tests, build configuration, and existing architecture, but it must not modify code, dependencies, Supabase, Vercel, data, or Production.
+
+After the read-only audit, present:
+
+- findings;
+- duplicate/dead/mock/local-only candidates;
+- affected files/symbols;
+- risks;
+- canonical paths to keep;
+- proposed cleanup batches;
+- verification plan.
+
+Then stop and request explicit approval before any cleanup implementation.
 
 ### Current stop condition
 
-**WAITING FOR OWNER APPROVAL TO MERGE DOCUMENTATION CLOSEOUT.**
-
-No next implementation phase has started.
+**WAITING FOR OWNER APPROVAL TO START PHASE 4B.1 READ-ONLY AUDIT.**
 
 ---
 
@@ -2479,21 +2560,23 @@ If the roadmap is newer on an unmerged documentation branch, explicitly identify
 
 # 25. Documentation Branch Scope
 
-For `docs/axia-phase4b-postmerge-v1`:
+For `docs/axia-phase4b1-readonly-plan-v1`:
 
 Allowed:
 
-- record PR #24 merge and post-merge verification;
-- record Vercel quota blocker;
-- update Current State, Completed History, risks, and NEXT ACTION.
+- record PR #25 merge and final Production verification;
+- update current `main` / Production SHA;
+- record the Phase 4B.1 read-only audit plan;
+- update NEXT ACTION.
 
 Not allowed:
 
 - functional code changes;
+- cleanup/refactor implementation;
 - migrations;
 - Supabase mutations;
 - Vercel configuration changes;
 - paid infrastructure;
-- next-phase implementation.
+- Phase 4B.1 audit execution.
 
-This branch is documentation-only and must not be merged without explicit owner approval.
+This branch is documentation-only. The Phase 4B.1 audit has **not** started.
