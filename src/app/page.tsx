@@ -316,6 +316,8 @@ export default function HomePage() {
             isFocusMode={isFocusMode}
             onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
             onHearingsChanged={refreshCoreWorkspace}
+            onOpenMatter={handleOpenMatter}
+            onOpenTasks={() => setActiveTab("tasks")}
           />
         )}
         {activeTab === "clients" && (
