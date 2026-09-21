@@ -27,6 +27,7 @@ import {
   loadMattersWorkspace,
 } from "@/lib/matters-client";
 import { ClientDetailDashboard } from "@/components/client-detail-dashboard";
+import { useActionContextMenu } from "@/components/action-context-menu";
 
 interface ClientsViewProps {
   selectedClientId?: string | null;
@@ -50,6 +51,7 @@ export function ClientsView({
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [isNewClientOpen, setIsNewClientOpen] = useState(false);
+  const clientActionMenu = useActionContextMenu();
 
   // New Client Form
   const [name, setName] = useState("");
@@ -117,6 +119,30 @@ export function ClientsView({
       setIsSavingClient(false);
     }
   };
+
+  const getClientActions = (client: Client) => [
+    {
+      id: "open",
+      label: "فتح لوحة الموكل",
+      onSelect: () => setLocalSelectedClientId(client.id),
+    },
+    {
+      id: "copy-phone",
+      label: "نسخ رقم الهاتف",
+      disabled: !client.phone || client.phone === "غير مسجل",
+      onSelect: async () => {
+        await navigator.clipboard.writeText(client.phone);
+      },
+    },
+    {
+      id: "copy-email",
+      label: "نسخ البريد الإلكتروني",
+      disabled: !client.email || client.email === "غير مسجل",
+      onSelect: async () => {
+        await navigator.clipboard.writeText(client.email);
+      },
+    },
+  ];
 
   const filteredClients = clients.filter((client) => {
     const matchesSearch =
@@ -264,7 +290,11 @@ export function ClientsView({
 
                 return (
                   <tr 
-                    key={client.id} 
+                    key={client.id}
+                    {...clientActionMenu.bind(
+                      getClientActions(client),
+                      `الموكل ${client.name}`,
+                    )}
                     onClick={() => setLocalSelectedClientId(client.id)}
                     className="hover:bg-[var(--accent)]/70 transition-colors group cursor-pointer"
                   >
@@ -338,17 +368,23 @@ export function ClientsView({
                           <span className="text-[var(--text-muted)]">المتبقي:</span>
                           <span className="font-semibold text-amber-500">{client.balanceDue}</span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setLocalSelectedClientId(client.id);
-                          }}
-                          className="mt-1.5 w-full inline-flex items-center justify-center gap-1 rounded border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-[10px] font-bold text-[var(--text)] group-hover:border-[var(--axia-gold)] group-hover:text-[var(--axia-gold)] transition shadow-sm"
-                        >
-                          <span>عرض لوحة الموكل</span>
-                          <ChevronLeft className="size-3" />
-                        </button>
+                        <div className="mt-1.5 flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setLocalSelectedClientId(client.id);
+                            }}
+                            className="flex-1 inline-flex items-center justify-center gap-1 rounded border border-[var(--border)] bg-[var(--bg)] px-2 py-1 text-[10px] font-bold text-[var(--text)] group-hover:border-[var(--axia-gold)] group-hover:text-[var(--axia-gold)] transition shadow-sm"
+                          >
+                            <span>عرض لوحة الموكل</span>
+                            <ChevronLeft className="size-3" />
+                          </button>
+                          {clientActionMenu.triggerButton(
+                            getClientActions(client),
+                            `الموكل ${client.name}`,
+                          )}
+                        </div>
                       </div>
                     </td>
                   </tr>
@@ -491,6 +527,7 @@ export function ClientsView({
           </div>
         </div>
       )}
+      {clientActionMenu.menuNode}
     </div>
   );
 }
