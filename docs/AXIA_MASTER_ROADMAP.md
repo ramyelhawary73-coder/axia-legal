@@ -812,7 +812,7 @@ The sequence below is now the canonical implementation order unless a fresh live
 
 ## Phase 4B — Data Integrity & Security Hardening
 
-**Status:** `IN_PROGRESS — 4B-A VERIFIED / 4B-B PREPARED / MIGRATION NOT APPLIED`
+**Status:** `IN_PROGRESS — 4B-A VERIFIED / 4B-B APPLIED TO DEVELOPMENT / DB TESTS PASS / CI VERIFICATION PENDING`
 
 Objective: establish a safe commercial data/security baseline before major product expansion.
 
@@ -864,7 +864,7 @@ Recommended architecture:
 
 ### Phase 4B-B — Audit Trail Foundation Design
 
-**State:** PREPARED ON BRANCH — MIGRATION NOT APPLIED
+**State:** APPLIED TO AXIA LEGAL DEVELOPMENT — VERIFIED — NOT MERGED
 
 Root causes confirmed:
 
@@ -967,7 +967,7 @@ Prepared on branch `feat/axia-phase4b-audit-foundation-v1`:
 - `supabase/migrations/20260921105916_axia_phase4b_audit_trail_foundation.sql`
 - `tests/axia-phase4b-audit-foundation.test.mjs`
 
-The migration has **not** been applied to Supabase.
+The migration was applied **only** to `AXIA Legal Development` (`qshgczulivsxztgrbqew`) with Supabase migration version `20260921111252`. No Production environment was changed.
 
 Prepared migration behavior:
 
@@ -999,17 +999,62 @@ Application changes:
 
 No expected business-schema rewrite.
 
+#### Development application & verification result
+
+Migration applied successfully to:
+
+- project: `AXIA Legal Development`;
+- project ref: `qshgczulivsxztgrbqew`;
+- migration version: `20260921111252`;
+- migration name: `axia_phase4b_audit_trail_foundation`.
+
+Post-application verification confirmed:
+
+- `private.audit_core_row()` exists as `SECURITY DEFINER`;
+- empty function `search_path` is enforced;
+- direct EXECUTE is unavailable to `public`, `anon`, and `authenticated`;
+- Core audit triggers exist on Clients, Matters, Hearings, Tasks, Finance, and Documents;
+- authenticated direct fake Core audit insert is rejected by RLS;
+- authorized `rajih.agent.run` insert remains permitted;
+- unauthorized cross-organization RAJIH audit insert is rejected;
+- same-tenant Client create/update generates one expected event each;
+- no-op update that changes only `updated_at` does not generate a false business event;
+- runtime create/update events were successfully generated for Clients, Matters, Hearings, Tasks, and Finance;
+- `document.created` was generated on document metadata insert;
+- all tested Core trigger events recorded the expected actor and `database_trigger` source;
+- cross-tenant Client update was blocked and generated no audit event;
+- normal staff member can read own audit events but not another member's events;
+- owner can read another member's organization event;
+- all smoke fixtures and temporary memberships were rolled back;
+- final fixture count: `0`;
+- final `audit_logs` count after rollback tests: `0`.
+
+Post-DDL Supabase Security Advisor findings remain limited to the pre-existing warnings:
+
+- `vector` extension in `public`;
+- Leaked Password Protection disabled.
+
+No new Security Advisor finding was introduced by Phase 4B-B.
+
+Performance Advisor findings remain the previously known Legal Knowledge/ingestion items:
+
+- 6 unindexed foreign-key notices;
+- 6 RLS init-plan warnings;
+- unused-index informational notices.
+
+These are not changed in 4B-B.
+
 #### Rollback strategy
 
-Migration must be reversible operationally by a follow-up migration that:
+If rollback is required, use a follow-up migration that:
 
-- drops newly added Core audit triggers;
-- drops the private audit trigger function if no longer referenced;
-- restores previous `audit_logs` policies/grants if necessary;
-- leaves existing business rows untouched;
-- never rewrites historical Core records.
+- drops the six Core audit triggers;
+- drops `private.audit_core_row()` if no longer referenced;
+- restores the previous `audit_logs` INSERT/SELECT policies and grants if required;
+- leaves business rows untouched;
+- does not rewrite historical records.
 
-The migration file is prepared on the Phase 4B branch but has not been applied to Supabase.
+Do not edit or remove the already-applied migration from history.
 
 Exit criteria:
 
@@ -2306,32 +2351,33 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PHASE 4B-B — PREPARED / OWNER SQL-DIFF REVIEW / NOT APPLIED**
+**Current mode: PHASE 4B-B — DEVELOPMENT APPLIED / DB TESTS PASS / CI VERIFICATION**
 
-Prepared artifacts on `feat/axia-phase4b-audit-foundation-v1`:
+Completed:
 
-- `supabase/migrations/20260921105916_axia_phase4b_audit_trail_foundation.sql`
-- `tests/axia-phase4b-audit-foundation.test.mjs`
+- 4B-A environment verification;
+- 4B-B migration applied to `AXIA Legal Development` only;
+- runtime audit/RLS/rollback smoke tests passed;
+- post-DDL Supabase Security/Performance Advisors rerun;
+- no paid resource created;
+- no Production environment changed;
+- no Merge performed.
 
-No migration has been applied to Supabase. No Vercel Environment Variable has been changed. No paid resource has been created.
+Current required action:
 
-Required next steps:
-
-1. Present the complete migration SQL and branch diff to the owner.
-2. Review any requested changes.
-3. Do **not** apply the migration until the owner explicitly approves Development application.
-4. After approval to apply:
-   - apply only to `AXIA Legal Development`;
-   - run the documented audit/tenant smoke matrix;
-   - rerun Supabase advisors;
-   - run Typecheck/Lint/Safety/Build;
-   - publish Preview only;
-   - update this roadmap before any merge request.
-5. Production Supabase creation/cost lookup remains deferred.
+1. Run/verify CI on the exact final branch head:
+   - Typecheck;
+   - Lint;
+   - Safety tests;
+   - Production build.
+2. Review exact branch diff.
+3. Stop after CI/reporting. Do not merge without explicit owner approval.
+4. Do not continue to the next Phase 4B sub-scope until owner approves it.
+5. Production Supabase/cost lookup remains deferred.
 
 ### Current stop condition
 
-**STOP BEFORE DATABASE MUTATION.**
+**NO MERGE / NO PRODUCTION / NO PAID INFRASTRUCTURE.**
 
 ---
 
