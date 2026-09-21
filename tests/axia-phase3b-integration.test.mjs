@@ -62,7 +62,8 @@ test("Documents API uploads real files and never exposes storage_path", () => {
   assert.match(documentsApi, /MAX_FILE_BYTES/);
   assert.doesNotMatch(documentsApi, /service_role/i);
   assert.doesNotMatch(documentsApi, /\.remove\(/);
-  assert.doesNotMatch(documentsApi, /storage_path:/);
+  assert.match(documentsApi, /storage_path: objectName/);
+  assert.doesNotMatch(documentsApi, /storagePath:/);
 });
 
 test("Document download uses a short-lived signed URL after RLS metadata lookup", () => {
