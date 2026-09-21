@@ -1,7 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
-import { NavigationTab, LegalTask } from "@/types/legal";
+import {
+  NavigationTab,
+  LegalTask,
+  Client,
+  Matter,
+  Hearing,
+  LegalDocument,
+} from "@/types/legal";
 import { OverviewView } from "@/components/views/overview-view";
 import { MattersView } from "@/components/views/matters-view";
 import { HearingsView } from "@/components/views/hearings-view";
@@ -14,7 +21,6 @@ import { RajihAiView } from "@/components/views/rajih-ai-view";
 import { TeamView } from "@/components/views/team-view";
 import { ReportsView } from "@/components/views/reports-view";
 import { AdministrationView } from "@/components/views/administration-view";
-import { mockMatters, mockClients, mockDocuments } from "@/lib/mock-legal-data";
 import {
   createPersistentTask,
   loadTaskWorkspace,
@@ -24,6 +30,10 @@ import {
 import { useDailySnapshotAutoExport } from "@/hooks/use-daily-snapshot-auto-export";
 import { DailySnapshotToast } from "@/components/daily-snapshot-toast";
 import { DailySnapshotManager } from "@/components/daily-snapshot-manager";
+import { loadPersistentClients } from "@/lib/clients-client";
+import { loadMattersWorkspace } from "@/lib/matters-client";
+import { loadPersistentHearings } from "@/lib/hearings-client";
+import { loadPersistentDocuments } from "@/lib/documents-client";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<NavigationTab>("overview");
@@ -31,6 +41,12 @@ export default function HomePage() {
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<LegalTask[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [matters, setMatters] = useState<Matter[]>([]);
+  const [hearings, setHearings] = useState<Hearing[]>([]);
+  const [documents, setDocuments] = useState<LegalDocument[]>([]);
+  const [coreSyncError, setCoreSyncError] = useState<string | null>(null);
+  const [coreLoading, setCoreLoading] = useState(true);
   const [taskWorkspace, setTaskWorkspace] = useState<TaskWorkspace | null>(null);
   const [taskSyncError, setTaskSyncError] = useState<string | null>(null);
   const [tasksLoading, setTasksLoading] = useState(true);
@@ -38,7 +54,7 @@ export default function HomePage() {
   const [isFocusMode, setIsFocusMode] = useState(false);
 
   // Background Auto-Export: automatically exports daily snapshot to Downloads / Cloud Sync on app startup
-  const { toastNotification, dismissToast } = useDailySnapshotAutoExport(mockMatters, tasks);
+  const { toastNotification, dismissToast } = useDailySnapshotAutoExport(matters, tasks);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +75,62 @@ export default function HomePage() {
       .finally(() => {
         if (!cancelled) setTasksLoading(false);
       });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const refreshCoreWorkspace = async () => {
+    const [loadedClients, matterWorkspace] = await Promise.all([
+      loadPersistentClients(),
+      loadMattersWorkspace(),
+    ]);
+
+    const [loadedHearings, loadedDocuments] = await Promise.all([
+      loadPersistentHearings(matterWorkspace.matters),
+      loadPersistentDocuments(matterWorkspace.matters, loadedClients),
+    ]);
+
+    setClients(loadedClients);
+    setMatters(matterWorkspace.matters);
+    setHearings(loadedHearings);
+    setDocuments(loadedDocuments);
+    setCoreSyncError(null);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const [loadedClients, matterWorkspace] = await Promise.all([
+          loadPersistentClients(),
+          loadMattersWorkspace(),
+        ]);
+
+        const [loadedHearings, loadedDocuments] = await Promise.all([
+          loadPersistentHearings(matterWorkspace.matters),
+          loadPersistentDocuments(matterWorkspace.matters, loadedClients),
+        ]);
+
+        if (cancelled) return;
+        setClients(loadedClients);
+        setMatters(matterWorkspace.matters);
+        setHearings(loadedHearings);
+        setDocuments(loadedDocuments);
+        setCoreSyncError(null);
+      } catch (error) {
+        if (cancelled) return;
+        setCoreSyncError(
+          error instanceof Error
+            ? error.message
+            : "تعذر تحميل بيانات مساحة العمل.",
+        );
+      } finally {
+        if (!cancelled) setCoreLoading(false);
+      }
+    })();
 
     return () => {
       cancelled = true;
@@ -130,6 +202,7 @@ export default function HomePage() {
       const workspace = await loadTaskWorkspace();
       setTaskWorkspace(workspace);
       setTasks(workspace.tasks);
+      await refreshCoreWorkspace();
       setTaskSyncError(null);
     } catch (error) {
       setTaskSyncError(
@@ -160,17 +233,17 @@ export default function HomePage() {
 
   let subContext: string | null = null;
   if (activeTab === "matters" && selectedMatterId) {
-    const matter = mockMatters.find(m => m.id === selectedMatterId);
+    const matter = matters.find((m) => m.id === selectedMatterId);
     if (matter) {
       subContext = `قضية رقم ${matter.caseNumber}`;
     }
   } else if (activeTab === "clients" && selectedClientId) {
-    const client = mockClients.find(c => c.id === selectedClientId);
+    const client = clients.find((c) => c.id === selectedClientId);
     if (client) {
       subContext = `الموكل: ${client.name}`;
     }
   } else if (activeTab === "documents" && selectedDocumentId) {
-    const doc = mockDocuments.find(d => d.id === selectedDocumentId);
+    const doc = documents.find((d) => d.id === selectedDocumentId);
     if (doc) {
       subContext = `مستند: ${doc.title}`;
     }
@@ -198,19 +271,36 @@ export default function HomePage() {
         onCreateTask={handleCreateTask}
         taskMatterOptions={taskWorkspace?.matters ?? []}
         taskAssigneeLabel={taskWorkspace?.assigneeLabel ?? "المستخدم الحالي"}
-        matters={mockMatters}
-        clients={mockClients}
-        documents={mockDocuments}
+        matters={matters}
+        clients={clients}
+        documents={documents}
         onSelectMatter={handleSelectMatter}
         onSelectClient={handleSelectClient}
         onSelectDocument={handleSelectDocument}
         isFocusMode={isFocusMode}
       >
         {activeTab === "overview" && (
-          <OverviewView 
-            onNavigate={setActiveTab} 
-            onOpenMatter={handleOpenMatter} 
-          />
+          <>
+            {coreSyncError && (
+              <div className="mb-4 rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-semibold text-red-300">
+                {coreSyncError}
+              </div>
+            )}
+            {coreLoading && (
+              <div className="mb-4 rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-3 text-xs text-[var(--text-muted)]">
+                جارٍ تحميل بيانات مساحة العمل...
+              </div>
+            )}
+            <OverviewView
+              matters={matters}
+              hearings={hearings}
+              tasks={tasks}
+              clients={clients}
+              documents={documents}
+              onNavigate={setActiveTab}
+              onOpenMatter={handleOpenMatter}
+            />
+          </>
         )}
         {activeTab === "matters" && (
           <MattersView 
@@ -257,9 +347,11 @@ export default function HomePage() {
           </>
         )}
         {activeTab === "documents" && (
-          <DocumentsView 
-            clients={mockClients} 
-            matters={mockMatters}
+          <DocumentsView
+            clients={clients}
+            matters={matters}
+            documents={documents}
+            onDocumentsChange={setDocuments}
             selectedDocId={selectedDocumentId}
             onCloseDocModal={() => setSelectedDocumentId(null)}
           />
@@ -268,8 +360,8 @@ export default function HomePage() {
         {activeTab === "library" && <LibraryView />}
         {activeTab === "rajih" && <RajihAiView />}
         {activeTab === "team" && <TeamView />}
-        {activeTab === "reports" && <ReportsView matters={mockMatters} tasks={tasks} />}
-        {activeTab === "administration" && <AdministrationView matters={mockMatters} tasks={tasks} />}
+        {activeTab === "reports" && <ReportsView matters={matters} tasks={tasks} />}
+        {activeTab === "administration" && <AdministrationView matters={matters} tasks={tasks} />}
       </AppShell>
 
       {/* Floating Notification for Daily Snapshot Auto-Export */}
@@ -283,7 +375,7 @@ export default function HomePage() {
       <DailySnapshotManager
         isOpen={isSnapshotManagerOpen}
         onClose={() => setIsSnapshotManagerOpen(false)}
-        matters={mockMatters}
+        matters={matters}
         tasks={tasks}
       />
     </>
