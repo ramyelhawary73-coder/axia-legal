@@ -19,7 +19,6 @@ import {
   Users
 } from "lucide-react";
 import { Matter, Client, LegalDocument, NavigationTab } from "@/types/legal";
-import { mockMatters, mockClients, mockDocuments } from "@/lib/mock-legal-data";
 
 export type SearchCategoryFilter = "all" | "matters" | "clients" | "documents" | "actions";
 
@@ -50,9 +49,9 @@ interface SearchItem {
 }
 
 export function GlobalSearchBar({
-  matters = mockMatters,
-  clients = mockClients,
-  documents = mockDocuments,
+  matters = [],
+  clients = [],
+  documents = [],
   onNavigate,
   onSelectMatter,
   onSelectClient,
@@ -72,15 +71,27 @@ export function GlobalSearchBar({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const resultsContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // Quick suggestions for empty state
-  const quickSuggestions = [
-    { label: "محكمة النقض", category: "matters", queryText: "النقض" },
-    { label: "شركة النيل للمقاولات", category: "clients", queryText: "شركة النيل" },
-    { label: "مجموعة المنصور", category: "clients", queryText: "المنصور" },
-    { label: "مذكرة الرد والطعن", category: "documents", queryText: "مذكرة" },
-    { label: "قضايا متداولة ٢٠٢٥", category: "matters", queryText: "٢٠٢٥" },
-    { label: "عقود مقاولة واتفاقيات", category: "documents", queryText: "عقد" },
-  ];
+  // Quick suggestions come only from persisted workspace data.
+  const quickSuggestions = useMemo(
+    () => [
+      ...matters.slice(0, 2).map((matter) => ({
+        label: matter.caseNumber,
+        category: "matters",
+        queryText: matter.caseNumber,
+      })),
+      ...clients.slice(0, 2).map((client) => ({
+        label: client.name,
+        category: "clients",
+        queryText: client.name,
+      })),
+      ...documents.slice(0, 2).map((document) => ({
+        label: document.title,
+        category: "documents",
+        queryText: document.title,
+      })),
+    ],
+    [clients, documents, matters],
+  );
 
   // Close on outside click
   useEffect(() => {
@@ -190,7 +201,7 @@ export function GlobalSearchBar({
         subtitle: "استخدام النماذج القانونية الذكية المعتمدة وتوليد المستند فورا",
         badge: "محرر العقود والمستندات",
         badgeVariant: "purple",
-        details: "مزامنة سحابية فائقة وحفظ تلقائي بمجلد التنزيلات المحلي",
+        details: "أرشيف خاص مع روابط تنزيل مؤقتة ومحكومة بالصلاحيات",
         meta: "انتقال",
         rawItem: { description: "فتح محرر المستندات" }
       },
@@ -256,7 +267,7 @@ export function GlobalSearchBar({
         badge: c.type,
         badgeVariant: c.type === "شركة / مؤسسة" ? "blue" : "emerald",
         details: `الهاتف: ${c.phone} | ${c.nationalIdOrCr}`,
-        meta: `${c.activeMattersCount} دعاوى مسجلة`,
+        meta: `${matters.filter((matter) => matter.clientId === c.id).length} دعاوى مسجلة`,
         rawItem: c,
       });
     });
@@ -861,7 +872,7 @@ export function GlobalSearchBar({
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-[var(--border)] flex items-center justify-between text-[11px] text-[var(--text-muted)]">
-                  <span>يمكنك إدخال رقم أي قضية، اسم موكل، رقم توكيل، أو محكمة</span>
+                  <span>ابحث في القضايا والموكلين والمستندات المحفوظة فعلياً</span>
                   <span className="font-semibold text-[var(--text)]">مكتب أكسيا للحلول القانونية</span>
                 </div>
               </div>
