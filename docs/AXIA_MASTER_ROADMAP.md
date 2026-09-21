@@ -812,7 +812,7 @@ The sequence below is now the canonical implementation order unless a fresh live
 
 ## Phase 4B — Data Integrity & Security Hardening
 
-**Status:** `IN_PROGRESS — 4B-A VERIFIED / 4B-B DESIGN READY / MUTATION NOT APPROVED`
+**Status:** `IN_PROGRESS — 4B-A VERIFIED / 4B-B PREPARED / MIGRATION NOT APPLIED`
 
 Objective: establish a safe commercial data/security baseline before major product expansion.
 
@@ -1009,7 +1009,7 @@ Migration must be reversible operationally by a follow-up migration that:
 - leaves existing business rows untouched;
 - never rewrites historical Core records.
 
-No migration has been created or applied yet.
+The migration file is prepared on the Phase 4B branch but has not been applied to Supabase.
 
 Exit criteria:
 
