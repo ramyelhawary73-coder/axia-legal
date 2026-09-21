@@ -38,7 +38,7 @@ interface ClientDetailDashboardProps {
   matters: Matter[];
   onSelectClient: (client: Client) => void;
   onBack: () => void;
-  onAddNewMatter?: (matter: Matter) => void;
+  onAddNewMatter?: (matter: Matter) => Matter | void | Promise<Matter | void>;
 }
 
 export function ClientDetailDashboard({
@@ -61,6 +61,8 @@ export function ClientDetailDashboard({
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [createMatterError, setCreateMatterError] = useState<string | null>(null);
+  const [isCreatingMatter, setIsCreatingMatter] = useState(false);
 
   // New Matter Form State
   const [newCaseNumber, setNewCaseNumber] = useState("");
@@ -68,12 +70,6 @@ export function ClientDetailDashboard({
   const [newCircuit, setNewCircuit] = useState("");
   const [newTitle, setNewTitle] = useState("");
   const [newClientRole, setNewClientRole] = useState<Matter["clientRole"]>("مدعي");
-  const [newOpponentName, setNewOpponentName] = useState("");
-  const [newAssignedLawyer, setNewAssignedLawyer] = useState("د. رامي الهواري");
-  const [newHearingDate, setNewHearingDate] = useState("2026-10-15");
-  const [newHearingGoal, setNewHearingGoal] = useState("جلسة افتتاحية وتقديم المستندات");
-  const [newAgreedFees, setNewAgreedFees] = useState("١٥٠,٠٠٠ ج.م");
-  const [newClaimAmount, setNewClaimAmount] = useState("");
 
   // Filter matters strictly belonging to this client
   const clientMatters = useMemo(() => {
@@ -95,13 +91,24 @@ export function ClientDetailDashboard({
     return clientMatters.filter((m) => m.status === "مغلقة" || m.stage === "محكوم فيها");
   }, [clientMatters]);
 
-  const winCount = useMemo(() => {
-    return closedMatters.filter((m) => 
-      !m.verdictResult || m.verdictResult.includes("كسب") || m.verdictResult.includes("صالح") || m.verdictResult.includes("صلح")
-    ).length;
-  }, [closedMatters]);
+  const ratedClosedMatters = useMemo(
+    () => closedMatters.filter((matter) => Boolean(matter.verdictResult)),
+    [closedMatters],
+  );
 
-  const winRate = closedMatters.length > 0 ? Math.round((winCount / closedMatters.length) * 100) : 100;
+  const winCount = useMemo(() => {
+    return ratedClosedMatters.filter(
+      (matter) =>
+        matter.verdictResult?.includes("كسب") ||
+        matter.verdictResult?.includes("صالح") ||
+        matter.verdictResult?.includes("صلح"),
+    ).length;
+  }, [ratedClosedMatters]);
+
+  const winRate =
+    ratedClosedMatters.length > 0
+      ? Math.round((winCount / ratedClosedMatters.length) * 100)
+      : null;
 
   // Filtered matters for display
   const displayedMatters = useMemo(() => {
@@ -136,9 +143,9 @@ export function ClientDetailDashboard({
     setTimeout(() => setCopiedText(null), 2000);
   };
 
-  const handleCreateMatter = (e: React.FormEvent) => {
+  const handleCreateMatter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCaseNumber || !newTitle || !newOpponentName) return;
+    if (!newCaseNumber || !newTitle || !onAddNewMatter) return;
 
     const newMatter: Matter = {
       id: `MAT-${Date.now()}`,
@@ -150,24 +157,40 @@ export function ClientDetailDashboard({
       clientName: client.name,
       clientId: client.id,
       clientRole: newClientRole,
-      opponentName: newOpponentName,
-      assignedLawyer: newAssignedLawyer,
-      nextHearingDate: newHearingDate,
-      nextHearingGoal: newHearingGoal,
+      opponentName: "غير مسجل",
+      assignedLawyer: "غير مسجل",
+      nextHearingDate: "غير مسجل",
+      nextHearingGoal: "غير مسجل",
       stage: "متداولة",
       status: "مفتوحة",
       filingDate: new Date().toISOString().split("T")[0],
-      agreedFees: newAgreedFees || "١٠٠,٠٠٠ ج.م",
-      paidFees: "٥٠,٠٠٠ ج.م",
-      claimAmount: newClaimAmount || "غير مقدر القيمة",
-      notes: `تم قيد الدعوى مباشرة لصالح الموكل ${client.name} بموجب التوكيل ${client.poaNumber}.`,
+      agreedFees: "غير مسجل",
+      paidFees: "غير مسجل",
+      notes:
+        client.poaNumber === "غير مسجل"
+          ? `تم قيد الدعوى مباشرة لصالح الموكل ${client.name}.`
+          : `تم قيد الدعوى مباشرة لصالح الموكل ${client.name} بموجب التوكيل ${client.poaNumber}.`,
     };
 
-    if (onAddNewMatter) {
-      onAddNewMatter(newMatter);
+    setCreateMatterError(null);
+    setIsCreatingMatter(true);
+
+    try {
+      const persistedMatter = await onAddNewMatter(newMatter);
+      if (!persistedMatter) {
+        setCreateMatterError("تعذر حفظ القضية.");
+        return;
+      }
+
+      setIsAddMatterModalOpen(false);
+      setSelectedMatterForDossier(persistedMatter);
+    } catch (error) {
+      setCreateMatterError(
+        error instanceof Error ? error.message : "تعذر حفظ القضية.",
+      );
+    } finally {
+      setIsCreatingMatter(false);
     }
-    setIsAddMatterModalOpen(false);
-    setSelectedMatterForDossier(newMatter);
   };
 
   return (
@@ -264,7 +287,7 @@ export function ClientDetailDashboard({
                 </span>
                 <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[11px] font-bold text-emerald-500">
                   <ShieldCheck className="size-3" />
-                  توكيل موثق وساري
+                  {client.poaExpiry === "غير مسجل" ? "بيانات التوكيل غير مسجلة" : "توكيل موثق وساري"}
                 </span>
               </div>
 
@@ -298,8 +321,11 @@ export function ClientDetailDashboard({
               </span>
               <button
                 type="button"
-                onClick={() => handleCopy(client.poaNumber)}
-                className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-0.5"
+                onClick={() => {
+                  if (client.poaNumber !== "غير مسجل") handleCopy(client.poaNumber);
+                }}
+                disabled={client.poaNumber === "غير مسجل"}
+                className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text)] flex items-center gap-0.5 disabled:cursor-not-allowed disabled:opacity-40"
                 title="نسخ رقم التوكيل"
               >
                 {copiedText === client.poaNumber ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
@@ -362,7 +388,9 @@ export function ClientDetailDashboard({
               نسبة كسب الدعاوى
             </span>
             <div className="mt-1 flex items-baseline gap-1.5">
-              <span className="text-xl font-bold text-emerald-500">{winRate}٪</span>
+              <span className="text-xl font-bold text-emerald-500">
+                {winRate === null ? "غير مسجل" : `${winRate}٪`}
+              </span>
               <span className="text-[10px] text-[var(--text-muted)]">أحكام صالحة للموكل</span>
             </div>
           </div>
@@ -958,7 +986,7 @@ export function ClientDetailDashboard({
 
               <div>
                 <span className="text-[var(--text-muted)] block text-[10px]">تاريخ القيد بالجداول:</span>
-                <span className="font-mono text-[var(--text)]">{selectedMatterForDossier.filingDate || "٢٠٢٥"}</span>
+                <span className="font-mono text-[var(--text)]">{selectedMatterForDossier.filingDate || "غير مسجل"}</span>
               </div>
             </div>
 
@@ -1045,7 +1073,9 @@ export function ClientDetailDashboard({
               {client.name}
             </h2>
             <p className="text-xs text-[var(--text-muted)] mt-0.5 border-b border-[var(--border)] pb-3">
-              بموجب التوكيل الرسمي: {client.poaNumber}
+              {client.poaNumber === "غير مسجل"
+                ? "بيانات التوكيل غير مسجلة حتى الآن"
+                : `بموجب التوكيل الرسمي: ${client.poaNumber}`}
             </p>
 
             <form onSubmit={handleCreateMatter} className="mt-4 space-y-4 text-xs">
@@ -1119,79 +1149,20 @@ export function ClientDetailDashboard({
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">اسم الخصم / الشركة المشكو في حقها</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="مثال: شركة النور للملاحة والتخليص"
-                    value={newOpponentName}
-                    onChange={(e) => setNewOpponentName(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                  />
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--accent)]/40 p-3 text-[11px] leading-relaxed text-[var(--text-muted)]">
+                  بيانات الخصوم تُسجل في سجل أطراف القضية المستقل. لن يتم اختلاق خصم داخل ملف القضية الأساسي، وستظهر القيمة «غير مسجل» لحين ربط واجهة الأطراف.
                 </div>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">تاريخ الجلسة الافتتاحية</label>
-                  <input
-                    type="date"
-                    value={newHearingDate}
-                    onChange={(e) => setNewHearingDate(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">المطلوب بالجلسة (الهدف الإجرائي)</label>
-                  <input
-                    type="text"
-                    placeholder="مثال: تقديم أصل الصحيفة وإعلان الخصوم"
-                    value={newHearingGoal}
-                    onChange={(e) => setNewHearingGoal(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                  />
-                </div>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--accent)]/40 p-3 text-[11px] leading-relaxed text-[var(--text-muted)]">
+                الجلسات والمحامي المسؤول والأتعاب تُسجل من وحداتها الحقيقية بعد حفظ القضية. هذه البيانات لن تُحفظ محلياً أو تُنشأ بقيم افتراضية.
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">المحامي المسؤول</label>
-                  <select
-                    value={newAssignedLawyer}
-                    onChange={(e) => setNewAssignedLawyer(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                  >
-                    <option value="د. رامي الهواري">د. رامي الهواري (نقض)</option>
-                    <option value="أ. طارق الشريف">أ. طارق الشريف (استئناف عالي)</option>
-                    <option value="أ. نرمين جلال">أ. نرمين جلال (مجلس دولة)</option>
-                    <option value="أ. خالد النمر">أ. خالد النمر (مدني واستئناف)</option>
-                  </select>
+              {createMatterError && (
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-[11px] font-semibold text-red-300">
+                  {createMatterError}
                 </div>
-
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">قيمة المطالبة المالية</label>
-                  <input
-                    type="text"
-                    placeholder="مثال: ٣,٥٠٠,٠٠٠ ج.م"
-                    value={newClaimAmount}
-                    onChange={(e) => setNewClaimAmount(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[var(--text-muted)] mb-1 font-medium">الأتعاب المقدرة</label>
-                <input
-                  type="text"
-                  placeholder="مثال: ١٨٠,٠٠٠ ج.م"
-                  value={newAgreedFees}
-                  onChange={(e) => setNewAgreedFees(e.target.value)}
-                  className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                />
-              </div>
+              )}
 
               <div className="pt-4 border-t border-[var(--border)] flex justify-end gap-2">
                 <button
@@ -1203,9 +1174,10 @@ export function ClientDetailDashboard({
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-[var(--axia-gold)] px-4 py-2 text-xs font-bold text-black shadow-md hover:bg-[var(--axia-gold-light)] transition"
+                  disabled={isCreatingMatter}
+                  className="rounded-lg bg-[var(--axia-gold)] px-4 py-2 text-xs font-bold text-black shadow-md hover:bg-[var(--axia-gold-light)] transition disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  قيد الدعوى وحفظ السجل
+                  {isCreatingMatter ? "جارٍ الحفظ..." : "قيد الدعوى وحفظ السجل"}
                 </button>
               </div>
             </form>

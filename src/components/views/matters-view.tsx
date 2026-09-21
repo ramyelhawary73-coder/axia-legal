@@ -37,7 +37,6 @@ import {
   Legend,
   CartesianGrid
 } from "recharts";
-import { mockTasks } from "@/lib/mock-legal-data";
 import {
   createPersistentMatter,
   loadMattersWorkspace,
@@ -1310,7 +1309,7 @@ export function MattersView({
         }}
         defaultReportType={pdfSelectedMatter ? "single-matter" : "matters"}
         matters={filteredMatters}
-        tasks={mockTasks}
+        tasks={[]}
         selectedMatter={pdfSelectedMatter}
       />
     </div>

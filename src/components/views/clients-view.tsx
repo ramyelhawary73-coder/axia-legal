@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { 
   Users, 
   Building2, 
@@ -17,8 +17,15 @@ import {
   CheckCircle2,
   ChevronLeft
 } from "lucide-react";
-import { mockClients, mockMatters } from "@/lib/mock-legal-data";
 import { Client, Matter } from "@/types/legal";
+import {
+  createPersistentClient,
+  loadPersistentClients,
+} from "@/lib/clients-client";
+import {
+  createPersistentMatter,
+  loadMattersWorkspace,
+} from "@/lib/matters-client";
 import { ClientDetailDashboard } from "@/components/client-detail-dashboard";
 
 interface ClientsViewProps {
@@ -27,8 +34,11 @@ interface ClientsViewProps {
 }
 
 export function ClientsView({ selectedClientId, onCloseClientDashboard }: ClientsViewProps = {}) {
-  const [clients, setClients] = useState<Client[]>(mockClients);
-  const [matters, setMatters] = useState<Matter[]>(mockMatters);
+  const [clients, setClients] = useState<Client[]>([]);
+  const [matters, setMatters] = useState<Matter[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [isSavingClient, setIsSavingClient] = useState(false);
   const [localSelectedClientId, setLocalSelectedClientId] = useState<string | null>(null);
   const effectiveClientId = selectedClientId ?? localSelectedClientId;
   const selectedClient = effectiveClientId ? clients.find((c) => c.id === effectiveClientId) || null : null;
@@ -42,46 +52,71 @@ export function ClientsView({ selectedClientId, onCloseClientDashboard }: Client
   const [nationalIdOrCr, setNationalIdOrCr] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [poaNumber, setPoaNumber] = useState("");
-  const [poaOffice, setPoaOffice] = useState("");
   const [address, setAddress] = useState("");
 
-  const handleCreateClient = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !phone) return;
+  useEffect(() => {
+    let cancelled = false;
 
-    const newClient: Client = {
-      id: `CLI-${Date.now()}`,
-      name,
-      type,
-      nationalIdOrCr: nationalIdOrCr || "قيد الاستيفاء",
-      phone,
-      email: email || "info@client.com",
-      poaNumber: poaNumber || "توكيل قيد الإيداع",
-      poaOffice: poaOffice || "مكتب توثيق النموذجي",
-      poaExpiry: "ساري",
-      activeMattersCount: 1,
-      totalPaid: "٠ ج.م",
-      balanceDue: "٠ ج.م",
-      address: address || "القاهرة، جمهورية مصر العربية",
+    void Promise.all([loadPersistentClients(), loadMattersWorkspace()])
+      .then(([loadedClients, workspace]) => {
+        if (cancelled) return;
+        setClients(loadedClients);
+        setMatters(workspace.matters);
+        setSyncError(null);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setSyncError(
+          error instanceof Error ? error.message : "تعذر تحميل بيانات الموكلين.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
     };
+  }, []);
 
-    setClients([newClient, ...clients]);
-    setIsNewClientOpen(false);
-    setName("");
-    setPhone("");
-    setNationalIdOrCr("");
-    setEmail("");
-    setPoaNumber("");
-    setPoaOffice("");
-    setAddress("");
+  const handleCreateClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || isSavingClient) return;
+
+    setIsSavingClient(true);
+    setSyncError(null);
+
+    try {
+      const newClient = await createPersistentClient({
+        name: name.trim(),
+        type,
+        nationalIdOrCr: nationalIdOrCr.trim() || undefined,
+        phone: phone.trim() || undefined,
+        email: email.trim() || undefined,
+        address: address.trim() || undefined,
+      });
+
+      setClients((current) => [newClient, ...current]);
+      setIsNewClientOpen(false);
+      setName("");
+      setPhone("");
+      setNationalIdOrCr("");
+      setEmail("");
+      setAddress("");
+    } catch (error) {
+      setSyncError(
+        error instanceof Error ? error.message : "تعذر حفظ بيانات الموكل.",
+      );
+    } finally {
+      setIsSavingClient(false);
+    }
   };
 
   const filteredClients = clients.filter((client) => {
     const matchesSearch =
       client.name.includes(search) ||
       client.phone.includes(search) ||
-      client.poaNumber.includes(search);
+      client.nationalIdOrCr.includes(search);
     const matchesType = filterType === "all" || client.type === filterType;
     return matchesSearch && matchesType;
   });
@@ -98,7 +133,23 @@ export function ClientsView({ selectedClientId, onCloseClientDashboard }: Client
           setLocalSelectedClientId(null);
           onCloseClientDashboard?.();
         }}
-        onAddNewMatter={(newMatter) => setMatters([newMatter, ...matters])}
+        onAddNewMatter={async (newMatter) => {
+          const persistedMatter = await createPersistentMatter({
+            caseNumber: newMatter.caseNumber,
+            title: newMatter.title,
+            court: newMatter.court === "غير مسجل" ? undefined : newMatter.court,
+            category: newMatter.category,
+            clientId: selectedClient.id,
+            caseYear: newMatter.year,
+            circuit:
+              newMatter.circuit === "غير مسجل" ? undefined : newMatter.circuit,
+            clientRole:
+              newMatter.clientRole === "غير مسجل" ? undefined : newMatter.clientRole,
+            filingDate: newMatter.filingDate,
+          });
+          setMatters((current) => [persistedMatter, ...current]);
+          return persistedMatter;
+        }}
       />
     );
   }
@@ -113,7 +164,7 @@ export function ClientsView({ selectedClientId, onCloseClientDashboard }: Client
           </h1>
           <p className="mt-1 text-xs text-[var(--text-muted)] flex items-center gap-1.5">
             <Users className="size-3.5" />
-            إدارة الموكلين، أرشيف التوكيلات الرسمية، ولوحة البيانات القضائية التراكمية
+            إدارة الموكلين وربطهم بالقضايا المحفوظة فعلياً في AXIA
           </p>
         </div>
 
@@ -127,6 +178,17 @@ export function ClientsView({ selectedClientId, onCloseClientDashboard }: Client
           </button>
         </div>
       </div>
+
+      {syncError && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-semibold text-red-300">
+          {syncError}
+        </div>
+      )}
+      {isLoading && (
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 text-xs text-[var(--text-muted)]">
+          جارٍ تحميل الموكلين والقضايا المحفوظة...
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 shrink-0">
@@ -239,7 +301,7 @@ export function ClientsView({ selectedClientId, onCloseClientDashboard }: Client
                       <div className="text-[10px] text-[var(--text-muted)] mr-4 mb-1">{client.poaOffice}</div>
                       <div className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-500 mr-4 border border-emerald-500/20">
                         <ShieldCheck className="size-2.5" />
-                        توكيل ساري
+                        {client.poaExpiry === "غير مسجل" ? "بيانات التوكيل غير مسجلة" : client.poaExpiry}
                       </div>
                     </td>
                     <td className="px-4 py-3 align-top">
@@ -387,28 +449,8 @@ export function ClientsView({ selectedClientId, onCloseClientDashboard }: Client
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم التوكيل وحرفه</label>
-                  <input
-                    type="text"
-                    placeholder="مثال: ٥٤١ / أ لسنة ٢٠٢٥ قصر النيل"
-                    value={poaNumber}
-                    onChange={(e) => setPoaNumber(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-medium">مكتب التوثيق (الشهر العقاري)</label>
-                  <input
-                    type="text"
-                    placeholder="مثال: توثيق استثمار القاهرة"
-                    value={poaOffice}
-                    onChange={(e) => setPoaOffice(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
-                  />
-                </div>
+              <div className="rounded-xl border border-[var(--border)] bg-[var(--accent)]/40 p-3 text-[11px] leading-relaxed text-[var(--text-muted)]">
+                بيانات التوكيلات لها سجل مستقل ولم يتم ربط واجهته بعد. سيتم حفظ الموكل الآن بدون اختلاق رقم توكيل أو مكتب توثيق، وستظهر القيم كـ«غير مسجل».
               </div>
 
               <div>
@@ -432,9 +474,10 @@ export function ClientsView({ selectedClientId, onCloseClientDashboard }: Client
                 </button>
                 <button
                   type="submit"
-                  className="rounded-md bg-[var(--text)] px-4 py-2 text-xs font-bold text-[var(--bg)] shadow-md hover:opacity-90 transition-opacity"
+                  disabled={isSavingClient}
+                  className="rounded-md bg-[var(--text)] px-4 py-2 text-xs font-bold text-[var(--bg)] shadow-md hover:opacity-90 transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  حفظ وتسجيل الموكل
+                  {isSavingClient ? "جارٍ الحفظ..." : "حفظ وتسجيل الموكل"}
                 </button>
               </div>
             </form>

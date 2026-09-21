@@ -27,9 +27,15 @@ import {
   Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { mockHearings, mockTasks, mockMatters } from "@/lib/mock-legal-data";
 import { Hearing, LegalTask, Matter } from "@/types/legal";
 import { exportElementToPdf, generateReportRef } from "@/lib/pdf-export-service";
+import {
+  createPersistentHearing,
+  loadPersistentHearings,
+  updatePersistentHearing,
+} from "@/lib/hearings-client";
+import { loadMattersWorkspace } from "@/lib/matters-client";
+import { loadTaskWorkspace } from "@/lib/tasks-client";
 
 // Arabic Days and Months
 const ARABIC_DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
@@ -137,7 +143,7 @@ function PleadingNotesEditor({
   onSave 
 }: { 
   initialNotes?: string; 
-  onSave: (notes: string) => void; 
+  onSave: (notes: string) => void | Promise<void>; 
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [notes, setNotes] = useState(initialNotes);
@@ -149,10 +155,15 @@ function PleadingNotesEditor({
 
   const handleChange = (val: string) => {
     setNotes(val);
+  };
+
+  const handleSave = async () => {
     setIsSaving(true);
-    onSave(val);
-    const t = setTimeout(() => setIsSaving(false), 600);
-    return () => clearTimeout(t);
+    try {
+      await onSave(notes);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -178,18 +189,21 @@ function PleadingNotesEditor({
             <textarea
               value={notes}
               onChange={(e) => handleChange(e.target.value)}
+              onBlur={() => {
+                void handleSave();
+              }}
               placeholder="اكتب هنا دفوعك القانونية، طلباتك بالجلسة، أو ملاحظاتك العاجلة للمرافعة..."
               className="w-full text-xs bg-[var(--accent)] text-[var(--text)] border border-[var(--border)] rounded-xl p-3 min-h-[75px] focus:outline-none focus:ring-1 focus:ring-[var(--axia-gold)] leading-relaxed resize-y custom-scrollbar"
             />
             {isSaving && (
               <span className="absolute bottom-2 left-3 text-[9px] text-[var(--axia-gold)] animate-pulse font-medium">
-                جاري المزامنة مع تفاصيل القضية...
+                جاري حفظ ملاحظات الجلسة...
               </span>
             )}
           </div>
           <p className="text-[10px] text-[var(--text-muted)] flex items-center gap-1">
             <span>✨</span>
-            <span>تُحفظ نقاط المرافعة فورياً وتتم مزامنتها مباشرة مع ملف القضية برقمها المرجعي.</span>
+            <span>تُحفظ ملاحظات المرافعة في سجل الجلسة الحقيقي عند الخروج من حقل الكتابة.</span>
           </p>
         </motion.div>
       )}
@@ -204,116 +218,74 @@ export function HearingsView({
   isFocusMode?: boolean;
   onToggleFocusMode?: () => void;
 } = {}) {
-  // Master states for elements
-  const [hearings, setHearings] = useState<Hearing[]>(mockHearings);
-  const [tasks, setTasks] = useState<LegalTask[]>(mockTasks);
-  const [matters, setMatters] = useState<Matter[]>(mockMatters);
+  // Master states for persisted business data
+  const [hearings, setHearings] = useState<Hearing[]>([]);
+  const [tasks, setTasks] = useState<LegalTask[]>([]);
+  const [matters, setMatters] = useState<Matter[]>([]);
   const [isOnline, setIsOnline] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [isSavingHearing, setIsSavingHearing] = useState(false);
 
-  // Monitor network status
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      Promise.resolve().then(() => setIsOnline(navigator.onLine));
-      const goOnline = () => setIsOnline(true);
-      const goOffline = () => setIsOnline(false);
-      window.addEventListener("online", goOnline);
-      window.addEventListener("offline", goOffline);
-      return () => {
-        window.removeEventListener("online", goOnline);
-        window.removeEventListener("offline", goOffline);
-      };
-    }
+    if (typeof window === "undefined") return;
+
+    Promise.resolve().then(() => setIsOnline(navigator.onLine));
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
   }, []);
 
-  // Load from LocalStorage on mount
   useEffect(() => {
-    try {
-      const cachedHearings = localStorage.getItem("axia_hearings");
-      const cachedTasks = localStorage.getItem("axia_tasks");
-      const cachedMatters = localStorage.getItem("axia_matters");
-      const todayStr = "2026-09-18";
-      
-      Promise.resolve().then(() => {
-        if (cachedHearings) {
-          const parsed = JSON.parse(cachedHearings);
-          const withAutoArchive = parsed.map((h: Hearing) => {
-            if (h.hearingDate < todayStr && h.isArchived === undefined) {
-              return { ...h, isArchived: true, status: "منتهية" as const };
-            }
-            return h;
-          });
-          setHearings(withAutoArchive);
-        } else {
-          setHearings((prev) =>
-            prev.map((h) => {
-              if (h.hearingDate < todayStr && h.isArchived === undefined) {
-                return { ...h, isArchived: true, status: "منتهية" as const };
-              }
-              return h;
-            })
-          );
-        }
-        if (cachedTasks) {
-          setTasks(JSON.parse(cachedTasks));
-        }
-        if (cachedMatters) {
-          setMatters(JSON.parse(cachedMatters));
-        }
+    let cancelled = false;
+
+    void Promise.all([loadMattersWorkspace(), loadTaskWorkspace()])
+      .then(async ([matterWorkspace, taskWorkspace]) => {
+        if (cancelled) return;
+        setMatters(matterWorkspace.matters);
+        setTasks(taskWorkspace.tasks);
+
+        const persistedHearings = await loadPersistentHearings(
+          matterWorkspace.matters,
+        );
+        if (cancelled) return;
+        setHearings(persistedHearings);
+        setSyncError(null);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setSyncError(
+          error instanceof Error ? error.message : "تعذر تحميل بيانات الجلسات.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setIsDataLoading(false);
       });
-    } catch (err) {
-      console.error("Failed to load calendar data from localStorage", err);
-    }
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Save to LocalStorage on changes
-  useEffect(() => {
+  const handleUpdateHearingNotes = async (hearingId: string, notes: string) => {
     try {
-      localStorage.setItem("axia_hearings", JSON.stringify(hearings));
-    } catch (err) {
-      console.error("Failed to save hearings to localStorage", err);
-    }
-  }, [hearings]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("axia_tasks", JSON.stringify(tasks));
-    } catch (err) {
-      console.error("Failed to save tasks to localStorage", err);
-    }
-  }, [tasks]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("axia_matters", JSON.stringify(matters));
-    } catch (err) {
-      console.error("Failed to save matters to localStorage", err);
-    }
-  }, [matters]);
-
-  const handleUpdateHearingNotes = (hearingId: string, notes: string) => {
-    // 1. Update the hearing pleadingNotes
-    setHearings(prev => 
-      prev.map(h => h.id === hearingId ? { ...h, pleadingNotes: notes } : h)
-    );
-
-    // 2. Locate the hearing to find the associated matterId
-    const targetHearing = hearings.find(h => h.id === hearingId);
-    if (targetHearing && targetHearing.matterId) {
-      setMatters(prev => 
-        prev.map(m => {
-          if (m.id === targetHearing.matterId) {
-            const header = `📝 نقاط مرافعة جلسة ${targetHearing.hearingDate}:`;
-            let newNotes = m.notes || "";
-            if (newNotes.includes(header)) {
-              const parts = newNotes.split("\n\n");
-              newNotes = parts.map(p => p.startsWith(header) ? `${header} ${notes}` : p).join("\n\n");
-            } else {
-              newNotes = `${header} ${notes}\n\n${newNotes}`;
-            }
-            return { ...m, notes: newNotes.trim() };
-          }
-          return m;
-        })
+      const updated = await updatePersistentHearing(
+        hearingId,
+        { pleadingNotes: notes || null },
+        matters,
+      );
+      setHearings((current) =>
+        current.map((hearing) => (hearing.id === hearingId ? updated : hearing)),
+      );
+      setSyncError(null);
+    } catch (error) {
+      setSyncError(
+        error instanceof Error ? error.message : "تعذر حفظ ملاحظات الجلسة.",
       );
     }
   };
@@ -331,8 +303,8 @@ export function HearingsView({
   const [showMatters, setShowMatters] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Base calendar date (centered around Sept 18, 2026)
-  const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(() => new Date(2026, 8, 18));
+  // Base calendar date follows the real current day.
+  const [currentCalendarDate, setCurrentCalendarDate] = useState<Date>(() => new Date());
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; date: string; type: string } | null>(null);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
@@ -371,14 +343,13 @@ export function HearingsView({
   const [reportCode, setReportCode] = useState(() => generateReportRef("AX-REP"));
 
   // New hearing states
-  const [newCaseNumber, setNewCaseNumber] = useState("");
+  const [newMatterId, setNewMatterId] = useState("");
   const [newCourt, setNewCourt] = useState("دار القضاء العالي - محكمة النقض");
   const [newCircuit, setNewCircuit] = useState("الدائرة المدنية والتجارية");
   const [newHall, setNewHall] = useState("قاعة ٤");
   const [newRoll, setNewRoll] = useState(12);
-  const [newDate, setNewDate] = useState("2026-09-25");
-  const [newTime, setNewTime] = useState("10:00 ص");
-  const [newLawyer, setNewLawyer] = useState("د. رامي الهواري");
+  const [newDate, setNewDate] = useState(() => formatDateStr(new Date()));
+  const [newTime, setNewTime] = useState("10:00");
   const [newPurpose, setNewPurpose] = useState("المرافعة وتقديم المستندات");
   const [decisionNotes, setDecisionNotes] = useState<{ [id: string]: string }>({});
 
@@ -463,29 +434,37 @@ export function HearingsView({
     setTimeout(() => setToast(null), 4000);
   };
 
-  const handleToggleArchive = (hearingId: string) => {
-    const hearing = hearings.find((h) => h.id === hearingId);
+  const handleToggleArchive = async (hearingId: string) => {
+    const hearing = hearings.find((item) => item.id === hearingId);
     if (!hearing) return;
-    
+
     const nextArchived = !hearing.isArchived;
 
-    setHearings((prev) =>
-      prev.map((h) =>
-        h.id === hearingId
-          ? { 
-              ...h, 
-              isArchived: nextArchived,
-              status: nextArchived ? "منتهية" as const : "قادمة" as const
-            }
-          : h
-      )
-    );
-
-    triggerToast(
-      nextArchived ? "تم نقل الجلسة للأرشيف المنتهي بنجاح" : "تم استعادة الجلسة وإعادتها للجدول النشط",
-      hearing.hearingDate,
-      "hearing"
-    );
+    try {
+      const updated = await updatePersistentHearing(
+        hearingId,
+        {
+          isArchived: nextArchived,
+          status: nextArchived ? "completed" : "scheduled",
+        },
+        matters,
+      );
+      setHearings((current) =>
+        current.map((item) => (item.id === hearingId ? updated : item)),
+      );
+      setSyncError(null);
+      triggerToast(
+        nextArchived
+          ? "تم نقل الجلسة للأرشيف وحفظ التغيير"
+          : "تم استعادة الجلسة للرول النشط",
+        hearing.hearingDate,
+        "hearing",
+      );
+    } catch (error) {
+      setSyncError(
+        error instanceof Error ? error.message : "تعذر تحديث حالة الجلسة.",
+      );
+    }
   };
 
   // iCal parsing and export helpers
@@ -583,8 +562,16 @@ export function HearingsView({
     triggerToast("تم إنشاء وتصدير ملف التقومة بنجاح", formatDateStr(new Date()), "matter");
   };
 
-  // Drag & Drop handlers
-  const handleDragStart = (e: React.DragEvent, item: { id: string; type: "hearing" | "task" | "matter" }) => {
+  // Drag & Drop persists hearing rescheduling only.
+  const handleDragStart = (
+    e: React.DragEvent,
+    item: { id: string; type: "hearing" | "task" | "matter" },
+  ) => {
+    if (item.type !== "hearing") {
+      e.preventDefault();
+      return;
+    }
+
     e.dataTransfer.setData("text/plain", JSON.stringify(item));
     e.dataTransfer.effectAllowed = "move";
   };
@@ -593,62 +580,105 @@ export function HearingsView({
     e.preventDefault();
   };
 
-  const handleDrop = (e: React.DragEvent, targetDateStr: string) => {
+  const handleDrop = async (e: React.DragEvent, targetDateStr: string) => {
     e.preventDefault();
     setDragOverDate(null);
+
     try {
       const dataStr = e.dataTransfer.getData("text/plain");
       if (!dataStr) return;
-      const { id, type } = JSON.parse(dataStr) as { id: string; type: "hearing" | "task" | "matter" };
 
-      if (type === "hearing") {
-        setHearings(prev => prev.map(h => h.id === id ? { ...h, hearingDate: targetDateStr, status: targetDateStr === "2026-09-18" ? "اليوم" : "قادمة" } : h));
-        triggerToast("تمت إعادة جدولة الجلسة بنجاح", targetDateStr, "hearing");
-      } else if (type === "task") {
-        setTasks(prev => prev.map(t => t.id === id ? { ...t, deadline: `${targetDateStr}T12:00:00.000Z` } : t));
-        triggerToast("تم ترحيل ميعاد المهمة بنجاح", targetDateStr, "task");
-      } else if (type === "matter") {
-        setMatters(prev => prev.map(m => m.id === id ? { ...m, nextHearingDate: targetDateStr } : m));
-        triggerToast("تم تعديل تاريخ جلسة القضية بنجاح", targetDateStr, "matter");
+      const { id, type } = JSON.parse(dataStr) as {
+        id: string;
+        type: "hearing" | "task" | "matter";
+      };
+
+      if (type !== "hearing") {
+        triggerToast(
+          "غيّر موعد المهمة أو القضية من وحدتها الأصلية حتى يتم الحفظ بشكل صحيح",
+          targetDateStr,
+          type,
+        );
+        return;
       }
-    } catch (err) {
-      console.error("DND Drop Error:", err);
+
+      const updated = await updatePersistentHearing(
+        id,
+        { hearingDate: targetDateStr },
+        matters,
+      );
+      setHearings((current) =>
+        current.map((hearing) => (hearing.id === id ? updated : hearing)),
+      );
+      setSyncError(null);
+      triggerToast("تمت إعادة جدولة الجلسة وحفظها", targetDateStr, "hearing");
+    } catch (error) {
+      setSyncError(
+        error instanceof Error ? error.message : "تعذر إعادة جدولة الجلسة.",
+      );
     }
   };
 
-  const handleAddDecision = (id: string, decision: string) => {
-    setHearings(
-      hearings.map((h) =>
-        h.id === id ? { ...h, lastDecision: decision, status: "منتهية" } : h
-      )
-    );
+  const handleAddDecision = async (id: string, decision: string) => {
+    if (!decision.trim()) return;
+
+    try {
+      const updated = await updatePersistentHearing(
+        id,
+        { lastDecision: decision.trim(), status: "completed", isArchived: true },
+        matters,
+      );
+      setHearings((current) =>
+        current.map((hearing) => (hearing.id === id ? updated : hearing)),
+      );
+      setDecisionNotes((current) => ({ ...current, [id]: "" }));
+      setSyncError(null);
+    } catch (error) {
+      setSyncError(
+        error instanceof Error ? error.message : "تعذر حفظ قرار الجلسة.",
+      );
+    }
   };
 
-  const handleCreateHearing = (e: React.FormEvent) => {
+  const handleCreateHearing = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCaseNumber) return;
+    if (!newMatterId || !newDate || isSavingHearing) return;
 
-    // eslint-disable-next-line react-hooks/purity
-    const generatedId = `HR-${Date.now()}`;
-    const hearing: Hearing = {
-      id: generatedId,
-      matterId: "MAT-NEW",
-      caseNumber: newCaseNumber,
-      court: newCourt,
-      circuit: newCircuit,
-      hall: newHall,
-      rollNumber: newRoll,
-      hearingDate: newDate,
-      hearingTime: newTime,
-      attendingLawyer: newLawyer,
-      purpose: newPurpose,
-      status: newDate === "2026-09-18" ? "اليوم" : "قادمة",
-    };
+    const selectedMatter = matters.find((matter) => matter.id === newMatterId);
+    if (!selectedMatter) {
+      setSyncError("اختر قضية حقيقية محفوظة قبل إضافة الجلسة.");
+      return;
+    }
 
-    setHearings([hearing, ...hearings]);
-    setIsNewHearingOpen(false);
-    setNewCaseNumber("");
-    triggerToast("تم إدراج الجلسة الجديدة بالرول بنجاح", newDate, "hearing");
+    setIsSavingHearing(true);
+    setSyncError(null);
+
+    try {
+      const hearing = await createPersistentHearing(
+        {
+          matterId: selectedMatter.id,
+          hearingDate: newDate,
+          hearingTime: newTime || undefined,
+          court: newCourt || selectedMatter.court,
+          circuit: newCircuit || selectedMatter.circuit,
+          hall: newHall || undefined,
+          rollNumber: String(newRoll),
+          purpose: newPurpose || undefined,
+        },
+        matters,
+      );
+
+      setHearings((current) => [hearing, ...current]);
+      setIsNewHearingOpen(false);
+      setNewMatterId("");
+      triggerToast("تم إدراج الجلسة وحفظها في قاعدة البيانات", newDate, "hearing");
+    } catch (error) {
+      setSyncError(
+        error instanceof Error ? error.message : "تعذر حفظ الجلسة.",
+      );
+    } finally {
+      setIsSavingHearing(false);
+    }
   };
 
   // Map unified events for Calendar consumption
@@ -789,9 +819,9 @@ export function HearingsView({
     setCurrentCalendarDate(nextDate);
   };
 
-  // Quick reset to Today's date (Sept 18, 2026)
+  // Quick reset to the actual current date.
   const handleResetToToday = () => {
-    setCurrentCalendarDate(new Date(2026, 8, 18));
+    setCurrentCalendarDate(new Date());
   };
 
   // Helper to extract items scheduled on a specific day
@@ -827,6 +857,17 @@ export function HearingsView({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {syncError && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-semibold text-red-300">
+          {syncError}
+        </div>
+      )}
+      {isDataLoading && (
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-3 text-xs text-[var(--text-muted)]">
+          جارٍ تحميل القضايا والجلسات والمهام المحفوظة...
+        </div>
+      )}
 
       {/* Main App Title Section */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-3.5 border-b border-[var(--border)]">
@@ -906,7 +947,7 @@ export function HearingsView({
               : "bg-amber-500/10 text-amber-400 border-amber-500/20 animate-pulse"
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-emerald-400" : "bg-amber-400"}`} />
-            <span>{isOnline ? "محفوظ محلياً (جاهز أوفلاين)" : "يعمل أوفلاين (تمكين التخزين المؤقت)"}</span>
+            <span>{isOnline ? "متصل بقاعدة البيانات" : "غير متصل — لن يتم حفظ تعديلات جديدة"}</span>
           </div>
 
           {/* Focus Mode Toggle Button */}
@@ -1056,16 +1097,16 @@ export function HearingsView({
               <div className="flex items-center justify-between border-b border-[var(--border)] pb-2.5">
                 <h3 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider flex items-center gap-1.5">
                   <RefreshCw className="size-3.5 text-[var(--axia-gold)]" />
-                  إعادة جدولة سريعة
+                  إعادة جدولة الجلسات
                 </h3>
                 <span className="text-[10px] bg-[var(--accent)] px-2 py-0.5 rounded-md text-[var(--text-muted)]">
-                  اسحب أي عنصر
+                  الجلسات فقط
                 </span>
               </div>
 
               <div className="text-[11px] text-[var(--text-muted)] leading-relaxed flex items-start gap-1.5 bg-[var(--accent)]/30 p-2.5 rounded-xl border border-[var(--border)]">
                 <Info className="size-4 text-[var(--axia-gold)] shrink-0 mt-0.5" />
-                <span>يمكنك سحب أي بطاقة من القائمة أدناه وإفلاتها مباشرة على أي يوم في التقويم لتحديث موعدها وتاريخها فوراً!</span>
+                <span>يمكنك سحب بطاقة الجلسة فقط وإفلاتها على يوم جديد؛ المهام والقضايا تُعدّل من وحداتها الأصلية لضمان الحفظ الحقيقي.</span>
               </div>
 
               {/* Sidebar List of Draggable Items */}
@@ -1079,7 +1120,7 @@ export function HearingsView({
                   unifiedCalendarItems.slice(0, 7).map((item) => (
                     <div
                       key={item.id}
-                      draggable
+                      draggable={item.type === "hearing"}
                       onDragStart={(e) => handleDragStart(e, { id: item.id, type: item.type })}
                       className={`p-3 rounded-xl border text-right cursor-grab active:cursor-grabbing hover:border-[var(--axia-gold)]/40 hover:bg-[var(--accent)]/50 transition-all shadow-sm flex flex-col gap-1.5 ${
                         item.type === "hearing" ? "border-amber-500/15 bg-amber-500/[0.02]" :
@@ -1211,7 +1252,7 @@ export function HearingsView({
                     {monthDates.map((date, index) => {
                       const dateStr = formatDateStr(date);
                       const isCurrentMonth = date.getMonth() === currentCalendarDate.getMonth();
-                      const isToday = dateStr === "2026-09-18";
+                      const isToday = dateStr === formatDateStr(new Date());
                       const dayItems = getDayItems(dateStr);
                       const isDraggedOver = dragOverDate === dateStr;
 
@@ -1282,7 +1323,7 @@ export function HearingsView({
                 >
                   {weekDates.map((date, idx) => {
                     const dateStr = formatDateStr(date);
-                    const isToday = dateStr === "2026-09-18";
+                    const isToday = dateStr === formatDateStr(new Date());
                     const dayItems = getDayItems(dateStr);
                     const isDraggedOver = dragOverDate === dateStr;
 
@@ -1384,8 +1425,8 @@ export function HearingsView({
                       </h3>
                       <p className="text-xs text-[var(--text-muted)]">جدول المواعيد والمهام الإجرائية المحددة لهذا اليوم</p>
                     </div>
-                    {formatDateStr(currentCalendarDate) === "2026-09-18" && (
-                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">اليوم المالي الحالي</span>
+                    {formatDateStr(currentCalendarDate) === formatDateStr(new Date()) && (
+                      <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">اليوم</span>
                     )}
                   </div>
 
@@ -1710,15 +1751,30 @@ export function HearingsView({
             
             <form onSubmit={handleCreateHearing} className="mt-4 space-y-4 text-xs">
               <div>
-                <label className="block text-[var(--text-muted)] mb-1 font-medium">رقم القضية</label>
-                <input
-                  type="text"
+                <label className="block text-[var(--text-muted)] mb-1 font-medium">القضية المرتبطة</label>
+                <select
                   required
-                  placeholder="مثال: ١٤٢٠ لسنة ٩٣ ق - نقض"
-                  value={newCaseNumber}
-                  onChange={(e) => setNewCaseNumber(e.target.value)}
+                  value={newMatterId}
+                  onChange={(e) => {
+                    const matterId = e.target.value;
+                    setNewMatterId(matterId);
+                    const selected = matters.find((matter) => matter.id === matterId);
+                    if (selected) {
+                      setNewCourt(selected.court === "غير مسجل" ? "" : selected.court);
+                      setNewCircuit(selected.circuit === "غير مسجل" ? "" : selected.circuit);
+                    }
+                  }}
                   className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
-                />
+                >
+                  <option value="">
+                    {matters.length ? "اختر قضية محفوظة..." : "لا توجد قضايا محفوظة"}
+                  </option>
+                  {matters.map((matter) => (
+                    <option key={matter.id} value={matter.id}>
+                      {matter.caseNumber} — {matter.title}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -1765,7 +1821,7 @@ export function HearingsView({
                 <div>
                   <label className="block text-[var(--text-muted)] mb-1 font-medium">توقيت الانعقاد</label>
                   <input
-                    type="text"
+                    type="time"
                     value={newTime}
                     onChange={(e) => setNewTime(e.target.value)}
                     className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
@@ -1787,9 +1843,9 @@ export function HearingsView({
                   <label className="block text-[var(--text-muted)] mb-1 font-medium">المحامي المكلف بالحضور</label>
                   <input
                     type="text"
-                    value={newLawyer}
-                    onChange={(e) => setNewLawyer(e.target.value)}
-                    className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
+                    readOnly
+                    value="غير مسجل"
+                    className="w-full rounded-md border border-[var(--border)] bg-[var(--accent)] px-3 py-2 text-[var(--text-muted)]"
                   />
                 </div>
               </div>
@@ -1814,9 +1870,10 @@ export function HearingsView({
                 </button>
                 <button
                   type="submit"
-                  className="rounded-md bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] hover:opacity-90 transition-opacity"
+                  disabled={isSavingHearing || matters.length === 0}
+                  className="rounded-md bg-[var(--text)] px-4 py-2 font-medium text-[var(--bg)] hover:opacity-90 transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  حفظ الجلسة
+                  {isSavingHearing ? "جارٍ الحفظ..." : "حفظ الجلسة"}
                 </button>
               </div>
             </form>
