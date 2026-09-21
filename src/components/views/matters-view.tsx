@@ -40,10 +40,12 @@ import {
 import {
   createPersistentMatter,
   loadMattersWorkspace,
+  updatePersistentMatter,
   type MatterClientOption,
 } from "@/lib/matters-client";
 import { Matter, CourtCategory } from "@/types/legal";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
+import { useActionContextMenu } from "@/components/action-context-menu";
 
 const getCategoryStyle = (cat: "مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة" | string) => {
   switch (cat) {
@@ -79,6 +81,7 @@ export function MattersView({
   const [matterClients, setMatterClients] = useState<MatterClientOption[]>([]);
   const [mattersLoading, setMattersLoading] = useState(true);
   const [mattersError, setMattersError] = useState<string | null>(null);
+  const matterActionMenu = useActionContextMenu();
 
   useEffect(() => {
     let cancelled = false;
@@ -183,6 +186,56 @@ export function MattersView({
   const [localActiveMatterId, setLocalActiveMatterId] = useState<string | null>(null);
   const effectiveMatterId = selectedMatterId ?? localActiveMatterId;
   const activeMatter = effectiveMatterId ? matters.find((m) => m.id === effectiveMatterId) || null : null;
+
+  const handleSetMatterStatus = async (
+    matter: Matter,
+    status: "open" | "closed",
+  ) => {
+    try {
+      const updated = await updatePersistentMatter(matter.id, { status });
+      setMatters((current) =>
+        current.map((item) => (item.id === matter.id ? updated : item)),
+      );
+      setMattersError(null);
+      await onMatterCreated?.();
+    } catch (error) {
+      setMattersError(
+        error instanceof Error ? error.message : "تعذر تحديث حالة القضية.",
+      );
+    }
+  };
+
+  const getMatterActions = (matter: Matter) => [
+    {
+      id: "open",
+      label: "فتح ملف القضية",
+      onSelect: () => setLocalActiveMatterId(matter.id),
+    },
+    {
+      id: matter.status === "مفتوحة" ? "close" : "reopen",
+      label: matter.status === "مفتوحة" ? "إغلاق القضية" : "إعادة فتح القضية",
+      onSelect: () =>
+        handleSetMatterStatus(
+          matter,
+          matter.status === "مفتوحة" ? "closed" : "open",
+        ),
+    },
+    {
+      id: "report",
+      label: "تصدير تقرير القضية PDF",
+      onSelect: () => {
+        setPdfSelectedMatter(matter);
+        setIsPdfModalOpen(true);
+      },
+    },
+    {
+      id: "copy-case-number",
+      label: "نسخ رقم القضية",
+      onSelect: async () => {
+        await navigator.clipboard.writeText(matter.caseNumber);
+      },
+    },
+  ];
 
   // New contact form states
   const [contactName, setContactName] = useState("");
@@ -454,7 +507,11 @@ export function MattersView({
                 <tbody className="divide-y divide-[var(--border)]">
                   {filteredMatters.map((matter) => (
                     <tr 
-                      key={matter.id} 
+                      key={matter.id}
+                      {...matterActionMenu.bind(
+                        getMatterActions(matter),
+                        `القضية ${matter.caseNumber}`,
+                      )}
                       className="hover:bg-[var(--accent)] transition-colors group cursor-default"
                       onDoubleClick={() => setLocalActiveMatterId(matter.id)}
                     >
@@ -504,13 +561,21 @@ export function MattersView({
                          {matter.assignedLawyer.split(" ")[0]} {matter.assignedLawyer.split(" ")[1]}
                       </td>
                       <td className="px-4 py-3 align-top text-center">
-                        <button
-                          onClick={() => setLocalActiveMatterId(matter.id)}
-                          className="p-1 rounded-md text-[var(--text-muted)] hover:bg-[var(--border)] hover:text-[var(--text)] transition-colors opacity-0 group-hover:opacity-100 mx-auto"
-                          title="فتح الملف"
-                        >
-                          <ArrowUpRight className="size-4" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setLocalActiveMatterId(matter.id)}
+                            className="p-1 rounded-md text-[var(--text-muted)] hover:bg-[var(--border)] hover:text-[var(--text)] transition-colors opacity-0 group-hover:opacity-100"
+                            title="فتح الملف"
+                          >
+                            <ArrowUpRight className="size-4" />
+                          </button>
+                          {matterActionMenu.triggerButton(
+                            getMatterActions(matter),
+                            `القضية ${matter.caseNumber}`,
+                            "opacity-70 group-hover:opacity-100",
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -1312,6 +1377,7 @@ export function MattersView({
         tasks={[]}
         selectedMatter={pdfSelectedMatter}
       />
+      {matterActionMenu.menuNode}
     </div>
   );
 }
