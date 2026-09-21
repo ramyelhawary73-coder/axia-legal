@@ -231,6 +231,8 @@ export function HearingsView({
   onTasksChanged,
   onOpenMatter,
   onOpenTasks,
+  actionRequest,
+  onActionRequestHandled,
 }: {
   isFocusMode?: boolean;
   onToggleFocusMode?: () => void;
@@ -238,6 +240,12 @@ export function HearingsView({
   onTasksChanged?: () => void | Promise<void>;
   onOpenMatter?: (matterId: string) => void;
   onOpenTasks?: () => void;
+  actionRequest?: {
+    action: "add" | "reschedule";
+    matterId: string;
+    requestId: number;
+  } | null;
+  onActionRequestHandled?: () => void;
 } = {}) {
   // Master states for persisted business data
   const [hearings, setHearings] = useState<Hearing[]>([]);
@@ -378,6 +386,51 @@ export function HearingsView({
   const [newTime, setNewTime] = useState("10:00");
   const [newPurpose, setNewPurpose] = useState("المرافعة وتقديم المستندات");
   const [decisionNotes, setDecisionNotes] = useState<{ [id: string]: string }>({});
+
+  useEffect(() => {
+    if (!actionRequest || isDataLoading) return;
+
+    const matter = matters.find((item) => item.id === actionRequest.matterId);
+    if (!matter) {
+      setSyncError("القضية المطلوبة غير متاحة في مساحة العمل الحالية.");
+      onActionRequestHandled?.();
+      return;
+    }
+
+    if (actionRequest.action === "add") {
+      setNewMatterId(matter.id);
+      setNewCourt(matter.court !== "غير مسجل" ? matter.court : "");
+      setNewCircuit(matter.circuit !== "غير مسجل" ? matter.circuit : "");
+      setNewDate(formatDateStr(new Date()));
+      setIsNewHearingOpen(true);
+      onActionRequestHandled?.();
+      return;
+    }
+
+    const linkedHearings = hearings
+      .filter((hearing) => hearing.matterId === matter.id && !hearing.isArchived)
+      .sort((a, b) => a.hearingDate.localeCompare(b.hearingDate));
+    const today = formatDateStr(new Date());
+    const linkedHearing =
+      linkedHearings.find((hearing) => hearing.hearingDate >= today) ??
+      linkedHearings.at(-1);
+
+    if (!linkedHearing) {
+      setSyncError("لا توجد جلسة مرتبطة بالقضية لإعادة جدولتها.");
+      onActionRequestHandled?.();
+      return;
+    }
+
+    setRescheduleModalHearingId(linkedHearing.id);
+    setRescheduleDate(linkedHearing.hearingDate);
+    onActionRequestHandled?.();
+  }, [
+    actionRequest,
+    hearings,
+    isDataLoading,
+    matters,
+    onActionRequestHandled,
+  ]);
 
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
