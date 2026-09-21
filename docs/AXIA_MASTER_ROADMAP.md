@@ -822,6 +822,21 @@ Primary goals:
 - document orphan-recovery strategy;
 - update this roadmap with final architecture decisions.
 
+## Phase 4B.1 — Codebase Baseline, Deduplication & Architecture Cleanup
+
+**Status:** `PLANNED`
+
+Primary goals:
+
+- inventory duplicate/dead/obsolete code paths;
+- map canonical domain/API/client/UI implementations;
+- remove confirmed obsolete mocks/local-only business paths;
+- consolidate shared validation/types/helpers where safe;
+- improve CI quality gates;
+- establish technical-debt register;
+- preserve behavior through characterization and regression tests;
+- avoid broad rewrites.
+
 ## Phase 4C — Safe Delete & Trash
 
 **Status:** `PLANNED`
@@ -1258,6 +1273,13 @@ Status: Open
 Priority: P2  
 Status: Open
 
+## KR-015 — Accumulated duplicate/dead/overlapping code can increase release risk
+
+Priority: P1 before broad product expansion  
+Status: Open
+
+Required response: evidence-based codebase inventory and incremental deduplication; no blind mass cleanup.
+
 ---
 
 # 19. Decisions Register
@@ -1301,6 +1323,16 @@ Status: Open
 
 **Decision:** PWA installation is a product requirement, but authoritative legal data remains server-controlled.  
 **Reason:** installability does not imply unsafe offline data ownership.
+
+## DR-009
+
+**Decision:** codebase cleanliness and maintainability are commercial product requirements, not optional technical polish.  
+**Reason:** AXIA is intended for recurring commercial operation; duplicate/dead/patch-on-patch code increases support cost, regression risk, and slows safe product evolution.
+
+## DR-010
+
+**Decision:** cleanup must be incremental and test-backed rather than a repository-wide rewrite.  
+**Reason:** preserve stable functionality while converging on canonical implementations.
 
 ---
 
@@ -1565,6 +1597,189 @@ Pricing and final packaging remain owner business decisions.
 
 **Reason for this order:** do not build a polished commercial shell, demo, or subscription control plane on top of unresolved audit/data-integrity gaps.
 
+### Owner-confirmed Requirements Batch 02 — Codebase Excellence, Maintainability & Premium Commercial Quality
+
+**Status:** `CONFIRMED_FOR_ROADMAP`  
+**Captured:** 2026-09-21  
+**Owner intent:** AXIA must become a premium commercial product that can be maintained and expanded for years as a recurring-income software business. The internal codebase must be as disciplined as the external product experience.
+
+#### A. No patch-on-patch engineering
+
+Required rule:
+
+- do not solve new problems by stacking duplicate handlers/components/helpers over old ones;
+- identify Root Cause first;
+- prefer one canonical implementation per business capability;
+- replace obsolete paths rather than leaving old and new versions active together;
+- temporary compatibility code must be explicitly marked and scheduled for removal.
+
+#### B. Whole-system codebase cleanup
+
+Before commercial release, perform a structured repository audit covering:
+
+- dead code;
+- unused exports/imports;
+- duplicate components;
+- duplicate API/client helpers;
+- duplicate validation/business rules;
+- stale feature branches reflected in code;
+- old mock/fake business data;
+- local-only business state;
+- hard-coded business values;
+- abandoned UI states/modals;
+- unused assets;
+- obsolete styles;
+- duplicated icons/branding assets;
+- deprecated APIs;
+- stale comments/TODOs;
+- unnecessary dependencies;
+- oversized components that contain unrelated responsibilities.
+
+Cleanup must be evidence-based. Do not mass-delete code, indexes, packages, tables, migrations, or assets merely because they appear unused in a quick scan.
+
+#### C. Single-source-of-truth architecture
+
+Required direction:
+
+- one domain model per business entity;
+- one validation contract per operation;
+- shared types where appropriate;
+- shared permission/tenant rules;
+- shared status/date mapping;
+- shared UI primitives for repeated patterns;
+- no competing implementations for the same Client/Matter/Hearing/Task behavior;
+- authoritative business data must come from the server/database, not browser state.
+
+#### D. Safe refactoring strategy
+
+Refactoring sequence:
+
+1. inventory and dependency map;
+2. characterize current behavior with tests;
+3. identify duplicate/dead paths;
+4. choose canonical path;
+5. migrate callers;
+6. remove obsolete path;
+7. run Typecheck/Lint/Safety/Build/E2E as applicable;
+8. verify Preview;
+9. only then merge.
+
+Large “rewrite everything” refactors are prohibited unless separately justified and approved.
+
+#### E. Code quality gates
+
+Commercial AXIA should progressively enforce:
+
+- reproducible dependency install;
+- strict TypeScript;
+- lint without ignored new warnings;
+- safety/security contract tests;
+- browser E2E for critical flows;
+- tenant-isolation regression tests;
+- API validation tests;
+- no new mock business data in production paths;
+- no new authoritative legal data in localStorage;
+- dependency vulnerability review;
+- bundle/performance review for major UI phases;
+- accessible keyboard/touch behavior;
+- roadmap update on every material PR.
+
+#### F. Performance and maintainability
+
+Required direction:
+
+- remove unnecessary rerenders only where measured/relevant;
+- avoid giant components becoming permanent architecture;
+- split by domain responsibility, not arbitrary file size;
+- lazy-load heavy optional surfaces where appropriate;
+- avoid duplicate data fetching;
+- keep API contracts explicit;
+- prevent N+1-style database patterns where relevant;
+- index only based on query/RLS needs and evidence;
+- monitor bundle growth and slow workflows.
+
+#### G. Production observability and supportability
+
+A commercial recurring-income product needs operational visibility.
+
+Planned capabilities:
+
+- structured server error logging;
+- correlation/request identifiers where useful;
+- safe application error boundaries;
+- user-friendly failure states;
+- operational audit trail;
+- release/version identification;
+- health visibility for owner/control center;
+- no leakage of secrets or sensitive client data in logs.
+
+#### H. Premium product quality definition
+
+“Premium” for AXIA means all of the following together:
+
+- distinctive visual identity;
+- fast and responsive interaction;
+- reliable persistence;
+- clear Arabic UX;
+- no fake or placeholder business data;
+- secure tenant separation;
+- auditable legal operations;
+- installable app experience;
+- stable upgrades;
+- clean maintainable code;
+- sales-ready Demo;
+- subscription/entitlement control;
+- supportable production operations.
+
+Premium does **not** mean visual effects at the expense of stability, security, performance, or legal-data integrity.
+
+#### I. Recurring-income product objective
+
+AXIA is intended to become a sustainable commercial software product, not a one-off internal system.
+
+Engineering therefore must support:
+
+- repeatable onboarding of new offices;
+- tenant isolation;
+- configurable plans;
+- feature entitlements;
+- controlled upgrades;
+- data migration discipline;
+- support tooling;
+- Demo-to-paid conversion workflow;
+- measurable usage where privacy permits;
+- low-risk maintenance and releases;
+- long-term backward compatibility strategy.
+
+### Proposed dedicated engineering phase
+
+Add a dedicated implementation phase after initial security/data-integrity hardening and before broad visual/product expansion:
+
+`Phase 4B.1 — Codebase Baseline, Deduplication & Architecture Cleanup`
+
+Scope should include:
+
+- repository dependency/duplication inventory;
+- stale mock/local-only path inventory;
+- dead-code candidates;
+- canonical domain/client/API mapping;
+- safe deduplication in small batches;
+- removal of confirmed obsolete code;
+- CI quality-gate improvements;
+- technical-debt register;
+- no business-feature scope expansion unless needed to safely consolidate duplicate logic.
+
+### Acceptance criteria for Phase 4B.1
+
+- no functional regression in existing core workflows;
+- no tenant-isolation regression;
+- no broad destructive cleanup based on guesswork;
+- all removed code has evidence of replacement/non-use;
+- no duplicate production path remains for any refactored capability;
+- CI and relevant E2E tests pass;
+- bundle/build remains healthy;
+- roadmap records removed technical debt and remaining debt.
+
 **Owner may continue adding requirements before the implementation roadmap is locked.**
 
 ---
@@ -1632,7 +1847,7 @@ Before marking a PR ready:
 
 **Current mode: Requirements Collection + Roadmap Locking**
 
-Requirements Batch 01 is confirmed and recorded. Do not begin broad implementation yet.
+Requirements Batches 01–02 are confirmed and recorded. Do not begin broad implementation yet.
 
 Next owner action:
 
