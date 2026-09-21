@@ -860,7 +860,7 @@ Recommended architecture:
 - map Vercel `Production` variables to Production Supabase and `Preview/Development` to non-production resources;
 - verify migration/RLS parity before first real customer.
 
-**Cost status:** not yet queried. Supabase requires the target organization to be explicitly confirmed before project-cost lookup. The only connected organization currently visible is `ramyelhawary73-coder's Org`; owner confirmation is required before calling the cost tool. No paid project has been created.
+**Cost / Production project decision:** DEFERRED BY OWNER. Do not query project cost, create a paid Supabase Production project, or introduce any new paid infrastructure at this stage. Continue only with no-additional-cost hardening on the existing Development environment. Revisit Production project creation only when the owner explicitly reopens the decision near Demo/commercial onboarding.
 
 ### Phase 4B-B — Audit Trail Foundation Design
 
@@ -1768,6 +1768,11 @@ Required response: evidence-based codebase inventory and incremental deduplicati
 **Decision:** Demo Ready and First Paying Client Ready are separate milestones.  
 **Reason:** a safe sales Demo can showcase a focused set of workflows before every future module exists, while real customer data requires a higher security, persistence, recovery, and operational standard.
 
+## DR-013
+
+**Decision:** no new paid Supabase Production project or other paid infrastructure will be created or cost-queried at this stage.  
+**Reason:** owner has explicitly deferred new infrastructure cost. Phase 4B should continue with no-additional-cost hardening in Development, while Production/Development isolation remains a known P0 that must be resolved before real paying-customer data is onboarded.
+
 ---
 
 # 20. Requirements Inbox
@@ -2279,29 +2284,38 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PHASE 4B — OWNER REVIEW GATE BEFORE MUTATION**
+**Current mode: PHASE 4B — NO-COST HARDENING / OWNER REVIEW GATE BEFORE MUTATION**
 
-Phase 4B-A read-only environment verification is complete. Phase 4B-B Audit Trail Foundation design is complete. No migration or environment change has been applied.
+Owner decision: no new paid infrastructure at this stage. Do not query Supabase project cost and do not create `AXIA Legal Production` yet.
 
-Required next owner decisions:
+Current state:
 
-1. Confirm whether cost lookup should use Supabase organization:
-   `ramyelhawary73-coder's Org`.
-2. After organization confirmation, query and present the current cost of creating a separate `AXIA Legal Production` project. Do not create it.
-3. Review and approve/reject the Phase 4B-B Audit Trail Foundation design recorded above.
-4. If Audit Trail implementation is approved:
-   - create the migration file on the existing Phase 4B branch;
-   - review exact SQL/diff;
-   - only then request explicit approval to apply the migration to Development;
-   - run tenant/audit smoke tests and CI;
-   - Preview only before merge.
-5. Vercel Production Environment Variables must not be changed without a separate explicit owner approval after Production Supabase exists and is verified.
+- Phase 4B-A environment isolation verification is complete.
+- Production/Development Supabase isolation remains `UNVERIFIED / P0`.
+- Phase 4B-B Audit Trail Foundation design is complete.
+- No migration has been created or applied.
+- No Vercel Environment Variable has been changed.
+- No paid resource has been created.
+
+Recommended next step:
+
+1. Continue Phase 4B-B using the existing Development project only.
+2. If owner explicitly approves Audit Trail implementation:
+   - create the migration file on this branch;
+   - show the exact SQL/diff before application;
+   - request a separate explicit approval to apply it to Development;
+   - run tenant/audit smoke tests;
+   - run Typecheck/Lint/Safety/Build;
+   - deploy Preview only;
+   - update this roadmap.
+3. Defer Production Supabase creation, cost lookup, and Vercel Production environment remapping until the owner explicitly reopens that decision.
+4. Do not onboard real paying-customer data while Production/Development isolation is unresolved.
 
 ### Current stop condition
 
-**STOP BEFORE MUTATION.**
+**STOP BEFORE DATABASE MUTATION.**
 
-No Supabase project creation, no paid resource, no migration application, no Vercel environment change, and no Production configuration change is authorized yet.
+No migration application, no paid project creation, no environment-variable change, and no Production configuration change is authorized yet.
 
 ---
 
