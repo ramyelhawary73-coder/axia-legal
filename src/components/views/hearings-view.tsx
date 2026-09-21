@@ -34,8 +34,14 @@ import {
   loadPersistentHearings,
   updatePersistentHearing,
 } from "@/lib/hearings-client";
-import { loadMattersWorkspace } from "@/lib/matters-client";
-import { loadTaskWorkspace } from "@/lib/tasks-client";
+import {
+  loadMattersWorkspace,
+  updatePersistentMatter,
+} from "@/lib/matters-client";
+import {
+  loadTaskWorkspace,
+  updatePersistentTaskStatus,
+} from "@/lib/tasks-client";
 import {
   useActionContextMenu,
   type ActionContextMenuItem,
@@ -47,6 +53,8 @@ const ARABIC_MONTHS = [
   "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
   "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
 ];
+
+const AXIA_CALENDAR_DRAG_TYPE = "application/x-axia-calendar-hearing";
 
 // Helper to extract YYYY-MM-DD from various date string formats
 const getDateOnly = (dateStr: string): string => {
@@ -219,10 +227,14 @@ export function HearingsView({
   isFocusMode = false,
   onToggleFocusMode,
   onHearingsChanged,
+  onOpenMatter,
+  onOpenTasks,
 }: {
   isFocusMode?: boolean;
   onToggleFocusMode?: () => void;
   onHearingsChanged?: () => void | Promise<void>;
+  onOpenMatter?: (matterId: string) => void;
+  onOpenTasks?: () => void;
 } = {}) {
   // Master states for persisted business data
   const [hearings, setHearings] = useState<Hearing[]>([]);
@@ -573,6 +585,112 @@ export function HearingsView({
     return actions;
   };
 
+  type CalendarActionItem = {
+    id: string;
+    title: string;
+    type: "hearing" | "task" | "matter";
+    original: Hearing | LegalTask | Matter;
+  };
+
+  const handleCalendarTaskStatus = async (task: LegalTask) => {
+    const nextStatus: LegalTask["status"] =
+      task.status === "مكتملة" ? "قيد التنفيذ" : "مكتملة";
+    try {
+      await updatePersistentTaskStatus([task.id], nextStatus);
+      setTasks((current) =>
+        current.map((item) =>
+          item.id === task.id ? { ...item, status: nextStatus } : item,
+        ),
+      );
+      setSyncError(null);
+      triggerToast(
+        nextStatus === "مكتملة"
+          ? "تم إكمال المهمة وحفظ التغيير"
+          : "تمت إعادة فتح المهمة وحفظ التغيير",
+        getDateOnly(task.deadline),
+        "task",
+      );
+    } catch (error) {
+      setSyncError(
+        error instanceof Error ? error.message : "تعذر تحديث حالة المهمة.",
+      );
+    }
+  };
+
+  const handleCalendarMatterStatus = async (matter: Matter) => {
+    const nextStatus = matter.status === "مفتوحة" ? "closed" : "open";
+    try {
+      const updated = await updatePersistentMatter(matter.id, {
+        status: nextStatus,
+      });
+      setMatters((current) =>
+        current.map((item) => (item.id === matter.id ? updated : item)),
+      );
+      setSyncError(null);
+      triggerToast(
+        nextStatus === "closed"
+          ? "تم إغلاق القضية وحفظ التغيير"
+          : "تمت إعادة فتح القضية وحفظ التغيير",
+        formatDateStr(new Date()),
+        "matter",
+      );
+    } catch (error) {
+      setSyncError(
+        error instanceof Error ? error.message : "تعذر تحديث حالة القضية.",
+      );
+    }
+  };
+
+  const getCalendarItemActions = (
+    item: CalendarActionItem,
+  ): ActionContextMenuItem[] => {
+    if (item.type === "hearing") {
+      return getHearingActions(item.original as Hearing);
+    }
+
+    if (item.type === "task") {
+      const task = item.original as LegalTask;
+      return [
+        {
+          id: "open-task-module",
+          label: "فتح قسم المهام",
+          onSelect: () => onOpenTasks?.(),
+        },
+        {
+          id: task.status === "مكتملة" ? "reopen-task" : "complete-task",
+          label:
+            task.status === "مكتملة"
+              ? "إعادة فتح المهمة"
+              : "تحديد المهمة كمكتملة",
+          onSelect: () => handleCalendarTaskStatus(task),
+        },
+      ];
+    }
+
+    const matter = item.original as Matter;
+    return [
+      {
+        id: "open-matter",
+        label: "فتح ملف القضية",
+        onSelect: () => onOpenMatter?.(matter.id),
+      },
+      {
+        id: matter.status === "مفتوحة" ? "close-matter" : "reopen-matter",
+        label:
+          matter.status === "مفتوحة"
+            ? "إغلاق القضية"
+            : "إعادة فتح القضية",
+        onSelect: () => handleCalendarMatterStatus(matter),
+      },
+    ];
+  };
+
+  const getCalendarItemMenuLabel = (item: CalendarActionItem) => {
+    if (item.type === "hearing") return `الجلسة ${item.title}`;
+    if (item.type === "task") return `المهمة ${item.title}`;
+    return `القضية ${item.title}`;
+  };
+
   // iCal parsing and export helpers
   const parseTimeTo24h = (timeStr: string): { hours: number; minutes: number } => {
     let hours = 9;
@@ -678,33 +796,51 @@ export function HearingsView({
       return;
     }
 
-    e.dataTransfer.setData("text/plain", JSON.stringify(item));
+    e.dataTransfer.setData(AXIA_CALENDAR_DRAG_TYPE, JSON.stringify(item));
     e.dataTransfer.effectAllowed = "move";
   };
 
+  const hasAxiaCalendarDrag = (e: React.DragEvent) =>
+    Array.from(e.dataTransfer.types).includes(AXIA_CALENDAR_DRAG_TYPE);
+
   const handleDragOver = (e: React.DragEvent) => {
+    if (!hasAxiaCalendarDrag(e)) return;
     e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDragEnter = (e: React.DragEvent, targetDateStr: string) => {
+    if (!hasAxiaCalendarDrag(e)) return;
+    e.preventDefault();
+    setDragOverDate(targetDateStr);
   };
 
   const handleDrop = async (e: React.DragEvent, targetDateStr: string) => {
+    if (!hasAxiaCalendarDrag(e)) return;
+
     e.preventDefault();
     setDragOverDate(null);
 
     try {
-      const dataStr = e.dataTransfer.getData("text/plain");
+      const dataStr = e.dataTransfer.getData(AXIA_CALENDAR_DRAG_TYPE);
       if (!dataStr) return;
 
-      const { id, type } = JSON.parse(dataStr) as {
-        id: string;
-        type: "hearing" | "task" | "matter";
+      const payload = JSON.parse(dataStr) as {
+        id?: unknown;
+        type?: unknown;
       };
 
-      if (type !== "hearing") return;
-      await persistHearingReschedule(id, targetDateStr);
-    } catch (error) {
-      setSyncError(
-        error instanceof Error ? error.message : "تعذر قراءة بيانات السحب.",
-      );
+      if (
+        typeof payload.id !== "string" ||
+        payload.type !== "hearing"
+      ) {
+        setSyncError("عنصر السحب غير صالح لإعادة جدولة جلسة.");
+        return;
+      }
+
+      await persistHearingReschedule(payload.id, targetDateStr);
+    } catch {
+      setSyncError("تعذر قراءة بيانات سحب الجلسة. حاول السحب من بطاقة الجلسة نفسها.");
     }
   };
 
@@ -1211,12 +1347,10 @@ export function HearingsView({
                   unifiedCalendarItems.slice(0, 7).map((item) => (
                     <div
                       key={item.id}
-                      {...(item.type === "hearing"
-                        ? hearingActionMenu.bind(
-                            getHearingActions(item.original as Hearing),
-                            `الجلسة ${item.title}`,
-                          )
-                        : {})}
+                      {...hearingActionMenu.bind(
+                        getCalendarItemActions(item),
+                        getCalendarItemMenuLabel(item),
+                      )}
                       draggable={
                         item.type === "hearing" &&
                         reschedulingHearingId !== item.id
@@ -1234,12 +1368,11 @@ export function HearingsView({
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1">
-                          {item.type === "hearing" &&
-                            hearingActionMenu.triggerButton(
-                              getHearingActions(item.original as Hearing),
-                              `الجلسة ${item.title}`,
-                              "bg-[var(--panel)]/80",
-                            )}
+                          {hearingActionMenu.triggerButton(
+                            getCalendarItemActions(item),
+                            getCalendarItemMenuLabel(item),
+                            "bg-[var(--panel)]/80",
+                          )}
                           <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
                           item.type === "hearing" ? "bg-amber-500/10 text-amber-400" :
                           item.type === "task" ? "bg-teal-500/10 text-teal-400" :
@@ -1372,7 +1505,7 @@ export function HearingsView({
                         <div
                           key={index}
                           onDragOver={handleDragOver}
-                          onDragEnter={() => setDragOverDate(dateStr)}
+                          onDragEnter={(e) => handleDragEnter(e, dateStr)}
                           onDragLeave={() => setDragOverDate(null)}
                           onDrop={(e) => handleDrop(e, dateStr)}
                           className={`min-h-[110px] p-2 border-l border-b border-[var(--border)] transition-all flex flex-col gap-1 text-right relative overflow-y-auto custom-scrollbar ${
@@ -1400,12 +1533,10 @@ export function HearingsView({
                             {dayItems.map((item) => (
                               <div
                                 key={item.id}
-                                {...(item.type === "hearing"
-                                  ? hearingActionMenu.bind(
-                                      getHearingActions(item.original as Hearing),
-                                      `الجلسة ${item.title}`,
-                                    )
-                                  : {})}
+                                {...hearingActionMenu.bind(
+                                  getCalendarItemActions(item),
+                                  getCalendarItemMenuLabel(item),
+                                )}
                                 draggable={
                                   item.type === "hearing" &&
                                   reschedulingHearingId !== item.id
@@ -1426,6 +1557,11 @@ export function HearingsView({
                                  item.type === "task" ? <CheckSquare className="size-2.5 shrink-0" /> :
                                  <Briefcase className="size-2.5 shrink-0" />}
                                 <span className="truncate flex-1">{item.title}</span>
+                                {hearingActionMenu.triggerButton(
+                                  getCalendarItemActions(item),
+                                  getCalendarItemMenuLabel(item),
+                                  "size-5 shrink-0 bg-[var(--panel)]/70",
+                                )}
                               </div>
                             ))}
                           </div>
@@ -1456,7 +1592,7 @@ export function HearingsView({
                       <div
                         key={idx}
                         onDragOver={handleDragOver}
-                        onDragEnter={() => setDragOverDate(dateStr)}
+                        onDragEnter={(e) => handleDragEnter(e, dateStr)}
                         onDragLeave={() => setDragOverDate(null)}
                         onDrop={(e) => handleDrop(e, dateStr)}
                         className={`p-4 min-h-[300px] flex flex-col gap-3 transition-all ${
@@ -1487,12 +1623,10 @@ export function HearingsView({
                             dayItems.map((item) => (
                               <div
                                 key={item.id}
-                                {...(item.type === "hearing"
-                                  ? hearingActionMenu.bind(
-                                      getHearingActions(item.original as Hearing),
-                                      `الجلسة ${item.title}`,
-                                    )
-                                  : {})}
+                                {...hearingActionMenu.bind(
+                                  getCalendarItemActions(item),
+                                  getCalendarItemMenuLabel(item),
+                                )}
                                 draggable={
                                   item.type === "hearing" &&
                                   reschedulingHearingId !== item.id
@@ -1518,9 +1652,16 @@ export function HearingsView({
                                      "مراجعة دعوى"}
                                   </span>
                                 </div>
-                                <h4 className="text-xs font-bold leading-snug line-clamp-2">
-                                  {item.title}
-                                </h4>
+                                <div className="flex items-start justify-between gap-1">
+                                  <h4 className="text-xs font-bold leading-snug line-clamp-2 flex-1">
+                                    {item.title}
+                                  </h4>
+                                  {hearingActionMenu.triggerButton(
+                                    getCalendarItemActions(item),
+                                    getCalendarItemMenuLabel(item),
+                                    "size-6 shrink-0 bg-[var(--panel)]/70",
+                                  )}
+                                </div>
                                 <span className="text-[10px] opacity-80 block truncate">
                                   {item.sub}
                                 </span>
