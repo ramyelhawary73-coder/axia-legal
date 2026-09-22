@@ -1,3 +1,4 @@
+import { readJsonResponse } from "@/lib/api/client-response";
 import type { Client } from "@/types/legal";
 
 type ApiClient = {
@@ -11,19 +12,6 @@ type ApiClient = {
   notes: string | null;
   status: "active" | "inactive" | "archived";
 };
-
-async function readJsonResponse<T>(response: Response): Promise<T> {
-  const payload = (await response.json().catch(() => null)) as
-    | (T & { error?: string })
-    | { error?: string }
-    | null;
-
-  if (!response.ok) {
-    throw new Error(payload?.error || "تعذر الاتصال بخدمة الموكلين.");
-  }
-
-  return payload as T;
-}
 
 function mapClient(client: ApiClient): Client {
   return {
@@ -49,7 +37,7 @@ export async function loadPersistentClients(): Promise<Client[]> {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
-  const payload = await readJsonResponse<{ clients: ApiClient[] }>(response);
+  const payload = await readJsonResponse<{ clients: ApiClient[] }>(response, "تعذر الاتصال بخدمة الموكلين.");
   return payload.clients.map(mapClient);
 }
 
@@ -78,6 +66,6 @@ export async function createPersistentClient(input: {
     }),
   });
 
-  const payload = await readJsonResponse<{ client: ApiClient }>(response);
+  const payload = await readJsonResponse<{ client: ApiClient }>(response, "تعذر الاتصال بخدمة الموكلين.");
   return mapClient(payload.client);
 }

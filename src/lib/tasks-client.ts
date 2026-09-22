@@ -1,3 +1,4 @@
+import { readJsonResponse } from "@/lib/api/client-response";
 import type { LegalTask } from "@/types/legal";
 
 export type TaskMatterOption = {
@@ -15,19 +16,6 @@ export type TaskWorkspace = {
   tasks: LegalTask[];
 };
 
-async function readJsonResponse<T>(response: Response): Promise<T> {
-  const payload = (await response.json().catch(() => null)) as
-    | (T & { error?: string })
-    | { error?: string }
-    | null;
-
-  if (!response.ok) {
-    throw new Error(payload?.error || "تعذر الاتصال بخدمة المهام.");
-  }
-
-  return payload as T;
-}
-
 export async function loadTaskWorkspace(): Promise<TaskWorkspace> {
   const response = await fetch("/api/tasks", {
     method: "GET",
@@ -35,7 +23,7 @@ export async function loadTaskWorkspace(): Promise<TaskWorkspace> {
     headers: { Accept: "application/json" },
   });
 
-  return readJsonResponse<TaskWorkspace>(response);
+  return readJsonResponse<TaskWorkspace>(response, "تعذر الاتصال بخدمة المهام.");
 }
 
 export async function createPersistentTask(task: LegalTask): Promise<LegalTask> {
@@ -46,7 +34,7 @@ export async function createPersistentTask(task: LegalTask): Promise<LegalTask> 
     body: JSON.stringify({ task }),
   });
 
-  const payload = await readJsonResponse<{ task: LegalTask }>(response);
+  const payload = await readJsonResponse<{ task: LegalTask }>(response, "تعذر الاتصال بخدمة المهام.");
   return payload.task;
 }
 
@@ -61,7 +49,7 @@ export async function updatePersistentTaskDeadline(
     body: JSON.stringify({ taskIds: [taskId], deadline }),
   });
 
-  const payload = await readJsonResponse<{ updatedIds: string[] }>(response);
+  const payload = await readJsonResponse<{ updatedIds: string[] }>(response, "تعذر الاتصال بخدمة المهام.");
   if (!payload.updatedIds.includes(taskId)) {
     throw new Error("لم يتم تأكيد تحديث موعد المهمة.");
   }
@@ -80,5 +68,5 @@ export async function updatePersistentTaskStatus(
     body: JSON.stringify({ taskIds, status }),
   });
 
-  await readJsonResponse<{ updatedIds: string[] }>(response);
+  await readJsonResponse<{ updatedIds: string[] }>(response, "تعذر الاتصال بخدمة المهام.");
 }

@@ -1,3 +1,4 @@
+import { readJsonResponse } from "@/lib/api/client-response";
 import type { Matter } from "@/types/legal";
 
 export type MatterClientOption = {
@@ -10,19 +11,6 @@ export type MattersWorkspace = {
   clients: MatterClientOption[];
 };
 
-async function readJsonResponse<T>(response: Response): Promise<T> {
-  const payload = (await response.json().catch(() => null)) as
-    | (T & { error?: string })
-    | { error?: string }
-    | null;
-
-  if (!response.ok) {
-    throw new Error(payload?.error || "تعذر الاتصال بخدمة القضايا.");
-  }
-
-  return payload as T;
-}
-
 export async function loadMattersWorkspace(): Promise<MattersWorkspace> {
   const response = await fetch("/api/matters", {
     method: "GET",
@@ -30,7 +18,7 @@ export async function loadMattersWorkspace(): Promise<MattersWorkspace> {
     headers: { Accept: "application/json" },
   });
 
-  return readJsonResponse<MattersWorkspace>(response);
+  return readJsonResponse<MattersWorkspace>(response, "تعذر الاتصال بخدمة القضايا.");
 }
 
 export async function createPersistentMatter(input: {
@@ -57,7 +45,7 @@ export async function createPersistentMatter(input: {
     body: JSON.stringify(input),
   });
 
-  const payload = await readJsonResponse<{ matter: Matter }>(response);
+  const payload = await readJsonResponse<{ matter: Matter }>(response, "تعذر الاتصال بخدمة القضايا.");
   return payload.matter;
 }
 
@@ -97,6 +85,6 @@ export async function updatePersistentMatter(
     body: JSON.stringify({ id, ...updates }),
   });
 
-  const payload = await readJsonResponse<{ matter: Matter }>(response);
+  const payload = await readJsonResponse<{ matter: Matter }>(response, "تعذر الاتصال بخدمة القضايا.");
   return payload.matter;
 }

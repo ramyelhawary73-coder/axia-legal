@@ -1,3 +1,4 @@
+import { readJsonResponse } from "@/lib/api/client-response";
 import type { Client, FinancialRecord, Matter } from "@/types/legal";
 
 type ApiFinancialRecord = {
@@ -22,19 +23,6 @@ type ApiFinancialRecord = {
   createdAt: string;
   updatedAt: string;
 };
-
-async function readJsonResponse<T>(response: Response): Promise<T> {
-  const payload = (await response.json().catch(() => null)) as
-    | (T & { error?: string })
-    | { error?: string }
-    | null;
-
-  if (!response.ok) {
-    throw new Error(payload?.error || "تعذر الاتصال بالخدمة المالية.");
-  }
-
-  return payload as T;
-}
 
 const typeFromApi: Record<ApiFinancialRecord["recordType"], FinancialRecord["type"]> = {
   fee_payment: "دفعة أتعاب",
@@ -101,7 +89,7 @@ export async function loadPersistentFinance(
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
-  const payload = await readJsonResponse<{ records: ApiFinancialRecord[] }>(response);
+  const payload = await readJsonResponse<{ records: ApiFinancialRecord[] }>(response, "تعذر الاتصال بالخدمة المالية.");
   return payload.records.map((record) => mapFinancial(record, clients, matters));
 }
 
@@ -145,6 +133,6 @@ export async function createPersistentFinanceRecord(
     }),
   });
 
-  const payload = await readJsonResponse<{ record: ApiFinancialRecord }>(response);
+  const payload = await readJsonResponse<{ record: ApiFinancialRecord }>(response, "تعذر الاتصال بالخدمة المالية.");
   return mapFinancial(payload.record, clients, matters);
 }

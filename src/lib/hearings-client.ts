@@ -1,3 +1,4 @@
+import { readJsonResponse } from "@/lib/api/client-response";
 import type { Hearing, Matter } from "@/types/legal";
 
 type ApiHearing = {
@@ -16,19 +17,6 @@ type ApiHearing = {
   pleadingNotes: string | null;
   isArchived: boolean;
 };
-
-async function readJsonResponse<T>(response: Response): Promise<T> {
-  const payload = (await response.json().catch(() => null)) as
-    | (T & { error?: string })
-    | { error?: string }
-    | null;
-
-  if (!response.ok) {
-    throw new Error(payload?.error || "تعذر الاتصال بخدمة الجلسات.");
-  }
-
-  return payload as T;
-}
 
 function mapStatus(api: ApiHearing): Hearing["status"] {
   if (api.status === "postponed") return "مؤجلة";
@@ -69,7 +57,7 @@ export async function loadPersistentHearings(matters: Matter[]): Promise<Hearing
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
-  const payload = await readJsonResponse<{ hearings: ApiHearing[] }>(response);
+  const payload = await readJsonResponse<{ hearings: ApiHearing[] }>(response, "تعذر الاتصال بخدمة الجلسات.");
   return payload.hearings.map((item) => mapHearing(item, matters));
 }
 
@@ -95,7 +83,7 @@ export async function createPersistentHearing(
     },
     body: JSON.stringify(input),
   });
-  const payload = await readJsonResponse<{ hearing: ApiHearing }>(response);
+  const payload = await readJsonResponse<{ hearing: ApiHearing }>(response, "تعذر الاتصال بخدمة الجلسات.");
   return mapHearing(payload.hearing, matters);
 }
 
@@ -125,6 +113,6 @@ export async function updatePersistentHearing(
     },
     body: JSON.stringify({ id, ...updates }),
   });
-  const payload = await readJsonResponse<{ hearing: ApiHearing }>(response);
+  const payload = await readJsonResponse<{ hearing: ApiHearing }>(response, "تعذر الاتصال بخدمة الجلسات.");
   return mapHearing(payload.hearing, matters);
 }
