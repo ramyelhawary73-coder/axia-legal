@@ -87,19 +87,12 @@ Statements under **Current State** should be treated as verified only when a liv
 
 - Repository: `ramyelhawary73-coder/axia-legal`
 - Default branch: `main`
-- Verified main SHA: `6efe7d5f1732f94f5ec0878331ada0cc190740d1`
+- Verified main SHA: `93f214d5998aa2864c3314b4e7a274ef0ec02345`
+- PR #28 — Cleanup Batch 1 post-merge documentation closeout — merged using merge commit `93f214d5998aa2864c3314b4e7a274ef0ec02345`.
 - PR #27 — Cleanup Batch 1 client infrastructure — merged using merge commit `6efe7d5f1732f94f5ec0878331ada0cc190740d1`.
-- PR #26 — Phase 4B.1 read-only audit closeout — merged with merge commit `4e8451652e9c376a2f9c88882e146e10f1ec970d`.
-- PR #25 — Phase 4B documentation closeout — merged with merge commit `e2c96618ad649efdd66b54a7f5431a18292ac6b5`.
-- Exact-content verification from PR #27 head `a421e30f8f8a53e53379f93acc69cfd2cbc38e93` to merged `main`: 0 file differences; `main` is ahead by the single merge commit only.
+- Exact-content verification from PR #28 head `8ac33f73f09ce1176f10d048b985df54a1a2fe0c` to merged `main`: 0 file differences; `main` is ahead by the single merge commit only.
 - Merge commits remain the approved merge strategy.
-- CI workflow now installs dependencies with `npm ci` and runs:
-  - Typecheck
-  - Lint
-  - Safety tests
-  - Production build
-- Exact-head PR CI #166 passed all gates before merge.
-- Post-merge push-triggered GitHub Actions run could not be directly enumerated through the currently available connector action because that action exposes pull-request-triggered runs only. This limitation is recorded rather than treating the push run as verified.
+- CI workflow installs dependencies with `npm ci` and runs Typecheck, Lint, Safety tests, and Production build.
 
 ## Supabase Development
 
@@ -1520,28 +1513,60 @@ Cleanup Batch 2 has **not** started.
 
 #### Cleanup Batch 2 — Matter creation/domain constants consolidation
 
-Scope:
+**Status:** `PLANNED — READ-ONLY SCOPE REVIEW PLAN READY / NOT STARTED`
 
-- introduce `MatterCreateInput`;
-- remove transient fake full-Matter construction from `ClientDetailDashboard`;
-- centralize Court/Category/ClientRole option constants;
-- centralize Client↔Matter association helper;
-- keep persistent API behavior unchanged.
+Objective:
 
-Affected areas:
+Consolidate Matter creation and Client↔Matter domain logic without changing persistent API behavior, UI design, Supabase schema, or business semantics.
 
-- `MattersView`;
-- `ClientsView`;
-- `ClientDetailDashboard`;
-- `matters-client`;
-- types/domain helpers;
-- related tests.
+### Required read-only scope review before implementation
 
-Risk: Medium.
+The review must inspect and document:
 
-Required before implementation:
+1. both Matter creation entry points:
+   - `MattersView`;
+   - `ClientDetailDashboard` through `ClientsView`;
+2. current `createPersistentMatter` input contract and all callers;
+3. transient fake `Matter` construction and placeholder-field usage;
+4. duplicated Court / Category / ClientRole option definitions;
+5. Client↔Matter association logic, including ID matching and any name fallback;
+6. all tests/source-contracts that currently protect these flows;
+7. any downstream consumers that depend on the full `Matter` shape;
+8. whether introducing a dedicated `MatterCreateInput` type can remain source-compatible and persistence-neutral.
 
-Characterization tests for both matter-create entry points and client-matter association.
+### Required review output
+
+Before implementation approval, present:
+
+- exact files/symbols involved;
+- current data flow for both creation entry points;
+- confirmed duplication;
+- behavior that must remain unchanged;
+- canonical `MatterCreateInput` design;
+- canonical location for Court / Category / ClientRole constants;
+- canonical Client↔Matter association helper design;
+- characterization tests required before refactor;
+- risk analysis;
+- proposed implementation diff;
+- verification plan.
+
+### Explicit non-goals
+
+Do not during the read-only review:
+
+- edit code;
+- create an implementation branch;
+- change UI;
+- change API behavior;
+- change Supabase;
+- change migrations;
+- change Vercel configuration;
+- change dependencies;
+- delete any fallback logic before proving its callers and behavior.
+
+Risk if later implemented: Medium.
+
+Cleanup Batch 2 has **not** started.
 
 #### Cleanup Batch 3 — Navigation live-badge cleanup
 
@@ -2920,37 +2945,50 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: CLEANUP BATCH 1 VERIFIED / MERGED — CLEANUP BATCH 2 NOT STARTED**
+**Current mode: CLEANUP BATCH 1 CLOSED — CLEANUP BATCH 2 READ-ONLY SCOPE REVIEW NOT STARTED**
 
 Verified state:
 
-- current GitHub `main`: `6efe7d5f1732f94f5ec0878331ada0cc190740d1`;
-- PR #27 merged using merge commit only;
-- merged file content exactly matches tested PR head;
-- Cleanup Batch 1 shared browser response helper is now on `main`;
-- CI workflow now uses `npm ci`;
-- exact-head CI #166 passed all gates before merge;
-- GitHub Vercel status for the merge SHA is `success`;
-- no Supabase, migration, UI, Business Logic, dependency-version, or Vercel configuration changes were introduced.
+- current GitHub `main`: `93f214d5998aa2864c3314b4e7a274ef0ec02345`;
+- PR #28 merged using merge commit only;
+- merged PR #28 content exactly matches its tested head with 0 file differences;
+- Cleanup Batch 1 is closed and documented;
+- Cleanup Batch 2 implementation has not started.
 
-Verification limitations recorded:
+### Proposed next action — requires owner approval
 
-- post-merge push-triggered GitHub Actions run is not directly enumerable through the currently available connector action;
-- direct Vercel deployment details are temporarily blocked by connector authorization `403`.
+Perform **Cleanup Batch 2 Read-only Scope Review only**.
 
-### Next correct action
+The review may inspect:
 
-1. Merge this documentation-only post-merge closeout into `main` after owner approval.
-2. Do **not** start Cleanup Batch 2 automatically.
-3. After documentation closeout, perform a fresh read-only scope review for Cleanup Batch 2 — Matter creation/domain constants consolidation.
-4. Present exact files, characterization tests, risk, canonical `MatterCreateInput` design, and verification plan.
-5. Wait for explicit owner approval before any Batch 2 implementation.
+- `MattersView`;
+- `ClientsView`;
+- `ClientDetailDashboard`;
+- `matters-client`;
+- legal/domain types;
+- current tests and source contracts;
+- related helper/constants usage.
+
+The review must not modify code, create an implementation branch, change Supabase, change Vercel, or alter business behavior.
+
+After the review, present:
+
+- exact current data flow;
+- canonical `MatterCreateInput` proposal;
+- duplication/association findings;
+- exact affected files;
+- characterization tests;
+- risk;
+- proposed implementation scope;
+- verification plan.
+
+Then stop for explicit implementation approval.
 
 ### Explicit stop condition
 
-**WAITING FOR OWNER APPROVAL TO MERGE THE DOCUMENTATION CLOSEOUT.**
+**WAITING FOR OWNER APPROVAL TO START CLEANUP BATCH 2 READ-ONLY SCOPE REVIEW.**
 
-Cleanup Batch 2 is **NOT STARTED**.
+Cleanup Batch 2 implementation is **NOT STARTED**.
 
 ---
 
@@ -2966,26 +3004,23 @@ If the roadmap is newer on an unmerged documentation branch, explicitly identify
 
 # 25. Documentation Branch Scope
 
-For `docs/axia-cleanup-batch1-postmerge-v1`:
+For `docs/axia-cleanup-batch2-scope-plan-v1`:
 
 Allowed:
 
-- record PR #27 merge;
+- record PR #28 merge;
 - update current `main` SHA;
-- record exact-content post-merge verification;
-- record GitHub Vercel merge-SHA status;
-- record CI/Vercel connector verification limitations;
-- mark Cleanup Batch 1 as VERIFIED / MERGED;
+- record the Cleanup Batch 2 read-only scope-review plan;
 - update NEXT ACTION.
 
 Not allowed:
 
 - functional code changes;
+- Cleanup Batch 2 audit/review execution;
 - Cleanup Batch 2 implementation;
 - migrations;
 - Supabase mutations;
 - Vercel configuration changes;
-- dependency changes;
-- paid infrastructure.
+- dependency changes.
 
 This branch is documentation-only. Cleanup Batch 2 has **not** started.
