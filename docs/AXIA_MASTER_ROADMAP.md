@@ -87,10 +87,11 @@ Statements under **Current State** should be treated as verified only when a liv
 
 - Repository: `ramyelhawary73-coder/axia-legal`
 - Default branch: `main`
-- Verified main SHA: `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`
-- PR #24 — AXIA Phase 4B Audit Trail Foundation — is merged into `main` with merge commit `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`.
+- Verified main SHA: `e2c96618ad649efdd66b54a7f5431a18292ac6b5`
+- PR #25 — Phase 4B documentation closeout — is merged into `main` with merge commit `e2c96618ad649efdd66b54a7f5431a18292ac6b5`.
+- PR #24 — AXIA Phase 4B Audit Trail Foundation — is merged with merge commit `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`.
 - PR #23 Roadmap Lock v1 and PR #22 Master Roadmap documentation are also merged.
-- Exact-content verification from PR #24 head to merged `main`: 0 file differences; `main` is ahead by the single merge commit only.
+- Exact-content verification from PR #25 head to merged `main`: 0 file differences; `main` is ahead by the single merge commit only.
 - Merge commits are the approved merge strategy for completed AXIA phases.
 - The CI workflow runs:
   - Typecheck
@@ -113,14 +114,15 @@ Statements under **Current State** should be treated as verified only when a liv
 
 - AXIA production project is deployed and reachable.
 - PR #24 final Preview on exact head `3cbd8efdb74de8424a395d926d37ee85c90507cc` was verified `READY`.
-- Production was manually deployed from the exact merged `main` commit after the prior Vercel build-rate-limit failure.
-- Verified Production deployment: `dpl_3reCzQgMksqmrXPCQJtzCws3EAzS`.
+- PR #25 documentation closeout triggered a normal Production auto-deployment from `main`.
+- Verified Production deployment: `dpl_2RTDztrxRtBGpwukTdMz6AJSUcVH`.
 - Production state: `READY`.
-- Production Git SHA: `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`.
+- Production Git SHA: `e2c96618ad649efdd66b54a7f5431a18292ac6b5`.
 - Production branch: `main`.
 - Production aliases include `axia-legal-psi.vercel.app`.
-- Runtime verification after deployment found no grouped runtime errors and no error/fatal/warning logs in the checked window.
-- GitHub `main` and Vercel Production are now reconciled on the same SHA.
+- GitHub Vercel status for the merge SHA is `success`.
+- Runtime verification after deployment found no grouped runtime errors in the checked window.
+- GitHub `main` and Vercel Production are reconciled on the same SHA.
 - Production Supabase isolation from Development remains a required verification item before real client data.
 
 ## Real Development data last observed
@@ -1138,29 +1140,496 @@ Exit criteria:
 
 ## Phase 4B.1 — Codebase Baseline, Deduplication & Architecture Cleanup
 
-**Status:** `PLANNED`
+**Status:** `READ_ONLY_AUDIT_COMPLETE — CLEANUP PLAN READY / NO IMPLEMENTATION STARTED`
 
-Objective: remove confirmed technical duplication and obsolete paths without rewriting stable functionality.
+**Audit baseline:** `main @ e2c96618ad649efdd66b54a7f5431a18292ac6b5`  
+**Audit mode:** Read-only source/configuration review only. No code, dependency, Supabase, Vercel, data, or Production mutation occurred.
 
-Primary scope:
+Objective: remove confirmed duplication and obsolete paths incrementally without destabilizing working legal workflows.
 
-- repository dependency and duplication inventory;
-- dead-code candidate inventory;
-- stale mock/fake/local-only business path inventory;
-- canonical Client/Matter/Hearing/Task/API/client-helper mapping;
-- shared validation/type/helper consolidation where justified;
-- remove confirmed obsolete code only after callers migrate;
-- improve code-quality gates;
-- create/maintain a Technical Debt Register.
+### 4B.1-A — Confirmed findings
 
-Exit criteria:
+#### F-01 — Authoritative legal drafts still depend on browser-local persistence
 
-- no broad destructive cleanup based on guesswork;
-- every removed production path has evidence of replacement or non-use;
-- no regression in core workflows;
-- no tenant-isolation regression;
-- relevant characterization/regression tests pass;
-- build/bundle remains healthy.
+**Priority:** P0 carry-forward  
+**Classification:** KEEP UNTIL REPLACED — NOT A 4B.1 DELETE TARGET
+
+Evidence:
+
+- `src/components/legal-rich-text-editor.tsx`: ~1332 lines;
+- loads `initialMockLegalDrafts` from `src/lib/mock-legal-drafts.ts`;
+- reads `localStorage.getItem("axia_legal_drafts_v1")`;
+- falls back to `initialMockLegalDrafts`;
+- writes the entire drafts array back to localStorage on change.
+
+Conclusion:
+
+This is real product debt, but simply deleting it during cleanup would destroy the current drafting workflow. The correct replacement remains the planned Persistent Legal Document Workspace phase.
+
+Action in 4B.1:
+
+- do not remove the editor or mock-draft fallback yet;
+- isolate/refactor only if needed for safe decomposition;
+- preserve behavior until server-side draft persistence exists.
+
+#### F-02 — Visible Legal Library still uses mock precedent content
+
+**Priority:** P1 carry-forward  
+**Classification:** KEEP UNTIL REPLACED — NOT A BLIND CLEANUP DELETE
+
+Evidence:
+
+- `src/components/views/library-view.tsx` imports `mockPrecedents`;
+- its visible precedent list is initialized directly from `mockPrecedents`;
+- `src/lib/mock-legal-data.ts` remains a ~715-line mock data module.
+
+Conclusion:
+
+The Library mock is still an active production-path dependency. It must be replaced by the Real Legal Library phase, not merely deleted.
+
+Additional dead-code candidate:
+
+- `mock-legal-data.ts` exports `mockMatters`, `mockHearings`, `mockClients`, `mockTasks`, `mockDocuments`, `mockFinances`, `mockPrecedents`, and `mockTeam`;
+- among audited active UI paths, only `mockPrecedents` was confirmed in use;
+- the other exports are **candidates**, not approved deletions, until a repository-wide reference scan proves non-use.
+
+#### F-03 — Sidebar contains hard-coded business badges
+
+**Priority:** P1  
+**Classification:** CONSOLIDATE / REPLACE WITH LIVE DATA
+
+Evidence in `src/components/app-shell.tsx`:
+
+- Matters badge: `"٥"`;
+- Hearings badge: `"اليوم"`;
+- Clients badge: `"٥"`;
+- Tasks static declaration: `"٣"`, although runtime logic already overrides Tasks with `upcomingTasksCount` when available;
+- RAJIH `"AI"` is a product label, not a business count.
+
+Conclusion:
+
+Static numeric/urgency badges can misrepresent live office data.
+
+Cleanup direction:
+
+- keep navigation metadata separate from live counters;
+- derive business counts from authoritative workspace state;
+- keep `AI` only as a non-numeric product label if desired.
+
+#### F-04 — HTTP response parsing is duplicated across client modules
+
+**Priority:** P1 maintainability  
+**Classification:** SAFE CONSOLIDATION CANDIDATE
+
+Confirmed duplicate helper:
+
+`async function readJsonResponse<T>(response: Response): Promise<T>`
+
+is independently implemented in at least:
+
+- `src/lib/clients-client.ts`;
+- `src/lib/matters-client.ts`;
+- `src/lib/hearings-client.ts`;
+- `src/lib/tasks-client.ts`;
+- `src/lib/finance-client.ts`;
+- `src/lib/documents-client.ts`;
+- `src/lib/team-client.ts`;
+- `src/lib/administration-client.ts`.
+
+Repeated POST/PATCH fetch configuration also exists across multiple clients.
+
+Risk:
+
+Error handling can drift between modules and fixes must be repeated.
+
+Canonical direction:
+
+Create one small shared browser API response helper while retaining domain-specific user-facing fallback messages where necessary.
+
+#### F-05 — Matter creation and Client↔Matter logic are duplicated
+
+**Priority:** P1  
+**Classification:** CONSOLIDATE AFTER CHARACTERIZATION TESTS
+
+Confirmed duplication:
+
+- `MattersView` owns a complete “new matter” form and calls `createPersistentMatter`;
+- `ClientDetailDashboard` owns a second matter-creation form;
+- `ClientsView` adapts `ClientDetailDashboard` output back into `createPersistentMatter`;
+- court option lists are repeated in `MattersView` and `ClientDetailDashboard`;
+- Client↔Matter association fallback logic using `clientId` plus name matching is duplicated in `ClientsView` and `ClientDetailDashboard`.
+
+Structural smell:
+
+`ClientDetailDashboard` currently creates a transient `Matter` object with:
+
+- `id: MAT-${Date.now()}`;
+- multiple `"غير مسجل"` placeholder values;
+
+then passes it to `onAddNewMatter`, where `ClientsView` maps selected fields into the real persistent API call.
+
+The transient ID is not the persisted database ID, so this is not confirmed data corruption. However, using a full fake `Matter` object as a create-command DTO creates unnecessary coupling and makes future fields easy to mishandle.
+
+Canonical direction:
+
+- define one `MatterCreateInput` contract;
+- centralize Court/Category/ClientRole options;
+- use one create form primitive or shared create controller;
+- centralize Client↔Matter association logic;
+- prefer stable `clientId` association over name fallback when IDs are available.
+
+#### F-06 — Workspace data has multiple competing owners and duplicate fetches
+
+**Priority:** P1 architecture/performance  
+**Classification:** HIGHER-RISK CONSOLIDATION
+
+Confirmed:
+
+`src/app/page.tsx` loads and owns:
+
+- Clients;
+- Matters;
+- Hearings;
+- Documents;
+- Tasks.
+
+At the same time:
+
+- `ClientsView` reloads Clients + Matters;
+- `MattersView` reloads Matters;
+- `HearingsView` reloads Matters + Tasks + Hearings;
+- `FinanceView` reloads Clients + Matters + Finance.
+
+Impact:
+
+- redundant API requests;
+- multiple local copies of the same entities;
+- refresh callbacks must manually synchronize different owners;
+- increased stale-state/regression risk.
+
+Canonical decision required before cleanup:
+
+Choose one deliberate model:
+
+1. central workspace state with domain mutation callbacks; or
+2. view-owned data with the shell consuming a dedicated shared query/cache layer.
+
+Do not partially remove loaders until the ownership model is chosen and tested.
+
+#### F-07 — Several components have excessive responsibility concentration
+
+**Priority:** P2 maintainability / regression risk  
+**Classification:** DECOMPOSE AFTER TEST COVERAGE
+
+Observed sizes on current main:
+
+- `HearingsView`: ~2631 lines, ~40 `useState` hooks;
+- `MattersView`: ~1301 lines, ~25 `useState` hooks;
+- `LegalRichTextEditor`: ~1332 lines, ~21 `useState` hooks;
+- `ClientDetailDashboard`: ~1212 lines, ~16 `useState` hooks;
+- `TasksView`: ~1190 lines;
+- `GlobalSearchBar`: ~1148 lines;
+- `LegalPdfReportModal`: ~762 lines;
+- `AppShell`: ~552 lines.
+
+Additional signal:
+
+- `HearingsView` disables `react-hooks/preserve-manual-memoization`;
+- `TasksView` and `AppShell` contain `react-hooks/set-state-in-effect` disables.
+
+Conclusion:
+
+These files are not automatically “bad” because they are large, but they contain multiple independent responsibilities and are expensive to change safely.
+
+Direction:
+
+Split by stable domain responsibility, not arbitrary line count.
+
+#### F-08 — Current safety tests are mainly source-contract tests, not browser behavior tests
+
+**Priority:** P1 before large refactor  
+**Classification:** TEST GAP
+
+Audited test files use Node `fs.readFileSync` + regex/assertions against source/migration text.
+
+Examples:
+
+- `tests/axia-phase4a-interactions.test.mjs`;
+- `tests/axia-core-ui-integration.test.mjs`;
+- `tests/axia-phase4b-audit-foundation.test.mjs`.
+
+They are useful safety contracts, but the audited suite does not exercise the UI in a real browser.
+
+Risk:
+
+A large component refactor can preserve strings/API names and still break user interaction.
+
+Required before high-risk cleanup:
+
+Add focused behavioral/E2E coverage for the workflows being refactored rather than attempting broad E2E expansion in one step.
+
+#### F-09 — CI dependency installation is reproducible in principle but not enforced
+
+**Priority:** P2  
+**Classification:** SAFE HYGIENE CANDIDATE
+
+Confirmed:
+
+- `package-lock.json` exists;
+- lockfile version = 3;
+- CI still runs `npm install`.
+
+Direction:
+
+Validate `npm ci` on a branch, then use it in CI if successful. Do not combine this with dependency upgrades.
+
+#### F-10 — Dependency removal candidates require proof
+
+**Priority:** P2  
+**Classification:** NEEDS REFERENCE PROOF
+
+Current direct dependencies include `glob`.
+
+The audited package scripts do not import `glob`, while other major dependencies have confirmed audited consumers:
+
+- `html2canvas` / `jspdf` → PDF export;
+- `motion` → Hearings UI;
+- `recharts` → Matters dashboard;
+- Supabase/Next/React/theme/icon packages → active runtime.
+
+`glob` is therefore a dependency-removal candidate, **not a confirmed unused dependency**. Do not remove until a complete repository reference check proves it is unused.
+
+#### F-11 — Domain/API/UI status translation is distributed across adapters
+
+**Priority:** P2 architecture  
+**Classification:** CONSOLIDATE BY DOMAIN, NOT GLOBAL REWRITE
+
+Examples:
+
+- API hearing statuses use English technical values while UI `Hearing.status` is Arabic;
+- Finance maps technical `pending/completed/cancelled` + direction into Arabic UI states;
+- Matter update inputs expose technical `open/closed/archived` while UI Matter types use Arabic status labels.
+
+This is a valid boundary pattern, but mapping rules are distributed and can drift.
+
+Direction:
+
+Keep API/database values technical and centralize each domain’s mapping in explicit adapters/contracts. Do not convert the whole database or UI vocabulary during cleanup.
+
+### 4B.1-B — Confirmed false positives / intentionally retained paths
+
+#### FP-01 — Matters dashboard localStorage is UI preference, not business persistence
+
+`src/components/views/matters-view.tsx` stores only:
+
+`axia_dashboard_widget_order`
+
+This controls dashboard widget order.
+
+Decision: **KEEP**.
+
+Reason:
+
+It is user-interface preference state, not authoritative legal/business data.
+
+#### FP-02 — Overview and Reports are data-driven
+
+Audited `OverviewView` and `ReportsView` derive counts/distributions from supplied Matters, Hearings, Tasks, Clients, and Documents.
+
+Decision: **KEEP**.
+
+No evidence from this audit that these views use mock KPI counts.
+
+#### FP-03 — Server API foundation is already usefully centralized
+
+Core routes already share:
+
+- `src/lib/api/validation.ts`;
+- `src/lib/api/errors.ts`;
+- `src/lib/api/workspace.ts`.
+
+Decision:
+
+Do not invent a broad server framework abstraction merely for deduplication. Consolidate only repeated domain rules with clear benefit.
+
+#### FP-04 — Active mock files must not be deleted before replacement
+
+`mock-legal-drafts.ts` and the Library’s `mockPrecedents` are active dependencies.
+
+Decision:
+
+They remain known product debt, not dead-code deletion candidates.
+
+### 4B.1-C — Out-of-scope issues discovered/confirmed during audit
+
+These remain valid risks but should not be mixed into code-cleanup commits:
+
+- wildcard CORS remains in `next.config.ts`;
+- Production vs Development Supabase separation remains unresolved for real-customer onboarding;
+- Legal Library real-data replacement belongs to Phase 15;
+- persistent legal drafts belong to Phase 11;
+- Safe Delete lifecycle belongs to Phase 12;
+- Legal Knowledge grants/RLS performance work belongs to dedicated hardening work.
+
+### 4B.1-D — Proposed Cleanup Batches
+
+#### Cleanup Batch 1 — Low-risk shared client infrastructure & CI hygiene
+
+**Recommended first implementation batch.**
+
+Scope:
+
+- introduce one shared browser JSON response helper;
+- migrate the eight audited `*-client.ts` modules to it;
+- preserve current domain-specific errors and API contracts;
+- validate `npm ci`;
+- switch GitHub CI from `npm install` to `npm ci` only if lockfile validation passes;
+- add/adjust source-contract tests for the shared helper.
+
+Expected files:
+
+- new small shared client helper under `src/lib/api/` or equivalent;
+- eight audited client modules;
+- `.github/workflows/ci.yml`;
+- focused tests;
+- roadmap.
+
+Risk: Low–Medium.
+
+Do not include:
+
+- dependency upgrades;
+- UI refactors;
+- Supabase;
+- business logic changes.
+
+#### Cleanup Batch 2 — Matter creation/domain constants consolidation
+
+Scope:
+
+- introduce `MatterCreateInput`;
+- remove transient fake full-Matter construction from `ClientDetailDashboard`;
+- centralize Court/Category/ClientRole option constants;
+- centralize Client↔Matter association helper;
+- keep persistent API behavior unchanged.
+
+Affected areas:
+
+- `MattersView`;
+- `ClientsView`;
+- `ClientDetailDashboard`;
+- `matters-client`;
+- types/domain helpers;
+- related tests.
+
+Risk: Medium.
+
+Required before implementation:
+
+Characterization tests for both matter-create entry points and client-matter association.
+
+#### Cleanup Batch 3 — Navigation live-badge cleanup
+
+Scope:
+
+- remove hard-coded business badge values;
+- derive Matters/Clients/Hearings/Tasks badges from real workspace state where reliable;
+- otherwise show no badge;
+- keep RAJIH `AI` as a non-business label if owner wants it.
+
+Risk: Low–Medium.
+
+This can later be visually refined again in the dedicated Sidebar redesign phase.
+
+#### Cleanup Batch 4 — Workspace data ownership consolidation
+
+Scope:
+
+- choose and document one data ownership model;
+- remove duplicate Core fetch ownership between `page.tsx` and individual views;
+- preserve read-back/rollback behavior for mutations;
+- reduce manual refresh coupling.
+
+Risk: High.
+
+Required first:
+
+- behavioral tests for refresh/navigation/mutation flows;
+- explicit data ownership design review.
+
+#### Cleanup Batch 5 — Component decomposition
+
+Suggested sequence:
+
+1. `HearingsView`;
+2. `MattersView`;
+3. `TasksView`;
+4. `ClientDetailDashboard`;
+5. `GlobalSearchBar`;
+6. `LegalRichTextEditor` only where decomposition does not interfere with future server persistence.
+
+Extract by responsibility:
+
+- calendar;
+- forms;
+- filters;
+- modals;
+- domain action controllers;
+- presentation sections.
+
+Risk: Medium–High.
+
+Rule:
+
+No visual redesign or new features in the same refactor batch.
+
+#### Cleanup Batch 6 — Dead-code / dependency pruning after proof
+
+Scope:
+
+- perform complete reference scan;
+- remove only confirmed-unused mock exports/components/helpers/assets;
+- verify whether `glob` is genuinely unused;
+- remove stale compatibility code only after callers are migrated.
+
+Risk: Medium if evidence is complete; High if guessed.
+
+Rule:
+
+No file/package is removed based only on filename, age, or current Development usage.
+
+### 4B.1-E — Recommended canonical paths
+
+| Concern | Canonical direction |
+| --- | --- |
+| Browser API response parsing | one shared typed response helper |
+| API auth/workspace boundary | keep existing `api/workspace.ts` |
+| API validation/errors | keep existing shared validation/error utilities |
+| Matter creation | one `MatterCreateInput` + shared create path |
+| Court/category/role options | domain constants, not repeated JSX literals |
+| Client↔Matter relation | ID-first shared helper; name fallback only if explicitly required |
+| Core workspace state | one deliberate ownership/cache model |
+| Widget order preference | keep localStorage UI preference |
+| Legal drafts | keep current path until server persistence replaces it |
+| Legal Library mock | keep until real Library replaces it |
+| Static business badges | replace with live values or remove |
+
+### 4B.1-F — Audit conclusion
+
+The current codebase does **not** require a rewrite.
+
+The main cleanup problem is not “too much code everywhere”; it is concentrated in:
+
+- duplicated browser client plumbing;
+- duplicated Matter/Client UI-domain logic;
+- multiple data owners/fetch paths;
+- several oversized components;
+- active mock/local-only product gaps that need replacement, not deletion;
+- limited behavioral test coverage for safe refactoring.
+
+The safest first cleanup is **Batch 1**, not deletion of large files.
+
+No cleanup implementation has started.
 
 ## Phase 5 — AXIA Brand Identity & Premium Login
 
@@ -2436,34 +2905,37 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PHASE 4B-B COMPLETE — PRODUCTION RECONCILED — DOCUMENTATION CLOSEOUT**
+**Current mode: PHASE 4B.1 READ-ONLY AUDIT COMPLETE — CLEANUP IMPLEMENTATION NOT STARTED**
 
-Completed:
+Audit baseline:
 
-- PR #24 merged using merge commit only;
-- GitHub `main`: `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`;
-- Development migration `20260921111252 axia_phase4b_audit_trail_foundation` verified;
-- six Core audit triggers verified;
-- no smoke fixtures remain;
-- no residual test audit rows remain;
-- Production deployment `dpl_3reCzQgMksqmrXPCQJtzCws3EAzS` is `READY`;
-- Production Git SHA exactly matches current `main`;
-- GitHub Vercel status is `success`;
-- runtime verification found no current errors in the checked window;
-- no paid infrastructure was created;
-- Production/Development Supabase isolation remains the previously documented P0 for future real-client onboarding.
+- GitHub `main`: `e2c96618ad649efdd66b54a7f5431a18292ac6b5`;
+- Production was not modified by this audit;
+- Supabase was not modified by this audit;
+- no implementation branch was created;
+- only this documentation branch was updated with audit evidence.
 
-### Next correct action
+### Recommended next action
 
-1. Merge this documentation-only closeout into `main` after owner approval so the canonical roadmap on `main` reflects the verified state.
-2. After documentation closeout is merged, perform a fresh **read-only** scope review for `Phase 4B.1 — Codebase Baseline, Deduplication & Architecture Cleanup`.
-3. Do not implement Phase 4B.1 until its findings, exact scope, affected files, risks, and verification plan are presented and explicitly approved.
+Review and approve/reject **Cleanup Batch 1 — Low-risk shared client infrastructure & CI hygiene**.
 
-### Current stop condition
+If approved, implementation must:
 
-**WAITING FOR OWNER APPROVAL TO MERGE DOCUMENTATION CLOSEOUT.**
+1. start from a fresh verification of the then-current `main`;
+2. use a new dedicated implementation branch;
+3. introduce one shared browser API response helper;
+4. migrate the eight audited client modules without changing API/business behavior;
+5. validate `npm ci` before changing CI;
+6. run Typecheck/Lint/Safety/Build;
+7. publish Vercel Preview only;
+8. update this roadmap;
+9. stop for owner testing/merge approval.
 
-No next implementation phase has started.
+### Explicit stop condition
+
+**WAITING FOR OWNER APPROVAL BEFORE ANY CLEANUP IMPLEMENTATION.**
+
+Do not begin Batch 1, Batch 2, or any refactor until explicitly approved.
 
 ---
 
@@ -2479,21 +2951,23 @@ If the roadmap is newer on an unmerged documentation branch, explicitly identify
 
 # 25. Documentation Branch Scope
 
-For `docs/axia-phase4b-postmerge-v1`:
+For `docs/axia-phase4b1-readonly-plan-v1`:
 
 Allowed:
 
-- record PR #24 merge and post-merge verification;
-- record Vercel quota blocker;
-- update Current State, Completed History, risks, and NEXT ACTION.
+- record PR #25 merge and final Production verification;
+- update current `main` / Production SHA;
+- record the Phase 4B.1 read-only audit plan;
+- update NEXT ACTION.
 
 Not allowed:
 
 - functional code changes;
+- cleanup/refactor implementation;
 - migrations;
 - Supabase mutations;
 - Vercel configuration changes;
 - paid infrastructure;
-- next-phase implementation.
+- Phase 4B.1 audit execution.
 
-This branch is documentation-only and must not be merged without explicit owner approval.
+This branch is documentation-only. The Phase 4B.1 audit has **not** started.
