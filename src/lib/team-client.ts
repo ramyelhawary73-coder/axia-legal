@@ -44,6 +44,7 @@ export async function loadPersistentTeam(): Promise<TeamMemberRecord[]> {
 
   const payload = await readJsonResponse<{ members: TeamMemberRecord[] }>(
     response,
+    "تعذر تحميل بيانات فريق العمل.",
   );
   return payload.members;
 }
