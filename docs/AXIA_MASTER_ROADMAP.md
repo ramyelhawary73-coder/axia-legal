@@ -87,17 +87,19 @@ Statements under **Current State** should be treated as verified only when a liv
 
 - Repository: `ramyelhawary73-coder/axia-legal`
 - Default branch: `main`
-- Verified main SHA: `e2c96618ad649efdd66b54a7f5431a18292ac6b5`
-- PR #25 — Phase 4B documentation closeout — is merged into `main` with merge commit `e2c96618ad649efdd66b54a7f5431a18292ac6b5`.
-- PR #24 — AXIA Phase 4B Audit Trail Foundation — is merged with merge commit `b6a9fd6ca381c8a32e976d9de7e863e3b8bbac2d`.
-- PR #23 Roadmap Lock v1 and PR #22 Master Roadmap documentation are also merged.
-- Exact-content verification from PR #25 head to merged `main`: 0 file differences; `main` is ahead by the single merge commit only.
-- Merge commits are the approved merge strategy for completed AXIA phases.
-- The CI workflow runs:
+- Verified main SHA: `6efe7d5f1732f94f5ec0878331ada0cc190740d1`
+- PR #27 — Cleanup Batch 1 client infrastructure — merged using merge commit `6efe7d5f1732f94f5ec0878331ada0cc190740d1`.
+- PR #26 — Phase 4B.1 read-only audit closeout — merged with merge commit `4e8451652e9c376a2f9c88882e146e10f1ec970d`.
+- PR #25 — Phase 4B documentation closeout — merged with merge commit `e2c96618ad649efdd66b54a7f5431a18292ac6b5`.
+- Exact-content verification from PR #27 head `a421e30f8f8a53e53379f93acc69cfd2cbc38e93` to merged `main`: 0 file differences; `main` is ahead by the single merge commit only.
+- Merge commits remain the approved merge strategy.
+- CI workflow now installs dependencies with `npm ci` and runs:
   - Typecheck
   - Lint
   - Safety tests
   - Production build
+- Exact-head PR CI #166 passed all gates before merge.
+- Post-merge push-triggered GitHub Actions run could not be directly enumerated through the currently available connector action because that action exposes pull-request-triggered runs only. This limitation is recorded rather than treating the push run as verified.
 
 ## Supabase Development
 
@@ -112,17 +114,12 @@ Statements under **Current State** should be treated as verified only when a liv
 
 ## Vercel
 
-- AXIA production project is deployed and reachable.
-- PR #24 final Preview on exact head `3cbd8efdb74de8424a395d926d37ee85c90507cc` was verified `READY`.
-- PR #25 documentation closeout triggered a normal Production auto-deployment from `main`.
-- Verified Production deployment: `dpl_2RTDztrxRtBGpwukTdMz6AJSUcVH`.
-- Production state: `READY`.
-- Production Git SHA: `e2c96618ad649efdd66b54a7f5431a18292ac6b5`.
-- Production branch: `main`.
-- Production aliases include `axia-legal-psi.vercel.app`.
-- GitHub Vercel status for the merge SHA is `success`.
-- Runtime verification after deployment found no grouped runtime errors in the checked window.
-- GitHub `main` and Vercel Production are reconciled on the same SHA.
+- AXIA production project remains deployed.
+- PR #27 exact-head Vercel Preview status was `success`.
+- After merge, GitHub Vercel status for merge SHA `6efe7d5f1732f94f5ec0878331ada0cc190740d1` changed from `pending` to `success`.
+- Direct Vercel deployment-detail verification is temporarily unavailable because the connected Vercel account currently returns `403 Forbidden` for the project team scope and requires re-authentication.
+- Therefore the merge-SHA Vercel status is verified through GitHub, while the exact post-merge Production deployment ID/runtime details remain unverified in this closeout.
+- No Vercel configuration was changed by Cleanup Batch 1.
 - Production Supabase isolation from Development remains a required verification item before real client data.
 
 ## Real Development data last observed
@@ -519,9 +516,15 @@ This must be done without breaking Supabase Auth, document download, PWA behavio
 
 ## 7.7 CI reproducibility
 
-**Status:** `PLANNED`
+**Status:** `VERIFIED — CLEANUP BATCH 1`
 
-Prefer `npm ci` rather than `npm install` in CI when lockfile integrity is confirmed.
+Cleanup Batch 1 validated the committed lockfile with `npm ci` in GitHub Actions and then replaced CI `npm install` with `npm ci`.
+
+Verification:
+
+- install succeeded from the lockfile;
+- exact-head CI #166 passed Typecheck, Lint, Safety tests, and Production build;
+- no dependency versions or lockfile contents changed in the batch.
 
 ---
 
@@ -1475,59 +1478,45 @@ These remain valid risks but should not be mixed into code-cleanup commits:
 
 #### Cleanup Batch 1 — Low-risk shared client infrastructure & CI hygiene
 
-**Status:** `IMPLEMENTED ON PR #27 — VERIFIED / NOT MERGED`
+**Status:** `VERIFIED — MERGED`
 
-Implementation branch:
+Implementation PR:
 
-`refactor/axia-cleanup-batch1-client-infra`
+`#27 — refactor: Cleanup Batch 1 client infrastructure`
 
-Implementation summary:
+Merge commit:
 
-- added shared browser helper `src/lib/api/client-response.ts`;
-- migrated the eight audited client modules to the shared `readJsonResponse<T>(response, fallbackMessage)` helper;
-- preserved all existing domain-specific fallback error messages;
-- preserved existing endpoints, HTTP methods, request bodies, domain mapping, and business behavior;
-- added focused contract test `tests/axia-cleanup-batch1-client-infra.test.mjs`;
-- changed GitHub CI dependency installation from `npm install` to `npm ci`;
-- no dependency versions or lockfile contents were changed.
+`6efe7d5f1732f94f5ec0878331ada0cc190740d1`
 
-Audited client modules migrated:
+Delivered:
 
-- `src/lib/clients-client.ts`;
-- `src/lib/matters-client.ts`;
-- `src/lib/hearings-client.ts`;
-- `src/lib/tasks-client.ts`;
-- `src/lib/finance-client.ts`;
-- `src/lib/documents-client.ts`;
-- `src/lib/team-client.ts`;
-- `src/lib/administration-client.ts`.
+- shared browser helper `src/lib/api/client-response.ts`;
+- eight audited client modules migrated to `readJsonResponse<T>(response, fallbackMessage)`;
+- domain-specific fallback error messages preserved;
+- existing endpoints, HTTP methods, request bodies, domain mappings, and business behavior preserved;
+- focused contract test `tests/axia-cleanup-batch1-client-infra.test.mjs`;
+- CI install changed from `npm install` to `npm ci`;
+- no dependency versions or lockfile contents changed.
 
-Verification:
+Verification history:
 
-- first CI validation confirmed `npm ci` succeeds and installs the locked dependency graph;
-- the same run found one refactor error in `team-client.ts`: a multiline shared-helper call was missing the fallback argument;
-- that defect was fixed before merge consideration;
-- CI #165 then completed successfully:
-  - `npm ci` — success;
-  - Typecheck — success;
-  - Lint — success;
-  - Safety tests — success;
-  - Production build — success.
-- the successful `npm ci` run reported 0 npm vulnerabilities at install time.
-- no Supabase changes;
-- no migrations;
-- no UI changes;
-- no Business Logic changes;
-- no Vercel configuration changes;
-- no Production deployment from this branch.
+- first validation proved `npm ci` succeeds and reported 0 npm vulnerabilities at install time;
+- that run exposed one missing fallback argument in the multiline Team client call;
+- the defect was corrected before merge consideration;
+- exact-head CI #166 passed Install / Typecheck / Lint / Safety / Production build;
+- exact-head Vercel Preview status was `success`;
+- post-merge comparison from tested PR head to `main` shows 0 file differences;
+- GitHub Vercel status on merge SHA `6efe7d5f1732f94f5ec0878331ada0cc190740d1` is `success`;
+- no Supabase, migration, UI, Business Logic, dependency-version, or Vercel configuration changes were introduced.
 
-Risk after verification: Low.
+Post-merge verification limitation:
 
-Merge status:
+- the available GitHub workflow connector does not enumerate push-triggered runs for this commit query, so a separate push-CI run on `main` is not claimed as verified;
+- direct Vercel deployment details are temporarily inaccessible due connector authorization `403`, so only the GitHub-reported Vercel success state is verified after merge.
 
-**WAITING FOR OWNER APPROVAL.**
+Risk after merge: Low.
 
-Do not begin Cleanup Batch 2 before PR #27 is reviewed, merged if approved, and post-merge verification is complete.
+Cleanup Batch 2 has **not** started.
 
 #### Cleanup Batch 2 — Matter creation/domain constants consolidation
 
@@ -2931,40 +2920,37 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: CLEANUP BATCH 1 IMPLEMENTED AND VERIFIED ON PR #27 — NOT MERGED**
+**Current mode: CLEANUP BATCH 1 VERIFIED / MERGED — CLEANUP BATCH 2 NOT STARTED**
 
-Current implementation:
+Verified state:
 
-- branch: `refactor/axia-cleanup-batch1-client-infra`;
-- PR: `#27 — refactor: Cleanup Batch 1 client infrastructure`;
-- base `main` at implementation start: `4e8451652e9c376a2f9c88882e146e10f1ec970d`;
-- shared browser JSON response helper implemented;
-- eight audited client modules migrated;
-- domain-specific fallback error messages preserved;
-- GitHub CI changed to `npm ci` only after branch validation showed `npm ci` succeeds;
-- CI #165 completed successfully across Install / Typecheck / Lint / Safety / Build;
-- no Business Logic, UI, Supabase, migration, dependency-version, or Vercel configuration changes.
+- current GitHub `main`: `6efe7d5f1732f94f5ec0878331ada0cc190740d1`;
+- PR #27 merged using merge commit only;
+- merged file content exactly matches tested PR head;
+- Cleanup Batch 1 shared browser response helper is now on `main`;
+- CI workflow now uses `npm ci`;
+- exact-head CI #166 passed all gates before merge;
+- GitHub Vercel status for the merge SHA is `success`;
+- no Supabase, migration, UI, Business Logic, dependency-version, or Vercel configuration changes were introduced.
+
+Verification limitations recorded:
+
+- post-merge push-triggered GitHub Actions run is not directly enumerable through the currently available connector action;
+- direct Vercel deployment details are temporarily blocked by connector authorization `403`.
 
 ### Next correct action
 
-Perform final Pre-Merge Verification of PR #27 after the roadmap-update commit completes CI and Vercel Preview.
-
-Verify:
-
-1. PR remains mergeable and based on current `main`;
-2. changed-file scope matches Cleanup Batch 1 only;
-3. latest exact-head CI is successful;
-4. Vercel Preview status for the exact head is successful;
-5. no unexpected package/lockfile changes;
-6. no Supabase/Vercel configuration changes.
-
-Then stop and request explicit owner approval before merge.
+1. Merge this documentation-only post-merge closeout into `main` after owner approval.
+2. Do **not** start Cleanup Batch 2 automatically.
+3. After documentation closeout, perform a fresh read-only scope review for Cleanup Batch 2 — Matter creation/domain constants consolidation.
+4. Present exact files, characterization tests, risk, canonical `MatterCreateInput` design, and verification plan.
+5. Wait for explicit owner approval before any Batch 2 implementation.
 
 ### Explicit stop condition
 
-**WAITING FOR OWNER APPROVAL TO MERGE PR #27 AFTER FINAL EXACT-HEAD VERIFICATION.**
+**WAITING FOR OWNER APPROVAL TO MERGE THE DOCUMENTATION CLOSEOUT.**
 
-Do not merge PR #27 and do not begin Cleanup Batch 2 without explicit approval.
+Cleanup Batch 2 is **NOT STARTED**.
 
 ---
 
@@ -2980,23 +2966,26 @@ If the roadmap is newer on an unmerged documentation branch, explicitly identify
 
 # 25. Documentation Branch Scope
 
-For `docs/axia-phase4b1-readonly-plan-v1`:
+For `docs/axia-cleanup-batch1-postmerge-v1`:
 
 Allowed:
 
-- record PR #25 merge and final Production verification;
-- update current `main` / Production SHA;
-- record the Phase 4B.1 read-only audit plan;
+- record PR #27 merge;
+- update current `main` SHA;
+- record exact-content post-merge verification;
+- record GitHub Vercel merge-SHA status;
+- record CI/Vercel connector verification limitations;
+- mark Cleanup Batch 1 as VERIFIED / MERGED;
 - update NEXT ACTION.
 
 Not allowed:
 
 - functional code changes;
-- cleanup/refactor implementation;
+- Cleanup Batch 2 implementation;
 - migrations;
 - Supabase mutations;
 - Vercel configuration changes;
-- paid infrastructure;
-- Phase 4B.1 audit execution.
+- dependency changes;
+- paid infrastructure.
 
-This branch is documentation-only. The Phase 4B.1 audit has **not** started.
+This branch is documentation-only. Cleanup Batch 2 has **not** started.
