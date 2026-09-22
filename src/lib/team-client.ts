@@ -1,3 +1,4 @@
+import { readJsonResponse } from "@/lib/api/client-response";
 export type TeamRole =
   | "owner"
   | "admin"
@@ -33,19 +34,6 @@ export type TeamMemberRecord = {
   assignedMatters: TeamMatterItem[];
   assignedTasks: TeamTaskItem[];
 };
-
-async function readJsonResponse<T>(response: Response): Promise<T> {
-  const payload = (await response.json().catch(() => null)) as
-    | (T & { error?: string })
-    | { error?: string }
-    | null;
-
-  if (!response.ok) {
-    throw new Error(payload?.error || "تعذر تحميل بيانات فريق العمل.");
-  }
-
-  return payload as T;
-}
 
 export async function loadPersistentTeam(): Promise<TeamMemberRecord[]> {
   const response = await fetch("/api/team", {
