@@ -87,12 +87,14 @@ Statements under **Current State** should be treated as verified only when a liv
 
 - Repository: `ramyelhawary73-coder/axia-legal`
 - Default branch: `main`
-- Verified main SHA: `93f214d5998aa2864c3314b4e7a274ef0ec02345`
+- Verified main SHA: `fe23cc2213810abd91715d81cecf84ec2e6a46b7`
+- PR #29 — Cleanup Batch 2 scope-review plan — merged using merge commit `fe23cc2213810abd91715d81cecf84ec2e6a46b7`.
 - PR #28 — Cleanup Batch 1 post-merge documentation closeout — merged using merge commit `93f214d5998aa2864c3314b4e7a274ef0ec02345`.
 - PR #27 — Cleanup Batch 1 client infrastructure — merged using merge commit `6efe7d5f1732f94f5ec0878331ada0cc190740d1`.
-- Exact-content verification from PR #28 head `8ac33f73f09ce1176f10d048b985df54a1a2fe0c` to merged `main`: 0 file differences; `main` is ahead by the single merge commit only.
+- Exact-content verification from PR #29 head `c5c8c075c294391d3adb1c571ebce83d25084353` to merged `main`: 0 file differences; `main` is ahead by the merge commit only.
 - Merge commits remain the approved merge strategy.
-- CI workflow installs dependencies with `npm ci` and runs Typecheck, Lint, Safety tests, and Production build.
+- CI installs dependencies with `npm ci` and runs Typecheck, Lint, Safety tests, and Production build.
+- Cleanup Batch 2 read-only scope review was performed against the exact current `main` above. No functional mutation occurred during the review.
 
 ## Supabase Development
 
@@ -1513,60 +1515,309 @@ Cleanup Batch 2 has **not** started.
 
 #### Cleanup Batch 2 — Matter creation/domain constants consolidation
 
-**Status:** `PLANNED — READ-ONLY SCOPE REVIEW PLAN READY / NOT STARTED`
+**Status:** `READ_ONLY_SCOPE_REVIEW_COMPLETE — IMPLEMENTATION PLAN READY / NOT STARTED`
 
-Objective:
+**Audit baseline:** `main @ fe23cc2213810abd91715d81cecf84ec2e6a46b7`
 
-Consolidate Matter creation and Client↔Matter domain logic without changing persistent API behavior, UI design, Supabase schema, or business semantics.
+The review was read-only. No implementation branch, functional code, Supabase, migrations, dependencies, or Vercel configuration were changed.
 
-### Required read-only scope review before implementation
+### Root Cause
 
-The review must inspect and document:
+The core issue is that the Client dashboard uses the full persisted/read-model `Matter` interface as a create-command DTO.
 
-1. both Matter creation entry points:
-   - `MattersView`;
-   - `ClientDetailDashboard` through `ClientsView`;
-2. current `createPersistentMatter` input contract and all callers;
-3. transient fake `Matter` construction and placeholder-field usage;
-4. duplicated Court / Category / ClientRole option definitions;
-5. Client↔Matter association logic, including ID matching and any name fallback;
-6. all tests/source-contracts that currently protect these flows;
-7. any downstream consumers that depend on the full `Matter` shape;
-8. whether introducing a dedicated `MatterCreateInput` type can remain source-compatible and persistence-neutral.
+That forces `ClientDetailDashboard` to fabricate fields that are not part of the create operation:
 
-### Required review output
+- transient `id: MAT-${Date.now()}`;
+- placeholder opponent data;
+- placeholder assigned lawyer;
+- placeholder next-hearing data;
+- placeholder fee data;
+- UI-only status/stage defaults.
 
-Before implementation approval, present:
+`ClientsView` then receives that fake full `Matter` and immediately projects only a small subset back into the real `createPersistentMatter(...)` API contract.
 
-- exact files/symbols involved;
-- current data flow for both creation entry points;
-- confirmed duplication;
-- behavior that must remain unchanged;
-- canonical `MatterCreateInput` design;
-- canonical location for Court / Category / ClientRole constants;
-- canonical Client↔Matter association helper design;
-- characterization tests required before refactor;
-- risk analysis;
-- proposed implementation diff;
-- verification plan.
+This creates unnecessary coupling between:
 
-### Explicit non-goals
+- create-form state;
+- persisted Matter read model;
+- display-only placeholder fields;
+- API create input.
 
-Do not during the read-only review:
+The backend `POST /api/matters` contract itself is not the Root Cause and does not require redesign for this cleanup.
 
-- edit code;
-- create an implementation branch;
-- change UI;
-- change API behavior;
-- change Supabase;
-- change migrations;
-- change Vercel configuration;
-- change dependencies;
-- delete any fallback logic before proving its callers and behavior.
+### Current creation flow A — MattersView
 
-Risk if later implemented: Medium.
+`MattersView` directly calls `createPersistentMatter` with:
 
-Cleanup Batch 2 has **not** started.
+- `caseNumber`;
+- `title`;
+- `court`;
+- `category`;
+- `clientId`.
+
+Current defaults/behavior that must remain unchanged:
+
+- default court: `محكمة النقض`;
+- default category: `مدني`;
+- user must select a persisted client;
+- successful create prepends the persisted Matter returned by the API;
+- form closes/resets after success;
+- `onMatterCreated` remains the refresh callback;
+- no fake Matter object is created in this path.
+
+### Current creation flow B — ClientDetailDashboard → ClientsView
+
+`ClientDetailDashboard` currently creates a complete transient `Matter` with:
+
+- `id: MAT-${Date.now()}`;
+- current year;
+- selected court;
+- circuit or `الدائرة المختصة`;
+- title;
+- client name/id;
+- selected client role;
+- several `غير مسجل` placeholder read-model fields;
+- stage/status defaults;
+- current filing date;
+- placeholder fee fields;
+- a locally generated notes value.
+
+It then calls `onAddNewMatter(newMatter)`.
+
+`ClientsView` converts that object back to the persistent create input and currently forwards only:
+
+- `caseNumber`;
+- `title`;
+- `court` unless `غير مسجل`;
+- `category` if present;
+- `clientId` from the selected client;
+- `caseYear`;
+- `circuit` unless `غير مسجل`;
+- `clientRole` unless `غير مسجل`;
+- `filingDate`.
+
+Important characterization finding:
+
+The locally generated `notes` value in `ClientDetailDashboard` is **not currently forwarded to `createPersistentMatter`** by `ClientsView`.
+
+Cleanup Batch 2 must not silently start persisting that note, because that would be a business-behavior change rather than a pure refactor.
+
+### Current persistent create contract
+
+`src/lib/matters-client.ts` currently accepts an inline create object containing:
+
+- required: `caseNumber`, `title`, `clientId`;
+- optional: `court`, `category`, `caseYear`, `circuit`, `clientRole`, `filingDate`, `claimAmount`, `currency`, `notes`.
+
+The client POSTs the input unchanged to `/api/matters`.
+
+The API:
+
+- resolves the authenticated tenant workspace;
+- validates required text and UUID client ID;
+- verifies the client belongs to the current organization;
+- derives `organization_id` and `created_by` server-side;
+- inserts status `open` and stage `active`;
+- returns a persisted mapped `Matter`.
+
+No API or Supabase change is required for this cleanup batch.
+
+### Confirmed duplication — Client↔Matter association
+
+The same matching logic exists in both:
+
+- `src/components/views/clients-view.tsx`;
+- `src/components/client-detail-dashboard.tsx`.
+
+Current logic is:
+
+- match by `clientId`; OR
+- match by partial client-name containment.
+
+Risk:
+
+If a Matter has a non-empty `clientId` that does not equal the current Client ID but has a similar client name, the current `matchId || matchName` logic can still associate it by name.
+
+Canonical direction:
+
+Use one pure ID-first helper:
+
+1. if `matter.clientId` exists, only compare IDs;
+2. use normalized name fallback only when the Matter has no client ID;
+3. preserve the existing containment fallback for legacy/no-ID records unless later separately approved for stricter matching.
+
+The current real Matters API always maps persisted `row.client_id` into `Matter.clientId`, so normal persisted records already have the stable association key.
+
+### Confirmed option duplication
+
+Court option literals are repeated across:
+
+- `MattersView` create/filter UI;
+- `ClientDetailDashboard` create/filter UI;
+- `CourtCategory` type.
+
+The two create forms intentionally expose different current subsets:
+
+- `MattersView` create: `محكمة النقض`, `المحكمة الاقتصادية`, `مجلس الدولة (القضاء الإداري)`, `استئناف عالي`, `ابتدائية كلي`;
+- `ClientDetailDashboard` create includes those plus `جزئية`.
+
+Therefore Batch 2 must **not** unify the UI by silently adding/removing options.
+
+Canonical approach:
+
+- one pure Matter domain module owns typed option definitions;
+- separate exported subsets preserve the exact current option sets for each existing form;
+- labels/values come from the same canonical source.
+
+Category options are repeated inside `MattersView`.
+
+Client-role options are embedded in `ClientDetailDashboard` while the API has its own server-side valid-role set.
+
+Batch 2 should centralize client-side/domain UI constants only; it should not modify server validation in the same cleanup PR.
+
+### Proposed canonical domain module
+
+Recommended new pure module:
+
+`src/lib/matters-domain.ts`
+
+Responsibilities only:
+
+- `MatterCreateInput` type;
+- typed Matter category aliases/options;
+- typed create-court options/subsets;
+- typed client-role options;
+- `matterBelongsToClient(matter, client)` helper.
+
+It must import only domain types and must not fetch, mutate state, call Supabase, or contain UI rendering.
+
+Do **not** create a new shared mega-form in this batch.
+
+### Proposed MatterCreateInput
+
+Recommended contract:
+
+```ts
+export type MatterCreateInput = {
+  caseNumber: string;
+  title: string;
+  clientId: string;
+  court?: Exclude<Matter["court"], "غير مسجل">;
+  category?: NonNullable<Matter["category"]>;
+  caseYear?: number;
+  circuit?: string;
+  clientRole?: Exclude<Matter["clientRole"], "غير مسجل">;
+  filingDate?: string;
+  claimAmount?: number;
+  currency?: string;
+  notes?: string;
+};
+```
+
+`createPersistentMatter` should accept this named type instead of an inline object type.
+
+For the Client dashboard callback, use an input derived from this contract without `clientId`, then let `ClientsView` inject the already-selected persisted client ID.
+
+This removes the need for a fake full Matter while keeping the real create contract explicit.
+
+### Behavior that must remain unchanged
+
+Batch 2 implementation must preserve:
+
+- both existing creation entry points;
+- existing visible form fields;
+- current default court/category/role values;
+- current client selection behavior;
+- current API endpoint and POST body field names;
+- current tenant/workspace enforcement;
+- current status/stage defaults created by the API;
+- current successful-return behavior using the persisted Matter;
+- current error messages unless a source-only type change requires no user-visible change;
+- Client-dashboard notes must remain non-persisted in this cleanup unless a separate business change is approved;
+- no new category field may be added to ClientDetailDashboard in this cleanup;
+- no court option may be added/removed from either create form in this cleanup.
+
+### Exact implementation scope proposed
+
+Expected files:
+
+- new `src/lib/matters-domain.ts`;
+- `src/lib/matters-client.ts`;
+- `src/components/views/matters-view.tsx`;
+- `src/components/views/clients-view.tsx`;
+- `src/components/client-detail-dashboard.tsx`;
+- new focused characterization/source-contract test;
+- `docs/AXIA_MASTER_ROADMAP.md`.
+
+Expected non-files:
+
+- no `src/app/api/matters/route.ts` change;
+- no Supabase migration;
+- no Auth/RLS change;
+- no Vercel configuration change;
+- no dependency change;
+- no visual redesign.
+
+### Characterization tests required before/with refactor
+
+Add a focused Cleanup Batch 2 test file protecting at least:
+
+1. `createPersistentMatter` still POSTs to `/api/matters` and sends `JSON.stringify(input)`;
+2. `MatterCreateInput` is the named contract used by the client;
+3. `MattersView` still creates with the same five fields and persisted-client selection;
+4. `ClientDetailDashboard` no longer constructs `MAT-${Date.now()}` or a fake full `Matter`;
+5. Client dashboard create still carries the currently persisted fields only;
+6. `ClientsView` injects `selectedClient.id`;
+7. the local dashboard note does not become newly persisted during this cleanup;
+8. both client surfaces use one `matterBelongsToClient` helper;
+9. the helper uses ID as authoritative whenever present and falls back to name only when ID is absent;
+10. both existing create-form court option sets remain exactly unchanged;
+11. category and client-role options come from the domain constants;
+12. existing Core UI/API safety tests continue to pass.
+
+Because current AXIA tests are mainly source-contract tests rather than full browser E2E, Preview verification must manually exercise both create entry points before merge.
+
+### Risk assessment
+
+Overall implementation risk: **Medium**.
+
+Primary risks:
+
+- accidentally changing POST payload semantics;
+- accidentally persisting the currently discarded Client-dashboard note;
+- changing visible court options while deduplicating constants;
+- changing default court/category/client-role values;
+- over-tightening the legacy name fallback and hiding old no-ID records;
+- introducing circular imports between types/client/domain modules;
+- converting the cleanup into a shared mega-form/redesign.
+
+Mitigation:
+
+- keep `matters-domain.ts` pure;
+- preserve current option subsets exactly;
+- add characterization tests first;
+- make Client ID authoritative only when present;
+- do not edit the API route;
+- run `npm ci`, Typecheck, Lint, Safety, Build;
+- publish Preview;
+- manually test both Matter-create entry points;
+- stop before merge for owner approval.
+
+### Proposed implementation order
+
+1. add characterization tests that describe current persistence behavior;
+2. add pure `matters-domain.ts`;
+3. move the inline create contract to `MatterCreateInput`;
+4. replace fake full-Matter creation in `ClientDetailDashboard` with a create input;
+5. adapt `ClientsView` to inject selected Client ID;
+6. extract and adopt the ID-first association helper in both client surfaces;
+7. extract typed option constants while preserving each form’s existing visible subset;
+8. run full quality gate;
+9. publish Preview;
+10. update Roadmap;
+11. stop for owner merge approval.
+
+Cleanup Batch 2 implementation has **not** started.
 
 #### Cleanup Batch 3 — Navigation live-badge cleanup
 
@@ -2945,50 +3196,48 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: CLEANUP BATCH 1 CLOSED — CLEANUP BATCH 2 READ-ONLY SCOPE REVIEW NOT STARTED**
+**Current mode: CLEANUP BATCH 2 READ-ONLY SCOPE REVIEW COMPLETE — IMPLEMENTATION NOT STARTED**
 
-Verified state:
+Verified baseline:
 
-- current GitHub `main`: `93f214d5998aa2864c3314b4e7a274ef0ec02345`;
-- PR #28 merged using merge commit only;
-- merged PR #28 content exactly matches its tested head with 0 file differences;
-- Cleanup Batch 1 is closed and documented;
-- Cleanup Batch 2 implementation has not started.
+- GitHub `main`: `fe23cc2213810abd91715d81cecf84ec2e6a46b7`;
+- PR #29 is merged;
+- Cleanup Batch 1 is closed;
+- Cleanup Batch 2 scope review is complete;
+- no Cleanup Batch 2 implementation branch exists;
+- no functional code, Supabase, migration, dependency, or Vercel configuration change occurred during the review.
 
-### Proposed next action — requires owner approval
+### Recommended next action — requires explicit owner approval
 
-Perform **Cleanup Batch 2 Read-only Scope Review only**.
+Implement **Cleanup Batch 2 only** on a new dedicated branch from the then-current `main`.
 
-The review may inspect:
+Approved implementation scope should be limited to:
 
-- `MattersView`;
-- `ClientsView`;
-- `ClientDetailDashboard`;
-- `matters-client`;
-- legal/domain types;
-- current tests and source contracts;
-- related helper/constants usage.
+- add pure `src/lib/matters-domain.ts`;
+- introduce named `MatterCreateInput`;
+- remove fake full-`Matter` creation from `ClientDetailDashboard`;
+- preserve current persistent payload behavior;
+- keep Client-dashboard generated notes non-persisted in this cleanup;
+- centralize typed Court / Category / ClientRole constants without changing visible option sets;
+- introduce one ID-first `matterBelongsToClient` helper with name fallback only when `clientId` is absent;
+- add focused characterization tests;
+- update the Roadmap;
+- run `npm ci`, Typecheck, Lint, Safety tests, Production build, and Vercel Preview;
+- stop before merge.
 
-The review must not modify code, create an implementation branch, change Supabase, change Vercel, or alter business behavior.
+Explicitly excluded:
 
-After the review, present:
-
-- exact current data flow;
-- canonical `MatterCreateInput` proposal;
-- duplication/association findings;
-- exact affected files;
-- characterization tests;
-- risk;
-- proposed implementation scope;
-- verification plan.
-
-Then stop for explicit implementation approval.
+- API route changes;
+- Supabase/RLS/Auth changes;
+- UI redesign;
+- shared mega-form;
+- new business fields;
+- dependency changes;
+- Cleanup Batch 3+.
 
 ### Explicit stop condition
 
-**WAITING FOR OWNER APPROVAL TO START CLEANUP BATCH 2 READ-ONLY SCOPE REVIEW.**
-
-Cleanup Batch 2 implementation is **NOT STARTED**.
+**WAITING FOR OWNER APPROVAL BEFORE CLEANUP BATCH 2 IMPLEMENTATION.**
 
 ---
 
@@ -3004,23 +3253,25 @@ If the roadmap is newer on an unmerged documentation branch, explicitly identify
 
 # 25. Documentation Branch Scope
 
-For `docs/axia-cleanup-batch2-scope-plan-v1`:
+For `docs/axia-cleanup-batch2-scope-review-results-v1`:
 
 Allowed:
 
-- record PR #28 merge;
-- update current `main` SHA;
-- record the Cleanup Batch 2 read-only scope-review plan;
-- update NEXT ACTION.
+- record current `main` and PR #29 merge;
+- record Cleanup Batch 2 read-only findings;
+- record Root Cause and canonical design;
+- record characterization-test requirements;
+- record implementation risk and exact proposed scope;
+- update NEXT ACTION and NEW CHAT handoff context.
 
 Not allowed:
 
 - functional code changes;
-- Cleanup Batch 2 audit/review execution;
 - Cleanup Batch 2 implementation;
+- implementation branch creation;
+- API/Supabase/RLS/Auth changes;
 - migrations;
-- Supabase mutations;
 - Vercel configuration changes;
 - dependency changes.
 
-This branch is documentation-only. Cleanup Batch 2 has **not** started.
+This branch is documentation-only. Cleanup Batch 2 implementation has **not** started.
