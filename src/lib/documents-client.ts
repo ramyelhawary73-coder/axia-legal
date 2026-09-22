@@ -1,3 +1,4 @@
+import { readJsonResponse } from "@/lib/api/client-response";
 import type { Client, LegalDocument, Matter } from "@/types/legal";
 
 type ApiDocument = {
@@ -7,19 +8,6 @@ type ApiDocument = {
   mimeType: string;
   createdAt: string;
 };
-
-async function readJsonResponse<T>(response: Response): Promise<T> {
-  const payload = (await response.json().catch(() => null)) as
-    | (T & { error?: string })
-    | { error?: string }
-    | null;
-
-  if (!response.ok) {
-    throw new Error(payload?.error || "تعذر الاتصال بخدمة المستندات.");
-  }
-
-  return payload as T;
-}
 
 function mapDocument(
   document: ApiDocument,
@@ -56,7 +44,7 @@ export async function loadPersistentDocuments(
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
-  const payload = await readJsonResponse<{ documents: ApiDocument[] }>(response);
+  const payload = await readJsonResponse<{ documents: ApiDocument[] }>(response, "تعذر الاتصال بخدمة المستندات.");
   return payload.documents.map((document) =>
     mapDocument(document, matters, clients),
   );
@@ -82,7 +70,7 @@ export async function uploadPersistentDocument(
     body: form,
   });
 
-  const payload = await readJsonResponse<{ document: ApiDocument }>(response);
+  const payload = await readJsonResponse<{ document: ApiDocument }>(response, "تعذر الاتصال بخدمة المستندات.");
   return mapDocument(payload.document, matters, clients);
 }
 
@@ -98,6 +86,6 @@ export async function getSecureDocumentDownloadUrl(
     },
   );
 
-  const payload = await readJsonResponse<{ url: string }>(response);
+  const payload = await readJsonResponse<{ url: string }>(response, "تعذر الاتصال بخدمة المستندات.");
   return payload.url;
 }
