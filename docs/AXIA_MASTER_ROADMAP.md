@@ -1475,33 +1475,59 @@ These remain valid risks but should not be mixed into code-cleanup commits:
 
 #### Cleanup Batch 1 — Low-risk shared client infrastructure & CI hygiene
 
-**Recommended first implementation batch.**
+**Status:** `IMPLEMENTED ON PR #27 — VERIFIED / NOT MERGED`
 
-Scope:
+Implementation branch:
 
-- introduce one shared browser JSON response helper;
-- migrate the eight audited `*-client.ts` modules to it;
-- preserve current domain-specific errors and API contracts;
-- validate `npm ci`;
-- switch GitHub CI from `npm install` to `npm ci` only if lockfile validation passes;
-- add/adjust source-contract tests for the shared helper.
+`refactor/axia-cleanup-batch1-client-infra`
 
-Expected files:
+Implementation summary:
 
-- new small shared client helper under `src/lib/api/` or equivalent;
-- eight audited client modules;
-- `.github/workflows/ci.yml`;
-- focused tests;
-- roadmap.
+- added shared browser helper `src/lib/api/client-response.ts`;
+- migrated the eight audited client modules to the shared `readJsonResponse<T>(response, fallbackMessage)` helper;
+- preserved all existing domain-specific fallback error messages;
+- preserved existing endpoints, HTTP methods, request bodies, domain mapping, and business behavior;
+- added focused contract test `tests/axia-cleanup-batch1-client-infra.test.mjs`;
+- changed GitHub CI dependency installation from `npm install` to `npm ci`;
+- no dependency versions or lockfile contents were changed.
 
-Risk: Low–Medium.
+Audited client modules migrated:
 
-Do not include:
+- `src/lib/clients-client.ts`;
+- `src/lib/matters-client.ts`;
+- `src/lib/hearings-client.ts`;
+- `src/lib/tasks-client.ts`;
+- `src/lib/finance-client.ts`;
+- `src/lib/documents-client.ts`;
+- `src/lib/team-client.ts`;
+- `src/lib/administration-client.ts`.
 
-- dependency upgrades;
-- UI refactors;
-- Supabase;
-- business logic changes.
+Verification:
+
+- first CI validation confirmed `npm ci` succeeds and installs the locked dependency graph;
+- the same run found one refactor error in `team-client.ts`: a multiline shared-helper call was missing the fallback argument;
+- that defect was fixed before merge consideration;
+- CI #165 then completed successfully:
+  - `npm ci` — success;
+  - Typecheck — success;
+  - Lint — success;
+  - Safety tests — success;
+  - Production build — success.
+- the successful `npm ci` run reported 0 npm vulnerabilities at install time.
+- no Supabase changes;
+- no migrations;
+- no UI changes;
+- no Business Logic changes;
+- no Vercel configuration changes;
+- no Production deployment from this branch.
+
+Risk after verification: Low.
+
+Merge status:
+
+**WAITING FOR OWNER APPROVAL.**
+
+Do not begin Cleanup Batch 2 before PR #27 is reviewed, merged if approved, and post-merge verification is complete.
 
 #### Cleanup Batch 2 — Matter creation/domain constants consolidation
 
@@ -2905,37 +2931,40 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PHASE 4B.1 READ-ONLY AUDIT COMPLETE — CLEANUP IMPLEMENTATION NOT STARTED**
+**Current mode: CLEANUP BATCH 1 IMPLEMENTED AND VERIFIED ON PR #27 — NOT MERGED**
 
-Audit baseline:
+Current implementation:
 
-- GitHub `main`: `e2c96618ad649efdd66b54a7f5431a18292ac6b5`;
-- Production was not modified by this audit;
-- Supabase was not modified by this audit;
-- no implementation branch was created;
-- only this documentation branch was updated with audit evidence.
+- branch: `refactor/axia-cleanup-batch1-client-infra`;
+- PR: `#27 — refactor: Cleanup Batch 1 client infrastructure`;
+- base `main` at implementation start: `4e8451652e9c376a2f9c88882e146e10f1ec970d`;
+- shared browser JSON response helper implemented;
+- eight audited client modules migrated;
+- domain-specific fallback error messages preserved;
+- GitHub CI changed to `npm ci` only after branch validation showed `npm ci` succeeds;
+- CI #165 completed successfully across Install / Typecheck / Lint / Safety / Build;
+- no Business Logic, UI, Supabase, migration, dependency-version, or Vercel configuration changes.
 
-### Recommended next action
+### Next correct action
 
-Review and approve/reject **Cleanup Batch 1 — Low-risk shared client infrastructure & CI hygiene**.
+Perform final Pre-Merge Verification of PR #27 after the roadmap-update commit completes CI and Vercel Preview.
 
-If approved, implementation must:
+Verify:
 
-1. start from a fresh verification of the then-current `main`;
-2. use a new dedicated implementation branch;
-3. introduce one shared browser API response helper;
-4. migrate the eight audited client modules without changing API/business behavior;
-5. validate `npm ci` before changing CI;
-6. run Typecheck/Lint/Safety/Build;
-7. publish Vercel Preview only;
-8. update this roadmap;
-9. stop for owner testing/merge approval.
+1. PR remains mergeable and based on current `main`;
+2. changed-file scope matches Cleanup Batch 1 only;
+3. latest exact-head CI is successful;
+4. Vercel Preview status for the exact head is successful;
+5. no unexpected package/lockfile changes;
+6. no Supabase/Vercel configuration changes.
+
+Then stop and request explicit owner approval before merge.
 
 ### Explicit stop condition
 
-**WAITING FOR OWNER APPROVAL BEFORE ANY CLEANUP IMPLEMENTATION.**
+**WAITING FOR OWNER APPROVAL TO MERGE PR #27 AFTER FINAL EXACT-HEAD VERIFICATION.**
 
-Do not begin Batch 1, Batch 2, or any refactor until explicitly approved.
+Do not merge PR #27 and do not begin Cleanup Batch 2 without explicit approval.
 
 ---
 
