@@ -1,3 +1,4 @@
+import { readJsonResponse } from "@/lib/api/client-response";
 export type AdministrationWorkspace = {
   organization: {
     name: string;
@@ -25,19 +26,6 @@ export type AdministrationWorkspace = {
   };
 };
 
-async function readJsonResponse<T>(response: Response): Promise<T> {
-  const payload = (await response.json().catch(() => null)) as
-    | (T & { error?: string })
-    | { error?: string }
-    | null;
-
-  if (!response.ok) {
-    throw new Error(payload?.error || "تعذر تحميل بيانات الإدارة.");
-  }
-
-  return payload as T;
-}
-
 export async function loadAdministrationWorkspace(): Promise<AdministrationWorkspace> {
   const response = await fetch("/api/administration", {
     method: "GET",
@@ -45,5 +33,5 @@ export async function loadAdministrationWorkspace(): Promise<AdministrationWorks
     headers: { Accept: "application/json" },
   });
 
-  return readJsonResponse<AdministrationWorkspace>(response);
+  return readJsonResponse<AdministrationWorkspace>(response, "تعذر تحميل بيانات الإدارة.");
 }
