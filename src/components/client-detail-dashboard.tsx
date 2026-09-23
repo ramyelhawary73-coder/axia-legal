@@ -27,13 +27,15 @@ import {
   Copy,
   Check
 } from "lucide-react";
-import { Client, Matter, CourtCategory } from "@/types/legal";
+import { Client, Matter } from "@/types/legal";
 import {
   CLIENT_DETAIL_COURT_OPTIONS,
   CLIENT_DETAIL_FILTER_COURT_OPTIONS,
   MATTER_CLIENT_ROLE_OPTIONS,
   matterBelongsToClient,
   type MatterCreateInput,
+  type MatterClientRole,
+  type MatterCourt,
 } from "@/lib/matters-domain";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 import { LegalTemplateGeneratorModal } from "@/components/legal-template-generator-modal";
@@ -75,10 +77,10 @@ export function ClientDetailDashboard({
 
   // New Matter Form State
   const [newCaseNumber, setNewCaseNumber] = useState("");
-  const [newCourt, setNewCourt] = useState<CourtCategory>("ابتدائية كلي");
+  const [newCourt, setNewCourt] = useState<MatterCourt>("ابتدائية كلي");
   const [newCircuit, setNewCircuit] = useState("");
   const [newTitle, setNewTitle] = useState("");
-  const [newClientRole, setNewClientRole] = useState<Matter["clientRole"]>("مدعي");
+  const [newClientRole, setNewClientRole] = useState<MatterClientRole>("مدعي");
 
   // Filter matters strictly belonging to this client
   const clientMatters = useMemo(() => {
@@ -1095,7 +1097,7 @@ export function ClientDetailDashboard({
                   <label className="block text-[var(--text-muted)] mb-1 font-medium">الجهة القضائية</label>
                   <select
                     value={newCourt}
-                    onChange={(e) => setNewCourt(e.target.value as CourtCategory)}
+                    onChange={(e) => setNewCourt(e.target.value as MatterCourt)}
                     className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
                   >
                     {CLIENT_DETAIL_COURT_OPTIONS.map((option) => (
@@ -1123,7 +1125,7 @@ export function ClientDetailDashboard({
                   <label className="block text-[var(--text-muted)] mb-1 font-medium">صفة الموكل في الدعوى</label>
                   <select
                     value={newClientRole}
-                    onChange={(e) => setNewClientRole(e.target.value as Matter["clientRole"])}
+                    onChange={(e) => setNewClientRole(e.target.value as MatterClientRole)}
                     className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
                   >
                     {MATTER_CLIENT_ROLE_OPTIONS.map((option) => (
