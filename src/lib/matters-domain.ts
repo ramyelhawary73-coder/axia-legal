@@ -8,11 +8,11 @@ export type MatterCreateInput = {
   caseNumber: string;
   title: string;
   clientId: string;
-  court?: string;
-  category?: string;
+  court?: MatterCourt;
+  category?: MatterCategory;
   caseYear?: number;
   circuit?: string;
-  clientRole?: Matter["clientRole"];
+  clientRole?: MatterClientRole;
   filingDate?: string;
   claimAmount?: number;
   currency?: string;
