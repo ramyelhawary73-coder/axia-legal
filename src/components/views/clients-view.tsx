@@ -28,6 +28,10 @@ import {
 } from "@/lib/matters-client";
 import { ClientDetailDashboard } from "@/components/client-detail-dashboard";
 import { useActionContextMenu } from "@/components/action-context-menu";
+import {
+  matterBelongsToClient,
+  type MatterCreateInput,
+} from "@/lib/matters-domain";
 
 interface ClientsViewProps {
   selectedClientId?: string | null;
@@ -165,19 +169,10 @@ export function ClientsView({
           setLocalSelectedClientId(null);
           onCloseClientDashboard?.();
         }}
-        onAddNewMatter={async (newMatter) => {
+        onAddNewMatter={async (input: Omit<MatterCreateInput, "clientId">) => {
           const persistedMatter = await createPersistentMatter({
-            caseNumber: newMatter.caseNumber,
-            title: newMatter.title,
-            court: newMatter.court === "غير مسجل" ? undefined : newMatter.court,
-            category: newMatter.category,
+            ...input,
             clientId: selectedClient.id,
-            caseYear: newMatter.year,
-            circuit:
-              newMatter.circuit === "غير مسجل" ? undefined : newMatter.circuit,
-            clientRole:
-              newMatter.clientRole === "غير مسجل" ? undefined : newMatter.clientRole,
-            filingDate: newMatter.filingDate,
           });
           setMatters((current) => [persistedMatter, ...current]);
           await onWorkspaceChanged?.();
@@ -273,13 +268,7 @@ export function ClientsView({
             <tbody className="divide-y divide-[var(--border)]">
               {filteredClients.map((client) => {
                 // Compute open and closed matters for this client
-                const clientMatters = matters.filter((m) => {
-                  const matchId = m.clientId && m.clientId === client.id;
-                  const matchName = m.clientName && (
-                    m.clientName.includes(client.name) || client.name.includes(m.clientName)
-                  );
-                  return matchId || matchName;
-                });
+                const clientMatters = matters.filter((m) => matterBelongsToClient(m, client));
 
                 const openCount = clientMatters.filter(
                   (m) => m.status === "مفتوحة" || (!m.status && m.stage !== "محكوم فيها")
