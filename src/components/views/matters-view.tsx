@@ -40,10 +40,12 @@ import {
   updatePersistentMatter,
   type MatterClientOption,
 } from "@/lib/matters-client";
-import { Matter, CourtCategory } from "@/types/legal";
+import { Matter } from "@/types/legal";
 import {
   MATTERS_VIEW_COURT_OPTIONS,
   MATTER_CATEGORY_OPTIONS,
+  type MatterCategory,
+  type MatterCourt,
 } from "@/lib/matters-domain";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 import {
@@ -286,8 +288,8 @@ export function MattersView({
   // Modal for new case
   const [isNewMatterOpen, setIsNewMatterOpen] = useState(false);
   const [newCaseNumber, setNewCaseNumber] = useState("");
-  const [newCourt, setNewCourt] = useState<CourtCategory>("محكمة النقض");
-  const [newCategory, setNewCategory] = useState<"مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة">("مدني");
+  const [newCourt, setNewCourt] = useState<MatterCourt>("محكمة النقض");
+  const [newCategory, setNewCategory] = useState<MatterCategory>("مدني");
   const [newTitle, setNewTitle] = useState("");
   const [newClientId, setNewClientId] = useState("");
   const [isCreatingMatter, setIsCreatingMatter] = useState(false);
@@ -1191,7 +1193,7 @@ export function MattersView({
                   <div className="relative">
                     <select
                       value={newCourt}
-                      onChange={(e) => setNewCourt(e.target.value as CourtCategory)}
+                      onChange={(e) => setNewCourt(e.target.value as MatterCourt)}
                       className="appearance-none w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                     >
                       {MATTERS_VIEW_COURT_OPTIONS.map((option) => (
@@ -1208,7 +1210,7 @@ export function MattersView({
                   <div className="relative">
                     <select
                       value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value as "مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة")}
+                      onChange={(e) => setNewCategory(e.target.value as MatterCategory)}
                       className="appearance-none w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                     >
                       {MATTER_CATEGORY_OPTIONS.map((option) => (
