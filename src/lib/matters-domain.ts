@@ -44,6 +44,15 @@ export const CLIENT_DETAIL_COURT_OPTIONS = [
   { value: "جزئية", label: "جزئية" },
 ] as const satisfies readonly MatterSelectOption<MatterCourt>[];
 
+export const CLIENT_DETAIL_FILTER_COURT_OPTIONS = [
+  { value: "محكمة النقض", label: "محكمة النقض" },
+  { value: "المحكمة الاقتصادية", label: "المحكمة الاقتصادية" },
+  { value: "مجلس الدولة (القضاء الإداري)", label: "مجلس الدولة" },
+  { value: "استئناف عالي", label: "استئناف عالي" },
+  { value: "ابتدائية كلي", label: "ابتدائية كلي" },
+  { value: "جزئية", label: "جزئية" },
+] as const satisfies readonly MatterSelectOption<MatterCourt>[];
+
 export const MATTER_CATEGORY_OPTIONS = [
   { value: "مدني", label: "مدنية" },
   { value: "جنائي", label: "جنائية" },
