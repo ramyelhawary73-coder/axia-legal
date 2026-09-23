@@ -15,11 +15,11 @@ test("Cleanup Batch 2 introduces one named MatterCreateInput contract", () => {
   }
 
   for (const optional of [
-    "court?: string",
-    "category?: string",
+    "court?: MatterCourt",
+    "category?: MatterCategory",
     "caseYear?: number",
     "circuit?: string",
-    'clientRole?: Matter["clientRole"]',
+    "clientRole?: MatterClientRole",
     "filingDate?: string",
     "claimAmount?: number",
     "currency?: string",
