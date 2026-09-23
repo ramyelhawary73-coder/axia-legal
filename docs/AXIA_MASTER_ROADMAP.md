@@ -6,11 +6,11 @@
 >
 > **Rule:** every implementation PR must update this file before it is considered complete.
 >
-> **Last verified:** 2026-09-21  
+> **Last verified:** 2026-09-23  
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
-> **Verified main SHA:** `840b99d54ef037ffd6a7cde63dd5a90032eb0e60`  
-> **Current documentation branch:** `docs/axia-master-roadmap-v1`
+> **Verified main SHA:** `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`  
+> **Current documentation branch:** `docs/axia-cleanup-batch2-closeout-v1`
 
 ---
 
@@ -87,14 +87,16 @@ Statements under **Current State** should be treated as verified only when a liv
 
 - Repository: `ramyelhawary73-coder/axia-legal`
 - Default branch: `main`
-- Verified main SHA: `fe23cc2213810abd91715d81cecf84ec2e6a46b7`
+- Verified main SHA: `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`
+- PR #31 — Cleanup Batch 2 Matter creation/domain consolidation — merged using merge commit `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`.
+- PR #30 — Cleanup Batch 2 scope-review results — merged using merge commit `48d68903eee7412333b6cc26260b9ec220d2481a`.
 - PR #29 — Cleanup Batch 2 scope-review plan — merged using merge commit `fe23cc2213810abd91715d81cecf84ec2e6a46b7`.
 - PR #28 — Cleanup Batch 1 post-merge documentation closeout — merged using merge commit `93f214d5998aa2864c3314b4e7a274ef0ec02345`.
 - PR #27 — Cleanup Batch 1 client infrastructure — merged using merge commit `6efe7d5f1732f94f5ec0878331ada0cc190740d1`.
-- Exact-content verification from PR #29 head `c5c8c075c294391d3adb1c571ebce83d25084353` to merged `main`: 0 file differences; `main` is ahead by the merge commit only.
+- Exact-content verification from tested PR #31 head `3ecacfd841a97d202ba505d6797fcec70f5b1687` to merged `main`: 0 file differences; `main` is ahead by the merge commit only.
 - Merge commits remain the approved merge strategy.
 - CI installs dependencies with `npm ci` and runs Typecheck, Lint, Safety tests, and Production build.
-- Cleanup Batch 2 read-only scope review was performed against the exact current `main` above. No functional mutation occurred during the review.
+- Cleanup Batch 2 is merged, verified, and closed. Cleanup Batch 3 has not started.
 
 ## Supabase Development
 
@@ -110,11 +112,11 @@ Statements under **Current State** should be treated as verified only when a liv
 ## Vercel
 
 - AXIA production project remains deployed.
-- PR #27 exact-head Vercel Preview status was `success`.
-- After merge, GitHub Vercel status for merge SHA `6efe7d5f1732f94f5ec0878331ada0cc190740d1` changed from `pending` to `success`.
+- PR #31 exact-head Vercel Preview status for `3ecacfd841a97d202ba505d6797fcec70f5b1687` was `success`.
+- After merge, GitHub Vercel status for merge SHA `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982` changed from `pending` to `success`.
 - Direct Vercel deployment-detail verification is temporarily unavailable because the connected Vercel account currently returns `403 Forbidden` for the project team scope and requires re-authentication.
 - Therefore the merge-SHA Vercel status is verified through GitHub, while the exact post-merge Production deployment ID/runtime details remain unverified in this closeout.
-- No Vercel configuration was changed by Cleanup Batch 1.
+- No Vercel configuration was changed by Cleanup Batch 1 or Cleanup Batch 2.
 - Production Supabase isolation from Development remains a required verification item before real client data.
 
 ## Real Development data last observed
@@ -256,6 +258,31 @@ Post-merge reconciliation:
 - GitHub combined Vercel status is now `success`;
 - runtime error inspection found no current errors in the checked window;
 - Development migration parity remains intact with migration `20260921111252`, six audit triggers, zero fixtures, and zero residual test audit rows.
+
+## Phase 4B.1 / Cleanup Batch 2 — Matter Domain Consolidation — VERIFIED
+
+**PR #31**  
+Merge commit: `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`
+
+Delivered:
+
+- canonical `MatterCreateInput`;
+- pure `matters-domain.ts`;
+- removal of fake full-`Matter` construction from Client dashboard creation;
+- ID-first Client↔Matter association;
+- typed Court / Category / ClientRole option sources with existing visible choices preserved;
+- characterization tests protecting current behavior, including non-persistence of Client-dashboard generated notes.
+
+Verification:
+
+- exact tested head: `3ecacfd841a97d202ba505d6797fcec70f5b1687`;
+- CI #176: SUCCESS;
+- exact-head Vercel Preview: SUCCESS;
+- tested-head-to-merge content difference: 0 files;
+- post-merge Vercel status: SUCCESS;
+- no API route, Supabase, RLS/Auth, migration, dependency, or Vercel configuration changes.
+
+Cleanup Batch 2 status: **CLOSED**.
 
 ---
 
@@ -1511,11 +1538,12 @@ Post-merge verification limitation:
 
 Risk after merge: Low.
 
-Cleanup Batch 2 has **not** started.
+Cleanup Batch 2 is **VERIFIED AND CLOSED**.
 
 #### Cleanup Batch 2 — Matter creation/domain constants consolidation
 
-**Status:** `IMPLEMENTED ON DEDICATED BRANCH — VERIFICATION / PR REVIEW PENDING`
+**Status:** `VERIFIED`  
+**Closeout:** `CLOSED`
 
 **Audit baseline:** `main @ fe23cc2213810abd91715d81cecf84ec2e6a46b7`
 
@@ -1697,10 +1725,12 @@ It must import only domain types and must not fetch, mutate state, call Supabase
 
 Do **not** create a new shared mega-form in this batch.
 
-### Cleanup Batch 2 implementation result
+### Cleanup Batch 2 implementation and closeout result
 
-Implemented on the dedicated branch only:
+Implemented on `feat/axia-cleanup-batch2-matter-domain` and merged through PR #31:
 
+- tested PR head: `3ecacfd841a97d202ba505d6797fcec70f5b1687`;
+- merge commit: `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`;
 - added `src/lib/matters-domain.ts` as a pure domain module;
 - introduced named `MatterCreateInput` and wired `createPersistentMatter(input: MatterCreateInput)`;
 - removed the transient fake full-`Matter` object from `ClientDetailDashboard`;
@@ -1711,16 +1741,14 @@ Implemented on the dedicated branch only:
 - added focused Cleanup Batch 2 characterization tests;
 - no API route, Supabase, RLS/Auth, migration, dependency, Vercel configuration, UI redesign, or Batch 3+ change was introduced.
 
-Verification required before merge:
+Verification completed:
 
-- exact branch diff review;
-- Safety tests including Cleanup Batch 2 characterization tests;
-- Typecheck;
-- Lint;
-- Production build;
-- GitHub CI;
-- Vercel Preview status;
-- owner approval before merge.
+- CI #176 passed `npm ci`, Typecheck, Lint, Safety tests, and Production build on exact head `3ecacfd841a97d202ba505d6797fcec70f5b1687`;
+- Vercel Preview was `success` on the same exact head;
+- PR #31 was merged using merge commit only with the expected head SHA;
+- comparison from tested PR head to merge commit showed 0 file differences;
+- post-merge GitHub-reported Vercel status for `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982` is `success`;
+- Cleanup Batch 2 is closed.
 
 ### Proposed MatterCreateInput
 
@@ -3225,28 +3253,25 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: CLEANUP BATCH 2 IMPLEMENTED ON FEATURE BRANCH — VERIFICATION / OWNER REVIEW PENDING**
+**Current mode: CLEANUP BATCH 2 CLOSED — CLEANUP BATCH 3 NOT STARTED**
 
 Verified baseline:
 
-- GitHub `main`: `48d68903eee7412333b6cc26260b9ec220d2481a`;
-- PR #30 is merged;
+- GitHub `main`: `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`;
+- PR #31 is merged;
 - Cleanup Batch 1 is closed;
-- Cleanup Batch 2 scope review is complete;
-- implementation branch: `feat/axia-cleanup-batch2-matter-domain`;
-- implementation is limited to the approved Cleanup Batch 2 scope;
-- no API route, Supabase, RLS/Auth, migration, dependency, or Vercel configuration change was introduced.
+- Cleanup Batch 2 is verified and closed;
+- exact tested PR #31 head: `3ecacfd841a97d202ba505d6797fcec70f5b1687`;
+- tested-head-to-merge comparison: 0 file differences;
+- CI #176 succeeded;
+- exact-head Vercel Preview succeeded;
+- post-merge Vercel status succeeded;
+- no API route, Supabase, RLS/Auth, migration, dependency, or Vercel configuration change was introduced by Cleanup Batch 2;
+- Cleanup Batch 3 has not started.
 
 ### Recommended next action
 
-Complete verification for the current Cleanup Batch 2 implementation branch:
-
-- review the exact diff and confirm no files outside the approved scope;
-- run `npm ci`, Typecheck, Lint, Safety tests, and Production build through the repository CI;
-- verify GitHub CI on the exact PR head;
-- verify Vercel Preview on the same exact PR head;
-- present Pre-Merge Verification to the owner;
-- stop before merge until explicit owner approval.
+Stop after this documentation closeout. Do not begin Cleanup Batch 3, including read-only scope review, until the owner gives separate explicit approval.
 
 Explicitly excluded:
 
@@ -3260,7 +3285,7 @@ Explicitly excluded:
 
 ### Explicit stop condition
 
-**WAITING FOR VERIFICATION AND OWNER APPROVAL BEFORE CLEANUP BATCH 2 MERGE.**
+**WAITING FOR OWNER APPROVAL BEFORE ANY CLEANUP BATCH 3 WORK.**
 
 ---
 
@@ -3276,25 +3301,23 @@ If the roadmap is newer on an unmerged documentation branch, explicitly identify
 
 # 25. Documentation Branch Scope
 
-For `docs/axia-cleanup-batch2-scope-review-results-v1`:
+For `docs/axia-cleanup-batch2-closeout-v1`:
 
 Allowed:
 
-- record current `main` and PR #29 merge;
-- record Cleanup Batch 2 read-only findings;
-- record Root Cause and canonical design;
-- record characterization-test requirements;
-- record implementation risk and exact proposed scope;
-- update NEXT ACTION and NEW CHAT handoff context.
+- record current `main` after PR #31 merge;
+- record exact tested PR #31 head and merge commit;
+- record CI #176 and Vercel verification results;
+- mark Cleanup Batch 2 verified and closed;
+- update Completed Delivery History, Current State, NEXT ACTION, and handoff context.
 
 Not allowed:
 
 - functional code changes;
-- Cleanup Batch 2 implementation;
-- implementation branch creation;
+- Cleanup Batch 3 scope review or implementation;
 - API/Supabase/RLS/Auth changes;
 - migrations;
 - Vercel configuration changes;
 - dependency changes.
 
-This branch is documentation-only. Cleanup Batch 2 implementation has **not** started.
+This branch is documentation-only. Cleanup Batch 2 is closed and Cleanup Batch 3 has **not** started.
