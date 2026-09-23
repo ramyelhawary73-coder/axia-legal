@@ -1515,9 +1515,13 @@ Cleanup Batch 2 has **not** started.
 
 #### Cleanup Batch 2 — Matter creation/domain constants consolidation
 
-**Status:** `READ_ONLY_SCOPE_REVIEW_COMPLETE — IMPLEMENTATION PLAN READY / NOT STARTED`
+**Status:** `IMPLEMENTED ON DEDICATED BRANCH — VERIFICATION / PR REVIEW PENDING`
 
 **Audit baseline:** `main @ fe23cc2213810abd91715d81cecf84ec2e6a46b7`
+
+**Implementation baseline:** `main @ 48d68903eee7412333b6cc26260b9ec220d2481a`
+
+**Implementation branch:** `feat/axia-cleanup-batch2-matter-domain`
 
 The review was read-only. No implementation branch, functional code, Supabase, migrations, dependencies, or Vercel configuration were changed.
 
@@ -1692,6 +1696,31 @@ Responsibilities only:
 It must import only domain types and must not fetch, mutate state, call Supabase, or contain UI rendering.
 
 Do **not** create a new shared mega-form in this batch.
+
+### Cleanup Batch 2 implementation result
+
+Implemented on the dedicated branch only:
+
+- added `src/lib/matters-domain.ts` as a pure domain module;
+- introduced named `MatterCreateInput` and wired `createPersistentMatter(input: MatterCreateInput)`;
+- removed the transient fake full-`Matter` object from `ClientDetailDashboard`;
+- preserved the current Client-dashboard persistent payload behavior, including current year, filing date, and the existing `الدائرة المختصة` fallback when circuit is blank;
+- kept Client-dashboard generated notes non-persisted;
+- centralized typed Court / Category / ClientRole option definitions while preserving each current visible option set and label;
+- replaced duplicated Client↔Matter matching with one ID-first `matterBelongsToClient(...)` helper; name fallback is used only when `matter.clientId` is absent;
+- added focused Cleanup Batch 2 characterization tests;
+- no API route, Supabase, RLS/Auth, migration, dependency, Vercel configuration, UI redesign, or Batch 3+ change was introduced.
+
+Verification required before merge:
+
+- exact branch diff review;
+- Safety tests including Cleanup Batch 2 characterization tests;
+- Typecheck;
+- Lint;
+- Production build;
+- GitHub CI;
+- Vercel Preview status;
+- owner approval before merge.
 
 ### Proposed MatterCreateInput
 
@@ -3196,34 +3225,28 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: CLEANUP BATCH 2 READ-ONLY SCOPE REVIEW COMPLETE — IMPLEMENTATION NOT STARTED**
+**Current mode: CLEANUP BATCH 2 IMPLEMENTED ON FEATURE BRANCH — VERIFICATION / OWNER REVIEW PENDING**
 
 Verified baseline:
 
-- GitHub `main`: `fe23cc2213810abd91715d81cecf84ec2e6a46b7`;
-- PR #29 is merged;
+- GitHub `main`: `48d68903eee7412333b6cc26260b9ec220d2481a`;
+- PR #30 is merged;
 - Cleanup Batch 1 is closed;
 - Cleanup Batch 2 scope review is complete;
-- no Cleanup Batch 2 implementation branch exists;
-- no functional code, Supabase, migration, dependency, or Vercel configuration change occurred during the review.
+- implementation branch: `feat/axia-cleanup-batch2-matter-domain`;
+- implementation is limited to the approved Cleanup Batch 2 scope;
+- no API route, Supabase, RLS/Auth, migration, dependency, or Vercel configuration change was introduced.
 
-### Recommended next action — requires explicit owner approval
+### Recommended next action
 
-Implement **Cleanup Batch 2 only** on a new dedicated branch from the then-current `main`.
+Complete verification for the current Cleanup Batch 2 implementation branch:
 
-Approved implementation scope should be limited to:
-
-- add pure `src/lib/matters-domain.ts`;
-- introduce named `MatterCreateInput`;
-- remove fake full-`Matter` creation from `ClientDetailDashboard`;
-- preserve current persistent payload behavior;
-- keep Client-dashboard generated notes non-persisted in this cleanup;
-- centralize typed Court / Category / ClientRole constants without changing visible option sets;
-- introduce one ID-first `matterBelongsToClient` helper with name fallback only when `clientId` is absent;
-- add focused characterization tests;
-- update the Roadmap;
-- run `npm ci`, Typecheck, Lint, Safety tests, Production build, and Vercel Preview;
-- stop before merge.
+- review the exact diff and confirm no files outside the approved scope;
+- run `npm ci`, Typecheck, Lint, Safety tests, and Production build through the repository CI;
+- verify GitHub CI on the exact PR head;
+- verify Vercel Preview on the same exact PR head;
+- present Pre-Merge Verification to the owner;
+- stop before merge until explicit owner approval.
 
 Explicitly excluded:
 
@@ -3237,7 +3260,7 @@ Explicitly excluded:
 
 ### Explicit stop condition
 
-**WAITING FOR OWNER APPROVAL BEFORE CLEANUP BATCH 2 IMPLEMENTATION.**
+**WAITING FOR VERIFICATION AND OWNER APPROVAL BEFORE CLEANUP BATCH 2 MERGE.**
 
 ---
 
