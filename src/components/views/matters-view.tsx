@@ -40,7 +40,13 @@ import {
   updatePersistentMatter,
   type MatterClientOption,
 } from "@/lib/matters-client";
-import { Matter, CourtCategory } from "@/types/legal";
+import { Matter } from "@/types/legal";
+import {
+  MATTERS_VIEW_COURT_OPTIONS,
+  MATTER_CATEGORY_OPTIONS,
+  type MatterCategory,
+  type MatterCourt,
+} from "@/lib/matters-domain";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 import {
   useActionContextMenu,
@@ -282,8 +288,8 @@ export function MattersView({
   // Modal for new case
   const [isNewMatterOpen, setIsNewMatterOpen] = useState(false);
   const [newCaseNumber, setNewCaseNumber] = useState("");
-  const [newCourt, setNewCourt] = useState<CourtCategory>("محكمة النقض");
-  const [newCategory, setNewCategory] = useState<"مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة">("مدني");
+  const [newCourt, setNewCourt] = useState<MatterCourt>("محكمة النقض");
+  const [newCategory, setNewCategory] = useState<MatterCategory>("مدني");
   const [newTitle, setNewTitle] = useState("");
   const [newClientId, setNewClientId] = useState("");
   const [isCreatingMatter, setIsCreatingMatter] = useState(false);
@@ -436,11 +442,11 @@ export function MattersView({
                 className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
               >
                 <option value="all">كافة المحاكم والجهات</option>
-                <option value="محكمة النقض">محكمة النقض</option>
-                <option value="المحكمة الاقتصادية">المحكمة الاقتصادية</option>
-                <option value="مجلس الدولة (القضاء الإداري)">مجلس الدولة</option>
-                <option value="استئناف عالي">استئناف عالي</option>
-                <option value="ابتدائية كلي">ابتدائية كلي</option>
+                {MATTERS_VIEW_COURT_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
               <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
             </div>
@@ -467,12 +473,11 @@ export function MattersView({
                 className="appearance-none rounded-md border border-[var(--border)] bg-[var(--panel)] pr-8 pl-3 py-1.5 text-xs text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
               >
                 <option value="all">كافة التصنيفات</option>
-                <option value="مدني">مدنية</option>
-                <option value="جنائي">جنائية</option>
-                <option value="عمالي">عمالية</option>
-                <option value="تجاري">تجارية</option>
-                <option value="إداري">إدارية</option>
-                <option value="أسرة">أسرة</option>
+                {MATTER_CATEGORY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
               <ChevronDown className="absolute right-2.5 top-2 size-3 text-[var(--text-muted)] pointer-events-none" />
             </div>
@@ -1188,14 +1193,14 @@ export function MattersView({
                   <div className="relative">
                     <select
                       value={newCourt}
-                      onChange={(e) => setNewCourt(e.target.value as CourtCategory)}
+                      onChange={(e) => setNewCourt(e.target.value as MatterCourt)}
                       className="appearance-none w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                     >
-                      <option value="محكمة النقض">محكمة النقض</option>
-                      <option value="المحكمة الاقتصادية">المحكمة الاقتصادية</option>
-                      <option value="مجلس الدولة (القضاء الإداري)">مجلس الدولة</option>
-                      <option value="استئناف عالي">استئناف عالي</option>
-                      <option value="ابتدائية كلي">ابتدائية كلي</option>
+                      {MATTERS_VIEW_COURT_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)] pointer-events-none" />
                   </div>
@@ -1205,15 +1210,14 @@ export function MattersView({
                   <div className="relative">
                     <select
                       value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value as "مدني" | "جنائي" | "عمالي" | "تجاري" | "إداري" | "أسرة")}
+                      onChange={(e) => setNewCategory(e.target.value as MatterCategory)}
                       className="appearance-none w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--gold)] focus:outline-none focus:ring-1 focus:ring-[var(--gold)]"
                     >
-                      <option value="مدني">مدنية</option>
-                      <option value="جنائي">جنائية</option>
-                      <option value="عمالي">عمالية</option>
-                      <option value="تجاري">تجارية</option>
-                      <option value="إداري">إدارية</option>
-                      <option value="أسرة">أسرة</option>
+                      {MATTER_CATEGORY_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)] pointer-events-none" />
                   </div>

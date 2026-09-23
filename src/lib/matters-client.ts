@@ -1,5 +1,6 @@
 import { readJsonResponse } from "@/lib/api/client-response";
 import type { Matter } from "@/types/legal";
+import type { MatterCreateInput } from "@/lib/matters-domain";
 
 export type MatterClientOption = {
   id: string;
@@ -21,20 +22,9 @@ export async function loadMattersWorkspace(): Promise<MattersWorkspace> {
   return readJsonResponse<MattersWorkspace>(response, "تعذر الاتصال بخدمة القضايا.");
 }
 
-export async function createPersistentMatter(input: {
-  caseNumber: string;
-  title: string;
-  court?: string;
-  category?: string;
-  clientId: string;
-  caseYear?: number;
-  circuit?: string;
-  clientRole?: Matter["clientRole"];
-  filingDate?: string;
-  claimAmount?: number;
-  currency?: string;
-  notes?: string;
-}): Promise<Matter> {
+export async function createPersistentMatter(
+  input: MatterCreateInput,
+): Promise<Matter> {
   const response = await fetch("/api/matters", {
     method: "POST",
     cache: "no-store",

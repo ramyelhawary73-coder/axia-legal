@@ -27,7 +27,16 @@ import {
   Copy,
   Check
 } from "lucide-react";
-import { Client, Matter, CourtCategory } from "@/types/legal";
+import { Client, Matter } from "@/types/legal";
+import {
+  CLIENT_DETAIL_COURT_OPTIONS,
+  CLIENT_DETAIL_FILTER_COURT_OPTIONS,
+  MATTER_CLIENT_ROLE_OPTIONS,
+  matterBelongsToClient,
+  type MatterCreateInput,
+  type MatterClientRole,
+  type MatterCourt,
+} from "@/lib/matters-domain";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 import { LegalTemplateGeneratorModal } from "@/components/legal-template-generator-modal";
 import { legalTemplatesCollection } from "@/lib/legal-templates-data";
@@ -38,7 +47,9 @@ interface ClientDetailDashboardProps {
   matters: Matter[];
   onSelectClient: (client: Client) => void;
   onBack: () => void;
-  onAddNewMatter?: (matter: Matter) => Matter | void | Promise<Matter | void>;
+  onAddNewMatter?: (
+    input: Omit<MatterCreateInput, "clientId">,
+  ) => Matter | void | Promise<Matter | void>;
 }
 
 export function ClientDetailDashboard({
@@ -66,20 +77,14 @@ export function ClientDetailDashboard({
 
   // New Matter Form State
   const [newCaseNumber, setNewCaseNumber] = useState("");
-  const [newCourt, setNewCourt] = useState<CourtCategory>("ابتدائية كلي");
+  const [newCourt, setNewCourt] = useState<MatterCourt>("ابتدائية كلي");
   const [newCircuit, setNewCircuit] = useState("");
   const [newTitle, setNewTitle] = useState("");
-  const [newClientRole, setNewClientRole] = useState<Matter["clientRole"]>("مدعي");
+  const [newClientRole, setNewClientRole] = useState<MatterClientRole>("مدعي");
 
   // Filter matters strictly belonging to this client
   const clientMatters = useMemo(() => {
-    return matters.filter((m) => {
-      const matchId = m.clientId && m.clientId === client.id;
-      const matchName = m.clientName && (
-        m.clientName.includes(client.name) || client.name.includes(m.clientName)
-      );
-      return matchId || matchName;
-    });
+    return matters.filter((matter) => matterBelongsToClient(matter, client));
   }, [matters, client]);
 
   // Derived statistics
@@ -147,36 +152,21 @@ export function ClientDetailDashboard({
     e.preventDefault();
     if (!newCaseNumber || !newTitle || !onAddNewMatter) return;
 
-    const newMatter: Matter = {
-      id: `MAT-${Date.now()}`,
+    const input: Omit<MatterCreateInput, "clientId"> = {
       caseNumber: newCaseNumber,
-      year: new Date().getFullYear(),
-      court: newCourt,
-      circuit: newCircuit || "الدائرة المختصة",
       title: newTitle,
-      clientName: client.name,
-      clientId: client.id,
+      court: newCourt,
+      caseYear: new Date().getFullYear(),
+      circuit: newCircuit || "الدائرة المختصة",
       clientRole: newClientRole,
-      opponentName: "غير مسجل",
-      assignedLawyer: "غير مسجل",
-      nextHearingDate: "غير مسجل",
-      nextHearingGoal: "غير مسجل",
-      stage: "متداولة",
-      status: "مفتوحة",
       filingDate: new Date().toISOString().split("T")[0],
-      agreedFees: "غير مسجل",
-      paidFees: "غير مسجل",
-      notes:
-        client.poaNumber === "غير مسجل"
-          ? `تم قيد الدعوى مباشرة لصالح الموكل ${client.name}.`
-          : `تم قيد الدعوى مباشرة لصالح الموكل ${client.name} بموجب التوكيل ${client.poaNumber}.`,
     };
 
     setCreateMatterError(null);
     setIsCreatingMatter(true);
 
     try {
-      const persistedMatter = await onAddNewMatter(newMatter);
+      const persistedMatter = await onAddNewMatter(input);
       if (!persistedMatter) {
         setCreateMatterError("تعذر حفظ القضية.");
         return;
@@ -527,12 +517,11 @@ export function ClientDetailDashboard({
                   className="appearance-none rounded-md border border-[var(--border)] bg-[var(--bg)] pr-3 pl-8 py-1.5 text-xs text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none cursor-pointer"
                 >
                   <option value="all">كافة المحاكم</option>
-                  <option value="محكمة النقض">محكمة النقض</option>
-                  <option value="المحكمة الاقتصادية">المحكمة الاقتصادية</option>
-                  <option value="مجلس الدولة (القضاء الإداري)">مجلس الدولة</option>
-                  <option value="استئناف عالي">استئناف عالي</option>
-                  <option value="ابتدائية كلي">ابتدائية كلي</option>
-                  <option value="جزئية">جزئية</option>
+                  {CLIENT_DETAIL_FILTER_COURT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
                 <ChevronDown className="absolute left-2.5 top-2.5 size-3 text-[var(--text-muted)] pointer-events-none" />
               </div>
@@ -1108,15 +1097,14 @@ export function ClientDetailDashboard({
                   <label className="block text-[var(--text-muted)] mb-1 font-medium">الجهة القضائية</label>
                   <select
                     value={newCourt}
-                    onChange={(e) => setNewCourt(e.target.value as CourtCategory)}
+                    onChange={(e) => setNewCourt(e.target.value as MatterCourt)}
                     className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
                   >
-                    <option value="محكمة النقض">محكمة النقض</option>
-                    <option value="المحكمة الاقتصادية">المحكمة الاقتصادية</option>
-                    <option value="مجلس الدولة (القضاء الإداري)">مجلس الدولة (القضاء الإداري)</option>
-                    <option value="استئناف عالي">استئناف عالي</option>
-                    <option value="ابتدائية كلي">ابتدائية كلي</option>
-                    <option value="جزئية">جزئية</option>
+                    {CLIENT_DETAIL_COURT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -1137,15 +1125,14 @@ export function ClientDetailDashboard({
                   <label className="block text-[var(--text-muted)] mb-1 font-medium">صفة الموكل في الدعوى</label>
                   <select
                     value={newClientRole}
-                    onChange={(e) => setNewClientRole(e.target.value as Matter["clientRole"])}
+                    onChange={(e) => setNewClientRole(e.target.value as MatterClientRole)}
                     className="w-full rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
                   >
-                    <option value="مدعي">مدعي</option>
-                    <option value="مدعى عليه">مدعى عليه</option>
-                    <option value="طاعن">طاعن</option>
-                    <option value="مطعون ضده">مطعون ضده</option>
-                    <option value="مستأنف">مستأنف</option>
-                    <option value="مستأنف ضده">مستأنف ضده</option>
+                    {MATTER_CLIENT_ROLE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
