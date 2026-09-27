@@ -25,9 +25,18 @@ import {
   Plus, 
   Keyboard, 
   CheckCircle2, 
+  LogOut,
+  Building2,
+  BadgeCheck,
+  Server,
+  MapPin,
+  CreditCard,
+  Check,
   type LucideIcon 
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { NavigationTab, LegalTask, Matter, Client, LegalDocument } from "@/types/legal";
+import { logout } from "@/app/login/actions";
 import { NotificationsPopover } from "@/components/notifications-popover";
 import { getUpcomingDeadlineTasks, getHighPriorityTasksDueWithinHour } from "@/lib/task-utils";
 import { 
@@ -97,12 +106,29 @@ export function AppShell({
   onSelectDocument,
   isFocusMode = false,
 }: AppShellProps) {
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [taskCreatedToast, setTaskCreatedToast] = useState<{ id: string; title: string } | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [activeWorkspace, setActiveWorkspace] = useState<"cairo" | "alexandria" | "corp">("cairo");
+
+  // Click outside to close profile dropdown
+  useEffect(() => {
+    if (!isProfileOpen) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("#profile-dropdown-trigger") && !target.closest("#profile-dropdown-menu")) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [isProfileOpen]);
+
 
   // Global Keyboard Shortcuts Listener (Ctrl+N / Alt+N for tasks, Ctrl+K for search, Esc, Ctrl+/)
   useGlobalKeyboardShortcuts({
@@ -288,14 +314,210 @@ export function AppShell({
               onNavigate={onNavigate}
             />
 
-            {/* Office Profile Pill */}
-            <div className="hidden sm:flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--panel)]/50 px-2 py-1 cursor-pointer hover:bg-[var(--accent)] transition-colors">
-              <div className="size-6 rounded bg-gradient-to-br from-[var(--axia-gold-light)] to-[var(--axia-gold)] text-white font-bold grid place-items-center text-[10px]">
-                ر.هـ
-              </div>
-              <div className="text-right">
-                <span className="block text-[11px] font-bold text-[var(--text)]">مكتب د. رامي الهواري</span>
-              </div>
+            {/* Office Profile Pill & Professional Google/Apple-Style Accounts Switcher */}
+            <div className="relative">
+              <button
+                type="button"
+                id="profile-dropdown-trigger"
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--panel)]/50 px-2.5 py-1.5 cursor-pointer hover:bg-[var(--accent)] hover:border-[var(--axia-gold-light)]/40 transition duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[var(--axia-gold)]"
+                aria-expanded={isProfileOpen}
+                aria-haspopup="true"
+              >
+                <div className="relative size-6 shrink-0 rounded bg-gradient-to-br from-[var(--axia-gold-light)] to-[var(--axia-gold)] text-white font-bold grid place-items-center text-[10px] shadow-sm">
+                  ر.هـ
+                  <span className="absolute -top-0.5 -left-0.5 flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                  </span>
+                </div>
+                <div className="text-right hidden sm:block max-w-[125px]">
+                  <span className="block text-[11px] font-bold text-[var(--text)] truncate leading-none">
+                    {activeWorkspace === "cairo" 
+                      ? "مكتب القاهرة (الرئيسي)" 
+                      : activeWorkspace === "alexandria" 
+                      ? "مكتب الإسكندرية" 
+                      : "شؤون الشركات والاستثمار"}
+                  </span>
+                  <span className="block text-[9px] text-[var(--text-muted)] mt-0.5 truncate leading-none">
+                    د. رامي الهواري
+                  </span>
+                </div>
+                <ChevronLeft className={`size-3 text-[var(--text-muted)] transition-transform duration-200 ${isProfileOpen ? "-rotate-90" : ""}`} />
+              </button>
+
+              {/* The dropdown panel - Premium UI matching Apple/Google accounts view */}
+              {isProfileOpen && (
+                <div 
+                  id="profile-dropdown-menu"
+                  className="absolute left-0 mt-2 w-80 sm:w-96 origin-top-left rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                  dir="rtl"
+                >
+                  {/* Header: User Profile Card */}
+                  <div className="flex items-start gap-3 border-b border-[var(--border)] pb-3">
+                    <div className="size-12 rounded-xl bg-gradient-to-br from-[var(--axia-gold-light)] to-[var(--axia-gold)] text-white font-bold grid place-items-center text-lg shadow-md ring-2 ring-[var(--axia-gold-dim)] shrink-0">
+                      ر.هـ
+                    </div>
+                    <div className="flex-1 space-y-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-sm font-bold text-[var(--text)] truncate">د. رامي الهواري</h4>
+                        <span title="مستشار معتمد ومقيد بالنقابة">
+                          <BadgeCheck className="size-4 text-emerald-500 shrink-0" />
+                        </span>
+                      </div>
+                      <p className="text-xs text-[var(--text-muted)] font-medium leading-none truncate">ramyelhawary73@gmail.com</p>
+                      <p className="text-[10px] text-[var(--axia-gold-light)] font-semibold leading-relaxed">
+                        المستشار العام والنائب الأول لنقابة المحامين (شريك مؤسس)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Body: Active Workspace Indicator & Info */}
+                  <div className="py-3 border-b border-[var(--border)] space-y-2">
+                    <span className="block text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase">
+                      مساحة العمل والترخيص النشط
+                    </span>
+                    
+                    <div className="rounded-xl border border-[var(--axia-gold)]/20 bg-[var(--axia-gold)]/[0.03] p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Building2 className="size-4 text-[var(--axia-gold)] shrink-0" />
+                          <span className="text-xs font-bold text-[var(--text)] truncate">
+                            {activeWorkspace === "cairo" 
+                              ? "مجموعة د. رامي الهواري للمحاماة والاستشارات" 
+                              : activeWorkspace === "alexandria" 
+                              ? "مكتب د. رامي الهواري - فرع الإسكندرية" 
+                              : "إدارة الشؤون القانونية للشركات والكيانات الكبرى"}
+                          </span>
+                        </div>
+                        <span className="rounded bg-[var(--axia-gold)]/10 border border-[var(--axia-gold)]/20 px-1.5 py-0.5 text-[9px] font-bold text-[var(--axia-gold)] shrink-0">
+                          النسخة الكاملة
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[11px] text-[var(--text-muted)] pt-1 border-t border-[var(--border)]/60">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <MapPin className="size-3 text-[var(--axia-gold-light)] shrink-0" />
+                          <span className="truncate">
+                            {activeWorkspace === "cairo" ? "الزمالك، القاهرة" : activeWorkspace === "alexandria" ? "سموحة، الإسكندرية" : "مصر الجديدة، القاهرة"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 min-w-0">
+                          <CreditCard className="size-3 text-[var(--axia-gold-light)] shrink-0" />
+                          <span className="truncate">قيد النقابة: ١٠٠٤٩٢/ن</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Interactive: Switch Workspace (Slack/Google Style) */}
+                  <div className="py-3 border-b border-[var(--border)] space-y-2">
+                    <span className="block text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase">
+                      التبديل بين مساحات العمل للمكتب
+                    </span>
+
+                    <div className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveWorkspace("cairo");
+                        }}
+                        className={`w-full flex items-center justify-between rounded-lg p-2 text-right transition ${
+                          activeWorkspace === "cairo" 
+                            ? "bg-[var(--accent)] text-[var(--text)] font-semibold border border-[var(--border)]" 
+                            : "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="size-5 rounded bg-amber-500/10 text-amber-500 text-[10px] font-bold grid place-items-center shrink-0">ق</div>
+                          <div className="text-right min-w-0">
+                            <span className="block text-xs truncate">مكتب القاهرة (الرئيسي)</span>
+                            <span className="block text-[9px] text-[var(--text-muted)] leading-none truncate">مساحة العمل والملفات النشطة</span>
+                          </div>
+                        </div>
+                        {activeWorkspace === "cairo" && <Check className="size-3 text-[var(--axia-gold)] shrink-0" />}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveWorkspace("alexandria");
+                        }}
+                        className={`w-full flex items-center justify-between rounded-lg p-2 text-right transition ${
+                          activeWorkspace === "alexandria" 
+                            ? "bg-[var(--accent)] text-[var(--text)] font-semibold border border-[var(--border)]" 
+                            : "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="size-5 rounded bg-sky-500/10 text-sky-500 text-[10px] font-bold grid place-items-center shrink-0">س</div>
+                          <div className="text-right min-w-0">
+                            <span className="block text-xs truncate">مكتب الإسكندرية (سموحة)</span>
+                            <span className="block text-[9px] text-[var(--text-muted)] leading-none truncate">ملفات قضايا وجهات بحري</span>
+                          </div>
+                        </div>
+                        {activeWorkspace === "alexandria" && <Check className="size-3 text-[var(--axia-gold)] shrink-0" />}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveWorkspace("corp");
+                        }}
+                        className={`w-full flex items-center justify-between rounded-lg p-2 text-right transition ${
+                          activeWorkspace === "corp" 
+                            ? "bg-[var(--accent)] text-[var(--text)] font-semibold border border-[var(--border)]" 
+                            : "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="size-5 rounded bg-emerald-500/10 text-emerald-500 text-[10px] font-bold grid place-items-center shrink-0">ش</div>
+                          <div className="text-right min-w-0">
+                            <span className="block text-xs truncate">إدارة شؤون الشركات والاستثمار</span>
+                            <span className="block text-[9px] text-[var(--text-muted)] leading-none truncate">العقود وتأسيس الشركات الأجنبية</span>
+                          </div>
+                        </div>
+                        {activeWorkspace === "corp" && <Check className="size-3 text-[var(--axia-gold)] shrink-0" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Metadata and Stats */}
+                  <div className="py-2.5 flex items-center justify-between text-[10px] text-[var(--text-muted)] border-b border-[var(--border)]">
+                    <div className="flex items-center gap-1.5">
+                      <Server className="size-3 text-emerald-500 animate-pulse" />
+                      <span>قاعدة البيانات: مؤمنة ومتصلة</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>٥ قضايا</span>
+                      <span>·</span>
+                      <span>٥ عملاء</span>
+                      <span>·</span>
+                      <span>١١ مستنداً</span>
+                    </div>
+                  </div>
+
+                  {/* Actions: Sign out */}
+                  <div className="pt-3">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        setIsProfileOpen(false);
+                        try {
+                          await logout();
+                        } catch {
+                          // Fallback for mock client state or deployment redirect
+                          router.push("/login");
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-xs font-bold text-red-500 hover:bg-red-500 hover:text-white transition duration-200"
+                    >
+                      <LogOut className="size-4" />
+                      <span>تسجيل خروج آمن من النظام</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
