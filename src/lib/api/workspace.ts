@@ -57,7 +57,7 @@ export async function resolveWorkspace(request?: Request): Promise<WorkspaceCont
 
   let membership = requestedOrganizationId
     ? memberships.find(
-        (item) => String(item.organization_id) === requestedOrganizationId,
+        (item: { organization_id: unknown }) => String(item.organization_id) === requestedOrganizationId,
       )
     : memberships.length === 1
       ? memberships[0]

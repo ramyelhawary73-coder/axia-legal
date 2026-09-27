@@ -304,6 +304,6 @@ export async function PATCH(request: Request) {
   }
 
   return NextResponse.json({
-    updatedIds: (data ?? []).map((row) => String(row.id)),
+    updatedIds: (data ?? []).map((row: { id: unknown }) => String(row.id)),
   });
 }

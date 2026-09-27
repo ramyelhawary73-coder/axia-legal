@@ -112,7 +112,7 @@ async function loadClients(
 
   if (error) throw new Error("CLIENTS_QUERY_FAILED");
 
-  return (data ?? []).map((client) => ({
+  return (data ?? []).map((client: { id: unknown; name: unknown }) => ({
     id: String(client.id),
     name: String(client.name),
   }));
