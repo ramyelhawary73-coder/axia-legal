@@ -20,7 +20,6 @@ import {
   Zap,
   Play,
   X,
-  AlertTriangle,
   Fingerprint,
   Cpu,
   BadgeDollarSign
@@ -192,7 +191,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#08080A] overflow-x-hidden text-white selection:bg-amber-500/20 selection:text-amber-200 antialiased font-sans">
+    <div className="relative min-h-screen bg-[#070709] text-white selection:bg-amber-500/20 selection:text-amber-200 antialiased font-sans pb-16">
       
       {/* Webkit Autofill Neutralizer Style Block - guarantees transparent background under autocompletes */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -206,29 +205,29 @@ export default function LoginPage() {
         }
       `}} />
 
-      {/* BACKGROUND GRAPHICS: Aura glow and matrix grid */}
+      {/* GLOBAL SYSTEM BACKGROUND WATERMARKS FOR COMPLETE UNIFIED VISUAL SYMMETRY */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-amber-500/5 to-transparent blur-[120px] animate-pulse duration-[8000ms]" />
-        <div className="absolute bottom-[20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-gradient-to-tl from-emerald-500/5 to-transparent blur-[150px] animate-pulse duration-[10000ms]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-amber-500/5 to-transparent blur-[120px]" />
+        <div className="absolute bottom-[10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-tl from-emerald-500/5 to-transparent blur-[150px]" />
         
-        {/* Symmetric Centered Scales of Justice Giant Watermark background behind the login box */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-[0.035] z-0">
-          <svg className="w-[600px] h-[600px] text-amber-500" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M40 85 H60 M50 85 V30" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-            <path d="M20 35 H80" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
-            <path d="M20 35 L12 55 M20 35 L28 55" stroke="currentColor" strokeWidth="0.5" />
-            <path d="M7 55 Q20 65 33 55 Z" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.05" />
-            <path d="M80 35 L72 55 M80 35 L88 55" stroke="currentColor" strokeWidth="0.5" />
-            <path d="M67 55 Q80 65 93 55 Z" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.05" />
-            <circle cx="50" cy="35" r="2" fill="currentColor" />
+        {/* Giant Sovereign Scale Of Justice - Center Floating Background Watermark (Fits everything perfectly) */}
+        <div className="fixed inset-0 flex items-center justify-center opacity-[0.04] z-0 pointer-events-none">
+          <svg className="w-[750px] h-[750px] text-amber-500" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+            <path d="M40 85 H60 M50 85 V30" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" />
+            <path d="M15 35 H85" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" />
+            <path d="M15 35 L5 55 M15 35 L25 55" stroke="currentColor" strokeWidth="0.4" />
+            <path d="M0 55 Q15 65 30 55 Z" stroke="currentColor" strokeWidth="0.8" fill="currentColor" fillOpacity="0.03" />
+            <path d="M85 35 L75 55 M85 35 L95 55" stroke="currentColor" strokeWidth="0.4" />
+            <path d="M70 55 Q85 65 100 55 Z" stroke="currentColor" strokeWidth="0.8" fill="currentColor" fillOpacity="0.03" />
+            <circle cx="50" cy="35" r="1.5" fill="currentColor" />
           </svg>
         </div>
       </div>
 
-      {/* TOP STICKY HEADER TOOLBAR (Stays floating, provides discrete scroll back anchor) */}
-      <header className="sticky top-0 z-40 w-full px-6 py-4 backdrop-blur-md bg-black/30 border-b border-white/5">
+      {/* TOP FLOATING STICKY HEADER - PERMANENT ACCESS AT TOP-0 WITH ACTIVE BLUR */}
+      <header className="sticky top-0 z-50 w-full px-6 py-4 backdrop-blur-xl bg-black/60 border-b border-white/5 shadow-lg">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div onClick={scrollToTop} className="flex items-center gap-3 cursor-pointer">
             <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500/20 to-amber-600/20 border border-amber-500/30">
               <Scale className="w-4 h-4 text-amber-500" />
             </div>
@@ -242,33 +241,34 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Nav anchors */}
+          {/* Unified System Navigation Anchors */}
           <nav className="hidden md:flex items-center gap-6 text-[11px] text-neutral-400">
             <a href="#features-section" className="hover:text-amber-500 transition-colors">مزايا المنظومة</a>
             <a href="#calculator-section" className="hover:text-amber-500 transition-colors">مؤشرات الأداء</a>
             <a href="#compliance-section" className="hover:text-amber-500 transition-colors">السيادة والأمان</a>
           </nav>
 
+          {/* Symmetrical Instant Portal Entry Switcher (Fixes user pathing) */}
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline-block px-2.5 py-0.5 text-[8px] font-mono tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
               ● متصل سيادياً v1.2
             </span>
             <button 
               onClick={scrollToTop}
-              className="text-[11px] bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 rounded-full px-4 py-1.5 transition-all cursor-pointer font-semibold"
+              className="text-[11px] bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-black border border-amber-500/30 rounded-full px-4 py-1.5 transition-all duration-300 cursor-pointer font-bold"
             >
-              بوابة الدخول 👤
+              تسجيل الدخول للمكتب 👤
             </button>
           </div>
         </div>
       </header>
 
-      {/* APPLE STYLE MAIN VIEW - FULLY OPTIMIZED AND SPACING PERFECT */}
-      <main className="relative z-10 max-w-7xl mx-auto px-6 py-12 lg:py-20 flex flex-col justify-center min-h-[calc(100vh-100px)]">
+      {/* MAIN VIEW - NO CLIPPING SYSTEM WITH OPTIMAL DUAL-COLUMN HEIGHTS */}
+      <main className="relative z-10 max-w-7xl mx-auto px-6 py-8 lg:py-16 flex flex-col justify-center min-h-[calc(100vh-100px)]">
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
-          {/* COLUMN 1: Symmetrical Elegant Text Column (Left on Desktop) */}
+          {/* COLUMN 1: Symmetrical Brand Message Column */}
           <div className="lg:col-span-6 space-y-6 text-right flex flex-col justify-center">
             
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-400 mr-auto lg:mr-0 ml-auto">
@@ -289,14 +289,11 @@ export default function LoginPage() {
 
           </div>
 
-          {/* COLUMN 2: Apple Premium Crystal Auth Card (Right on Desktop) */}
+          {/* COLUMN 2: Apple Style Micro-Precision Crystal Auth Card (Perfect Sizing) */}
           <div className="lg:col-span-6 w-full flex justify-center lg:justify-end">
             
             <div className="w-full max-w-sm relative">
-              {/* Very soft glowing backlight */}
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-500/5 to-emerald-500/2 blur-2xl pointer-events-none" />
-              
-              <div className="relative backdrop-blur-3xl bg-neutral-950/40 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl">
+              <div className="relative backdrop-blur-3xl bg-[#0b0c10]/40 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl">
                 
                 {/* iOS-Style Precise Micro Switcher */}
                 <div className="relative flex p-1 bg-white/[0.03] rounded-full border border-white/5 mb-6">
@@ -304,7 +301,7 @@ export default function LoginPage() {
                     onClick={() => setAuthMode('login')}
                     className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-bold py-2 rounded-full transition-all cursor-pointer ${
                       authMode === 'login' 
-                        ? 'bg-amber-500 text-black shadow-md' 
+                        ? 'bg-amber-500 text-black shadow-md font-extrabold' 
                         : 'text-neutral-400 hover:text-white'
                     }`}
                   >
@@ -315,7 +312,7 @@ export default function LoginPage() {
                     onClick={() => setAuthMode('register')}
                     className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-bold py-2 rounded-full transition-all cursor-pointer ${
                       authMode === 'register' 
-                        ? 'bg-amber-500 text-black shadow-md' 
+                        ? 'bg-amber-500 text-black shadow-md font-extrabold' 
                         : 'text-neutral-400 hover:text-white'
                     }`}
                   >
@@ -327,7 +324,7 @@ export default function LoginPage() {
                 {authMode === 'login' ? (
                   <form onSubmit={handleLoginSubmit} className="space-y-6">
                     
-                    {/* Username Input with clean border-bottom and 0 background */}
+                    {/* Username input with crystal bottom border */}
                     <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5">
                       <input
                         type="email"
@@ -342,10 +339,10 @@ export default function LoginPage() {
                       </span>
                     </div>
 
-                    {/* Password Input with clean border-bottom and 0 background */}
+                    {/* Password input with crystal bottom border */}
                     <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5 pt-2">
                       <div className="absolute left-0 top-[-8px] text-[10px] text-neutral-500">
-                        <a href="#" className="hover:text-amber-500 transition-colors">نسيت كلمة المرور؟</a>
+                        <a href="#" className="hover:text-amber-500 transition-colors font-medium">نسيت كلمة المرور؟</a>
                       </div>
                       <input
                         type={showPassword ? 'text' : 'password'}
@@ -375,7 +372,7 @@ export default function LoginPage() {
                           onChange={(e) => setRememberMe(e.target.checked)}
                           className="rounded border-white/10 bg-white/5 text-amber-500 focus:ring-0 focus:ring-offset-0 w-3 h-3"
                         />
-                        <span className="text-[10px] text-neutral-400">تذكر جلستي</span>
+                        <span className="text-[10px] text-neutral-400 font-medium">تذكر جلستي</span>
                       </label>
                       <span className="flex items-center gap-1 text-[9px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">
                         <Shield className="w-2.5 h-2.5" />
@@ -392,15 +389,12 @@ export default function LoginPage() {
                       {isPending ? (
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <>
-                          <span>الدخول لمساحة العمل</span>
-                          <ChevronDown className="w-3.5 h-3.5 rotate-270" />
-                        </>
+                        <span>الدخول لمساحة العمل</span>
                       )}
                     </button>
                   </form>
                 ) : (
-                  /* REGISTRATION FORM - 100% UNBOXED CRYSTAL LINE PATTERN */
+                  /* REGISTER OFFICE FORM - 100% UNBOXED CRYSTAL LINE PATTERN */
                   <form onSubmit={handleRegisterSubmit} className="space-y-5">
                     
                     <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5">
@@ -473,10 +467,7 @@ export default function LoginPage() {
                         {isPending ? (
                           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         ) : (
-                          <>
-                            <span>تأسيس صرح المكتب السحابي</span>
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                          </>
+                          <span>تأسيس صرح المكتب السحابي</span>
                         )}
                       </button>
                     </div>
@@ -496,7 +487,7 @@ export default function LoginPage() {
         </div>
 
         {/* Scroll indicator with smooth loop down animation */}
-        <div className="flex flex-col items-center justify-center py-6 mt-6">
+        <div className="flex flex-col items-center justify-center py-4 mt-8">
           <a href="#features-section" className="flex flex-col items-center gap-2 text-xs text-neutral-500 hover:text-white transition-colors">
             <span>استكشف صرح المزايا والمحاكاة الحية الفورية</span>
             <ChevronDown className="w-4 h-4 text-amber-500 animate-bounce" />
@@ -504,7 +495,7 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* COMPREHENSIVE OUTSIDE SHOWCASE SECTION (BENTO GRID WITH SIMULATORS) */}
+      {/* COMPREHENSIVE OUTSIDE SHOWCASE SECTION (FIXED HEIGHT BUGS REMOVED - h-auto NATURAL FLOW) */}
       <section id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 py-20 border-t border-white/5">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-2xl sm:text-3xl font-extrabold mb-4">
@@ -515,8 +506,8 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Dynamic Showcase Navigation tabs alongside Interactive Sandbox buttons */}
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
+        {/* Dynamic Showcase Navigation tabs alongside Interactive Sandbox buttons (Flex height layout) */}
+        <div className="flex flex-col lg:flex-row gap-8 items-stretch">
           
           {/* Tab Selection Panel with trigger buttons */}
           <div className="w-full lg:w-1/3 flex flex-col gap-4">
@@ -639,8 +630,8 @@ export default function LoginPage() {
 
           </div>
 
-          {/* Dynamic Graphic Preview Frame (Framer Motion driven mock visuals) */}
-          <div className="w-full lg:w-2/3 h-[380px] sm:h-[450px] rounded-3xl relative overflow-hidden backdrop-blur-xl bg-neutral-950/40 border border-white/10 p-6 sm:p-8 flex flex-col justify-between">
+          {/* Dynamic Graphic Preview Frame (No fixed height bounds to prevent clipping of inside preview elements) */}
+          <div className="w-full lg:w-2/3 h-auto min-h-[420px] rounded-3xl relative backdrop-blur-xl bg-neutral-950/40 border border-white/10 p-6 sm:p-8 flex flex-col justify-between gap-6">
             
             {/* Background aesthetic decor inside the frame */}
             <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/[0.02] to-transparent pointer-events-none" />
@@ -658,7 +649,7 @@ export default function LoginPage() {
             </div>
 
             {/* Content Visuals Based on activeTab */}
-            <div className="flex-1 flex items-center justify-center py-6 overflow-hidden">
+            <div className="flex-1 flex items-center justify-center py-2 overflow-hidden">
               <AnimatePresence mode="wait">
                 
                 {/* AI Visual */}
@@ -682,7 +673,7 @@ export default function LoginPage() {
                     <div className="flex justify-end">
                       <button
                         onClick={() => setActivePlayground('ai')}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-xl shadow-lg shadow-amber-500/15 cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 rounded-full text-xs font-bold transition-all cursor-pointer"
                       >
                         <Zap className="w-3.5 h-3.5" />
                         <span>تشغيل صائغ العقود الفوري</span>
@@ -716,7 +707,7 @@ export default function LoginPage() {
                     <div className="flex justify-center">
                       <button
                         onClick={() => setActivePlayground('schedule')}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-xl shadow-lg shadow-amber-500/15 cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 rounded-full text-xs font-bold transition-all cursor-pointer"
                       >
                         <Zap className="w-3.5 h-3.5" />
                         <span>تأسيس تنبيه جلسة لحظي</span>
@@ -756,7 +747,7 @@ export default function LoginPage() {
                     <div className="flex justify-center">
                       <button
                         onClick={() => setActivePlayground('finance')}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-xl shadow-lg shadow-amber-500/15 cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 rounded-full text-xs font-bold transition-all cursor-pointer"
                       >
                         <Zap className="w-3.5 h-3.5" />
                         <span>فتح الحاسبة المالية المتقدمة</span>
@@ -785,7 +776,7 @@ export default function LoginPage() {
                     <div className="flex justify-end">
                       <button
                         onClick={() => setActivePlayground('security')}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-xl shadow-lg shadow-amber-500/15 cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 rounded-full text-xs font-bold transition-all cursor-pointer"
                       >
                         <Zap className="w-3.5 h-3.5" />
                         <span>محاكاة هجوم اختراق والتصدي له</span>
@@ -923,9 +914,9 @@ export default function LoginPage() {
         </div>
       </section>
 
-      {/* NATIONAL SOVEREIGN SECURITY & LEGAL COMPLIANCE SEALS */}
+      {/* NATIONAL SOVEREIGN SECURITY & LEGAL COMPLIANCE SEALS (NO CLIPPING, SCROLL NATURAL ROW) */}
       <section id="compliance-section" className="relative z-10 max-w-7xl mx-auto px-6 py-20 border-t border-white/5">
-        <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 rounded-3xl p-8 sm:p-12 relative overflow-hidden">
+        <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 rounded-3xl p-8 sm:p-12 relative">
           
           <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] rounded-full bg-emerald-500/[0.02] blur-[120px]" />
           
@@ -968,7 +959,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
               {/* Badge 1 */}
               <div className="bg-white/[0.02] border border-white/5 hover:border-white/10 p-6 rounded-2xl text-center space-y-3 transition-colors">
@@ -1056,7 +1047,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      {/* DETAILED INTERACTIVE SIMULATION PLAYGROUND MODALS (THE SANDBOX SUITE) */}
+      {/* DETAILED INTERACTIVE SIMULATION PLAYGROUND MODALS (RESPONSIVE HEIGHT FOR PERFECT VIEWPORT FIT) */}
       <AnimatePresence>
         {activePlayground !== null && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -1070,41 +1061,41 @@ export default function LoginPage() {
               className="absolute inset-0 bg-black/90 backdrop-blur-sm cursor-pointer"
             />
 
-            {/* Modal Glass Container */}
+            {/* Modal Glass Container - Responsive Height scroll guaranteed */}
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-2xl bg-neutral-950 border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+              className="relative w-full max-w-lg bg-neutral-950 border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
             >
               
               {/* Header inside the interactive simulator */}
-              <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+              <div className="p-5 border-b border-white/10 flex items-center justify-between bg-white/[0.02] shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
-                    <Zap className="w-5 h-5" />
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
+                    <Zap className="w-4.5 h-4.5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-white">
+                    <h3 className="font-bold text-xs text-white">
                       {activePlayground === 'ai' ? 'محاكاة ذكاء راجح القضائي' : activePlayground === 'schedule' ? 'محاكاة قلم الجلسات الذكي' : activePlayground === 'finance' ? 'محاكاة الحسابات والحوكمة الضريبية والشركاء' : 'محاكاة اختبار اختراق RLS'}
                     </h3>
-                    <p className="text-[10px] text-neutral-500">تجربة تفاعلية لمحاكاة بيئة النظام الفعلية من الخارج</p>
+                    <p className="text-[9px] text-neutral-500">تجربة تفاعلية لمحاكاة بيئة النظام الفعلية من الخارج</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setActivePlayground(null)}
-                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white transition-colors cursor-pointer"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-3.5 h-3.5" />
                 </button>
               </div>
 
-              {/* Dynamic Playground Body Panels */}
-              <div className="p-6 overflow-y-auto max-h-[70vh]">
+              {/* Dynamic Playground Body Panels (Scroll inner content) */}
+              <div className="p-6 overflow-y-auto flex-1 text-right space-y-5">
                 
                 {/* 1. AI PLAYGROUND PANEL */}
                 {activePlayground === 'ai' && (
-                  <div className="space-y-6 text-right">
+                  <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="block text-xs font-semibold text-neutral-400">
                         اختر نموذجاً مسبقاً للفحص أو أدخل مستندك المخصص:
@@ -1112,19 +1103,19 @@ export default function LoginPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <button
                           onClick={() => setAiPrompt('فحص ثغرات عقد إيجار تجاري خاضع للقانون ٤ لسنة ١٩٩٦')}
-                          className="px-3 py-2 rounded-xl text-[11px] border border-white/5 bg-white/5 hover:bg-white/10 text-neutral-300 transition-colors"
+                          className="px-2.5 py-1.5 rounded-xl text-[10px] border border-white/5 bg-white/5 hover:bg-white/10 text-neutral-300 transition-colors"
                         >
                           ثغرة عقد إيجار تجاري
                         </button>
                         <button
                           onClick={() => setAiPrompt('دفع في جنحة نصب بموجب المادة ٣٣٦ عقوبات')}
-                          className="px-3 py-2 rounded-xl text-[11px] border border-white/5 bg-white/5 hover:bg-white/10 text-neutral-300 transition-colors"
+                          className="px-2.5 py-1.5 rounded-xl text-[10px] border border-white/5 bg-white/5 hover:bg-white/10 text-neutral-300 transition-colors"
                         >
                           دفوع جنحة نصب واحتيال
                         </button>
                         <button
                           onClick={() => setAiPrompt('فحص ثغرات شرط تحكيم غامض أو غير مكتمل')}
-                          className="px-3 py-2 rounded-xl text-[11px] border border-white/5 bg-white/5 hover:bg-white/10 text-neutral-300 transition-colors"
+                          className="px-2.5 py-1.5 rounded-xl text-[10px] border border-white/5 bg-white/5 hover:bg-white/10 text-neutral-300 transition-colors"
                         >
                           ثغرة شرط التحكيم
                         </button>
@@ -1136,8 +1127,8 @@ export default function LoginPage() {
                         value={aiPrompt}
                         onChange={(e) => setAiPrompt(e.target.value)}
                         placeholder="اكتب مستندك أو دفعك القانوني هنا..."
-                        rows={4}
-                        className="w-full bg-neutral-900 border border-white/10 rounded-xl p-4 text-xs text-white placeholder-neutral-600 outline-none focus:border-amber-500/40"
+                        rows={3}
+                        className="w-full bg-neutral-900 border border-white/10 rounded-xl p-3.5 text-xs text-white placeholder-neutral-600 outline-none focus:border-amber-500/40"
                       />
                     </div>
 
@@ -1145,16 +1136,16 @@ export default function LoginPage() {
                       <button
                         onClick={runAiSimulation}
                         disabled={isAiGenerating}
-                        className="inline-flex items-center gap-2 px-5 py-3 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-xl shadow-lg shadow-amber-500/10 cursor-pointer"
+                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-full shadow-lg cursor-pointer"
                       >
                         {isAiGenerating ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                            <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
                             <span>جاري معالجة أحكام النقض...</span>
                           </>
                         ) : (
                           <>
-                            <Play className="w-3.5 h-3.5" />
+                            <Play className="w-3 h-3" />
                             <span>إطلاق فحص وصياغة راجح الذكية</span>
                           </>
                         )}
@@ -1162,10 +1153,10 @@ export default function LoginPage() {
                     </div>
 
                     {aiOutput && (
-                      <div className="bg-neutral-900 border border-white/10 rounded-xl p-5 space-y-2">
+                      <div className="bg-neutral-900 border border-white/10 rounded-xl p-4 space-y-2 text-right">
                         <div className="flex items-center gap-2 text-amber-500 border-b border-white/5 pb-2">
-                          <Terminal className="w-4 h-4" />
-                          <span className="text-xs font-bold font-mono">مخرجات محرك الذكاء القضائي السيادي:</span>
+                          <Terminal className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-bold font-mono">مخرجات محرك الذكاء القضائي السيادي:</span>
                         </div>
                         <p className="text-[11px] font-mono leading-relaxed text-neutral-300 whitespace-pre-wrap">
                           {aiOutput}
@@ -1177,151 +1168,129 @@ export default function LoginPage() {
 
                 {/* 2. COURT CALENDAR PLAYGROUND PANEL */}
                 {activePlayground === 'schedule' && (
-                  <div className="space-y-6 text-right">
-                    <form onSubmit={runCalendarSimulation} className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="sm:col-span-2">
-                          <label className="block text-xs text-neutral-400 mb-1.5">عنوان الجلسة أو الإجراء المطلبي</label>
-                          <input
-                            type="text"
-                            required
-                            value={newMeetingTitle}
-                            onChange={(e) => setNewMeetingTitle(e.target.value)}
-                            placeholder="مثال: جلسة المرافعة الختامية في دعوى التعويض الكلي"
-                            className="w-full bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 text-xs text-white placeholder-neutral-600 outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-neutral-400 mb-1.5">الدائرة القضائية</label>
-                          <select className="w-full bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none">
-                            <option>مدني كلي جنوب القاهرة</option>
-                            <option>جنايات مستأنف شمال</option>
-                            <option>جنح مستعجل الدقي</option>
-                            <option>القضاء الإداري بطلان</option>
-                          </select>
-                        </div>
+                  <form onSubmit={runCalendarSimulation} className="space-y-4">
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[11px] text-neutral-400 mb-1">عنوان الجلسة أو الإجراء المطلبي</label>
+                        <input
+                          type="text"
+                          required
+                          value={newMeetingTitle}
+                          onChange={(e) => setNewMeetingTitle(e.target.value)}
+                          placeholder="مثال: جلسة المرافعة الختامية في دعوى التعويض الكلي"
+                          className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-600 outline-none"
+                        />
                       </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs text-neutral-400 mb-1.5">تاريخ الحضور والجلسة</label>
-                          <input
-                            type="date"
-                            required
-                            value={newMeetingDate}
-                            onChange={(e) => setNewMeetingDate(e.target.value)}
-                            className="w-full bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-neutral-400 mb-1.5">توقيت الحضور بالظبط</label>
-                          <input
-                            type="time"
-                            required
-                            value={newMeetingTime}
-                            onChange={(e) => setNewMeetingTime(e.target.value)}
-                            className="w-full bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 text-xs text-white outline-none"
-                          />
-                        </div>
+                      <div>
+                        <label className="block text-[11px] text-neutral-400 mb-1">الدائرة القضائية</label>
+                        <select className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none">
+                          <option>مدني كلي جنوب القاهرة</option>
+                          <option>جنايات مستأنف شمال</option>
+                          <option>جنح مستعجل الدقي</option>
+                        </select>
                       </div>
-
-                      <div className="pt-2 flex justify-start">
-                        <button
-                          type="submit"
-                          className="inline-flex items-center gap-1.5 px-5 py-3 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-xl shadow-lg cursor-pointer"
-                        >
-                          <Calendar className="w-4 h-4" />
-                          <span>إطلاق أتمتة الجلسة وبث الإشعار الفوري</span>
-                        </button>
-                      </div>
-                    </form>
-
-                    <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 space-y-2">
-                      <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>القنوات المتصلة بالأتمتة التلقائية بعد الحفظ:</span>
-                      </div>
-                      <p className="text-[11px] text-neutral-400 leading-normal">
-                        بمجرد جدولة أي موعد، تطلق الأتمتة رسائل تأكيدية للموكلين عبر الواتساب، وتبث تذكيرات تليجرام لهواتف المحامين المسؤولين قبل الجلسة بـ ٢٤ ساعة، مع تسجيل التاريخ تلقائياً في الأجندة المشتركة للمكتب.
-                      </p>
                     </div>
-                  </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] text-neutral-400 mb-1">تاريخ الحضور</label>
+                        <input
+                          type="date"
+                          required
+                          value={newMeetingDate}
+                          onChange={(e) => setNewMeetingDate(e.target.value)}
+                          className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-neutral-400 mb-1">توقيت الحضور</label>
+                        <input
+                          type="time"
+                          required
+                          value={newMeetingTime}
+                          onChange={(e) => setNewMeetingTime(e.target.value)}
+                          className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex justify-start">
+                      <button
+                        type="submit"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-full shadow-lg cursor-pointer"
+                      >
+                        <Calendar className="w-4 h-4" />
+                        <span>إطلاق أتمتة الجلسة وبث الإشعار</span>
+                      </button>
+                    </div>
+                  </form>
                 )}
 
                 {/* 3. FINANCE PLAYGROUND PANEL */}
                 {activePlayground === 'finance' && (
-                  <div className="space-y-6 text-right">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <div className="flex justify-between text-xs mb-1.5">
-                            <span className="text-neutral-400">قيمة الأتعاب المقررة للقضية:</span>
-                            <span className="text-amber-500 font-mono font-bold">{feeAmount.toLocaleString('ar-EG')} ج.م</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="10000"
-                            max="1000000"
-                            step="10000"
-                            value={feeAmount}
-                            onChange={(e) => setFeeAmount(parseInt(e.target.value))}
-                            className="w-full accent-amber-500 bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
-                          />
+                  <div className="space-y-4">
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between text-[11px] mb-1">
+                          <span className="text-neutral-400">قيمة الأتعاب المقررة للقضية:</span>
+                          <span className="text-amber-500 font-mono font-bold">{feeAmount.toLocaleString('ar-EG')} ج.م</span>
                         </div>
-
-                        <div>
-                          <div className="flex justify-between text-xs mb-1.5">
-                            <span className="text-neutral-400">نسبة التوزيع للشريك المدير:</span>
-                            <span className="text-amber-500 font-mono font-bold">%{partnerSplit}</span>
-                          </div>
-                          <input
-                            type="range"
-                            min="10"
-                            max="90"
-                            value={partnerSplit}
-                            onChange={(e) => setPartnerSplit(parseInt(e.target.value))}
-                            className="w-full accent-amber-500 bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer"
-                          />
-                        </div>
+                        <input
+                          type="range"
+                          min="10000"
+                          max="1000000"
+                          step="10000"
+                          value={feeAmount}
+                          onChange={(e) => setFeeAmount(parseInt(e.target.value))}
+                          className="w-full accent-amber-500 bg-white/10 h-1 rounded-lg appearance-none cursor-pointer"
+                        />
                       </div>
 
-                      {/* Display Outputs based on formulas and taxes */}
-                      <div className="bg-white/[0.02] border border-white/10 p-5 rounded-2xl space-y-3 text-xs leading-relaxed">
-                        <div className="flex justify-between items-center text-neutral-400">
-                          <span>أتعاب الممارسة الكلية:</span>
-                          <span className="text-white font-mono font-semibold">{feeAmount.toLocaleString('ar-EG')} ج.م</span>
+                      <div>
+                        <div className="flex justify-between text-[11px] mb-1">
+                          <span className="text-neutral-400">نسبة التوزيع للشريك المدير:</span>
+                          <span className="text-amber-500 font-mono font-bold">%{partnerSplit}</span>
                         </div>
-                        <div className="flex justify-between items-center text-neutral-400">
-                          <span>قيمة مضافة مصرية (١٤%):</span>
-                          <span className="text-red-400 font-mono">+{computedFinance.vat} ج.م</span>
-                        </div>
-                        <div className="flex justify-between items-center text-neutral-400">
-                          <span>دمغة ورسوم صندوق العلاج (١.٥%):</span>
-                          <span className="text-red-400 font-mono">+{computedFinance.syndicateStamp} ج.م</span>
-                        </div>
-                        <div className="border-t border-white/5 pt-2.5 flex justify-between items-center text-emerald-400 font-bold">
-                          <span>صافي الإيرادات القابلة للتوزيع:</span>
-                          <span className="font-mono">{computedFinance.netProfit} ج.م</span>
-                        </div>
-                        <div className="border-t border-white/5 pt-2.5 flex justify-between items-center text-neutral-400">
-                          <span>نصيب المستشار الشريك ({partnerSplit}%):</span>
-                          <span className="text-white font-mono font-bold">{computedFinance.partnerAmount} ج.م</span>
-                        </div>
-                        <div className="flex justify-between items-center text-neutral-400">
-                          <span>نصيب المحامين المساعدين (الأسوشيتس):</span>
-                          <span className="text-white font-mono font-bold">{computedFinance.associatesAmount} ج.م</span>
-                        </div>
+                        <input
+                          type="range"
+                          min="10"
+                          max="90"
+                          value={partnerSplit}
+                          onChange={(e) => setPartnerSplit(parseInt(e.target.value))}
+                          className="w-full accent-amber-500 bg-white/10 h-1 rounded-lg appearance-none cursor-pointer"
+                        />
                       </div>
+                    </div>
 
+                    <div className="bg-[#121216] border border-white/5 p-4 rounded-xl space-y-2 text-xs leading-relaxed">
+                      <div className="flex justify-between items-center text-neutral-400">
+                        <span>أتعاب الممارسة الكلية:</span>
+                        <span className="text-white font-mono font-semibold">{feeAmount.toLocaleString('ar-EG')} ج.م</span>
+                      </div>
+                      <div className="flex justify-between items-center text-neutral-400">
+                        <span>قيمة مضافة مصرية (١٤%):</span>
+                        <span className="text-red-400 font-mono">+{computedFinance.vat} ج.م</span>
+                      </div>
+                      <div className="flex justify-between items-center text-neutral-400">
+                        <span>دمغة ورسوم صندوق العلاج (١.٥%):</span>
+                        <span className="text-red-400 font-mono">+{computedFinance.syndicateStamp} ج.م</span>
+                      </div>
+                      <div className="border-t border-white/5 pt-2 flex justify-between items-center text-emerald-400 font-bold">
+                        <span>صافي الإيرادات:</span>
+                        <span className="font-mono">{computedFinance.netProfit} ج.م</span>
+                      </div>
+                      <div className="border-t border-white/5 pt-2 flex justify-between items-center text-neutral-400">
+                        <span>نصيب الشريك ({partnerSplit}%):</span>
+                        <span className="text-white font-mono font-bold">{computedFinance.partnerAmount} ج.م</span>
+                      </div>
                     </div>
 
                     <div className="flex justify-start">
                       <button
-                        onClick={() => triggerToast('📈 تم ترحيل الحسابات وتحديث هيكل الأرباح بنجاح في ميزانية المكتب!')}
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-xl shadow-lg cursor-pointer"
+                        onClick={() => triggerToast('📈 تم ترحيل الحسابات وتحديث الميزانية بنجاح!')}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-full cursor-pointer shadow-lg"
                       >
-                        <BadgeDollarSign className="w-4 h-4" />
+                        <BadgeDollarSign className="w-3.5 h-3.5" />
                         <span>ترحيل وتحديث الميزانية السحابية</span>
                       </button>
                     </div>
@@ -1330,8 +1299,8 @@ export default function LoginPage() {
 
                 {/* 4. SECURITY ATTACK SIMULATION PLAYGROUND PANEL */}
                 {activePlayground === 'security' && (
-                  <div className="space-y-6 text-right">
-                    <p className="text-xs text-neutral-400 leading-relaxed">
+                  <div className="space-y-4">
+                    <p className="text-[11px] text-neutral-400 leading-relaxed">
                       اختبر مدى متانة جدار حماية عزل الموكلين (Row Level Security). ستقوم المحاكاة بإطلاق هجوم استعلام غير مخول من طرف مستخدم غريب لتجاوز حدود البيانات ورؤية كيف تتصدى لها حماية الخادم فورياً.
                     </p>
 
@@ -1339,38 +1308,29 @@ export default function LoginPage() {
                       <button
                         onClick={runSecuritySimulation}
                         disabled={isSimulatingAttack}
-                        className="inline-flex items-center gap-2 px-5 py-3 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-lg cursor-pointer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-full cursor-pointer shadow-lg"
                       >
                         {isSimulatingAttack ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>جاري التصدي للهجوم ورصد السجلات...</span>
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>جاري تصدي الهجوم...</span>
                           </>
                         ) : (
-                          <>
-                            <Play className="w-3.5 h-3.5" />
-                            <span>بدء اختبار هجوم الاختراق RLS Bypass</span>
-                          </>
+                          <span>بدء اختبار هجوم الاختراق RLS</span>
                         )}
                       </button>
                     </div>
 
                     {securityLogs.length > 0 && (
-                      <div className="bg-neutral-900 border border-white/10 rounded-xl p-5 space-y-2 font-mono text-[10px] text-right">
-                        <div className="flex items-center gap-2 text-red-400 border-b border-white/5 pb-2">
-                          <AlertTriangle className="w-4 h-4" />
-                          <span>سجلات جدار الحماية الأمني للـ RLS:</span>
-                        </div>
-                        <div className="space-y-1">
-                          {securityLogs.map((log, index) => (
-                            <div 
-                              key={index} 
-                              className={log.startsWith('❌') ? 'text-red-500 font-bold' : log.startsWith('🛡️') ? 'text-emerald-400' : 'text-neutral-400'}
-                            >
-                              {log}
-                            </div>
-                          ))}
-                        </div>
+                      <div className="bg-neutral-900 border border-white/10 p-4 rounded-xl space-y-1.5 font-mono text-[10px] text-right">
+                        {securityLogs.map((log, index) => (
+                          <div 
+                            key={index} 
+                            className={log.startsWith('❌') ? 'text-red-500 font-bold' : log.startsWith('🛡️') ? 'text-emerald-400' : 'text-neutral-400'}
+                          >
+                            {log}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -1379,10 +1339,10 @@ export default function LoginPage() {
               </div>
 
               {/* Footer within sandbox dialog */}
-              <div className="p-4 bg-white/[0.01] border-t border-white/10 flex justify-end">
+              <div className="p-4 bg-white/[0.01] border-t border-white/10 flex justify-end shrink-0">
                 <button
                   onClick={() => setActivePlayground(null)}
-                  className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-xl border border-white/10 transition-colors cursor-pointer"
+                  className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-full border border-white/10 transition-colors cursor-pointer"
                 >
                   إغلاق المحاكاة
                 </button>
