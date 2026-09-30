@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useTransition, useEffect } from 'react';
+import React, { useState, useMemo, useTransition } from 'react';
 import { 
   Shield, 
   Lock, 
@@ -13,11 +13,9 @@ import {
   Scale, 
   TrendingUp, 
   CheckCircle2, 
-  Users, 
   Database, 
   Activity, 
   Award, 
-  ArrowUp,
   Terminal,
   Zap,
   Play,
@@ -76,22 +74,6 @@ export default function LoginPage() {
   const [securityLogs, setSecurityLogs] = useState<string[]>([]);
   const [isSimulatingAttack, setIsSimulatingAttack] = useState(false);
 
-  // Scroll to Top visibility state
-  const [showScrollTop, setShowScrollTop] = useState(false);
-
-  // Handle scroll events to toggle scroll-to-top button
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 400) {
-        setShowScrollTop(true);
-      } else {
-        setShowScrollTop(false);
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   // Real-time calculated ROI stats
   const calculatedStats = useMemo(() => {
     const hoursSavedPerWeek = lawyersCount * 14; 
@@ -109,7 +91,7 @@ export default function LoginPage() {
     e.preventDefault();
     startTransition(async () => {
       // Simulate enterprise secure handshake
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1200));
       router.push('/dashboard');
     });
   };
@@ -119,7 +101,7 @@ export default function LoginPage() {
     e.preventDefault();
     startTransition(async () => {
       // Simulate workspace setup and security provisioning
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       router.push('/dashboard');
     });
   };
@@ -210,78 +192,91 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0A0A0C] overflow-x-hidden text-white selection:bg-amber-500/30 selection:text-amber-200 antialiased font-sans">
+    <div className="relative min-h-screen bg-[#08080A] overflow-x-hidden text-white selection:bg-amber-500/20 selection:text-amber-200 antialiased font-sans">
       
+      {/* Webkit Autofill Neutralizer Style Block - guarantees transparent background under autocompletes */}
+      <style dangerouslySetInnerHTML={{__html: `
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus,
+        input:-webkit-autofill:active {
+          -webkit-text-fill-color: #ffffff !important;
+          -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+          transition: background-color 5000s ease-in-out 0s !important;
+        }
+      `}} />
+
       {/* BACKGROUND GRAPHICS: Aura glow and matrix grid */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-amber-500/10 to-transparent blur-[120px] animate-pulse duration-[8000ms]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-amber-500/5 to-transparent blur-[120px] animate-pulse duration-[8000ms]" />
         <div className="absolute bottom-[20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-gradient-to-tl from-emerald-500/5 to-transparent blur-[150px] animate-pulse duration-[10000ms]" />
-        <div className="absolute top-[40%] left-[30%] w-[350px] h-[350px] rounded-full bg-amber-500/5 blur-[100px]" />
         
-        {/* Subtle Sovereign Circular Orbits of Justice Background */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50%" cy="50%" r="20%" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="5 10" />
-          <circle cx="50%" cy="50%" r="35%" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          <circle cx="50%" cy="50%" r="48%" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="10 15" />
-        </svg>
+        {/* Symmetric Centered Scales of Justice Giant Watermark background behind the login box */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-[0.035] z-0">
+          <svg className="w-[600px] h-[600px] text-amber-500" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M40 85 H60 M50 85 V30" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+            <path d="M20 35 H80" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+            <path d="M20 35 L12 55 M20 35 L28 55" stroke="currentColor" strokeWidth="0.5" />
+            <path d="M7 55 Q20 65 33 55 Z" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.05" />
+            <path d="M80 35 L72 55 M80 35 L88 55" stroke="currentColor" strokeWidth="0.5" />
+            <path d="M67 55 Q80 65 93 55 Z" stroke="currentColor" strokeWidth="1" fill="currentColor" fillOpacity="0.05" />
+            <circle cx="50" cy="35" r="2" fill="currentColor" />
+          </svg>
+        </div>
       </div>
 
-      {/* TOP FLOATING HEADER TOOLBAR */}
-      <header className="sticky top-0 z-40 w-full px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between backdrop-blur-md bg-black/40 border border-white/5 rounded-2xl px-6 py-3">
+      {/* TOP STICKY HEADER TOOLBAR (Stays floating, provides discrete scroll back anchor) */}
+      <header className="sticky top-0 z-40 w-full px-6 py-4 backdrop-blur-md bg-black/30 border-b border-white/5">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 shadow-lg shadow-amber-500/10">
-              <Scale className="w-5 h-5 text-black" />
-              <div className="absolute inset-0 rounded-xl border border-white/20" />
+            <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500/20 to-amber-600/20 border border-amber-500/30">
+              <Scale className="w-4 h-4 text-amber-500" />
             </div>
             <div>
-              <div className="font-bold text-sm tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-neutral-200 to-neutral-400">
+              <div className="font-bold text-xs tracking-wider text-white">
                 AXIA Legal OS
               </div>
-              <div className="text-[9px] text-amber-500 tracking-widest font-mono uppercase">
+              <div className="text-[8px] text-amber-500 tracking-wider font-mono uppercase">
                 Egyptian Practice & Intelligence OS
               </div>
             </div>
           </div>
 
           {/* Nav anchors */}
-          <nav className="hidden md:flex items-center gap-6 text-xs text-neutral-400">
+          <nav className="hidden md:flex items-center gap-6 text-[11px] text-neutral-400">
             <a href="#features-section" className="hover:text-amber-500 transition-colors">مزايا المنظومة</a>
-            <a href="#calculator-section" className="hover:text-amber-500 transition-colors">مؤشرات الأداء والساعات</a>
-            <a href="#compliance-section" className="hover:text-amber-500 transition-colors">السيادة القومية والأمان</a>
+            <a href="#calculator-section" className="hover:text-amber-500 transition-colors">مؤشرات الأداء</a>
+            <a href="#compliance-section" className="hover:text-amber-500 transition-colors">السيادة والأمان</a>
           </nav>
 
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-block px-2.5 py-1 text-[9px] font-mono tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-              ● متصل بنظام التشغيل السيادي v1.2
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline-block px-2.5 py-0.5 text-[8px] font-mono tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+              ● متصل سيادياً v1.2
             </span>
             <button 
-              onClick={() => {
-                setAuthMode(authMode === 'login' ? 'register' : 'login');
-                scrollToTop();
-              }}
-              className="text-xs bg-white/5 hover:bg-white/10 text-white font-medium border border-white/10 rounded-xl px-4 py-2 transition-all cursor-pointer"
+              onClick={scrollToTop}
+              className="text-[11px] bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 rounded-full px-4 py-1.5 transition-all cursor-pointer font-semibold"
             >
-              {authMode === 'login' ? 'تأسيس مكتب جديد' : 'تسجيل الدخول'}
+              بوابة الدخول 👤
             </button>
           </div>
         </div>
       </header>
 
-      {/* DUAL-COLUMN MASTER LAYOUT (No Clipping, Fits Viewport Perfect) */}
-      <main className="relative z-10 max-w-7xl mx-auto px-6 min-h-[calc(100vh-100px)] flex flex-col justify-center">
+      {/* APPLE STYLE MAIN VIEW - FULLY OPTIMIZED AND SPACING PERFECT */}
+      <main className="relative z-10 max-w-7xl mx-auto px-6 py-12 lg:py-20 flex flex-col justify-center min-h-[calc(100vh-100px)]">
         
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
-          {/* COLUMN 1: System Promotion & Glowing Sovereign Scale SVG (Left on Desktop, Top on Mobile) */}
-          <div className="lg:col-span-7 space-y-6 text-right relative flex flex-col justify-center">
+          {/* COLUMN 1: Symmetrical Elegant Text Column (Left on Desktop) */}
+          <div className="lg:col-span-6 space-y-6 text-right flex flex-col justify-center">
             
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400 mr-auto lg:mr-0 ml-auto">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-400 mr-auto lg:mr-0 ml-auto">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>صرح التسيير القضائي والذكاء الاصطناعي الأسرع في مصر والشرق الأوسط</span>
+              <span>صرح التسيير القضائي والذكاء الاصطناعي الأسرع في مصر</span>
             </div>
             
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-2 leading-tight">
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
               مستقبل الممارسة القانونية في مصر
               <span className="block mt-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 bg-clip-text text-transparent">
                 نظام التشغيل القضائي الفائق AXIA
@@ -292,211 +287,195 @@ export default function LoginPage() {
               منظومة سحابية متكاملة مصممة وفقاً لأرفع المقاييس الأمنية والتقنية في وادي السيليكون، تدمج البحث الذكي في أحكام النقض مع إدارة الجلسات، القضايا والتدفقات المالية بمساعدة محرك الذكاء الاصطناعي السيادي «راجح».
             </p>
 
-            {/* Glowing Custom Scale of Justice SVG Watermark */}
-            <div className="relative pt-6 max-w-sm hidden sm:block">
-              <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/5 to-transparent blur-2xl rounded-full" />
-              <svg className="w-48 h-48 text-amber-500/15 animate-pulse duration-[6000ms]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Pillar Base */}
-                <path d="M40 85 H60 M50 85 V30" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                {/* Crossbar */}
-                <path d="M25 35 H75" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                {/* Scales left */}
-                <path d="M25 35 L17 55 M25 35 L33 55" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M12 55 Q25 65 38 55 Z" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.05" />
-                {/* Scales right */}
-                <path d="M75 35 L67 55 M75 35 L83 55" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M62 55 Q75 65 88 55 Z" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.05" />
-                {/* Center Balance Needle */}
-                <path d="M50 30 L50 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="50" cy="18" r="2" fill="currentColor" />
-              </svg>
-            </div>
-
           </div>
 
-          {/* COLUMN 2: Portal Card (With Border-Bottom Underline Crystal Fields) */}
-          <div className="lg:col-span-5 w-full flex justify-center lg:justify-end">
+          {/* COLUMN 2: Apple Premium Crystal Auth Card (Right on Desktop) */}
+          <div className="lg:col-span-6 w-full flex justify-center lg:justify-end">
             
-            <div className="w-full max-w-md relative">
-              <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-amber-500/10 to-emerald-500/5 blur-xl pointer-events-none" />
+            <div className="w-full max-w-sm relative">
+              {/* Very soft glowing backlight */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-amber-500/5 to-emerald-500/2 blur-2xl pointer-events-none" />
               
-              <div className="relative backdrop-blur-2xl bg-black/45 border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl">
+              <div className="relative backdrop-blur-3xl bg-neutral-950/40 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl">
                 
-                {/* Mode Switcher Tab Slider */}
-                <div className="relative flex p-1.5 bg-white/5 rounded-2xl border border-white/5 mb-6">
+                {/* iOS-Style Precise Micro Switcher */}
+                <div className="relative flex p-1 bg-white/[0.03] rounded-full border border-white/5 mb-6">
                   <button
                     onClick={() => setAuthMode('login')}
-                    className={`flex-1 flex items-center justify-center gap-2 text-xs font-semibold py-3 rounded-xl transition-all cursor-pointer ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-bold py-2 rounded-full transition-all cursor-pointer ${
                       authMode === 'login' 
-                        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' 
+                        ? 'bg-amber-500 text-black shadow-md' 
                         : 'text-neutral-400 hover:text-white'
                     }`}
                   >
-                    <Lock className="w-3.5 h-3.5" />
                     <span>تسجيل الدخول</span>
                   </button>
                   
                   <button
                     onClick={() => setAuthMode('register')}
-                    className={`flex-1 flex items-center justify-center gap-2 text-xs font-semibold py-3 rounded-xl transition-all cursor-pointer ${
+                    className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-bold py-2 rounded-full transition-all cursor-pointer ${
                       authMode === 'register' 
-                        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' 
+                        ? 'bg-amber-500 text-black shadow-md' 
                         : 'text-neutral-400 hover:text-white'
                     }`}
                   >
-                    <Users className="w-3.5 h-3.5" />
                     <span>تأسيس مكتب</span>
                   </button>
                 </div>
 
-                {/* LOGIN FORM - CRYSTAL MINIMALIST UNDERLINED */}
+                {/* LOGIN FORM - 100% UNBOXED CRYSTAL LINE PATTERN */}
                 {authMode === 'login' ? (
                   <form onSubmit={handleLoginSubmit} className="space-y-6">
-                    <div className="relative">
-                      <span className="absolute left-0 bottom-3 text-neutral-500">
-                        <Mail className="w-4 h-4" />
-                      </span>
+                    
+                    {/* Username Input with clean border-bottom and 0 background */}
+                    <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5">
                       <input
                         type="email"
                         required
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="البريد الإلكتروني المهني لمساحة العمل"
-                        className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pb-3 pt-4 transition-all text-xs text-white placeholder-neutral-600 outline-none focus:ring-0"
+                        className="w-full bg-transparent border-none text-xs text-white placeholder-neutral-500 outline-none focus:ring-0 px-0 pb-1 pt-1"
                       />
+                      <span className="absolute left-0 bottom-2 text-neutral-600">
+                        <Mail className="w-3.5 h-3.5" />
+                      </span>
                     </div>
 
-                    <div className="relative">
-                      <div className="flex justify-between items-center text-[10px] text-neutral-500 absolute left-0 top-[-8px]">
-                        <a href="#" className="hover:text-amber-500 transition-colors">هل نسيت كلمة المرور؟</a>
+                    {/* Password Input with clean border-bottom and 0 background */}
+                    <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5 pt-2">
+                      <div className="absolute left-0 top-[-8px] text-[10px] text-neutral-500">
+                        <a href="#" className="hover:text-amber-500 transition-colors">نسيت كلمة المرور؟</a>
                       </div>
-                      <span className="absolute left-8 bottom-3 text-neutral-500">
-                        <Lock className="w-4 h-4" />
-                      </span>
                       <input
                         type={showPassword ? 'text' : 'password'}
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="كلمة المرور الأمنية لمساحة العمل"
-                        className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pl-16 pb-3 pt-4 transition-all text-xs text-white placeholder-neutral-600 outline-none focus:ring-0"
+                        className="w-full bg-transparent border-none text-xs text-white placeholder-neutral-500 outline-none focus:ring-0 pl-12 pr-0 pb-1 pt-1"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute left-0 bottom-3 text-neutral-500 hover:text-neutral-300 transition-colors"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                      <div className="absolute left-0 bottom-2 flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="text-neutral-600 hover:text-neutral-300 transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                        <Lock className="w-3.5 h-3.5 text-neutral-600" />
+                      </div>
                     </div>
 
-                    <div className="flex items-center justify-between px-1 pt-2">
-                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <div className="flex items-center justify-between px-0.5 pt-1">
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none">
                         <input
                           type="checkbox"
                           checked={rememberMe}
                           onChange={(e) => setRememberMe(e.target.checked)}
-                          className="rounded border-white/10 bg-white/5 text-amber-500 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
+                          className="rounded border-white/10 bg-white/5 text-amber-500 focus:ring-0 focus:ring-offset-0 w-3 h-3"
                         />
-                        <span className="text-[11px] text-neutral-400">تذكر جلستي على الجهاز</span>
+                        <span className="text-[10px] text-neutral-400">تذكر جلستي</span>
                       </label>
-                      <span className="flex items-center gap-1.5 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">
-                        <Shield className="w-3 h-3" />
-                        تشفير كامل RLS
+                      <span className="flex items-center gap-1 text-[9px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">
+                        <Shield className="w-2.5 h-2.5" />
+                        عزل RLS
                       </span>
                     </div>
 
+                    {/* Apple Style Sleek Pill Button */}
                     <button
                       type="submit"
                       disabled={isPending}
-                      className="w-full relative group overflow-hidden bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold text-xs py-4 rounded-xl shadow-lg shadow-amber-500/15 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      className="w-full bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 hover:border-amber-500/20 text-white font-bold text-xs py-3 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg"
                     >
                       {isPending ? (
-                        <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
                         <>
-                          <span>الدخول لمساحة العمل المشفرة</span>
-                          <ArrowUp className="w-4 h-4 rotate-90 transition-transform group-hover:translate-y-[-2px]" />
+                          <span>الدخول لمساحة العمل</span>
+                          <ChevronDown className="w-3.5 h-3.5 rotate-270" />
                         </>
                       )}
                     </button>
                   </form>
                 ) : (
-                  /* REGISTER OFFICE FORM - CRYSTAL MINIMALIST UNDERLINED */
+                  /* REGISTRATION FORM - 100% UNBOXED CRYSTAL LINE PATTERN */
                   <form onSubmit={handleRegisterSubmit} className="space-y-5">
-                    <div className="relative">
+                    
+                    <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5">
                       <input
                         type="text"
                         required
                         value={officeName}
                         onChange={(e) => setOfficeName(e.target.value)}
                         placeholder="اسم المكتب أو الكيان القانوني الكلي"
-                        className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pb-3 pt-4 transition-all text-xs text-white placeholder-neutral-600 outline-none focus:ring-0"
+                        className="w-full bg-transparent border-none text-xs text-white placeholder-neutral-500 outline-none focus:ring-0 px-0 pb-1 pt-1"
                       />
                     </div>
 
-                    <div className="relative">
+                    <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5 pt-1">
                       <input
                         type="text"
                         required
                         value={founderName}
                         onChange={(e) => setFounderName(e.target.value)}
                         placeholder="اسم الشريك المؤسس / المدير المسؤول"
-                        className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pb-3 pt-4 transition-all text-xs text-white placeholder-neutral-600 outline-none focus:ring-0"
+                        className="w-full bg-transparent border-none text-xs text-white placeholder-neutral-500 outline-none focus:ring-0 px-0 pb-1 pt-1"
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="relative">
+                    <div className="grid grid-cols-2 gap-4 pt-1">
+                      <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5">
                         <input
                           type="text"
                           required
                           value={syndicateId}
                           onChange={(e) => setSyndicateId(e.target.value)}
-                          placeholder="رقم الكارنيه النقابي"
-                          className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pb-3 pt-4 transition-all text-xs text-white placeholder-neutral-600 outline-none focus:ring-0"
+                          placeholder="رقم القيد بالنقابة"
+                          className="w-full bg-transparent border-none text-xs text-white placeholder-neutral-500 outline-none focus:ring-0 px-0 pb-1 pt-1"
                         />
                       </div>
-                      <div className="relative">
+                      <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5">
                         <select
                           value={officeType}
                           onChange={(e) => setOfficeType(e.target.value)}
-                          className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pb-3 pt-4 transition-all text-xs text-neutral-400 outline-none focus:ring-0"
+                          className="w-full bg-transparent border-none text-xs text-neutral-400 outline-none focus:ring-0 px-0 pb-1 pt-1"
                         >
-                          <option value="general">قضاء عام وجنائي</option>
-                          <option value="corporate">شركات واستثمار</option>
-                          <option value="civil">مدني وتعويضات</option>
-                          <option value="arbitration">تحكيم وتنازع دولي</option>
+                          <option value="general" className="bg-[#08080A]">قضاء عام وجنائي</option>
+                          <option value="corporate" className="bg-[#08080A]">شركات واستثمار</option>
+                          <option value="civil" className="bg-[#08080A]">مدني وتعويضات</option>
+                          <option value="arbitration" className="bg-[#08080A]">تحكيم وتنازع</option>
                         </select>
                       </div>
                     </div>
 
-                    <div className="relative flex items-center">
+                    <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5 pt-1 flex items-center">
                       <input
                         type="text"
                         required
                         value={workspaceUrl}
                         onChange={(e) => setWorkspaceUrl(e.target.value)}
                         placeholder="رابط مساحة العمل المطلوبة"
-                        className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pl-24 pb-3 pt-4 transition-all text-xs text-left font-mono text-white placeholder-neutral-600 outline-none focus:ring-0"
+                        className="w-full bg-transparent border-none text-xs text-left font-mono text-white placeholder-neutral-600 outline-none focus:ring-0 px-0 pb-1 pt-1"
                       />
-                      <span className="absolute left-0 bottom-3 text-[10px] font-mono text-neutral-500 pointer-events-none select-none pl-1.5">
+                      <span className="absolute left-0 bottom-2 text-[10px] font-mono text-neutral-500 pointer-events-none select-none pl-1">
                         .axia.legal
                       </span>
                     </div>
 
-                    <div className="pt-3">
+                    <div className="pt-2">
                       <button
                         type="submit"
                         disabled={isPending}
-                        className="w-full relative group overflow-hidden bg-gradient-to-r from-emerald-400 to-emerald-500 hover:from-emerald-500 hover:to-emerald-600 text-black font-semibold text-xs py-4 rounded-xl shadow-lg shadow-emerald-500/10 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                        className="w-full bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 hover:border-amber-500/20 text-white font-bold text-xs py-3 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg"
                       >
                         {isPending ? (
-                          <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         ) : (
                           <>
                             <span>تأسيس صرح المكتب السحابي</span>
-                            <CheckCircle2 className="w-4 h-4" />
+                            <CheckCircle2 className="w-3.5 h-3.5" />
                           </>
                         )}
                       </button>
@@ -517,7 +496,7 @@ export default function LoginPage() {
         </div>
 
         {/* Scroll indicator with smooth loop down animation */}
-        <div className="flex flex-col items-center justify-center py-4">
+        <div className="flex flex-col items-center justify-center py-6 mt-6">
           <a href="#features-section" className="flex flex-col items-center gap-2 text-xs text-neutral-500 hover:text-white transition-colors">
             <span>استكشف صرح المزايا والمحاكاة الحية الفورية</span>
             <ChevronDown className="w-4 h-4 text-amber-500 animate-bounce" />
@@ -526,9 +505,9 @@ export default function LoginPage() {
       </main>
 
       {/* COMPREHENSIVE OUTSIDE SHOWCASE SECTION (BENTO GRID WITH SIMULATORS) */}
-      <section id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 py-24 border-t border-white/5">
+      <section id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 py-20 border-t border-white/5">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-2xl sm:text-4xl font-extrabold mb-4">
+          <h2 className="text-2xl sm:text-3xl font-extrabold mb-4">
             أقوى الأدوات في خدمة قضيتك وعملائك
           </h2>
           <p className="text-xs sm:text-sm text-neutral-400 max-w-xl mx-auto">
@@ -833,7 +812,7 @@ export default function LoginPage() {
       </section>
 
       {/* INTERACTIVE VALUE & ROI CALCULATOR SECTION */}
-      <section id="calculator-section" className="relative z-10 max-w-7xl mx-auto px-6 py-24 border-t border-white/5">
+      <section id="calculator-section" className="relative z-10 max-w-7xl mx-auto px-6 py-20 border-t border-white/5">
         <div className="absolute inset-0 z-0 bg-gradient-to-br from-amber-500/[0.01] to-transparent pointer-events-none" />
         
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -843,7 +822,7 @@ export default function LoginPage() {
               <TrendingUp className="w-3.5 h-3.5" />
               <span>مؤشرات الكفاءة التشغيلية والمالية للمكتب</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-extrabold mb-6 leading-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold mb-6 leading-tight">
               احسب مقدار توفير الوقت والأرباح السحابية لمكتبك الموقر
             </h2>
             <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed mb-8">
@@ -1061,22 +1040,6 @@ export default function LoginPage() {
           </div>
         </div>
       </footer>
-
-      {/* FIXED CRYSTAL SCROLL TO TOP NAVIGATOR (Solves Return to Portal issue) */}
-      <AnimatePresence>
-        {showScrollTop && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            onClick={scrollToTop}
-            className="fixed bottom-8 left-8 z-50 inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs shadow-2xl transition-all cursor-pointer"
-          >
-            <ArrowUp className="w-4 h-4" />
-            <span>العودة لبوابة الدخول 👤</span>
-          </motion.button>
-        )}
-      </AnimatePresence>
 
       {/* STATIC TOASTER PORTAL FOR EMITTED PLATFORM NOTIFICATIONS */}
       {toastNotification && (
