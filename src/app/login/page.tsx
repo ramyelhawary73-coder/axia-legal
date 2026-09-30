@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useTransition } from 'react';
+import React, { useState, useMemo, useTransition, useEffect } from 'react';
 import { 
   Shield, 
   Lock, 
@@ -17,7 +17,7 @@ import {
   Database, 
   Activity, 
   Award, 
-  ArrowRight,
+  ArrowUp,
   Terminal,
   Zap,
   Play,
@@ -75,6 +75,22 @@ export default function LoginPage() {
   // Security Playground states
   const [securityLogs, setSecurityLogs] = useState<string[]>([]);
   const [isSimulatingAttack, setIsSimulatingAttack] = useState(false);
+
+  // Scroll to Top visibility state
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Handle scroll events to toggle scroll-to-top button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 400) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Real-time calculated ROI stats
   const calculatedStats = useMemo(() => {
@@ -189,6 +205,10 @@ export default function LoginPage() {
     };
   }, [feeAmount, partnerSplit]);
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="relative min-h-screen bg-[#0A0A0C] overflow-x-hidden text-white selection:bg-amber-500/30 selection:text-amber-200 antialiased font-sans">
       
@@ -197,11 +217,17 @@ export default function LoginPage() {
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-amber-500/10 to-transparent blur-[120px] animate-pulse duration-[8000ms]" />
         <div className="absolute bottom-[20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-gradient-to-tl from-emerald-500/5 to-transparent blur-[150px] animate-pulse duration-[10000ms]" />
         <div className="absolute top-[40%] left-[30%] w-[350px] h-[350px] rounded-full bg-amber-500/5 blur-[100px]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+        
+        {/* Subtle Sovereign Circular Orbits of Justice Background */}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50%" cy="50%" r="20%" fill="none" stroke="currentColor" strokeWidth="1" strokeDasharray="5 10" />
+          <circle cx="50%" cy="50%" r="35%" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="50%" cy="50%" r="48%" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="10 15" />
+        </svg>
       </div>
 
       {/* TOP FLOATING HEADER TOOLBAR */}
-      <header className="sticky top-0 z-50 w-full px-6 py-4">
+      <header className="sticky top-0 z-40 w-full px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between backdrop-blur-md bg-black/40 border border-white/5 rounded-2xl px-6 py-3">
           <div className="flex items-center gap-3">
             <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 shadow-lg shadow-amber-500/10">
@@ -226,14 +252,13 @@ export default function LoginPage() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-block px-2.5 py-1 text-[9px] font-mono tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full animate-pulse">
+            <span className="hidden sm:inline-block px-2.5 py-1 text-[9px] font-mono tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
               ● متصل بنظام التشغيل السيادي v1.2
             </span>
             <button 
               onClick={() => {
                 setAuthMode(authMode === 'login' ? 'register' : 'login');
-                const element = document.getElementById('auth-card');
-                if (element) element.scrollIntoView({ behavior: 'smooth' });
+                scrollToTop();
               }}
               className="text-xs bg-white/5 hover:bg-white/10 text-white font-medium border border-white/10 rounded-xl px-4 py-2 transition-all cursor-pointer"
             >
@@ -243,264 +268,267 @@ export default function LoginPage() {
         </div>
       </header>
 
-      {/* MAIN HERO SECTION WITH THE DUAL AUTH PORTAL */}
-      <main className="relative z-10 max-w-7xl mx-auto px-6 pt-12 pb-24 flex flex-col items-center">
+      {/* DUAL-COLUMN MASTER LAYOUT (No Clipping, Fits Viewport Perfect) */}
+      <main className="relative z-10 max-w-7xl mx-auto px-6 min-h-[calc(100vh-100px)] flex flex-col justify-center">
         
-        {/* Silicon Valley Style Catchy Headings */}
-        <div className="text-center max-w-3xl mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400 mb-6">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>صرح التسيير القضائي والذكاء الاصطناعي الأسرع في مصر والشرق الأوسط</span>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center py-6">
           
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
-            مستقبل الممارسة القانونية في مصر
-            <span className="block mt-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 bg-clip-text text-transparent">
-              نظام التشغيل القضائي الفائق AXIA
-            </span>
-          </h1>
-          
-          <p className="text-sm sm:text-base text-neutral-400 leading-relaxed max-w-2xl mx-auto">
-            منظومة سحابية متكاملة مصممة وفقاً لأرفع المقاييس الأمنية والتقنية في وادي السيليكون، تدمج البحث الذكي في أحكام النقض مع إدارة الجلسات، القضايا والتدفقات المالية بمساعدة محرك الذكاء الاصطناعي السيادي «راجح».
-          </p>
-        </div>
-
-        {/* AUTH CARD (Floating Glassmorphism) */}
-        <div id="auth-card" className="w-full max-w-md relative">
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-amber-500/10 to-emerald-500/5 blur-xl pointer-events-none" />
-          
-          <div className="relative backdrop-blur-2xl bg-black/45 border border-white/10 rounded-3xl p-8 shadow-2xl">
+          {/* COLUMN 1: System Promotion & Glowing Sovereign Scale SVG (Left on Desktop, Top on Mobile) */}
+          <div className="lg:col-span-7 space-y-6 text-right relative flex flex-col justify-center">
             
-            {/* Mode Switcher */}
-            <div className="relative flex p-1.5 bg-white/5 rounded-2xl border border-white/5 mb-8">
-              <button
-                onClick={() => setAuthMode('login')}
-                className={`flex-1 flex items-center justify-center gap-2 text-xs font-semibold py-3 rounded-xl transition-all cursor-pointer ${
-                  authMode === 'login' 
-                    ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' 
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                <Lock className="w-3.5 h-3.5" />
-                <span>تسجيل الدخول للمكتب</span>
-              </button>
-              
-              <button
-                onClick={() => setAuthMode('register')}
-                className={`flex-1 flex items-center justify-center gap-2 text-xs font-semibold py-3 rounded-xl transition-all cursor-pointer ${
-                  authMode === 'register' 
-                    ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' 
-                    : 'text-neutral-400 hover:text-white'
-                }`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>تأسيس مكتب جديد</span>
-              </button>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400 mr-auto lg:mr-0 ml-auto">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>صرح التسيير القضائي والذكاء الاصطناعي الأسرع في مصر والشرق الأوسط</span>
+            </div>
+            
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-2 leading-tight">
+              مستقبل الممارسة القانونية في مصر
+              <span className="block mt-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 bg-clip-text text-transparent">
+                نظام التشغيل القضائي الفائق AXIA
+              </span>
+            </h1>
+            
+            <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed max-w-xl">
+              منظومة سحابية متكاملة مصممة وفقاً لأرفع المقاييس الأمنية والتقنية في وادي السيليكون، تدمج البحث الذكي في أحكام النقض مع إدارة الجلسات، القضايا والتدفقات المالية بمساعدة محرك الذكاء الاصطناعي السيادي «راجح».
+            </p>
+
+            {/* Glowing Custom Scale of Justice SVG Watermark */}
+            <div className="relative pt-6 max-w-sm hidden sm:block">
+              <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/5 to-transparent blur-2xl rounded-full" />
+              <svg className="w-48 h-48 text-amber-500/15 animate-pulse duration-[6000ms]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Pillar Base */}
+                <path d="M40 85 H60 M50 85 V30" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                {/* Crossbar */}
+                <path d="M25 35 H75" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                {/* Scales left */}
+                <path d="M25 35 L17 55 M25 35 L33 55" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M12 55 Q25 65 38 55 Z" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.05" />
+                {/* Scales right */}
+                <path d="M75 35 L67 55 M75 35 L83 55" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M62 55 Q75 65 88 55 Z" stroke="currentColor" strokeWidth="2" fill="currentColor" fillOpacity="0.05" />
+                {/* Center Balance Needle */}
+                <path d="M50 30 L50 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="50" cy="18" r="2" fill="currentColor" />
+              </svg>
             </div>
 
-            {/* LOGIN FORM MODE */}
-            {authMode === 'login' ? (
-              <form onSubmit={handleLoginSubmit} className="space-y-5">
-                <div>
-                  <label className="block text-[11px] font-mono tracking-wider text-neutral-400 uppercase mb-2 mr-1">
-                    البريد الإلكتروني المهني لمساحة العمل
-                  </label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-neutral-500">
-                      <Mail className="w-4 h-4" />
-                    </span>
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="username@firm.legal"
-                      className="w-full bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/40 border border-white/10 rounded-xl pr-11 pl-4 py-3.5 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all text-xs text-white placeholder-neutral-500 outline-none"
-                    />
-                  </div>
-                </div>
+          </div>
 
-                <div>
-                  <div className="flex justify-between items-center mb-2 px-1">
-                    <label className="block text-[11px] font-mono tracking-wider text-neutral-400 uppercase">
-                      كلمة المرور الأمنية لمساحة العمل
-                    </label>
-                    <a href="#" className="text-[10px] text-amber-500 hover:underline">هل نسيت كلمة المرور؟</a>
-                  </div>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-neutral-500">
-                      <Lock className="w-4 h-4" />
-                    </span>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••••••••"
-                      className="w-full bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/40 border border-white/10 rounded-xl pr-11 pl-12 py-3.5 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all text-xs text-white placeholder-neutral-500 outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 left-0 pl-4 flex items-center text-neutral-500 hover:text-neutral-300 transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between px-1">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                      className="rounded border-white/10 bg-white/5 text-amber-500 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
-                    />
-                    <span className="text-[11px] text-neutral-400">تذكر جلستي على هذا الجهاز</span>
-                  </label>
-                  <span className="flex items-center gap-1.5 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">
-                    <Shield className="w-3 h-3" />
-                    تشفير كامل RLS
-                  </span>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="w-full relative group overflow-hidden bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold text-xs py-4 rounded-xl shadow-lg shadow-amber-500/15 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {isPending ? (
-                    <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <span>الدخول لمساحة العمل المشفرة</span>
-                      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-[-4px]" />
-                    </>
-                  )}
-                </button>
-              </form>
-            ) : (
-              /* REGISTRATION MODE - REGISTER NEW OFFICE */
-              <form onSubmit={handleRegisterSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-[11px] font-mono tracking-wider text-neutral-400 uppercase mb-1.5 mr-1">
-                    اسم المكتب أو الكيان القانوني الكلي
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={officeName}
-                    onChange={(e) => setOfficeName(e.target.value)}
-                    placeholder="مثال: ذو الفقار وشركاؤه للاستشارات القانونية"
-                    className="w-full bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all text-xs text-white placeholder-neutral-500 outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-mono tracking-wider text-neutral-400 uppercase mb-1.5 mr-1">
-                    اسم الشريك المؤسس / المدير المسؤول
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={founderName}
-                    onChange={(e) => setFounderName(e.target.value)}
-                    placeholder="مثال: الأستاذ أحمد ذو الفقار المحامي بالنقض"
-                    className="w-full bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all text-xs text-white placeholder-neutral-500 outline-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-mono tracking-wider text-neutral-400 uppercase mb-1.5 mr-1">
-                      رقم القيد بنقابة المحامين
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={syndicateId}
-                      onChange={(e) => setSyndicateId(e.target.value)}
-                      placeholder="مثال: ١٢٣٤٥٦ النقابة العامة"
-                      className="w-full bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/40 border border-white/10 rounded-xl px-4 py-3 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all text-xs text-white placeholder-neutral-500 outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-mono tracking-wider text-neutral-400 uppercase mb-1.5 mr-1">
-                      تخصص الممارسة الغالب
-                    </label>
-                    <select
-                      value={officeType}
-                      onChange={(e) => setOfficeType(e.target.value)}
-                      className="w-full bg-[#121216] border border-white/10 rounded-xl px-4 py-3 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all text-xs text-white outline-none"
-                    >
-                      <option value="general">قضاء عام وجنائي</option>
-                      <option value="corporate">شركات واستثمار</option>
-                      <option value="civil">مدني وتعويضات</option>
-                      <option value="arbitration">تحكيم وتنازع دولي</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-mono tracking-wider text-neutral-400 uppercase mb-1.5 mr-1">
-                    النطاق الفرعي المطلوب لمساحة العمل المشفرة
-                  </label>
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      required
-                      value={workspaceUrl}
-                      onChange={(e) => setWorkspaceUrl(e.target.value)}
-                      placeholder="zulficar"
-                      className="w-full bg-white/[0.03] hover:bg-white/[0.06] focus:bg-black/40 border border-white/10 rounded-xl pr-4 pl-28 py-3 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all text-xs text-left font-mono text-white placeholder-neutral-600 outline-none"
-                    />
-                    <span className="absolute left-3 text-[10px] font-mono text-neutral-500 pointer-events-none select-none border-l border-white/10 pl-1.5">
-                      .axia.legal
-                    </span>
-                  </div>
-                </div>
-
-                <div className="pt-2">
+          {/* COLUMN 2: Portal Card (With Border-Bottom Underline Crystal Fields) */}
+          <div className="lg:col-span-5 w-full flex justify-center lg:justify-end">
+            
+            <div className="w-full max-w-md relative">
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-amber-500/10 to-emerald-500/5 blur-xl pointer-events-none" />
+              
+              <div className="relative backdrop-blur-2xl bg-black/45 border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl">
+                
+                {/* Mode Switcher Tab Slider */}
+                <div className="relative flex p-1.5 bg-white/5 rounded-2xl border border-white/5 mb-6">
                   <button
-                    type="submit"
-                    disabled={isPending}
-                    className="w-full relative group overflow-hidden bg-gradient-to-r from-emerald-400 to-emerald-500 hover:from-emerald-500 hover:to-emerald-600 text-black font-semibold text-xs py-4 rounded-xl shadow-lg shadow-emerald-500/10 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    onClick={() => setAuthMode('login')}
+                    className={`flex-1 flex items-center justify-center gap-2 text-xs font-semibold py-3 rounded-xl transition-all cursor-pointer ${
+                      authMode === 'login' 
+                        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' 
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
                   >
-                    {isPending ? (
-                      <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        <span>تأسيس صرح المكتب السحابي</span>
-                        <CheckCircle2 className="w-4 h-4" />
-                      </>
-                    )}
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>تسجيل الدخول</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => setAuthMode('register')}
+                    className={`flex-1 flex items-center justify-center gap-2 text-xs font-semibold py-3 rounded-xl transition-all cursor-pointer ${
+                      authMode === 'register' 
+                        ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' 
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span>تأسيس مكتب</span>
                   </button>
                 </div>
-              </form>
-            )}
 
-            <div className="mt-6 pt-5 border-t border-white/5 text-center">
-              <span className="text-[10px] text-neutral-500 leading-relaxed block">
-                مساحة العمل تخضع كلياً لبروتوكول السرية المتبادلة بموجب لوائح وزارة الاتصالات وتكنولوجيا المعلومات ونقابة المحامين المصرية.
-              </span>
+                {/* LOGIN FORM - CRYSTAL MINIMALIST UNDERLINED */}
+                {authMode === 'login' ? (
+                  <form onSubmit={handleLoginSubmit} className="space-y-6">
+                    <div className="relative">
+                      <span className="absolute left-0 bottom-3 text-neutral-500">
+                        <Mail className="w-4 h-4" />
+                      </span>
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="البريد الإلكتروني المهني لمساحة العمل"
+                        className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pb-3 pt-4 transition-all text-xs text-white placeholder-neutral-600 outline-none focus:ring-0"
+                      />
+                    </div>
+
+                    <div className="relative">
+                      <div className="flex justify-between items-center text-[10px] text-neutral-500 absolute left-0 top-[-8px]">
+                        <a href="#" className="hover:text-amber-500 transition-colors">هل نسيت كلمة المرور؟</a>
+                      </div>
+                      <span className="absolute left-8 bottom-3 text-neutral-500">
+                        <Lock className="w-4 h-4" />
+                      </span>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="كلمة المرور الأمنية لمساحة العمل"
+                        className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pl-16 pb-3 pt-4 transition-all text-xs text-white placeholder-neutral-600 outline-none focus:ring-0"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute left-0 bottom-3 text-neutral-500 hover:text-neutral-300 transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between px-1 pt-2">
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={rememberMe}
+                          onChange={(e) => setRememberMe(e.target.checked)}
+                          className="rounded border-white/10 bg-white/5 text-amber-500 focus:ring-0 focus:ring-offset-0 w-3.5 h-3.5"
+                        />
+                        <span className="text-[11px] text-neutral-400">تذكر جلستي على الجهاز</span>
+                      </label>
+                      <span className="flex items-center gap-1.5 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">
+                        <Shield className="w-3 h-3" />
+                        تشفير كامل RLS
+                      </span>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isPending}
+                      className="w-full relative group overflow-hidden bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-semibold text-xs py-4 rounded-xl shadow-lg shadow-amber-500/15 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      {isPending ? (
+                        <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <span>الدخول لمساحة العمل المشفرة</span>
+                          <ArrowUp className="w-4 h-4 rotate-90 transition-transform group-hover:translate-y-[-2px]" />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                ) : (
+                  /* REGISTER OFFICE FORM - CRYSTAL MINIMALIST UNDERLINED */
+                  <form onSubmit={handleRegisterSubmit} className="space-y-5">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        required
+                        value={officeName}
+                        onChange={(e) => setOfficeName(e.target.value)}
+                        placeholder="اسم المكتب أو الكيان القانوني الكلي"
+                        className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pb-3 pt-4 transition-all text-xs text-white placeholder-neutral-600 outline-none focus:ring-0"
+                      />
+                    </div>
+
+                    <div className="relative">
+                      <input
+                        type="text"
+                        required
+                        value={founderName}
+                        onChange={(e) => setFounderName(e.target.value)}
+                        placeholder="اسم الشريك المؤسس / المدير المسؤول"
+                        className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pb-3 pt-4 transition-all text-xs text-white placeholder-neutral-600 outline-none focus:ring-0"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          required
+                          value={syndicateId}
+                          onChange={(e) => setSyndicateId(e.target.value)}
+                          placeholder="رقم الكارنيه النقابي"
+                          className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pb-3 pt-4 transition-all text-xs text-white placeholder-neutral-600 outline-none focus:ring-0"
+                        />
+                      </div>
+                      <div className="relative">
+                        <select
+                          value={officeType}
+                          onChange={(e) => setOfficeType(e.target.value)}
+                          className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pb-3 pt-4 transition-all text-xs text-neutral-400 outline-none focus:ring-0"
+                        >
+                          <option value="general">قضاء عام وجنائي</option>
+                          <option value="corporate">شركات واستثمار</option>
+                          <option value="civil">مدني وتعويضات</option>
+                          <option value="arbitration">تحكيم وتنازع دولي</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        required
+                        value={workspaceUrl}
+                        onChange={(e) => setWorkspaceUrl(e.target.value)}
+                        placeholder="رابط مساحة العمل المطلوبة"
+                        className="w-full bg-transparent border-t-0 border-l-0 border-r-0 border-b border-white/10 hover:border-b-white/30 focus:border-b-amber-500 pl-24 pb-3 pt-4 transition-all text-xs text-left font-mono text-white placeholder-neutral-600 outline-none focus:ring-0"
+                      />
+                      <span className="absolute left-0 bottom-3 text-[10px] font-mono text-neutral-500 pointer-events-none select-none pl-1.5">
+                        .axia.legal
+                      </span>
+                    </div>
+
+                    <div className="pt-3">
+                      <button
+                        type="submit"
+                        disabled={isPending}
+                        className="w-full relative group overflow-hidden bg-gradient-to-r from-emerald-400 to-emerald-500 hover:from-emerald-500 hover:to-emerald-600 text-black font-semibold text-xs py-4 rounded-xl shadow-lg shadow-emerald-500/10 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        {isPending ? (
+                          <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <span>تأسيس صرح المكتب السحابي</span>
+                            <CheckCircle2 className="w-4 h-4" />
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                <div className="mt-6 pt-5 border-t border-white/5 text-center">
+                  <span className="text-[10px] text-neutral-500 leading-relaxed block">
+                    مساحة العمل تخضع كلياً لبروتوكول السرية المتبادلة بموجب لوائح وزارة الاتصالات وتكنولوجيا المعلومات ونقابة المحامين المصرية.
+                  </span>
+                </div>
+              </div>
             </div>
+
           </div>
+
         </div>
 
         {/* Scroll indicator with smooth loop down animation */}
-        <div className="mt-20 animate-bounce">
+        <div className="flex flex-col items-center justify-center py-4">
           <a href="#features-section" className="flex flex-col items-center gap-2 text-xs text-neutral-500 hover:text-white transition-colors">
             <span>استكشف صرح المزايا والمحاكاة الحية الفورية</span>
-            <ChevronDown className="w-4 h-4 text-amber-500" />
+            <ChevronDown className="w-4 h-4 text-amber-500 animate-bounce" />
           </a>
         </div>
       </main>
 
       {/* COMPREHENSIVE OUTSIDE SHOWCASE SECTION (BENTO GRID WITH SIMULATORS) */}
-      <section id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 py-28 border-t border-white/5">
+      <section id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 py-24 border-t border-white/5">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">
+          <h2 className="text-2xl sm:text-4xl font-extrabold mb-4">
             أقوى الأدوات في خدمة قضيتك وعملائك
           </h2>
           <p className="text-xs sm:text-sm text-neutral-400 max-w-xl mx-auto">
@@ -535,7 +563,7 @@ export default function LoginPage() {
                 </button>
                 <button
                   onClick={() => setActivePlayground('ai')}
-                  className="mr-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-md shadow-amber-500/20 animate-pulse transition-all"
+                  className="mr-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-md shadow-amber-500/20 transition-all"
                 >
                   <Zap className="w-3.5 h-3.5" />
                   <span>⚡ محاكاة حية</span>
@@ -564,7 +592,7 @@ export default function LoginPage() {
                 </button>
                 <button
                   onClick={() => setActivePlayground('schedule')}
-                  className="mr-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-md shadow-amber-500/20 animate-pulse transition-all"
+                  className="mr-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-md shadow-amber-500/20 transition-all"
                 >
                   <Zap className="w-3.5 h-3.5" />
                   <span>⚡ محاكاة حية</span>
@@ -593,7 +621,7 @@ export default function LoginPage() {
                 </button>
                 <button
                   onClick={() => setActivePlayground('finance')}
-                  className="mr-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-md shadow-amber-500/20 animate-pulse transition-all"
+                  className="mr-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-md shadow-amber-500/20 transition-all"
                 >
                   <Zap className="w-3.5 h-3.5" />
                   <span>⚡ محاكاة حية</span>
@@ -622,7 +650,7 @@ export default function LoginPage() {
                 </button>
                 <button
                   onClick={() => setActivePlayground('security')}
-                  className="mr-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-md shadow-amber-500/20 animate-pulse transition-all"
+                  className="mr-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-md shadow-amber-500/20 transition-all"
                 >
                   <Zap className="w-3.5 h-3.5" />
                   <span>⚡ محاكاة حية</span>
@@ -1033,6 +1061,22 @@ export default function LoginPage() {
           </div>
         </div>
       </footer>
+
+      {/* FIXED CRYSTAL SCROLL TO TOP NAVIGATOR (Solves Return to Portal issue) */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            onClick={scrollToTop}
+            className="fixed bottom-8 left-8 z-50 inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs shadow-2xl transition-all cursor-pointer"
+          >
+            <ArrowUp className="w-4 h-4" />
+            <span>العودة لبوابة الدخول 👤</span>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* STATIC TOASTER PORTAL FOR EMITTED PLATFORM NOTIFICATIONS */}
       {toastNotification && (
