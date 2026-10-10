@@ -108,18 +108,18 @@ Statements under **Current State** should be treated as verified only when a liv
 - AXIA team: `ramyelhawary73-coders-projects`; project ID `prj_La6uiYbY8U5pxENVIFZlA0OFiVEi`.
 - The connected Vercel identity returns 403 for that exact team. No Vercel CLI credentials were available as fallback. A connection with access to this team is needed for deployment/env/isolation verification.
 - Existing Production alias: `https://axia-legal-psi.vercel.app`. No Production deployment or promotion has been requested by this implementation.
-- GitHub deployment statuses will be checked for each PR head; a success status alone is not a browser acceptance test or verification of the active Production alias.
+- P0A code head `8597950d38f27c2730c575b5a08d179df6039653` has a successful Vercel status and bot-confirmed Preview at `https://axia-legal-git-fix-axia-p-cb0653-ramyelhawary73-coders-projects.vercel.app`. Anonymous checks reach Vercel sign-in. Keep Deployment Protection; correct team access or the owner session is needed for acceptance. The documentation-only closeout head requires fresh status checks. A success status alone is not a runtime test or verification of the active Production alias.
 
 ## Current implementation — P0A
 
-Status: `IN_PROGRESS`, on `fix/axia-p0a-real-auth-20261010`; unmerged.
+Status: `OWNER_TESTING`, on `fix/axia-p0a-real-auth-20261010`; [Draft PR #33](https://github.com/ramyelhawary73-coder/axia-legal/pull/33), unmerged.
 
 - Login uses the real Supabase password-auth Server Action and waits for a returned user and session before success.
 - Return paths are constrained to the same origin; missing credentials, throttling, provider failures, and missing config produce bounded Arabic errors.
 - Normal runtime cannot instantiate the mock database or placeholder browser client. Missing config blocks protected routes in Development, Preview, and Production with 503; the public Login page explains the outage with a disabled form.
 - Workspace resolution still derives identity/membership from verified claims, denies forged tenant headers, and now handles service failures with the existing stable unavailable code.
 - New enterprise RTL Login and AXIA vector mark replace public fake registration and unsupported simulations. Password recovery and organization activation are honestly marked pending; no account, institution, or developer role is created through these controls.
-- Local Typecheck and Lint passed; 119 Safety tests passed (87 existing + 32 new executable auth/workspace boundary tests with isolated provider fixtures). Local Production build passed. Local Chromium checks passed at 1440/768/390/320 px without horizontal overflow or JS errors, including safe return values, unavailable-state controls and protected-route 503 responses. Configured-form browser submission also passed against an isolated localhost Auth fixture (one real Server Action request, wrong password denied, no provider text disclosed). On mobile the form appears before the introductory section. This is not a real Supabase-account test. Exact-head CI and Preview evidence remain pending.
+- Local Typecheck and Lint passed; 119 Safety tests passed (87 existing + 32 new executable auth/workspace boundary tests with isolated provider fixtures). Local Production build passed. Local Chromium checks passed at 1440/768/390/320 px without horizontal overflow or JS errors, including safe return values, unavailable-state controls and protected-route 503 responses. Configured-form browser submission also passed against an isolated localhost Auth fixture (one real Server Action request, wrong password denied, no provider text disclosed). On mobile the form appears before the introductory section. This is not a real Supabase-account test. Code-head CI [run 38068441644](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38068441644) passed for `8597950d38f27c2730c575b5a08d179df6039653`; Vercel status/bot confirm a completed Preview. Anonymous Preview checks redirect to Vercel sign-in, so hosted acceptance and real Supabase-account testing remain blocked. The documentation-only closeout requires a separate final-head status check.
 - Dependency files are unchanged. The audit found 7 affected-package findings (1 critical, 6 high); patching and repeat advisory verification are a separate P0B release blocker. Do not use `npm audit fix --force`.
 
 ---
@@ -3252,7 +3252,7 @@ Before marking a PR ready:
 
 **Current mode: P0A AUTH RECOVERY AND ENTERPRISE LOGIN — OWNER-AUTHORIZED IMPLEMENTATION**
 
-1. Finish local build and desktop/mobile browser checks; publish the scoped P0A PR and check exact-head CI and Preview.
+1. P0A implementation/local browser checks and code-head CI are complete in Draft PR #33. Verify CI/deployment statuses for the documentation closeout head, then conduct the real Preview acceptance checklist; no merge yet.
 2. Development is restored and the initial catalog/migration/RLS/Storage/advisor read-only reconciliation passed with the documented warnings. Complete direct role/isolation and migration-body reconciliation; do not replay old migrations to satisfy a missing source definition.
 3. The owner reconnects Vercel with access to the AXIA team. Verify Preview uses the intended Development project and confirm Production separation without exposing env values.
 4. Perform controlled Login/logout/expired-session and two-institution tests on the Preview against real Development Auth. Test fixtures must be identifiable and cleaned up or rolled back; no client data is used.
@@ -3305,7 +3305,7 @@ The full attached `AXIA_LEGAL_MASTER_EXECUTION_PLAN.md` was read alongside this 
 
 | Package | Status | Concrete output | Acceptance / dependencies |
 | --- | --- | --- | --- |
-| P0A — Auth recovery + enterprise Login foundation | IN_PROGRESS | Real password auth, fail-closed config, safe redirects, controlled errors, honest activation controls, original AXIA SVG mark | Local quality gate; exact-head CI/Preview; desktop/mobile checks; real Development Login/logout and tenant checks before merge |
+| P0A — Auth recovery + enterprise Login foundation | OWNER_TESTING | Real password auth, fail-closed config, safe redirects, controlled errors, honest activation controls, original AXIA SVG mark | Local quality gate; exact-head CI/Preview; desktop/mobile checks; real Development Login/logout and tenant checks before merge |
 | P0B — Dependency security | READY_FOR_SCOPE | Minimal compatible patches for identified Next.js/transitive advisories and synchronized lockfile | Repeat audit, Typecheck/Lint/Safety/Build, no forced downgrade; review exploit reachability and Preview regressions |
 | P0C — Live schema, Auth, RLS and Storage | READY_FOR_SCOPE | Reconcile live migrations/catalog with source, prove two-tenant isolation, verify environment separation; propose only evidenced repair SQL | Healthy Development + correct Vercel access; migration plan/rollback; direct Auth/RLS/Storage negative tests; no blind replay |
 | Cleanup 3 — Navigation counts | PLANNED | Replace fixed legal/business badges with real scoped counts or no count | Empty/loading/error/two-tenant states; preserve existing create flows |

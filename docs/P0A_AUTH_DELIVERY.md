@@ -1,6 +1,6 @@
 # P0A — Auth recovery and enterprise Login
 
-Status: **IN_PROGRESS** — branch `fix/axia-p0a-real-auth-20261010`, unmerged.
+Status: **OWNER_TESTING** — branch `fix/axia-p0a-real-auth-20261010`, unmerged.
 
 Verified base: `1e8ad939cd6f89d277891aa9f0c37b45c7c64e0c` (2026-10-10).
 
@@ -23,10 +23,24 @@ No SQL migration, business-record write, membership/role grant, production deplo
 | Safety | PASS, 119/119 | 87 existing source contracts + 32 executable isolated auth/workspace fixture tests; fixtures are test-only |
 | Production build | PASS | Local compilation, no deployment; missing config intentionally allowed during build but blocked at runtime |
 | Desktop/tablet/mobile browser | PASS | Chromium: 1440, 768, 390 and 320 px; no horizontal overflow or JS page errors; unsafe next sanitized; missing-config form disabled; activation notice and password toggle tested; protected root/tasks/RAJIH returned 503 with no-store; configured form called the real Server Action once against a local isolated Auth fixture and rejected wrong credentials without exposing provider text; mobile form precedes hero |
-| Exact-head GitHub CI | Pending PR | Must pass on the submitted head |
-| Hosted Vercel Preview | BLOCKED until verified | Vercel team access currently returns 403; GitHub statuses may expose deployment evidence |
+| Code-head GitHub CI | PASS | [Run 38068441644](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38068441644), code head `8597950d38f27c2730c575b5a08d179df6039653`; all install/typecheck/lint/safety/build steps passed. Documentation-only closeout triggers a separate final-head run |
+| Hosted Vercel Preview | Build/status PASS; browser acceptance BLOCKED | Code-head GitHub Vercel status is success; bot confirms deployment `GcaNvEjWna2t8L7CxomifTzXrWFz`. Anonymous Login/root/tasks requests redirect to Vercel sign-in, not the application. Correct team connection or owner session is required |
 | Real Auth/login/logout and two-tenant RLS | BLOCKED until verified | Development restored healthy; catalog confirms RLS and private Storage; direct session/isolation behavior and Vercel environment binding remain unverified |
 | Production | Unchanged by this branch | Active alias-to-commit and Development/Production separation still require correct team access |
+
+## PR and deployment evidence
+
+- [Draft PR #33](https://github.com/ramyelhawary73-coder/axia-legal/pull/33), 13 changed files, base main unchanged.
+- Code head: `8597950d38f27c2730c575b5a08d179df6039653`.
+- [Preview](https://axia-legal-git-fix-axia-p-cb0653-ramyelhawary73-coders-projects.vercel.app/login): protected by Vercel Authentication. A Vercel Login HTTP 200 does not count as an AXIA runtime pass.
+- This closeout only updates documentation. Its new head must receive its own CI/deployment status check; it does not change the tested code.
+
+## Owner connection steps
+
+1. In ChatGPT's connected apps, select Vercel and reconnect/authorize an identity that has access to `ramyelhawary73-coders-projects` and its `axia-legal` project. The current identity receives 403 for this exact scope. Do not paste tokens, passwords or API keys into chat.
+2. Open PR #33's Preview while signed into your authorized Vercel account. Retain Deployment Protection.
+3. Confirm Preview is bound to Development ref `qshgczulivsxztgrbqew`; Production must be checked separately. Environment verification is still blocked for the agent until the correct team connection works.
+4. Use existing Development test accounts for the acceptance checklist below. If no test account exists, prepare a scoped test-account/organization fixture in the next tenant-verification package; do not grant yourself office/platform owner rights through the public form.
 
 ## Live Development reconciliation
 
