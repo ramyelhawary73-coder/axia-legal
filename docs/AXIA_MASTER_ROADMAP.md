@@ -6,11 +6,11 @@
 >
 > **Rule:** every implementation PR must update this file before it is considered complete.
 >
-> **Last verified:** 2026-09-23  
+> **Last verified:** 2026-10-10
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
-> **Verified main SHA:** `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`  
-> **Current documentation branch:** `docs/axia-cleanup-batch2-closeout-v1`
+> **Verified main SHA:** `1e8ad939cd6f89d277891aa9f0c37b45c7c64e0c`
+> **Current execution branch:** `fix/axia-p0a-real-auth-20261010`
 
 ---
 
@@ -83,47 +83,44 @@ Statements under **Current State** should be treated as verified only when a liv
 
 # 3. Current State
 
-## GitHub
+## Fresh reconciliation — 2026-10-10
 
-- Repository: `ramyelhawary73-coder/axia-legal`
-- Default branch: `main`
-- Verified main SHA: `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`
-- PR #31 — Cleanup Batch 2 Matter creation/domain consolidation — merged using merge commit `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`.
-- PR #30 — Cleanup Batch 2 scope-review results — merged using merge commit `48d68903eee7412333b6cc26260b9ec220d2481a`.
-- PR #29 — Cleanup Batch 2 scope-review plan — merged using merge commit `fe23cc2213810abd91715d81cecf84ec2e6a46b7`.
-- PR #28 — Cleanup Batch 1 post-merge documentation closeout — merged using merge commit `93f214d5998aa2864c3314b4e7a274ef0ec02345`.
-- PR #27 — Cleanup Batch 1 client infrastructure — merged using merge commit `6efe7d5f1732f94f5ec0878331ada0cc190740d1`.
-- Exact-content verification from tested PR #31 head `3ecacfd841a97d202ba505d6797fcec70f5b1687` to merged `main`: 0 file differences; `main` is ahead by the merge commit only.
-- Merge commits remain the approved merge strategy.
-- CI installs dependencies with `npm ci` and runs Typecheck, Lint, Safety tests, and Production build.
-- Cleanup Batch 2 is merged, verified, and closed. Cleanup Batch 3 has not started.
+- GitHub `main`: `1e8ad939cd6f89d277891aa9f0c37b45c7c64e0c`, verified again immediately before branch creation. All 136 source blobs were downloaded from that exact commit and their Git blob hashes verified.
+- Cleanup Batch 1 PR #27 and Cleanup Batch 2 PR #31 are merged and closed; documentation closeout PR #32 is merged. Neither cleanup will be repeated.
+- The last main GitHub Actions run #190 succeeded (87 source-contract tests). This is historical baseline evidence, not evidence for a new change.
+- Main is not protected. Do not push directly or merge without owner approval. No plan/service purchase or repository visibility change is authorized.
+- Source regression after cleanup: Login used delayed client navigation instead of the existing password-auth Server Action; registration falsely reported success; missing public Supabase config enabled a shared mock server client and allowed non-production proxy requests through.
+- Anonymous Production checks performed during the read-only audit redirected `/`, `/dashboard`, and `/api/tasks` to Login; they did not prove an active anonymous Production bypass.
 
 ## Supabase Development
 
-- Project ID: `qshgczulivsxztgrbqew`
-- Last verified state: `ACTIVE_HEALTHY`
-- Core tenant data is protected with RLS.
-- Core authenticated access does not expose ordinary client/matter/task/document data to `anon`.
-- `legal-documents` Storage bucket is private.
-- Storage access is intentionally limited; ordinary delete capability is not enabled.
-- Core update grants were added only for PATCH-backed resources during Phase 4A.
-- No approved general DELETE grant exists for core legal records.
+- Existing project: `AXIA Legal Development`, ref `qshgczulivsxztgrbqew`, region `eu-west-1`.
+- Fresh status before implementation: `INACTIVE`; metadata reads worked but SQL/migration reads timed out. Empty advisor results while inactive must not be interpreted as a clean security bill.
+- The owner authorized starting the first implementation step and necessary Supabase work on 2026-10-10. A restore request for the existing paused Development project was accepted. This resumes the existing project; it is not a new database or backup rewind. Fresh follow-up confirmed `ACTIVE_HEALTHY`.
+- No SQL writes, migration replay, RLS/Auth setting changes, data deletion, or new paid resources are part of P0A.
+- Live read-only follow-up: 21 public tables, all RLS enabled; 45 public/storage policies; `legal-documents` is private with a 25 MiB limit. The six live `app_role` values match the workspace role union. Private membership helpers exist and use an empty search path.
+- Live migration ledger contains 21 migrations, including the older security foundation absent from the committed chain. The live audit migration is `20260921111252` while source is `20260921105916`; other historical RAJIH versions also differ. This is a source/ledger reconciliation problem, not proof that live foundational objects are missing. Do not replay the chain.
+- Security advisors now report two WARNs: [vector extension in public](https://supabase.com/docs/guides/database/database-linter?lint=0014_extension_in_public) and [leaked-password protection disabled](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). Do not move vector blindly: functions/type references and plan availability must be reviewed first.
+- Catalog inspection confirms policy presence, not full RLS enforcement. Real two-user/two-organization behavior and Production database separation remain required.
 
 ## Vercel
 
-- AXIA production project remains deployed.
-- PR #31 exact-head Vercel Preview status for `3ecacfd841a97d202ba505d6797fcec70f5b1687` was `success`.
-- After merge, GitHub Vercel status for merge SHA `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982` changed from `pending` to `success`.
-- Direct Vercel deployment-detail verification is temporarily unavailable because the connected Vercel account currently returns `403 Forbidden` for the project team scope and requires re-authentication.
-- Therefore the merge-SHA Vercel status is verified through GitHub, while the exact post-merge Production deployment ID/runtime details remain unverified in this closeout.
-- No Vercel configuration was changed by Cleanup Batch 1 or Cleanup Batch 2.
-- Production Supabase isolation from Development remains a required verification item before real client data.
+- AXIA team: `ramyelhawary73-coders-projects`; project ID `prj_La6uiYbY8U5pxENVIFZlA0OFiVEi`.
+- The connected Vercel identity returns 403 for that exact team. No Vercel CLI credentials were available as fallback. A connection with access to this team is needed for deployment/env/isolation verification.
+- Existing Production alias: `https://axia-legal-psi.vercel.app`. No Production deployment or promotion has been requested by this implementation.
+- GitHub deployment statuses will be checked for each PR head; a success status alone is not a browser acceptance test or verification of the active Production alias.
 
-## Real Development data last observed
+## Current implementation — P0A
 
-- Development contains a small amount of test/working data.
-- Do not delete Development data without explicit owner approval.
-- Test fixtures used during safe verification must always be rolled back or removed before completion.
+Status: `IN_PROGRESS`, on `fix/axia-p0a-real-auth-20261010`; unmerged.
+
+- Login uses the real Supabase password-auth Server Action and waits for a returned user and session before success.
+- Return paths are constrained to the same origin; missing credentials, throttling, provider failures, and missing config produce bounded Arabic errors.
+- Normal runtime cannot instantiate the mock database or placeholder browser client. Missing config blocks protected routes in Development, Preview, and Production with 503; the public Login page explains the outage with a disabled form.
+- Workspace resolution still derives identity/membership from verified claims, denies forged tenant headers, and now handles service failures with the existing stable unavailable code.
+- New enterprise RTL Login and AXIA vector mark replace public fake registration and unsupported simulations. Password recovery and organization activation are honestly marked pending; no account, institution, or developer role is created through these controls.
+- Local Typecheck and Lint passed; 119 Safety tests passed (87 existing + 32 new executable auth/workspace boundary tests with isolated provider fixtures). Local Production build passed. Local Chromium checks passed at 1440/768/390/320 px without horizontal overflow or JS errors, including safe return values, unavailable-state controls and protected-route 503 responses. Configured-form browser submission also passed against an isolated localhost Auth fixture (one real Server Action request, wrong password denied, no provider text disclosed). On mobile the form appears before the introductory section. This is not a real Supabase-account test. Exact-head CI and Preview evidence remain pending.
+- Dependency files are unchanged. The audit found 7 affected-package findings (1 critical, 6 high); patching and repeat advisory verification are a separate P0B release blocker. Do not use `npm audit fix --force`.
 
 ---
 
@@ -1874,7 +1871,7 @@ Mitigation:
 10. update Roadmap;
 11. stop for owner merge approval.
 
-Cleanup Batch 2 implementation has **not** started.
+Historical scope-review checkpoint (superseded by merged PR #31): Cleanup Batch 2 implementation had **not** started at that time.
 
 #### Cleanup Batch 3 — Navigation live-badge cleanup
 
@@ -3253,39 +3250,16 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: CLEANUP BATCH 2 CLOSED — CLEANUP BATCH 3 NOT STARTED**
+**Current mode: P0A AUTH RECOVERY AND ENTERPRISE LOGIN — OWNER-AUTHORIZED IMPLEMENTATION**
 
-Verified baseline:
+1. Finish local build and desktop/mobile browser checks; publish the scoped P0A PR and check exact-head CI and Preview.
+2. Development is restored and the initial catalog/migration/RLS/Storage/advisor read-only reconciliation passed with the documented warnings. Complete direct role/isolation and migration-body reconciliation; do not replay old migrations to satisfy a missing source definition.
+3. The owner reconnects Vercel with access to the AXIA team. Verify Preview uses the intended Development project and confirm Production separation without exposing env values.
+4. Perform controlled Login/logout/expired-session and two-institution tests on the Preview against real Development Auth. Test fixtures must be identifiable and cleaned up or rolled back; no client data is used.
+5. Update this file and `docs/P0A_AUTH_DELIVERY.md` with actual results. Stop before merge for owner approval, and verify again after any approved merge.
+6. Next implementation package: P0B dependency security patches, followed by P0C live tenant/schema reconciliation and the delivery sequence in section 26.
 
-- GitHub `main`: `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`;
-- PR #31 is merged;
-- Cleanup Batch 1 is closed;
-- Cleanup Batch 2 is verified and closed;
-- exact tested PR #31 head: `3ecacfd841a97d202ba505d6797fcec70f5b1687`;
-- tested-head-to-merge comparison: 0 file differences;
-- CI #176 succeeded;
-- exact-head Vercel Preview succeeded;
-- post-merge Vercel status succeeded;
-- no API route, Supabase, RLS/Auth, migration, dependency, or Vercel configuration change was introduced by Cleanup Batch 2;
-- Cleanup Batch 3 has not started.
-
-### Recommended next action
-
-Stop after this documentation closeout. Do not begin Cleanup Batch 3, including read-only scope review, until the owner gives separate explicit approval.
-
-Explicitly excluded:
-
-- API route changes;
-- Supabase/RLS/Auth changes;
-- UI redesign;
-- shared mega-form;
-- new business fields;
-- dependency changes;
-- Cleanup Batch 3+.
-
-### Explicit stop condition
-
-**WAITING FOR OWNER APPROVAL BEFORE ANY CLEANUP BATCH 3 WORK.**
+P0A does not authorize merging, Production deployment, billing purchases, automatic AI legal-record writes, or destructive SQL. The owner requested necessary Supabase work, but no SQL change is justified by this auth package.
 
 ---
 
@@ -3295,11 +3269,11 @@ When opening a new ChatGPT conversation for AXIA, use this instruction:
 
 > Work on `ramyelhawary73-coder/axia-legal`. First perform a fresh read-only verification of the latest `main`, then read `docs/AXIA_MASTER_ROADMAP.md` from that same current main. Treat it as the canonical project state, roadmap, risk register, and handoff. Do not rely on an old SHA if live GitHub differs. Continue from the `NEXT ACTION` section. Do not modify main directly. Before implementation, explain scope, affected systems, risks, and verification; use a dedicated branch and follow Preview → owner approval → merge → post-merge verification. Do not expose secrets or use Service Role in ordinary user-facing flows.
 
-If the roadmap is newer on an unmerged documentation branch, explicitly identify that branch and ask the owner whether it should be merged before implementation work begins.
+If the roadmap is newer on an unmerged execution branch, identify that branch and its PR; preserve the active authorized package and never infer merge/Production approval.
 
 ---
 
-# 25. Documentation Branch Scope
+# 25. Historical Documentation Branch Scope — 2026-09-23
 
 For `docs/axia-cleanup-batch2-closeout-v1`:
 
@@ -3321,3 +3295,36 @@ Not allowed:
 - dependency changes.
 
 This branch is documentation-only. Cleanup Batch 2 is closed and Cleanup Batch 3 has **not** started.
+
+
+---
+
+# 26. Owner-approved execution sequence — 2026-10-10
+
+The full attached `AXIA_LEGAL_MASTER_EXECUTION_PLAN.md` was read alongside this roadmap. Its remaining phases are retained. The owner explicitly requires a premium enterprise Login, an original logo, responsive product design, developer control, subscriptions, RAJIH, complete legal/admin workflows, tests after each implementation, and roadmap updates at each checkpoint. P0 security recovery precedes the remaining feature phases.
+
+| Package | Status | Concrete output | Acceptance / dependencies |
+| --- | --- | --- | --- |
+| P0A — Auth recovery + enterprise Login foundation | IN_PROGRESS | Real password auth, fail-closed config, safe redirects, controlled errors, honest activation controls, original AXIA SVG mark | Local quality gate; exact-head CI/Preview; desktop/mobile checks; real Development Login/logout and tenant checks before merge |
+| P0B — Dependency security | READY_FOR_SCOPE | Minimal compatible patches for identified Next.js/transitive advisories and synchronized lockfile | Repeat audit, Typecheck/Lint/Safety/Build, no forced downgrade; review exploit reachability and Preview regressions |
+| P0C — Live schema, Auth, RLS and Storage | READY_FOR_SCOPE | Reconcile live migrations/catalog with source, prove two-tenant isolation, verify environment separation; propose only evidenced repair SQL | Healthy Development + correct Vercel access; migration plan/rollback; direct Auth/RLS/Storage negative tests; no blind replay |
+| Cleanup 3 — Navigation counts | PLANNED | Replace fixed legal/business badges with real scoped counts or no count | Empty/loading/error/two-tenant states; preserve existing create flows |
+| Cleanup 4 — Remaining fake data and draft safety | PLANNED | Remove active fake production records; migrate globally keyed legal drafts safely to user/tenant persistence | Preserve existing local drafts; no automatic erase; cross-account isolation and reload persistence tests |
+| Cleanup 5–6 — Inactive paths and typing | PLANNED | Review unused paths, split overloaded responsibilities, tighten contracts in small PRs | Characterize behavior first; do not repeat Cleanup 1–2 or remove records/files blindly |
+| Phase 5 — Premium identity and responsive system | PLANNED | Apply the accepted AXIA identity across shell, navigation, forms, tables, legal editor and RAJIH; accessibility and mobile layouts | Desktop/tablet/mobile and RTL checks; keyboard/focus/contrast; owner approves the visual direction |
+| Phases 6–8 — Legal/admin completeness | PLANNED | Finish audited clients, matters, hearings, tasks, documents, finance, team, reports, templates, settings, search and contextual RAJIH flows | Role matrix, persisted read-back, guarded edits, legal exports, empty/error states; complete each subflow in bounded PRs |
+| RAJIH completion | PLANNED | Verified workspace/matter context, trusted citations, source provenance, retrieval coverage, usage controls, proposal/approval/audit cycle | No invented citations or public canned legal results; lawyer review; prompt-injection and tenant tests; record writes require human approval |
+| Phases 9–10 — Platform developer control + subscriptions | PLANNED | Separate platform-operator authority from office roles; plans, entitlements, seats/AI quotas, billing state, support controls, payment lifecycle | Server enforcement, audited privileged actions, MFA, idempotent verified webhooks, suspension/recovery tests; tenant content access is explicit and audited |
+| Phase 11 — Installability and communications | PLANNED | PWA manifest/icons/install UX, safe cache policy, verified email and opt-in notifications | No offline caching of confidential tenant records by default; lifecycle and mobile install tests; no messages sent before configured consent |
+| Phases 12–19 — Operations and commercial launch | PLANNED | Production isolation, observability, backups/restore drill, onboarding, customer support, pricing/payment checks, legal/privacy documents and controlled pilot | Gates A–D below; domain/service purchases and Production changes require separate owner approval |
+
+## Commercial release gates
+
+- **Gate A — Security:** real Auth, proven tenant/role isolation, private Storage, reconciled migrations, patched relevant advisories, correct Development/Production separation.
+- **Gate B — Product:** complete persisted legal/admin journeys, responsive premium UX, trustworthy RAJIH, no active fake business mutations.
+- **Gate C — Operations:** monitored errors, alerts, recoverable backups, incident/support runbooks, developer control with audited authority.
+- **Gate D — Commerce:** server-enforced subscriptions, payment lifecycle, legal/privacy terms, installability and a successful consented pilot. Owner explicitly approves Production launch.
+
+## Mandatory delivery checkpoint for every package
+
+Record: scope and root cause → branch/PR/head SHA → code/SQL changes → test results and limitations → Preview URL and owner test steps → roadmap status → next package → ready-to-send approval text. Local tests, hosted Preview, owner testing, merge and Production verification must be reported separately. A blocked hosted check is not a pass.

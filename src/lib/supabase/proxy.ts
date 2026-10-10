@@ -6,7 +6,9 @@ const PUBLIC_ROUTES = ["/login"];
 const JSON_AUTH_ROUTES = ["/api/rajih"];
 
 function matchesRoute(pathname: string, routes: string[]) {
-  return routes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+  return routes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
 }
 
 function redirectWithSession(url: URL, sessionResponse: NextResponse) {
@@ -20,18 +22,36 @@ function redirectWithSession(url: URL, sessionResponse: NextResponse) {
     const value = sessionResponse.headers.get(header);
     if (value) redirectResponse.headers.set(header, value);
   }
+  redirectResponse.headers.set("Cache-Control", "private, no-store");
 
   return redirectResponse;
 }
 
 export async function updateSession(request: NextRequest) {
   const config = getSupabasePublicConfig();
+  const pathname = request.nextUrl.pathname;
+
+  function unavailable() {
+    const headers = { "Cache-Control": "private, no-store" };
+    return pathname.startsWith("/api/")
+      ? NextResponse.json(
+          {
+            code: "WORKSPACE_UNAVAILABLE",
+            error: "خدمة الدخول غير متاحة مؤقتًا.",
+          },
+          { status: 503, headers },
+        )
+      : new NextResponse(
+          "خدمة الدخول غير متاحة مؤقتًا. يرجى المحاولة لاحقًا.",
+          { status: 503, headers },
+        );
+  }
 
   if (!config) {
-    if (process.env.VERCEL_ENV === "production") {
-      return new NextResponse("AXIA Legal authentication is not configured.", { status: 503 });
-    }
-    return NextResponse.next({ request });
+    // The public form can explain the outage; protected routes always fail closed.
+    return matchesRoute(pathname, PUBLIC_ROUTES)
+      ? NextResponse.next({ request })
+      : unavailable();
   }
 
   let supabaseResponse = NextResponse.next({ request });
@@ -42,7 +62,9 @@ export async function updateSession(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value),
+        );
         supabaseResponse = NextResponse.next({ request });
         cookiesToSet.forEach(({ name, value, options }) => {
           supabaseResponse.cookies.set(name, value, options);
@@ -51,9 +73,22 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const { data, error } = await supabase.auth.getClaims();
+  let result: Awaited<ReturnType<typeof supabase.auth.getClaims>>;
+  try {
+    result = await supabase.auth.getClaims();
+  } catch {
+    return matchesRoute(pathname, PUBLIC_ROUTES)
+      ? supabaseResponse
+      : unavailable();
+  }
+  const { data, error } = result;
+  supabaseResponse.headers.set("Cache-Control", "private, no-store");
+  if (error && "status" in error && Number(error.status) >= 500) {
+    return matchesRoute(pathname, PUBLIC_ROUTES)
+      ? supabaseResponse
+      : unavailable();
+  }
   const claims = error ? null : data?.claims;
-  const pathname = request.nextUrl.pathname;
 
   if (!claims && !matchesRoute(pathname, PUBLIC_ROUTES)) {
     if (matchesRoute(pathname, JSON_AUTH_ROUTES)) {
@@ -62,7 +97,8 @@ export async function updateSession(request: NextRequest) {
 
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", pathname);
+    url.search = "";
+    url.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
     return redirectWithSession(url, supabaseResponse);
   }
 
