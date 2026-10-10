@@ -18,6 +18,7 @@ The owner requested a world-class AXIA Login background or animation and support
 - `src/components/login-atmosphere.module.css`: ink/teal/gold background, fine grid and arcs, opaque readable Login card, three slow transform/opacity animations, smaller-screen rules, reduced-motion support and Login-only scrolling.
 - `src/components/login-experience.tsx`: scene integration and a keyboard-accessible pause/resume button. Email/password controls, form Server Action, safe return path, errors and honest pending activation/recovery flows are retained.
 - `docs/AXIA_MASTER_ROADMAP.md`: scope, verified baseline, current delivery state and remaining gates.
+- `.github/workflows/ci.yml`: run the existing quality job for all pull-request target branches. The original main-only filter skipped this stacked PR. Push-to-main behavior, read-only token permissions, runners and checks are unchanged; no privileged pull_request_target trigger or secrets were added.
 
 No image/video download, new package, global CSS change, subscription/RAJIH business logic change, live database write, main edit, merge or Production deployment is part of this package. This responsive Login does not establish that every internal module or a native mobile app is complete.
 
@@ -32,6 +33,8 @@ Passed on the final local code:
 - Static server-rendered form visible without JavaScript; zero browser page errors and zero external asset requests. Desktop/tablet/mobile screenshots were visually inspected.
 
 These are Chromium desktop-browser emulations, including a short viewport representing reduced keyboard space. Physical iOS/Android, mobile Safari, keyboard resizing and battery/performance behavior remain device acceptance checks; no claim of physical-device verification is made.
+
+Draft visual [PR #34](https://github.com/ramyelhawary73-coder/axia-legal/pull/34) targets the P0A branch. Initial visual head `cd0f6c2a166a447c686cc18309a6c97d5792b48e` started a Vercel Preview but no quality run: CI only listened for PRs targeting main. The minimal trigger correction above is included in the follow-up; check its exact final head for CI and deployment results.
 
 Hosted CI and Vercel Preview must be checked against the exact pushed head. A build status does not establish successful real Supabase Login or tenant isolation. Real Development account Login/logout, expiration, two-institution negative tests and environment separation remain mandatory P0A/P0C acceptance requirements.
 
