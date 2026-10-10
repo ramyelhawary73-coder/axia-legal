@@ -1,0 +1,46 @@
+# AXIA Login atmosphere — delivery and acceptance
+
+Date: 2026-10-10. Status: OWNER_TESTING (local checks passed; hosted checks and owner acceptance pending).
+
+## Scope and live baseline
+
+The owner requested a world-class AXIA Login background or animation and support for web, phones and tablets. The supplied screenshot was inspected. The previous composition was readable but visually flat; its global body overflow also made long Login content unreachable on small screens.
+
+- Fresh main: `1e8ad939cd6f89d277891aa9f0c37b45c7c64e0c`, unchanged and unprotected.
+- Fresh P0A head: `5a8bc45f623d2c74c8354580de893cb4a7699293`; Draft PR #33 remains open/unmerged.
+- Visual branch: `feat/axia-login-atmosphere-20261010`, based on that P0A head. Its PR targets the P0A branch to keep this review focused on visual changes. It must not be merged to main independently of P0A acceptance.
+- Supabase Development metadata: `ACTIVE_HEALTHY`. No SQL or Auth changes are required for this package.
+- Vercel exact AXIA team/project still returns 403; no authenticated CLI fallback is installed. Do not disable Deployment Protection or expose environment values.
+
+## Implementation
+
+- `src/components/login-atmosphere.tsx`: original brand-native vector scene; balanced A sculpture, fine orbital lines and a subtle perspective ground. Decorative elements are hidden from assistive technology and cannot intercept input.
+- `src/components/login-atmosphere.module.css`: ink/teal/gold background, fine grid and arcs, opaque readable Login card, three slow transform/opacity animations, smaller-screen rules, reduced-motion support and Login-only scrolling.
+- `src/components/login-experience.tsx`: scene integration and a keyboard-accessible pause/resume button. Email/password controls, form Server Action, safe return path, errors and honest pending activation/recovery flows are retained.
+- `docs/AXIA_MASTER_ROADMAP.md`: scope, verified baseline, current delivery state and remaining gates.
+
+No image/video download, new package, global CSS change, subscription/RAJIH business logic change, live database write, main edit, merge or Production deployment is part of this package. This responsive Login does not establish that every internal module or a native mobile app is complete.
+
+## Validation
+
+Passed on the final local code:
+
+- Typecheck; Lint with zero warnings; all 119 existing Safety tests; Production build. Package/lockfile and global CSS remain unchanged.
+- Chromium viewport checks: 1920x1080, 1440x960, 1366x768, 1024x768, 768x1024, 390x844, 320x740, 844x390 and 390x480. No horizontal overflow; submit and footer reachable by scrolling; form appears before the introduction on narrow layouts.
+- Explicit pause/resume and OS reduced-motion behavior; no running decorative animations under reduced motion. Motion is applied to HTML wrappers for the two SVG layers and a CSS ambient layer; there is no JS animation loop.
+- Password visibility controls; wrong credentials rejected through the real Login Server Action against an isolated localhost provider fixture, with exactly one provider call and no provider-detail leak. This is not a successful real Supabase-account test.
+- Static server-rendered form visible without JavaScript; zero browser page errors and zero external asset requests. Desktop/tablet/mobile screenshots were visually inspected.
+
+These are Chromium desktop-browser emulations, including a short viewport representing reduced keyboard space. Physical iOS/Android, mobile Safari, keyboard resizing and battery/performance behavior remain device acceptance checks; no claim of physical-device verification is made.
+
+Hosted CI and Vercel Preview must be checked against the exact pushed head. A build status does not establish successful real Supabase Login or tenant isolation. Real Development account Login/logout, expiration, two-institution negative tests and environment separation remain mandatory P0A/P0C acceptance requirements.
+
+## Owner review
+
+1. Open the visual branch Preview while signed into the Vercel account with access to `ramyelhawary73-coders-projects`.
+2. Inspect the desktop background and AXIA scene; pause/resume movement and enable the device's Reduce Motion setting.
+3. Check phone/tablet in portrait and landscape. Reach the Login button and footer by scrolling; open the keyboard and confirm fields remain reachable.
+4. Review RAJIH's introduction and the pending activation/recovery notices. These controls must not claim to create institutions or reset passwords yet.
+5. Reconnect Vercel to the account/team that owns AXIA, so environment binding and hosted acceptance can be checked without requesting credentials in chat.
+
+Next security package remains P0B compatible dependency patches, followed by P0C live Auth/tenant/schema verification. Approval of the visual direction does not authorize merge or Production deployment.
