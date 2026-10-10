@@ -10,7 +10,7 @@
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
 > **Verified main SHA:** `1e8ad939cd6f89d277891aa9f0c37b45c7c64e0c`
-> **Current execution branch:** `fix/axia-p0a-real-auth-20261010`
+> **Current execution branch:** `feat/axia-login-atmosphere-20261010` (based on unmerged P0A)
 
 ---
 
@@ -121,6 +121,20 @@ Status: `OWNER_TESTING`, on `fix/axia-p0a-real-auth-20261010`; [Draft PR #33](ht
 - New enterprise RTL Login and AXIA vector mark replace public fake registration and unsupported simulations. Password recovery and organization activation are honestly marked pending; no account, institution, or developer role is created through these controls.
 - Local Typecheck and Lint passed; 119 Safety tests passed (87 existing + 32 new executable auth/workspace boundary tests with isolated provider fixtures). Local Production build passed. Local Chromium checks passed at 1440/768/390/320 px without horizontal overflow or JS errors, including safe return values, unavailable-state controls and protected-route 503 responses. Configured-form browser submission also passed against an isolated localhost Auth fixture (one real Server Action request, wrong password denied, no provider text disclosed). On mobile the form appears before the introductory section. This is not a real Supabase-account test. Code-head CI [run 38068441644](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38068441644) passed for `8597950d38f27c2730c575b5a08d179df6039653`; Vercel status/bot confirm a completed Preview. Anonymous Preview checks redirect to Vercel sign-in, so hosted acceptance and real Supabase-account testing remain blocked. The documentation-only closeout requires a separate final-head status check.
 - Dependency files are unchanged. The audit found 7 affected-package findings (1 critical, 6 high); patching and repeat advisory verification are a separate P0B release blocker. Do not use `npm audit fix --force`.
+
+## Owner-requested Login visual refinement — 2026-10-10
+
+Status: `OWNER_TESTING`, on `feat/axia-login-atmosphere-20261010`, based on the freshly verified P0A head `5a8bc45f623d2c74c8354580de893cb4a7699293`. PR #33 remains open and unmerged; its closeout CI run [38068714523](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38068714523) passed. Main remains `1e8ad939cd6f89d277891aa9f0c37b45c7c64e0c`.
+
+- The owner supplied a current Login screenshot and requested a distinctive professional background/animation with desktop, phone and tablet support. The screenshot was inspected; the existing flat background lacks visual depth.
+- Bounded scope: custom AXIA SVG scene, gold/ink atmospheric CSS, restrained transform/opacity animation, explicit pause/resume, OS reduced-motion support, responsive composition and Login-only scrolling. Real Auth, RAJIH functionality, platform roles, subscription logic and database configuration are outside this visual package.
+- Root cause for small-screen reachability: global `body` has hidden overflow while the old Login grew beyond its viewport. A viewport-sized scrolling Login surface addresses this without changing the application shell's global scroll policy.
+- Fresh read-only Supabase metadata confirms `ACTIVE_HEALTHY`. The exact Vercel team/project still returns 403; no installed authenticated CLI fallback is available. Hosted runtime acceptance remains blocked on correct team access.
+- No new dependency, external asset request, SQL, Auth/RLS change, paid resource, merge or Production action is needed. P0B and the security/commercial gates remain outstanding.
+- Local Typecheck, Lint, 119 Safety tests and Production build passed. Chromium checks passed at nine viewport sizes (1920x1080, 1440x960, 1366x768, 1024x768, 768x1024, 390x844, 320x740, 844x390, 390x480): no horizontal overflow or browser errors; submit and footer reachable; mobile form first; pause/resume and reduced motion verified; zero external asset requests. The real Server Action rejected wrong credentials against an isolated localhost Auth fixture with exactly one provider call. A static server-rendered form was visible without JavaScript. These are desktop-browser emulations, not physical iOS/Android tests or real Supabase-account acceptance.
+- Draft visual [PR #34](https://github.com/ramyelhawary73-coder/axia-legal/pull/34) targets the P0A branch. Initial visual head `cd0f6c2a166a447c686cc18309a6c97d5792b48e` started Vercel Preview but had no quality run: `.github/workflows/ci.yml` only listened for PRs targeting main. Its filter is removed so the same read-only quality job covers stacked PRs; no new permissions, secrets or privileged trigger are introduced. Exact-head CI/deployment results remain to be recorded after that correction.
+- Delivery evidence and acceptance checklist: `docs/P0A_LOGIN_VISUAL_REFINEMENT.md`. SVG motion uses HTML wrappers; no JS animation loop, effect subscription or new dependency was introduced.
+- Visual/CI code head `d021fde7e5501f4a5b03d3e9bc8e317b9f673294`: [quality run 38070907965](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38070907965) completed successfully. Vercel status and bot confirm a Ready Preview at `https://axia-legal-git-feat-axia-73b882-ramyelhawary73-coders-projects.vercel.app`; deployment [C3TF6qesSGykr7UM1teQJMAM6SVT](https://vercel.com/ramyelhawary73-coders-projects/axia-legal/C3TF6qesSGykr7UM1teQJMAM6SVT). Anonymous GET `/login` redirects to Vercel sign-in. This proves completed build status, not hosted Auth/tenant acceptance. This closeout changes documentation only; its final-head CI must be checked separately. PRs #33/#34 remain Draft and unmerged. No Production action was performed.
 
 ---
 
@@ -3250,13 +3264,13 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: P0A AUTH RECOVERY AND ENTERPRISE LOGIN — OWNER-AUTHORIZED IMPLEMENTATION**
+**Current mode: OWNER-REQUESTED LOGIN ATMOSPHERE REFINEMENT — P0A ACCEPTANCE STILL PENDING**
 
-1. P0A implementation/local browser checks and code-head CI are complete in Draft PR #33. Verify CI/deployment statuses for the documentation closeout head, then conduct the real Preview acceptance checklist; no merge yet.
+1. The bounded Login visual refinement and local checks passed on its own branch. Check its Draft PR's CI and Preview against the exact pushed head, then obtain owner visual review. It is based on the unmerged P0A branch; do not merge either PR yet.
 2. Development is restored and the initial catalog/migration/RLS/Storage/advisor read-only reconciliation passed with the documented warnings. Complete direct role/isolation and migration-body reconciliation; do not replay old migrations to satisfy a missing source definition.
 3. The owner reconnects Vercel with access to the AXIA team. Verify Preview uses the intended Development project and confirm Production separation without exposing env values.
 4. Perform controlled Login/logout/expired-session and two-institution tests on the Preview against real Development Auth. Test fixtures must be identifiable and cleaned up or rolled back; no client data is used.
-5. Update this file and `docs/P0A_AUTH_DELIVERY.md` with actual results. Stop before merge for owner approval, and verify again after any approved merge.
+5. Update this file and the relevant delivery documents with actual results. Stop before merge for owner approval, and verify again after any approved merge. Review the visual direction before spreading it across the system.
 6. Next implementation package: P0B dependency security patches, followed by P0C live tenant/schema reconciliation and the delivery sequence in section 26.
 
 P0A does not authorize merging, Production deployment, billing purchases, automatic AI legal-record writes, or destructive SQL. The owner requested necessary Supabase work, but no SQL change is justified by this auth package.
@@ -3306,6 +3320,7 @@ The full attached `AXIA_LEGAL_MASTER_EXECUTION_PLAN.md` was read alongside this 
 | Package | Status | Concrete output | Acceptance / dependencies |
 | --- | --- | --- | --- |
 | P0A — Auth recovery + enterprise Login foundation | OWNER_TESTING | Real password auth, fail-closed config, safe redirects, controlled errors, honest activation controls, original AXIA SVG mark | Local quality gate; exact-head CI/Preview; desktop/mobile checks; real Development Login/logout and tenant checks before merge |
+| P0A visual refinement — Owner-requested animated Login | OWNER_TESTING | Brand-native AXIA scene, atmospheric background, pause/reduced-motion support and viewport scrolling | Local quality/browser checks passed; separate stacked PR; exact-head CI/Preview and owner visual review required |
 | P0B — Dependency security | READY_FOR_SCOPE | Minimal compatible patches for identified Next.js/transitive advisories and synchronized lockfile | Repeat audit, Typecheck/Lint/Safety/Build, no forced downgrade; review exploit reachability and Preview regressions |
 | P0C — Live schema, Auth, RLS and Storage | READY_FOR_SCOPE | Reconcile live migrations/catalog with source, prove two-tenant isolation, verify environment separation; propose only evidenced repair SQL | Healthy Development + correct Vercel access; migration plan/rollback; direct Auth/RLS/Storage negative tests; no blind replay |
 | Cleanup 3 — Navigation counts | PLANNED | Replace fixed legal/business badges with real scoped counts or no count | Empty/loading/error/two-tenant states; preserve existing create flows |

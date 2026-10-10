@@ -8,12 +8,19 @@ import {
   EyeOff,
   LoaderCircle,
   LockKeyhole,
+  Pause,
+  Play,
   Scale,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { login } from "@/app/login/actions";
 import { AxiaLogo } from "@/components/axia-logo";
+import {
+  LoginAtmosphere,
+  LoginBrandScene,
+} from "@/components/login-atmosphere";
+import styles from "./login-atmosphere.module.css";
 
 function LoginSubmit({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
@@ -49,31 +56,43 @@ export function LoginExperience({
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const [motionPaused, setMotionPaused] = useState(false);
   const inputClass =
     "mt-2 min-h-12 w-full rounded-xl border border-white/15 bg-white/[0.035] px-4 text-sm text-[#f5f2eb] placeholder:text-[#839298] focus:border-[#d8b978] focus:outline-none focus:ring-2 focus:ring-[#d8b978]/20 disabled:opacity-50";
 
   return (
     <main
-      className="relative min-h-dvh overflow-hidden bg-[#101c23] text-[#f5f2eb]"
+      className={`relative bg-[#101c23] text-[#f5f2eb] ${styles.surface}`}
       dir="rtl"
+      data-login-motion={motionPaused ? "paused" : "running"}
     >
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -left-48 -top-48 size-[600px] rounded-full bg-[#d8b978]/[0.045] blur-3xl"
-      />
+      <LoginAtmosphere />
       <div className="relative mx-auto flex min-h-dvh max-w-[1440px] flex-col px-6 sm:px-10 lg:px-16">
         <header className="flex items-center justify-between gap-6 border-b border-white/[0.08] py-6 sm:py-8">
           <AxiaLogo className="text-[#d8b978]" />
-          <span className="hidden text-xs tracking-wide text-[#aab6bb] sm:block">
-            مساحة عمل قانونية · AXIA Legal
-          </span>
-          <span className="rounded-full border border-white/10 px-3 py-1.5 text-xs text-[#aab6bb] sm:hidden">
-            العربية
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="hidden text-xs tracking-wide text-[#aab6bb] md:block">
+              مساحة عمل قانونية · AXIA Legal
+            </span>
+            <button
+              type="button"
+              aria-pressed={motionPaused}
+              onClick={() => setMotionPaused((paused) => !paused)}
+              className={styles.motionControl}
+            >
+              {motionPaused ? (
+                <Play className="size-3.5" aria-hidden="true" />
+              ) : (
+                <Pause className="size-3.5" aria-hidden="true" />
+              )}
+              {motionPaused ? "تشغيل الحركة" : "إيقاف الحركة"}
+            </button>
+          </div>
         </header>
 
-        <div className="grid flex-1 items-center gap-12 py-12 lg:grid-cols-2 lg:gap-20 lg:py-20">
+        <div className="grid flex-1 items-center gap-12 py-10 lg:grid-cols-2 lg:gap-20 lg:py-12">
           <section className="order-2 max-w-xl lg:order-1">
+            <LoginBrandScene />
             <div className="mb-6 flex items-center gap-2 text-xs font-medium tracking-wide text-[#d8b978]">
               <span className="h-px w-8 bg-[#d8b978]/60" /> للممارسة القانونية
               الحديثة
@@ -120,7 +139,7 @@ export function LoginExperience({
 
           <section
             aria-labelledby="login-title"
-            className="order-1 mx-auto w-full max-w-md rounded-3xl border border-white/10 bg-[#15242c] p-7 shadow-2xl shadow-black/15 sm:p-10 lg:order-2"
+            className={`order-1 mx-auto w-full max-w-md rounded-3xl p-7 sm:p-10 lg:order-2 ${styles.loginCard}`}
           >
             <span className="mb-6 inline-flex size-11 items-center justify-center rounded-xl border border-[#d8b978]/20 bg-[#d8b978]/[0.06]">
               <LockKeyhole
