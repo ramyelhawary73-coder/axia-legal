@@ -1,14 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { getSupabasePublicConfig } from "@/lib/supabase/config";
-import { createMockSupabaseServerClient } from "@/lib/supabase/mock-db";
+import { requireSupabasePublicConfig } from "@/lib/supabase/config";
 
 export async function createClient() {
-  const config = getSupabasePublicConfig();
-
-  if (!config) {
-    return createMockSupabaseServerClient() as unknown as ReturnType<typeof createServerClient>;
-  }
+  const config = requireSupabasePublicConfig();
 
   const cookieStore = await cookies();
   const { url, publishableKey } = config;
@@ -30,4 +25,3 @@ export async function createClient() {
     },
   });
 }
-
