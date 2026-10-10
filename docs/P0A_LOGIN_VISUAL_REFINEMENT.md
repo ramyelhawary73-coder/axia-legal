@@ -36,7 +36,14 @@ These are Chromium desktop-browser emulations, including a short viewport repres
 
 Draft visual [PR #34](https://github.com/ramyelhawary73-coder/axia-legal/pull/34) targets the P0A branch. Initial visual head `cd0f6c2a166a447c686cc18309a6c97d5792b48e` started a Vercel Preview but no quality run: CI only listened for PRs targeting main. The minimal trigger correction above is included in the follow-up; check its exact final head for CI and deployment results.
 
-Hosted CI and Vercel Preview must be checked against the exact pushed head. A build status does not establish successful real Supabase Login or tenant isolation. Real Development account Login/logout, expiration, two-institution negative tests and environment separation remain mandatory P0A/P0C acceptance requirements.
+Hosted evidence for visual/CI code head `d021fde7e5501f4a5b03d3e9bc8e317b9f673294`:
+
+- [Quality run 38070907965](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38070907965) completed successfully, including clean dependency install, Typecheck, Lint, Safety tests and Production build.
+- Vercel commit status succeeded and its bot reported Ready. [Preview Login](https://axia-legal-git-feat-axia-73b882-ramyelhawary73-coders-projects.vercel.app/login); [deployment C3TF6qesSGykr7UM1teQJMAM6SVT](https://vercel.com/ramyelhawary73-coders-projects/axia-legal/C3TF6qesSGykr7UM1teQJMAM6SVT).
+- Anonymous Preview GET reached `vercel.com/login`, so it did not exercise the application. Exact-team connector access still returns 403. Hosted environment binding and functional acceptance remain blocked; keep Deployment Protection.
+- Anonymous Production `/login` remained available (200). This package did not merge, deploy or promote Production. PRs #33 and #34 remain Draft/unmerged. The updated desktop visual poster was saved after local browser review.
+
+This closeout changes only delivery documentation. Check CI for its final head separately; the verified Preview above refers to the preceding identical code/workflow tree. A successful build does not establish real Supabase Login or tenant isolation. Real Development account Login/logout, expiration, two-institution negative tests and environment separation remain mandatory P0A/P0C acceptance requirements.
 
 ## Owner review
 
