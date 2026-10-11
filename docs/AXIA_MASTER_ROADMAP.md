@@ -6,11 +6,11 @@
 >
 > **Rule:** every implementation PR must update this file before it is considered complete.
 >
-> **Last verified:** 2026-10-10
+> **Last verified:** 2026-10-11
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
 > **Verified main SHA:** `1e8ad939cd6f89d277891aa9f0c37b45c7c64e0c`
-> **Current execution branch:** `feat/axia-login-atmosphere-20261010` (based on unmerged P0A)
+> **Current execution branch:** `feat/axia-login-identity-20261011` (based on unmerged PR #34)
 
 ---
 
@@ -124,7 +124,7 @@ Status: `OWNER_TESTING`, on `fix/axia-p0a-real-auth-20261010`; [Draft PR #33](ht
 
 ## Owner-requested Login visual refinement — 2026-10-10
 
-Status: `OWNER_TESTING`, on `feat/axia-login-atmosphere-20261010`, based on the freshly verified P0A head `5a8bc45f623d2c74c8354580de893cb4a7699293`. PR #33 remains open and unmerged; its closeout CI run [38068714523](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38068714523) passed. Main remains `1e8ad939cd6f89d277891aa9f0c37b45c7c64e0c`.
+Status: `DEFERRED` for visual acceptance: the owner requested a stronger identity/composition on 2026-10-11. The branch `feat/axia-login-atmosphere-20261010` and its passing checks are preserved as the baseline for the revision below. Its P0A base is `5a8bc45f623d2c74c8354580de893cb4a7699293`; PR #33 remains open and unmerged. Closeout CI run [38068714523](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38068714523) passed. Main remains `1e8ad939cd6f89d277891aa9f0c37b45c7c64e0c`.
 
 - The owner supplied a current Login screenshot and requested a distinctive professional background/animation with desktop, phone and tablet support. The screenshot was inspected; the existing flat background lacks visual depth.
 - Bounded scope: custom AXIA SVG scene, gold/ink atmospheric CSS, restrained transform/opacity animation, explicit pause/resume, OS reduced-motion support, responsive composition and Login-only scrolling. Real Auth, RAJIH functionality, platform roles, subscription logic and database configuration are outside this visual package.
@@ -135,6 +135,20 @@ Status: `OWNER_TESTING`, on `feat/axia-login-atmosphere-20261010`, based on the 
 - Draft visual [PR #34](https://github.com/ramyelhawary73-coder/axia-legal/pull/34) targets the P0A branch. Initial visual head `cd0f6c2a166a447c686cc18309a6c97d5792b48e` started Vercel Preview but had no quality run: `.github/workflows/ci.yml` only listened for PRs targeting main. Its filter is removed so the same read-only quality job covers stacked PRs; no new permissions, secrets or privileged trigger are introduced. Exact-head CI/deployment results remain to be recorded after that correction.
 - Delivery evidence and acceptance checklist: `docs/P0A_LOGIN_VISUAL_REFINEMENT.md`. SVG motion uses HTML wrappers; no JS animation loop, effect subscription or new dependency was introduced.
 - Visual/CI code head `d021fde7e5501f4a5b03d3e9bc8e317b9f673294`: [quality run 38070907965](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38070907965) completed successfully. Vercel status and bot confirm a Ready Preview at `https://axia-legal-git-feat-axia-73b882-ramyelhawary73-coders-projects.vercel.app`; deployment [C3TF6qesSGykr7UM1teQJMAM6SVT](https://vercel.com/ramyelhawary73-coders-projects/axia-legal/C3TF6qesSGykr7UM1teQJMAM6SVT). Anonymous GET `/login` redirects to Vercel sign-in. This proves completed build status, not hosted Auth/tenant acceptance. This closeout changes documentation only; its final-head CI must be checked separately. PRs #33/#34 remain Draft and unmerged. No Production action was performed.
+
+---
+
+## AXIA Aperture identity and Login revision — 2026-10-11
+
+Status: `OWNER_TESTING`, on `feat/axia-login-identity-20261011`, based on freshly verified PR #34 head `bfcee7859a0c0973bfb77bd77e67605f6f9800bd`. PRs #33/#34 remain Draft/unmerged. Live main is unchanged; Supabase Development remains `ACTIVE_HEALTHY`; exact AXIA Vercel team access still returns 403 and no CLI fallback is installed.
+
+- The owner rejected the previous visual direction and requested a much stronger Login composition and recognizable brand identity. The supplied 2026-10-11 screenshot was inspected. Root causes: narrow maximum canvas on wide screens, disconnected columns, uniformly dark surfaces, a literal thin scale icon, and a separate small 3D illustration that did not form a consistent identity.
+- New bounded direction: a 41/59 ivory-form/dark-art split composition, maximum 1760 px canvas, viewport-aware compact laptop spacing, mobile-first form order, a bespoke three-facet AXIA monogram and drawn geometric wordmark. Existing scoped Login CSS is revised directly; global application CSS is unchanged.
+- Original built-in imagegen artwork is delivered locally as `public/brand/axia-aperture-v1.webp` (1536x1024, 87,568 bytes); its architectural folds align with the monogram. Text and form remain HTML; the identity mark is inline SVG. One slow HTML-wrapper animation supports pause/resume and reduced-motion preferences. There is no external media request, canvas, animation library or new dependency.
+- The real Auth Server Action, safe next paths, bounded errors, unavailable-state controls, pending recovery/activation notices and RAJIH's human-review boundary remain in place. This package changes no database, Auth/RLS, role, subscription logic or Production deployment. Earlier package history is preserved.
+- Local Typecheck/Lint, 119 Safety tests and Production build passed. Final Chromium checks passed at nine viewports: standard desktops including 1366x768 and 1024x768 fit without vertical overflow, phone/tablet/landscape/short views have reachable controls and no horizontal overflow. Pause/reduced-motion, email-first keyboard order, artwork loading and artwork-failure form usability passed. Real Server Action wrong-credential rejection used one isolated localhost provider call, with no browser errors or external asset requests. Four unavailable-config browser checks and protected-route 503 regression checks also passed. Evidence and hosted status: `docs/P0A_LOGIN_IDENTITY_V2.md`.
+- Hosted code-head verification: Draft [PR #35](https://github.com/ramyelhawary73-coder/axia-legal/pull/35) targets PR #34's branch and preserves prior Auth/CI work. Exact code head `eabc037480e344ea961404bb5aeef1cf5357e699` passed [CI run 38107448494](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38107448494). Vercel reports [deployment J5WAv757RStNyNMi4RNhZD7TNS7P](https://vercel.com/ramyelhawary73-coders-projects/axia-legal/J5WAv757RStNyNMi4RNhZD7TNS7P) Ready and its commit status is success. New [Login Preview](https://axia-legal-git-feat-axia-15a1a1-ramyelhawary73-coders-projects.vercel.app/login) is protected; anonymous access redirects to Vercel sign-in. This is build verification, not hosted real-account/tenant acceptance. This closeout changes documentation only; its final-head checks are tracked in PR #35.
+- Owner approval of a visual proposal does not establish commercial launch readiness or award/trademark clearance. Physical mobile acceptance, real Auth/tenant isolation and P0B dependency repairs remain gates. No merge or Production action was performed.
 
 ---
 
@@ -3264,9 +3278,9 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: OWNER-REQUESTED LOGIN ATMOSPHERE REFINEMENT — P0A ACCEPTANCE STILL PENDING**
+**Current mode: AXIA APERTURE IDENTITY AND LOGIN REVISION — OWNER VISUAL REVIEW, P0A ACCEPTANCE PENDING**
 
-1. The bounded Login visual refinement and local checks passed on its own branch. Check its Draft PR's CI and Preview against the exact pushed head, then obtain owner visual review. It is based on the unmerged P0A branch; do not merge either PR yet.
+1. Review the completed Aperture identity/Login revision in Draft PR #35 and its new protected Preview. Local responsive/short-laptop/branding/Auth regression checks and code-head CI/Preview passed; verify the documentation-closeout head's checks in PR #35. Owner visual review and physical-device acceptance remain pending. Do not merge any pending PR yet.
 2. Development is restored and the initial catalog/migration/RLS/Storage/advisor read-only reconciliation passed with the documented warnings. Complete direct role/isolation and migration-body reconciliation; do not replay old migrations to satisfy a missing source definition.
 3. The owner reconnects Vercel with access to the AXIA team. Verify Preview uses the intended Development project and confirm Production separation without exposing env values.
 4. Perform controlled Login/logout/expired-session and two-institution tests on the Preview against real Development Auth. Test fixtures must be identifiable and cleaned up or rolled back; no client data is used.
@@ -3320,7 +3334,8 @@ The full attached `AXIA_LEGAL_MASTER_EXECUTION_PLAN.md` was read alongside this 
 | Package | Status | Concrete output | Acceptance / dependencies |
 | --- | --- | --- | --- |
 | P0A — Auth recovery + enterprise Login foundation | OWNER_TESTING | Real password auth, fail-closed config, safe redirects, controlled errors, honest activation controls, original AXIA SVG mark | Local quality gate; exact-head CI/Preview; desktop/mobile checks; real Development Login/logout and tenant checks before merge |
-| P0A visual refinement — Owner-requested animated Login | OWNER_TESTING | Brand-native AXIA scene, atmospheric background, pause/reduced-motion support and viewport scrolling | Local quality/browser checks passed; separate stacked PR; exact-head CI/Preview and owner visual review required |
+| P0A visual refinement — Owner-requested animated Login | DEFERRED | Brand-native AXIA scene, atmospheric background, pause/reduced-motion support and viewport scrolling | Local quality/browser checks passed; separate stacked PR; exact-head CI/Preview and owner visual review required |
+| P0A identity revision — AXIA Aperture | OWNER_TESTING | Distinctive original monogram/wordmark, ivory/dark composition and original architectural artwork | Local quality/browser checks passed; separate stacked PR; exact-head CI/Preview and owner visual acceptance required |
 | P0B — Dependency security | READY_FOR_SCOPE | Minimal compatible patches for identified Next.js/transitive advisories and synchronized lockfile | Repeat audit, Typecheck/Lint/Safety/Build, no forced downgrade; review exploit reachability and Preview regressions |
 | P0C — Live schema, Auth, RLS and Storage | READY_FOR_SCOPE | Reconcile live migrations/catalog with source, prove two-tenant isolation, verify environment separation; propose only evidenced repair SQL | Healthy Development + correct Vercel access; migration plan/rollback; direct Auth/RLS/Storage negative tests; no blind replay |
 | Cleanup 3 — Navigation counts | PLANNED | Replace fixed legal/business badges with real scoped counts or no count | Empty/loading/error/two-tenant states; preserve existing create flows |
