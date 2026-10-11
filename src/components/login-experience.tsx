@@ -6,6 +6,9 @@ import {
   ArrowLeft,
   Eye,
   EyeOff,
+  BriefcaseBusiness,
+  CalendarDays,
+  Files,
   LoaderCircle,
   Pause,
   Play,
@@ -62,6 +65,14 @@ export function LoginExperience({
       data-login-motion={motionPaused ? "paused" : "running"}
     >
       <LoginAtmosphere />
+      <LoginBrandScene />
+      <header className={styles.pageHead}>
+        <AxiaLogo className={styles.brand} />
+        <div className={styles.headMeta}>
+          <span>الممارسة القانونية، بمنظور جديد.</span>
+          <span className={styles.language}>العربية</span>
+        </div>
+      </header>
       <div className={styles.shell} dir="ltr">
         <section
           className={styles.formPanel}
@@ -69,18 +80,16 @@ export function LoginExperience({
           aria-labelledby="login-title"
         >
           <header className={styles.formHead}>
-            <AxiaLogo className={styles.mobileBrand} />
-            <span className={styles.desktopLabel}>دخول المؤسسات</span>
-            <span className={styles.language}>العربية</span>
+            <span className={styles.formSymbol}><BriefcaseBusiness size={19} aria-hidden="true" /></span>
+            <span>دخول المؤسسات</span>
           </header>
           <div className={styles.formContent}>
             <div className={styles.formBody}>
-              <p className={styles.eyebrow}>مساحة العمل</p>
               <h2 id="login-title" className={styles.formTitle}>
-                أهلًا بعودتك.
+                أهلًا بعودتك
               </h2>
               <p className={styles.formIntro}>
-                ادخل إلى مساحة العمل الخاصة بمؤسستك.
+                مساحة عملك القانونية، جاهزة لك.
               </p>
               {!authConfigured && (
                 <p role="status" className={styles.message}>
@@ -108,7 +117,7 @@ export function LoginExperience({
                     required
                     maxLength={320}
                     disabled={!authConfigured}
-                    placeholder="name@yourfirm.com"
+                    placeholder="you@yourfirm.com"
                     className={styles.input}
                   />
                 </div>
@@ -183,10 +192,6 @@ export function LoginExperience({
               )}
             </div>
           </div>
-          <footer className={styles.formFooter}>
-            <span dir="ltr">AXIA Legal</span>
-            <span>للممارسة القانونية الحديثة</span>
-          </footer>
         </section>
 
         <section
@@ -194,38 +199,22 @@ export function LoginExperience({
           dir="rtl"
           aria-labelledby="axia-intro-title"
         >
-          <LoginBrandScene />
-          <header className={styles.heroHead}>
-            <AxiaLogo className={styles.heroBrand} />
-            <span className={styles.mobileHeroLabel}>
-              الممارسة القانونية، بمنظور جديد.
-            </span>
-            <button
-              type="button"
-              aria-pressed={motionPaused}
-              onClick={() => setMotionPaused((paused) => !paused)}
-              className={styles.motionControl}
-            >
-              {motionPaused ? (
-                <Play className="size-3.5" aria-hidden="true" />
-              ) : (
-                <Pause className="size-3.5" aria-hidden="true" />
-              )}
-              <span>{motionPaused ? "تشغيل الحركة" : "إيقاف الحركة"}</span>
-            </button>
-          </header>
           <div className={styles.heroContent}>
-            <p className={styles.heroEyebrow}>وضوح الرؤية. قوة القرار.</p>
+            <p className={styles.heroEyebrow}><span /> مساحة العمل القانونية</p>
             <h1 id="axia-intro-title">
-              القانون،
+              كل قضية.
               <br />
-              <span>بوضوحٍ أكبر.</span>
+              <span>رؤية أوضح.</span>
             </h1>
             <p className={styles.heroDescription}>
-              قضاياك وجلساتك ومستنداتك، في مساحة عمل واحدة.
-              <br className={styles.desktopBreak} /> صُمّمت لتمنحك التركيز على
-              ما يصنع الفارق.
+              تفاصيل مكتبك في تناغم. من أول مستند إلى موعد الجلسة، مساحة
+              واحدة تمنحك التنظيم والتركيز.
             </p>
+            <div className={styles.capabilities}>
+              <span><BriefcaseBusiness size={17} aria-hidden="true" /> القضايا</span>
+              <span><CalendarDays size={17} aria-hidden="true" /> الجلسات</span>
+              <span><Files size={17} aria-hidden="true" /> المستندات</span>
+            </div>
           </div>
           <div className={styles.rajih}>
             <span className={styles.rajihIcon}>
@@ -233,13 +222,25 @@ export function LoginExperience({
             </span>
             <div>
               <h2>
-                راجح <span dir="ltr">RAJIH AI</span>
+                راجح، مساعدك القانوني <span dir="ltr">RAJIH AI</span>
               </h2>
               <p>للبحث والصياغة القانونية. المراجعة والقرار المهني بيدك.</p>
             </div>
           </div>
         </section>
       </div>
+      <footer className={styles.pageFooter}>
+        <div><span dir="ltr">AXIA Legal</span><span>للممارسة القانونية الحديثة</span></div>
+        <button
+          type="button"
+          aria-pressed={motionPaused}
+          onClick={() => setMotionPaused((paused) => !paused)}
+          className={styles.motionControl}
+        >
+          {motionPaused ? <Play size={14} aria-hidden="true" /> : <Pause size={14} aria-hidden="true" />}
+          <span>{motionPaused ? "تشغيل الحركة" : "إيقاف الحركة"}</span>
+        </button>
+      </footer>
     </main>
   );
 }
