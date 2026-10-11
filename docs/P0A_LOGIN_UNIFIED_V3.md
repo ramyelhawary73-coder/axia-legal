@@ -1,6 +1,6 @@
 # AXIA Legal — Unified Login composition
 
-Date: 2026-10-11. Status: OWNER_TESTING; final local checks passed, exact-head hosted checks and owner visual review pending. This is an owner-requested replacement of the rejected PR #35 visual proposal, preserving the existing Auth/CI foundation.
+Date: 2026-10-11. Status: OWNER_TESTING; local and exact code-head CI/Preview build passed, owner visual review pending. Documentation-closeout head checks are tracked in Draft PR #36. This is an owner-requested replacement of the rejected PR #35 visual proposal, preserving the existing Auth/CI foundation.
 
 ## Fresh baseline and scope
 
@@ -42,7 +42,16 @@ Passed on final local code:
 - Four missing-config responsive browser checks: disabled Login, safe-next normalization, bounded error, honest pending activation and password reveal. Protected `/`, `/api/tasks` and `/api/rajih` returned 503 with private/no-store caching. No mock fallback was added.
 - Desktop/laptop/phone screenshots inspected internally. These are Chromium emulations, not physical Android/iOS/Safari verification.
 
-Exact-head hosted results will be added after push. Physical-device and real Supabase-account/tenant tests are separate gates; local fixtures are not live Supabase tests.
+Exact code-head CI/Preview checks passed. Physical-device and real Supabase-account/tenant tests are separate gates; local fixtures are not live Supabase tests.
+
+## Hosted verification
+
+- Draft [PR #36](https://github.com/ramyelhawary73-coder/axia-legal/pull/36) targets PR #35's branch and preserves prior Auth/CI work.
+- Exact code head `0bf8cef17f01b96f8ad2620c9b4c9bc75d4fc93b`: [CI run 38137696604](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38137696604) completed/success, including clean install, Typecheck, Lint, Safety tests and build.
+- Vercel commit status is success; [deployment 373BTZTyUoYeBHP3PtWTPmnxduye](https://vercel.com/ramyelhawary73-coders-projects/axia-legal/373BTZTyUoYeBHP3PtWTPmnxduye) is Ready.
+- New [Login Preview](https://axia-legal-git-feat-axia-d9e2b0-ramyelhawary73-coders-projects.vercel.app/login) is protected. Anonymous GET redirects to Vercel sign-in. Keep Deployment Protection; owner can open the existing authorized Vercel session.
+- This closeout changes documentation only. Its exact final-head CI/Preview results are tracked in PR #36; code/assets remain unchanged from the verified head. Build success does not prove hosted real-account/tenant acceptance.
+- Main and Production were not modified; PRs remain Draft/unmerged.
 
 Basic text/button contrast was calculated for the sampled palette pairs: form body 5.46:1, secondary buttons 5.37:1, field labels 9.70:1, primary action 11.75:1, hero copy 6.72:1 and hero accent 6.07:1 against the conservative sampled solid backgrounds. This is limited palette verification, not a full WCAG conformance claim.
 
