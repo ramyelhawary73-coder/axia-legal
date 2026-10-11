@@ -1,10 +1,10 @@
 # AXIA Aperture — Login identity revision
 
-Date: 2026-10-11. Status: OWNER_TESTING (local checks passed; exact-head hosted checks and owner review pending). Owner-requested revision of the prior visual direction; no merge or Production authorization.
+Date: 2026-10-11. Status: OWNER_TESTING (local checks and exact code-head CI/Preview build passed; owner review pending). Owner-requested revision of the prior visual direction; no merge or Production authorization. Documentation-closeout head checks are tracked in Draft PR #35.
 
 ## Baseline and purpose
 
-Fresh main `1e8ad939cd6f89d277891aa9f0c37b45c7c64e0c`; PR #34 `bfcee7859a0c0973bfb77bd77e67605f6f9800bd` and PR #33 `5a8bc45f623d2c74c8354580de893cb4a7699293` remain Draft/unmerged. Revision branch `feat/axia-login-identity-20261011` is based on PR #34 and preserves the preceding real-auth and CI work. Its new PR targets that branch for focused review.
+Fresh main `1e8ad939cd6f89d277891aa9f0c37b45c7c64e0c`; PR #34 `bfcee7859a0c0973bfb77bd77e67605f6f9800bd` and PR #33 `5a8bc45f623d2c74c8354580de893cb4a7699293` remain Draft/unmerged. Revision branch `feat/axia-login-identity-20261011` is based on PR #34 and preserves the preceding real-auth and CI work. Draft [PR #35](https://github.com/ramyelhawary73-coder/axia-legal/pull/35) targets that branch for focused review.
 
 The inspected owner screenshot shows excessive separation between the small dark form and marketing column, a narrow canvas on wide displays, and a thin literal legal icon that lacks a distinctive identity. The owner requests competition-caliber visual quality; that is a subjective review target, not an award claim.
 
@@ -37,6 +37,14 @@ Passed locally on final code:
 - Screenshots of desktop, laptop and phone layouts visually inspected. These are Chromium emulations; physical-device claims are not made.
 
 Physical Android/iOS/Safari, keyboard behavior, real Development Login/logout and two-institution isolation remain separate acceptance checks. Approval of this identity does not approve deploying the product, claim a registered trademark, or prove every internal module is responsive. P0B dependency repairs and P0C Auth/tenant/environment verification remain next security gates.
+
+## Hosted code-head verification
+
+- Exact code head: `eabc037480e344ea961404bb5aeef1cf5357e699`.
+- [CI run 38107448494](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38107448494): completed/success. Clean npm install, Typecheck, Lint, Safety tests, build and cleanup checks passed.
+- Vercel commit status: success. [Deployment J5WAv757RStNyNMi4RNhZD7TNS7P](https://vercel.com/ramyelhawary73-coders-projects/axia-legal/J5WAv757RStNyNMi4RNhZD7TNS7P): Ready.
+- New [Login Preview](https://axia-legal-git-feat-axia-15a1a1-ramyelhawary73-coders-projects.vercel.app/login). Anonymous access redirects to Vercel sign-in; owner should open it with the existing authorized Vercel account. Deployment Protection stays enabled. Hosted real-account/tenant and environment-binding acceptance have not passed.
+- The following documentation-only closeout leaves all tested code/assets unchanged. Its exact final-head CI/Preview results are recorded in PR #35, avoiding a self-referential evidence commit loop. No merge or Production action.
 
 ## Artwork prompt — built-in generation
 
