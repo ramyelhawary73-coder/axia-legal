@@ -146,7 +146,7 @@ export function RajihAiView() {
               ابحث في المصادر القانونية المعتمدة، حلّل مستنداتك المصرح بها، وأنشئ مسودات قابلة للمراجعة — مع مصدر كل نتيجة وتاريخ سريانها.
             </p>
           </div>
-          <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:grid-cols-4 xl:w-[420px] xl:shrink-0">
+          <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:grid-cols-4 xl:w-[480px] xl:shrink-0">
             {[
               [ShieldCheck, "مصادر معتمدة", "فقط"],
               [BookOpen, "بحث موثق", "بالاستشهادات"],
@@ -155,7 +155,7 @@ export function RajihAiView() {
             ].map(([Icon, label, value]) => {
               const IconComponent = Icon as typeof ShieldCheck;
               return (
-                <div key={label as string} className="min-w-0 rounded-2xl border border-[var(--border)] bg-black/15 p-3">
+                <div key={label as string} className="min-w-0 rounded-2xl border border-[var(--border)] bg-black/15 p-2.5">
                   <IconComponent className="size-4 text-[var(--axia-gold-light)]" />
                   <p className="mt-2 text-[10px] text-[var(--text-muted)]">{label as string}</p>
                   <p className="mt-0.5 text-[11px] leading-5 font-bold text-[var(--text)] [overflow-wrap:anywhere]">{value as string}</p>
