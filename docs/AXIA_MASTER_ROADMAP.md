@@ -3321,3 +3321,14 @@ Not allowed:
 - dependency changes.
 
 This branch is documentation-only. Cleanup Batch 2 is closed and Cleanup Batch 3 has **not** started.
+
+
+## RAJIH capability-card overflow — 2026-10-13
+
+Status: IN_PROGRESS / owner review pending. Dedicated branch `fix/rajih-card-overflow-20261013` starts from freshly verified main `1e8ad939cd6f89d277891aa9f0c37b45c7c64e0c`; existing unmerged Login PRs are preserved.
+
+Root cause: header flex layout shrinks the capability grid beside the introduction; long Arabic value text lacks overflow wrapping. Fix only `src/components/views/rajih-ai-view.tsx`: defer side-by-side header layout to xl, keep xl card grid from shrinking, allow text column/card minimum width to shrink safely, and wrap long values without reducing font size.
+
+Local validation in the existing isolated checkout: Typecheck and zero-warning Lint passed; all 119 Safety tests passed. Default Turbopack build hit a local persistence-cache error (invalid digit found in string); explicit Webpack build passed. Six Chromium widths 320/390/768/1024/1280/1440 passed bounding-box and scroll-width containment checks for all four capability values. Safe demo recording uses the repaired actual component. These are visual/layout tests, not Auth, live legal answer or tenant-isolation acceptance.
+
+Remote exact-head CI and Vercel Preview must be checked before approval/merge. No Auth, Supabase, Database, RLS, Secrets, dependencies, main write, Merge or Production changes authorized by this package. NEXT ACTION: review corrected cards/video and PR checks, then request owner approval before merge.
