@@ -133,8 +133,8 @@ export function RajihAiView() {
   return (
     <main className="min-h-full space-y-5 p-3 sm:space-y-7 sm:p-6 lg:p-10" dir="rtl">
       <section className="relative overflow-hidden rounded-[2rem] border border-[var(--axia-gold)]/30 bg-[radial-gradient(circle_at_top_right,rgba(191,151,45,0.18),transparent_42%),linear-gradient(135deg,var(--panel),var(--bg))] p-5 shadow-2xl shadow-black/20 sm:p-8">
-        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
+        <div className="relative z-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div className="min-w-0 max-w-3xl flex-1">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-bold text-emerald-300">
               <span className="size-1.5 animate-pulse rounded-full bg-emerald-300" />
               مساعد بحث قانوني آمن
@@ -146,7 +146,7 @@ export function RajihAiView() {
               ابحث في المصادر القانونية المعتمدة، حلّل مستنداتك المصرح بها، وأنشئ مسودات قابلة للمراجعة — مع مصدر كل نتيجة وتاريخ سريانها.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:w-[420px]">
+          <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:grid-cols-4 xl:w-[420px] xl:shrink-0">
             {[
               [ShieldCheck, "مصادر معتمدة", "فقط"],
               [BookOpen, "بحث موثق", "بالاستشهادات"],
@@ -155,10 +155,10 @@ export function RajihAiView() {
             ].map(([Icon, label, value]) => {
               const IconComponent = Icon as typeof ShieldCheck;
               return (
-                <div key={label as string} className="rounded-2xl border border-[var(--border)] bg-black/15 p-3">
+                <div key={label as string} className="min-w-0 rounded-2xl border border-[var(--border)] bg-black/15 p-3">
                   <IconComponent className="size-4 text-[var(--axia-gold-light)]" />
                   <p className="mt-2 text-[10px] text-[var(--text-muted)]">{label as string}</p>
-                  <p className="mt-0.5 text-[11px] font-bold text-[var(--text)]">{value as string}</p>
+                  <p className="mt-0.5 text-[11px] leading-5 font-bold text-[var(--text)] [overflow-wrap:anywhere]">{value as string}</p>
                 </div>
               );
             })}
