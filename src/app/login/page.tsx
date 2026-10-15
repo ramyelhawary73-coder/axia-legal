@@ -46,6 +46,7 @@ import {
 } from "lucide-react";
 import { login } from "@/app/login/actions";
 import { AxiaBrandLogo, AxiaSymbolSvg } from "@/components/axia-brand-logo";
+import styles from "./login.module.css";
 
 type ShowcaseTab = "rajih" | "hearings" | "finance" | "security";
 type AuthTab = "signin" | "request_license";
@@ -235,7 +236,7 @@ function LoginSubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-l from-[var(--axia-gold)] via-[var(--axia-gold-light)] to-[var(--axia-gold)] px-5 py-3.5 text-xs font-extrabold text-black shadow-lg shadow-[var(--axia-gold)]/20 transition-all duration-300 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
+      className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-l from-[var(--axia-gold)] via-[var(--login-gold-highlight)] to-[var(--axia-gold)] px-5 py-3.5 text-xs font-extrabold text-black shadow-lg shadow-[var(--axia-gold)]/20 transition-all duration-300 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
     >
       <span className="relative z-10 flex items-center justify-center gap-2">
         {pending ? (
@@ -418,14 +419,14 @@ function LoginPortalContent() {
   return (
     <div
       ref={scrollContainerRef}
-      className="relative h-screen w-full overflow-y-auto overflow-x-hidden scroll-smooth bg-[var(--bg)] text-[var(--text)] selection:bg-[var(--axia-gold)]/20 selection:text-[var(--axia-gold-light)]"
+      className={`${styles.portal} relative h-dvh w-full overflow-y-auto overflow-x-hidden scroll-smooth bg-[var(--bg)] text-[var(--text)] selection:bg-[var(--axia-gold)]/20 selection:text-[var(--axia-gold-light)]`}
     >
       {/* Ambient Sovereign Architectural Backdrop */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -top-40 right-[-10%] h-[520px] w-[520px] rounded-full bg-gradient-to-bl from-[var(--axia-gold)]/12 via-amber-500/5 to-transparent blur-[130px]" />
         <div className="absolute bottom-[-15%] left-[-10%] h-[480px] w-[480px] rounded-full bg-gradient-to-tr from-emerald-500/8 via-[var(--axia-gold)]/5 to-transparent blur-[140px]" />
         <div
-          className="absolute inset-0 opacity-[0.025] dark:opacity-[0.04]"
+          className="absolute inset-0 opacity-[0.012] dark:opacity-[0.025]"
           style={{
             backgroundImage:
               "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
@@ -433,14 +434,14 @@ function LoginPortalContent() {
           }}
         />
         {/* Subtle Watermark Emblem */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-[0.025] dark:opacity-[0.035]">
+        <div className="absolute inset-0 flex items-center justify-center opacity-[0.012] dark:opacity-[0.025]">
           <AxiaSymbolSvg className="h-[680px] w-[680px]" monochrome idPrefix="axia-bg-watermark" />
         </div>
       </div>
 
       {/* Top Sticky Command Navbar */}
       <header className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--bg-glass)] backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
           <button
             type="button"
             onClick={() => scrollToSection("top")}
@@ -450,7 +451,7 @@ function LoginPortalContent() {
           </button>
 
           {/* Quick Section Navigation */}
-          <nav className="hidden lg:flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--panel)]/60 p-1 text-xs font-semibold text-[var(--text-muted)]">
+          <nav className="hidden xl:flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--panel)]/60 p-1 text-xs font-semibold text-[var(--text-muted)]">
             <button
               type="button"
               onClick={() => scrollToSection("top")}
@@ -483,7 +484,7 @@ function LoginPortalContent() {
 
           {/* Status, Theme Switcher & CTA */}
           <div className="flex items-center gap-2.5">
-            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 font-mono text-[10px] font-bold text-emerald-500">
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 font-mono text-[10px] font-bold text-[var(--login-success)]">
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
               عزل سيادي RLS نشط
             </span>
@@ -515,13 +516,32 @@ function LoginPortalContent() {
       </header>
 
       {/* HERO SECTION: SPLIT-SCREEN ENTERPRISE LOGIN + INTERACTIVE SYSTEM SHOWCASE */}
-      <main className="relative z-10 mx-auto max-w-7xl px-4 pt-6 pb-16 sm:px-6 lg:px-8 lg:pt-10">
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-10">
+      <main className="relative z-10 mx-auto max-w-[1440px] px-4 pt-6 pb-16 sm:px-6 lg:px-10 lg:pt-8">
+            {/* Value Proposition Hero Header */}
+            <div className={styles.intro}>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/10 px-3.5 py-1.5 text-xs font-bold text-[var(--axia-gold-light)]">
+                <Sparkles className="size-3.5" />
+                <span>أول نظام تشغيل قضائي سحابي متكامل للمكاتب القانونية في مصر</span>
+              </div>
+
+              <h1 className="text-3xl font-black tracking-tight leading-[1.4] sm:text-4xl xl:text-[42px]">
+                أدِر مكتبك القانوني بدقة المؤسسات العالمية{" "}
+                <span className="text-[var(--axia-gold-light)]">
+                  وبذكاء «راجح» القضائي
+                </span>
+              </h1>
+
+              <p className="mx-auto max-w-3xl text-sm leading-7 text-[var(--text-muted)]">
+                منصة <strong className="text-[var(--text)]">AXIA Legal OS</strong> تجمع إدارة القضايا، رول الجلسات، التوكيلات، العقود المشفرة، وحوكمة الأتعاب مع محرك الذكاء الاصطناعي <strong className="text-[var(--axia-gold-light)]">«راجح»</strong> المقيد بأحكام محكمة النقض والتشريعات المصرية، داخل بيئة سحابية معزولة بالكامل لكل مكتب.
+              </p>
+
+            </div>
+        <div className={styles.workspace}>
           {/* RIGHT COLUMN (RTL Primary — 5 Columns): THE ENTERPRISE AUTH CAPSULE */}
-          <div className="lg:col-span-5 lg:sticky lg:top-24">
-            <div className="relative overflow-hidden rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)]/90 p-6 shadow-2xl backdrop-blur-2xl sm:p-8">
+          <div className={styles.authColumn}>
+            <div className={`${styles.authCard} relative rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)] p-5 sm:p-7`}>
               {/* Top Golden Accent Line */}
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-l from-transparent via-[var(--axia-gold-light)] to-transparent" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-l from-transparent via-[var(--login-gold-highlight)] to-transparent" />
 
               {/* Animated AXIA Brand Header inside the Auth Card */}
               <div className="mb-6 flex flex-col items-start justify-between gap-4 border-b border-[var(--border)] pb-5">
@@ -541,7 +561,7 @@ function LoginPortalContent() {
                   onClick={() => setAuthTab("signin")}
                   className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-extrabold transition-all cursor-pointer ${
                     authTab === "signin"
-                      ? "bg-gradient-to-l from-[var(--axia-gold)] to-[var(--axia-gold-light)] text-black shadow-md"
+                      ? "bg-gradient-to-l from-[var(--axia-gold)] to-[var(--login-gold-highlight)] text-black shadow-md"
                       : "text-[var(--text-muted)] hover:text-[var(--text)]"
                   }`}
                 >
@@ -555,7 +575,7 @@ function LoginPortalContent() {
                   onClick={() => setAuthTab("request_license")}
                   className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-extrabold transition-all cursor-pointer ${
                     authTab === "request_license"
-                      ? "bg-gradient-to-l from-[var(--axia-gold)] to-[var(--axia-gold-light)] text-black shadow-md"
+                      ? "bg-gradient-to-l from-[var(--axia-gold)] to-[var(--login-gold-highlight)] text-black shadow-md"
                       : "text-[var(--text-muted)] hover:text-[var(--text)]"
                   }`}
                 >
@@ -573,9 +593,9 @@ function LoginPortalContent() {
                   {authErrorMessage && (
                     <div
                       role="alert"
-                      className="flex items-start gap-2.5 rounded-2xl border border-red-500/35 bg-red-500/10 p-3.5 text-right text-xs font-semibold text-red-400"
+                      className="flex items-start gap-2.5 rounded-2xl border border-red-500/35 bg-red-500/10 p-3.5 text-right text-xs font-semibold text-[var(--login-error)]"
                     >
-                      <AlertCircle className="mt-0.5 size-4 shrink-0 text-red-400" />
+                      <AlertCircle className="mt-0.5 size-4 shrink-0 text-[var(--login-error)]" />
                       <div className="space-y-0.5">
                         <p className="font-bold">تعذر تسجيل الدخول</p>
                         <p className="text-[11px] opacity-90">{authErrorMessage}</p>
@@ -664,7 +684,7 @@ function LoginPortalContent() {
                   {/* Security Assurance Footer */}
                   <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[var(--border)] text-center">
                     <div className="rounded-xl bg-[var(--accent)] px-2 py-2">
-                      <span className="block font-mono text-[10px] font-bold text-emerald-500">
+                      <span className="block font-mono text-[10px] font-bold text-[var(--login-success)]">
                         RLS Isolated
                       </span>
                       <span className="text-[9px] text-[var(--text-muted)]">عزل تام للمكتب</span>
@@ -692,7 +712,7 @@ function LoginPortalContent() {
 
                   {licenseRequestCode ? (
                     <div className="space-y-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-right">
-                      <div className="flex items-center gap-2.5 text-emerald-400">
+                      <div className="flex items-center gap-2.5 text-[var(--login-success)]">
                         <CheckCircle2 className="size-5 shrink-0" />
                         <h4 className="text-sm font-extrabold">
                           تم تجهيز مسودة طلب الترخيص محليًا
@@ -831,9 +851,9 @@ function LoginPortalContent() {
 
                       <button
                         type="submit"
-                        className="w-full rounded-xl bg-gradient-to-l from-[var(--axia-gold)] to-[var(--axia-gold-light)] py-3 text-xs font-extrabold text-black shadow-lg transition-all hover:brightness-110 cursor-pointer"
+                        className="w-full rounded-xl bg-gradient-to-l from-[var(--axia-gold)] to-[var(--login-gold-highlight)] py-3 text-xs font-extrabold text-black shadow-lg transition-all hover:brightness-110 cursor-pointer"
                       >
-                        إرسال طلب تأسيس المكتب وحجز العرض التنفيذي
+                        تجهيز مسودة طلب ترخيص المكتب
                       </button>
                     </form>
                   )}
@@ -843,64 +863,9 @@ function LoginPortalContent() {
           </div>
 
           {/* LEFT COLUMN (RTL Showcase — 7 Columns): INTERACTIVE PRODUCT MARKETING & LIVE OS PREVIEW */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Value Proposition Hero Header */}
-            <div className="space-y-4 text-right">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/10 px-3.5 py-1.5 text-xs font-bold text-[var(--axia-gold-light)]">
-                <Sparkles className="size-3.5" />
-                <span>أول نظام تشغيل قضائي سحابي متكامل للمكاتب القانونية في مصر</span>
-              </div>
-
-              <h1 className="text-3xl font-black tracking-tight leading-[1.2] sm:text-4xl lg:text-[42px]">
-                أدِر مكتبك القانوني بدقة المؤسسات العالمية{" "}
-                <span className="bg-gradient-to-l from-[var(--axia-gold-light)] via-amber-400 to-[var(--axia-gold)] bg-clip-text text-transparent">
-                  وبذكاء «راجح» القضائي
-                </span>
-              </h1>
-
-              <p className="max-w-2xl text-xs sm:text-sm leading-relaxed text-[var(--text-muted)]">
-                منصة <strong className="text-[var(--text)]">AXIA Legal OS</strong> تجمع إدارة القضايا، رول الجلسات، التوكيلات، العقود المشفرة، وحوكمة الأتعاب مع محرك الذكاء الاصطناعي <strong className="text-[var(--axia-gold-light)]">«راجح»</strong> المقيد بأحكام محكمة النقض والتشريعات المصرية، داخل بيئة سحابية معزولة بالكامل لكل مكتب.
-              </p>
-
-              {/* Key Trust Metrics Bar */}
-              <div className="grid grid-cols-2 gap-3 pt-1 sm:grid-cols-4">
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)]/80 p-3.5">
-                  <span className="block font-mono text-lg font-black text-[var(--axia-gold-light)]">
-                    ١٢ وحدة
-                  </span>
-                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">
-                    تشغيلية وقانونية متكاملة
-                  </span>
-                </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)]/80 p-3.5">
-                  <span className="block font-mono text-lg font-black text-emerald-500">
-                    100% RLS
-                  </span>
-                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">
-                    عزل بيانات الموكلين والقضايا
-                  </span>
-                </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)]/80 p-3.5">
-                  <span className="block font-mono text-lg font-black text-[var(--text)]">
-                    RAJIH AI
-                  </span>
-                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">
-                    استشهاد موثق بأحكام النقض
-                  </span>
-                </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)]/80 p-3.5">
-                  <span className="block font-mono text-lg font-black text-[var(--axia-gold-light)]">
-                    ٦ مسارات
-                  </span>
-                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">
-                    تدقيق إلزامي (Audit Triggers)
-                  </span>
-                </div>
-              </div>
-            </div>
-
+          <div className={styles.showcaseColumn}>
             {/* LIVE INTERACTIVE PRODUCT CONSOLE (Try the 4 Core Pillars right on the Login Screen) */}
-            <div className="overflow-hidden rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)]/95 shadow-2xl backdrop-blur-xl">
+            <div className={`${styles.console} overflow-hidden rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)]`}>
               {/* Console Window Bar */}
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--bg)]/70 px-4 py-3 sm:px-5">
                 <div className="flex items-center gap-2">
@@ -975,7 +940,7 @@ function LoginPortalContent() {
               </div>
 
               {/* Interactive Console Body */}
-              <div className="p-5 sm:p-6">
+              <div className={`${styles.consoleBody} p-4 sm:p-5`} tabIndex={0} role="region" aria-label="محتوى العرض التفاعلي">
                 <AnimatePresence mode="wait">
                   {/* PILLAR 1: RAJIH AI INTERACTIVE SIMULATION */}
                   {activeShowcase === "rajih" && (
@@ -991,7 +956,7 @@ function LoginPortalContent() {
                         <span className="text-xs font-bold text-[var(--text-muted)]">
                           اختر قضية أو استشارة لتجربة تحليل «راجح» المدعوم بأحكام النقض:
                         </span>
-                        <span className="rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-0.5 text-[10px] font-bold text-emerald-500">
+                        <span className="rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-0.5 text-[10px] font-bold text-[var(--login-success)]">
                           مقيد بالمصادر التشريعية المعتمدة
                         </span>
                       </div>
@@ -1049,7 +1014,7 @@ function LoginPortalContent() {
                         ) : (
                           <div className="space-y-3 text-xs leading-relaxed">
                             <div className="rounded-xl bg-[var(--panel)] p-3 border border-[var(--border)]">
-                              <span className="block text-[11px] font-extrabold text-emerald-500 mb-1">
+                              <span className="block text-[11px] font-extrabold text-[var(--login-success)] mb-1">
                                 ١. الخلاصة القانونية:
                               </span>
                               <p className="text-[var(--text)]">{activeScenario.summary}</p>
@@ -1142,10 +1107,10 @@ function LoginPortalContent() {
                                 <span
                                   className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
                                     hearing.status === "today"
-                                      ? "bg-red-500/15 text-red-400 border border-red-500/30"
+                                      ? "bg-red-500/15 text-[var(--login-error)] border border-red-500/30"
                                       : hearing.status === "judgment"
                                       ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                                      : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                      : "bg-emerald-500/15 text-[var(--login-success)] border border-emerald-500/30"
                                   }`}
                                 >
                                   {hearing.statusLabel}
@@ -1241,7 +1206,7 @@ function LoginPortalContent() {
                             <span className="text-[var(--text-muted)]">
                               مخصص القيمة المضافة (١٤٪):
                             </span>
-                            <span className="font-mono font-semibold text-red-400">
+                            <span className="font-mono font-semibold text-[var(--login-error)]">
                               -{financeBreakdown.vatAmount.toLocaleString("ar-EG")} ج.م
                             </span>
                           </div>
@@ -1249,11 +1214,11 @@ function LoginPortalContent() {
                             <span className="text-[var(--text-muted)]">
                               دمغة النقابة والعلاج (١.٥٪):
                             </span>
-                            <span className="font-mono font-semibold text-red-400">
+                            <span className="font-mono font-semibold text-[var(--login-error)]">
                               -{financeBreakdown.barStampAmount.toLocaleString("ar-EG")} ج.م
                             </span>
                           </div>
-                          <div className="flex justify-between border-t border-[var(--border)] pt-2 font-extrabold text-emerald-500">
+                          <div className="flex justify-between border-t border-[var(--border)] pt-2 font-extrabold text-[var(--login-success)]">
                             <span>صافي العائد القابل للتوزيع:</span>
                             <span className="font-mono">
                               {financeBreakdown.netDistributable.toLocaleString("ar-EG")} ج.م
@@ -1296,7 +1261,7 @@ function LoginPortalContent() {
                           type="button"
                           onClick={handleRunSecurityCheck}
                           disabled={isRunningSecurityCheck}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 text-[11px] font-extrabold text-emerald-400 hover:bg-emerald-500 hover:text-black transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 text-[11px] font-extrabold text-[var(--login-success)] hover:bg-emerald-500 hover:text-black transition-colors cursor-pointer"
                         >
                           <Terminal className="size-3.5" />
                           <span>
@@ -1350,7 +1315,7 @@ function LoginPortalContent() {
                                 </span>
                                 <CheckCircle2
                                   className={`size-4 shrink-0 ${
-                                    active ? "text-emerald-500" : "text-[var(--text-muted)]"
+                                    active ? "text-[var(--login-success)]" : "text-[var(--text-muted)]"
                                   }`}
                                 />
                               </div>
@@ -1374,6 +1339,43 @@ function LoginPortalContent() {
             </div>
           </div>
         </div>
+        <div className={styles.metrics}>
+              {/* Key Trust Metrics Bar */}
+              <div className="grid grid-cols-2 gap-3 pt-1 sm:grid-cols-4">
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)]/80 p-3.5">
+                  <span className="block font-mono text-lg font-black text-[var(--axia-gold-light)]">
+                    ١٢ وحدة
+                  </span>
+                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">
+                    تشغيلية وقانونية متكاملة
+                  </span>
+                </div>
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)]/80 p-3.5">
+                  <span className="block font-mono text-lg font-black text-[var(--login-success)]">
+                    100% RLS
+                  </span>
+                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">
+                    عزل بيانات الموكلين والقضايا
+                  </span>
+                </div>
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)]/80 p-3.5">
+                  <span className="block font-mono text-lg font-black text-[var(--text)]">
+                    RAJIH AI
+                  </span>
+                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">
+                    استشهاد موثق بأحكام النقض
+                  </span>
+                </div>
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)]/80 p-3.5">
+                  <span className="block font-mono text-lg font-black text-[var(--axia-gold-light)]">
+                    ٦ مسارات
+                  </span>
+                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">
+                    تدقيق إلزامي (Audit Triggers)
+                  </span>
+                </div>
+              </div>
+        </div>
       </main>
 
       {/* SECTION 2: 12-MODULE ECOSYSTEM BENTO SHOWCASE */}
@@ -1381,7 +1383,7 @@ function LoginPortalContent() {
         id="modules-section"
         className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)]/40 py-20"
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-3xl text-center space-y-3 mb-14">
             <div className="inline-flex items-center gap-2 rounded-full border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/10 px-3.5 py-1 text-xs font-bold text-[var(--axia-gold-light)]">
               <Layers className="size-3.5" />
@@ -1428,7 +1430,7 @@ function LoginPortalContent() {
         id="roi-section"
         className="relative z-10 border-t border-[var(--border)] py-20"
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
             <div className="lg:col-span-6 space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/10 px-3.5 py-1 text-xs font-bold text-[var(--axia-gold-light)]">
@@ -1539,10 +1541,10 @@ function LoginPortalContent() {
                   <span className="text-xs font-bold text-[var(--text-muted)]">
                     القيمة التشغيلية السنوية المقدرة
                   </span>
-                  <BadgeDollarSign className="size-5 text-emerald-500" />
+                  <BadgeDollarSign className="size-5 text-[var(--login-success)]" />
                 </div>
                 <div className="my-4">
-                  <span className="font-mono text-2xl font-black text-emerald-500">
+                  <span className="font-mono text-2xl font-black text-[var(--login-success)]">
                     {roiMetrics.annualEfficiencyValueEgp.toLocaleString("ar-EG")} ج.م
                   </span>
                   <p className="mt-1 text-[11px] text-[var(--text-muted)]">
@@ -1582,11 +1584,11 @@ function LoginPortalContent() {
         id="security-section"
         className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)]/40 py-20"
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
           <div className="rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)] p-8 sm:p-12">
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 items-center">
               <div className="lg:col-span-6 space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-emerald-500">
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-[var(--login-success)]">
                   <Shield className="size-4" />
                   <span>معمارية الأمان والسرية المهنية</span>
                 </div>
@@ -1601,7 +1603,7 @@ function LoginPortalContent() {
 
                 <div className="space-y-3 pt-2 text-xs">
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[var(--login-success)]" />
                     <div>
                       <strong className="text-[var(--text)]">
                         التوافق مع مبادئ قانون حماية البيانات الشخصية رقم ١٥١ لسنة ٢٠٢٠:
@@ -1612,7 +1614,7 @@ function LoginPortalContent() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[var(--login-success)]" />
                     <div>
                       <strong className="text-[var(--text)]">
                         التوافق مع متطلبات الأدلة الرقمية وأمن المعلومات (قانون ١٧٥ لسنة ٢٠١٨):
@@ -1623,7 +1625,7 @@ function LoginPortalContent() {
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-500" />
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[var(--login-success)]" />
                     <div>
                       <strong className="text-[var(--text)]">
                         حوكمة الذكاء الاصطناعي (RAJIH Safety Policy):
@@ -1674,7 +1676,7 @@ function LoginPortalContent() {
                 </div>
 
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-5 space-y-2.5">
-                  <div className="grid size-10 place-items-center rounded-xl bg-emerald-500/12 text-emerald-500">
+                  <div className="grid size-10 place-items-center rounded-xl bg-emerald-500/12 text-[var(--login-success)]">
                     <Award className="size-5" />
                   </div>
                   <h4 className="text-xs font-extrabold text-[var(--text)]">
@@ -1692,7 +1694,7 @@ function LoginPortalContent() {
 
       {/* FOOTER */}
       <footer className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)] py-10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
+        <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
           <AxiaBrandLogo mode="lockup" size="sm" />
 
           <div className="text-center sm:text-left text-[11px] text-[var(--text-muted)] space-y-1">

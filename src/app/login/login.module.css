@@ -1,0 +1,155 @@
+.portal {
+  --bg: #f5f6f8;
+  --bg-glass: rgba(245, 246, 248, 0.96);
+  --panel: #ffffff;
+  --border: #e2e5eb;
+  --border-strong: #cbd1db;
+  --text: #182338;
+  --text-muted: #526078;
+  --accent: #f0f2f6;
+  --accent-hover: #e7ebf1;
+  --axia-gold: #c69b32;
+  --login-gold-highlight: #e2bd65;
+  --axia-gold-light: #79580d;
+  --axia-gold-dim: #eee2c7;
+  --login-success: #087653;
+  --login-error: #b42332;
+  --login-shadow: 0 8px 28px rgba(24, 35, 56, 0.06);
+  color-scheme: light;
+}
+
+:global(.dark) .portal {
+  --bg: #0c1017;
+  --bg-glass: rgba(12, 16, 23, 0.96);
+  --panel: #141b26;
+  --border: #283243;
+  --border-strong: #39465a;
+  --text: #edf1f7;
+  --text-muted: #aab7ca;
+  --accent: #1b2533;
+  --accent-hover: #243145;
+  --axia-gold: #c59b27;
+  --login-gold-highlight: #e5bd59;
+  --axia-gold-light: #e5bd59;
+  --axia-gold-dim: rgba(197, 155, 39, 0.15);
+  --login-success: #61d8ad;
+  --login-error: #ff9ea7;
+  --login-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+  color-scheme: dark;
+}
+
+.intro {
+  max-width: 960px;
+  margin: 0 auto 28px;
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.authColumn,
+.showcaseColumn {
+  min-width: 0;
+}
+
+.authCard,
+.console {
+  box-shadow: var(--login-shadow);
+}
+
+.authCard {
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.authCard input:not([type="hidden"]),
+.authCard select {
+  min-height: 44px;
+  min-width: 0;
+  font-size: 14px;
+}
+
+.authCard label {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.authCard button[type="submit"] {
+  min-height: 48px;
+  font-size: 14px;
+}
+
+.portal button:focus-visible,
+.consoleBody:focus-visible {
+  outline: 2px solid var(--axia-gold-light);
+  outline-offset: 3px;
+}
+
+.console {
+  display: flex;
+  flex-direction: column;
+  height: 640px;
+}
+
+.console > :not(.consoleBody) {
+  flex-shrink: 0;
+}
+
+.consoleBody {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+
+.metrics {
+  margin-top: 24px;
+}
+
+@media (min-width: 1024px) {
+  .workspace {
+    grid-template-columns: minmax(360px, 2fr) minmax(0, 3fr);
+    gap: 28px;
+  }
+
+  .authCard,
+  .console {
+    height: 680px;
+  }
+}
+
+@media (max-width: 639px) {
+  .intro {
+    margin-bottom: 24px;
+    gap: 10px;
+  }
+
+  .intro h1 {
+    font-size: 27px;
+  }
+
+  .authCard input:not([type="hidden"]),
+  .authCard select {
+    font-size: 16px;
+  }
+
+  .console {
+    height: 660px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal,
+  .portal * {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
