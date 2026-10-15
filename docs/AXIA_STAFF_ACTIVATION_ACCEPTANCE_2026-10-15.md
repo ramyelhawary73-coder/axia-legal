@@ -14,13 +14,31 @@
 - Browser inspection exposed a pre-existing hydration mismatch in speech-support detection. Switched that capability read to an SSR-safe external-store snapshot; voice behavior is preserved and hydration errors are checked in browser automation.
 - No application dependency, package.json, lockfile, live database, SMTP, Auth setting, secret or Production configuration was changed.
 
-## Activation decision: HOLD
+## Activation decision: HOLD — shared Production target, single-database workflow selected
 
 Read-only live checks confirmed 21 migration history records, no `public.staff_invitations` table and no `public.axia_staff_accept(text)` RPC. The new migration has not been applied.
 
-Vercel project inspection still returned **403** for `ramyelhawary73-coders-projects`. No usable authenticated CLI was available. The Production/Preview Supabase mapping remains unverified; the requested two non-secret `NEXT_PUBLIC_SUPABASE_URL` values were not provided. A Development label is not proof of a separate data boundary.
+The owner supplied two Vercel Dashboard screenshots. Both Production and All Pre-Production Environments set `NEXT_PUBLIC_SUPABASE_URL` to `https://qshgczulivsxztgrbqew.supabase.co`. Current dashboard configuration therefore shares one Supabase project. This is configuration evidence, not independent inspection inside every deployed build. Direct Vercel project access still returns 403. Do not ask for these URLs again or treat the Development project name as isolation.
 
-The owner explicitly authorized only a proven isolated Development target. Therefore no migration or live permission test was run against `qshgczulivsxztgrbqew`. Development authorization persists and does not need to be repeated once the target is proven. If Production shares that project, stop for a changed scope or establish an independent Development target; do not infer Production permission.
+The owner declined a second cloud project because the account is free and chose to continue using the existing project. No new project, plan upgrade or environment-variable change is required by the chosen workflow. Keep code changes on a dedicated branch and run isolated local/CI tests; every persistent write to this database must be treated as a Production write.
+
+An attempt to apply the exact reviewed migration through the migration tool was rejected by automatic approval review. Its stated reason was the original requirement for a separate Development target and a stop on shared Production, plus the new table/functions/RLS and task-write trigger. The rejection prevented execution. A subsequent read confirmed 21 history entries, latest `20260921111252`, and no invitation table, acceptance RPC or task guard. Do not retry through SQL Editor, raw SQL or another connection to bypass the rejection. Obtain explicit approval naming this file and this shared Production project before another attempt; the owner's one-database decision remains recorded.
+
+### Completed preparation for controlled activation
+
+- Rechecked PR #42 at `e55c7213129cfb2563f086701ef6abf4004704eb`: draft/unmerged, with [successful CI 38787956872](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38787956872). It passed Typecheck/Lint/Build, 113 application tests, 19 PGlite checks, 22 native SQL checks and 30 browser checks. Subsequent changes in this revision are documentation only.
+- Confirmed required helpers, referenced table/column contracts including the five `auth.users` columns, existing grants/policies and audit/update triggers. No new-object name conflicts were found.
+- Checked existing task compatibility with recipient membership/role/case rules: zero incompatible rows. Current counts remain two users, two offices, two memberships and one task.
+- Captured row counts and SHA-256 fingerprints for all 21 existing public tables (1,673 total rows), historical migration statement hashes and prerequisite definitions. This is a comparison checkpoint, **not a restorable full database backup**; full database/Auth/Storage recovery has not been verified.
+- No application code, migration bytes, Auth settings, roles, memberships, SMTP, secret or live data were changed in this preparation. No real email was sent.
+
+### Proposed exact live scope and recovery limits
+
+Only `20261015081218_axia_staff_email_invitations.sql`, with the fingerprint below, is proposed for the existing shared Production project. It creates the invitation table/indexes, checked functions/grants and the task-assignee trigger. It does not rewrite historical migrations, existing RLS policies or business rows. The trigger can affect future task inserts/updates, including rejecting writes without an authenticated actor; this remains a material Production behavior change.
+
+The SQL transaction rolls back its new objects if execution fails before commit. After commit, do not claim that reverting frontend code reverses database state. Preserve invitation rows, memberships and audit records; diagnose a failure before proposing a narrowly scoped repair. Never automatically drop the table, delete memberships, weaken RLS or restore an old full database over newer business data.
+
+After a separately approved successful application: verify new RLS/grants/function security, confirm the original 21 migration records and row fingerprints are unchanged, run advisors and controlled permission smoke tests, and report actual Auth/employee acceptance gaps. Merge, Production code deployment, SMTP/Secrets, actual sends and new-account provisioning remain separate scope.
 
 ### Exact migration identity
 
@@ -41,7 +59,7 @@ Story: office management creates an email-bound invitation → an existing confi
 | Multi-session SQL | Added a disposable PostgreSQL 17 service and three concurrent checks to CI | Exact-head CI result is authoritative; no Supabase host is used |
 | Desktop/mobile rendering | Browser contract automation for light/dark login and Team/Library/Tasks/acceptance at 1440/390/320px | Uses synthetic API responses on loopback; never claims real login, email or live tenant acceptance |
 | Actual Preview/build | Exact-head default build, CI and Vercel deployment status attached to PR | Deployment success alone is not live acceptance |
-| Live SQL/Auth/SMTP | No mutation; activation held | Needs proven Development mapping and authorized test identities |
+| Live SQL/Auth/SMTP | No mutation; migration attempt rejected; shared target documented | Needs explicit approval for the exact shared-Production migration and authorized test identities |
 
 ### Initial integrated CI result
 
@@ -67,9 +85,9 @@ The same 19 security checks can run against either PGlite or a real PostgreSQL d
 
 The native test adapter has a fixed loopback host and fixed disposable database name. It does not accept a live connection URL. The service is loopback-bound and contains only synthetic data; it is destroyed with the job. No Service Role or application secret is used.
 
-## Controlled Development acceptance after the gate clears
+## Controlled acceptance after explicit shared-Production approval
 
-1. Refresh main/PR heads, project mapping, prerequisite object definitions and migration history; compare the exact SHA-256 above. Apply this one migration only if all checks agree and Development is separate.
+1. Refresh main/PR heads, project mapping, prerequisite object definitions and migration history; compare the exact SHA-256 above. Apply this one migration only after explicit approval of this shared Production target and a clean preflight; do not rely on the earlier Development-only authorization.
 2. Inspect new table RLS/FORCE RLS, column grants, invoker wrappers, private function execution, assignee guard and security advisors. Confirm original policies and memberships were not rewritten.
 3. Use explicitly authorized test identities with confirmed email. Verify owner/admin role restrictions; wrong/expired/revoked/rotated links; repeat acceptance; inviter demotion; existing-member non-promotion; case and tenant denials; create/reassign/refresh persistence.
 4. Verify actual login, inline account switching, session expiry and mobile behavior in Preview. Test email delivery only in the later approved sender scope; fixtures are not delivery proof.

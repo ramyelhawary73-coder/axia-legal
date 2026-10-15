@@ -92,7 +92,7 @@ Verified 2026-10-15. Detailed evidence, limits, employee invitation design and d
 - Owner-approved PR #39 merged the AXIA visual/login work; tested head `0df76142b511459edb9c5cba6d275efa0e7a1d82`.
 - Main CI run `38697796918` succeeded; GitHub Vercel status succeeded. Public Production login inspected at `https://axia-legal-psi.vercel.app/login`.
 - Authenticated login, employee flows and full mobile workflow acceptance are not established by visual approval or successful builds.
-- Direct Vercel project inspection returns 403; exact runtime configuration and Production/Development Supabase separation remain unverified.
+- Direct Vercel project inspection returns 403. Owner-supplied Dashboard screenshots show Production and All Pre-Production Environments sharing `qshgczulivsxztgrbqew`; independent inspection inside each deployed build remains unavailable.
 - Current integration branch combines PR #40 at `2a189f0bbde7141f43160dc3b714861eb6684c10` and PR #41 at `576bf1fcdf39d78fc3a6d6e5fb908b112eecf05f`. Both source PRs remain open/draft and main is unchanged. Exact-head CI/Preview evidence is attached to the integration PR.
 - Cleanup Batches 1/2 remain closed; this is delivery readiness work authorized by the owner's current request, not Cleanup Batch 3.
 
@@ -104,14 +104,15 @@ Verified 2026-10-15. Detailed evidence, limits, employee invitation design and d
 - Transaction-scoped authenticated SELECT tests for each existing owner exposed one organization and zero other-tenant organizations/clients/matters/tasks. Write, staff-role and Storage isolation still require tests.
 - `legal-documents` bucket is private, with 25 MiB limit and MIME restrictions.
 - Six business audit triggers observed; documents INSERT only, other five INSERT/UPDATE.
-- 21 live migration records versus 19 repository migration files require explicit historical reconciliation before additional migrations.
+- 21 live migration records versus 19 baseline source files require read-only prerequisite/history comparison; never replay or rewrite the historical records as a blanket repair.
 - Two security WARNs: vector extension in public and disabled leaked-password protection. Performance advisor findings are documented in the linked report. No settings, schema, grants or policies changed.
 
 ## Delivery status
 
 - **Not ready for real customer onboarding:** production data boundary, staff onboarding, persisted editor drafts, recovery and authenticated workflow acceptance are open gates.
 - Live employee invitations and role mutation remain unavailable. This branch implements email-bound invitation links/acceptance and task assignment/reassignment, with isolated tests. Sender delivery and account provisioning remain unimplemented; no live migration has been applied.
-- This branch retains the snapshot/library fixes and the staff invitation/assignment foundation together. The SQL is byte-identical to PR #41. Live DB/Auth/RLS/SMTP/Secrets and Production remain unchanged; activation is blocked by an unverified Production mapping and Vercel 403. Isolated UI and multi-session SQL checks are added to CI.
+- This branch retains the snapshot/library fixes and staff invitation/assignment foundation together. SQL is byte-identical to PR #41. CI on `e55c721` passed 113 application tests, 19 PGlite checks, 22 native SQL checks, 30 UI checks and Typecheck/Lint/Build. Live DB/Auth/RLS/SMTP/Secrets remain unchanged.
+- Owner selected the existing single-database workflow and declined a second cloud project. A migration attempt was blocked by automatic approval review because the earlier scope required isolated Development. Read-after-rejection confirmed no migration/table/RPC/guard was added. Explicit approval naming this exact shared-Production change is the next gate; do not bypass it through another tool or SQL Editor.
 
 ---
 
@@ -312,20 +313,13 @@ This section records the read-only audit findings that must influence future pha
 
 ## 5.2 P0 / must be resolved before real client production data
 
-### P0-A — Production vs Development Supabase isolation is not yet formally verified
+### P0-A — Shared Production/Preview database; controlled single-database workflow
 
-**Status:** `READY_FOR_SCOPE`
+**Status:** `BLOCKED`
 
-Before real client onboarding, confirm that Vercel Production does not rely on the Development Supabase project unless that is an explicit temporary decision.
+Dashboard configuration shows one shared target, despite its Development name. Owner explicitly chose the current project because of the free-account constraint. No additional cloud project or paid infrastructure is to be created without a changed decision. Local/CI isolation remains available and must be used before any controlled live change.
 
-Required future evidence:
-
-- Production Supabase project identity;
-- Preview/Development project identity;
-- environment variable mapping by environment;
-- migration parity;
-- RLS parity;
-- no real client data in Development.
+Required next evidence: explicit approval for the reviewed shared-Production migration after the automatic rejection; immutable migration/history identity; unchanged existing data; post-application RLS/permission/task compatibility; actual employee Auth acceptance. Every write on this shared target is a Production write. Recovery verification remains an open first-client gate.
 
 ### P0-B — Legal draft editor is still local-device state
 
@@ -3243,17 +3237,17 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: INTEGRATION ACCEPTANCE — LIVE ACTIVATION HELD**
+**Current mode: SINGLE-DATABASE WORKFLOW — EXACT PRODUCTION ACTIVATION APPROVAL REQUIRED**
 
 Main remains `dfb557f2741ca521b13fd727abeb0f2c25803fd5`. Integration branch: `feat/axia-staff-activation-acceptance`. PR #40 and PR #41 are combined here without merging either into main.
 
 1. Review the [integration report](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md), exact-head CI, browser artifact and Preview. Keep synthetic UI checks distinct from real Supabase/Auth acceptance.
-2. Obtain the two non-secret `NEXT_PUBLIC_SUPABASE_URL` values for Vercel Production and Preview. Vercel access returned 403 and no values were supplied. Do not infer isolation from the Development project name.
-3. Only after proving a separate Development target, recheck migration prerequisites/history and SHA-256 `1e2a29f97c109689cf2a9abacc5f970e87920bae418116cbb3b12f828646ad2b`; apply only `20261015081218_axia_staff_email_invitations.sql` under the existing Development authorization. Stop at mismatch/shared Production or historical replay requirements.
-4. Run controlled real Auth/tenant/role/assignment acceptance and advisors in Development. No arbitrary account or fixture creation/deletion, real email or Production mutation is implied.
+2. Production/Pre-Production URL screenshots are supplied and show a shared project. Do not ask for them again or create a second project. Owner chose the current single-database workflow; isolated local/CI testing still applies.
+3. Automatic review rejected the migration attempt. Obtain explicit approval naming `20261015081218_axia_staff_email_invitations.sql` on shared Production project `qshgczulivsxztgrbqew`. Recheck prerequisites/history and SHA-256 `1e2a29f97c109689cf2a9abacc5f970e87920bae418116cbb3b12f828646ad2b` before any approved attempt. No old-history replay/repair and no alternate SQL route to bypass rejection.
+4. After approved activation, verify original table fingerprints/history, new RLS/grants and task compatibility, then run controlled Auth/tenant/role/assignment acceptance and advisors. No arbitrary account/fixture creation/deletion or real email is implied.
 5. Follow the report's separate transactional sender and invite-guided account registration plan. Sender/Secrets/SMTP changes, actual sends, merge and Production rollout require explicit approval.
 
-Development authorization persists. The missing target mapping blocks live activation only; independent integration/review/testing continues. No main/Production/Supabase live change has been made by this package.
+The row/hash/schema checkpoint is not a full restorable backup. Live activation and recovery verification remain outstanding. No main/Production/Supabase live change has been made by this package; no new infrastructure or environment-variable change is required by the selected workflow.
 
 ---
 
