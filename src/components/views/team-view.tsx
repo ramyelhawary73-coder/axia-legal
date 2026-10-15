@@ -29,7 +29,7 @@ function initials(name: string) {
   if (!name || name === "غير مسجل") return "—";
   return name
     .trim()
-    .split(/s+/)
+    .split(/\s+/)
     .slice(0, 2)
     .map((part) => part[0])
     .join("");
@@ -108,7 +108,7 @@ export function TeamView() {
 
         <div className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-xs text-[var(--text-muted)]">
           <UserPlus className="size-4 text-[var(--axia-gold)]" />
-          <span>دعوة عضو جديد تحتاج Invitation/Auth Phase مستقلة</span>
+          <span>دعوات الموظفين بالبريد الإلكتروني قيد التجهيز</span>
         </div>
       </div>
 

@@ -24,7 +24,8 @@ interface UseDailySnapshotReturn {
 
 export function useDailySnapshotAutoExport(
   matters: Matter[],
-  tasks: LegalTask[]
+  tasks: LegalTask[],
+  isDataReady = false,
 ): UseDailySnapshotReturn {
   const [isAutoExporting, setIsAutoExporting] = useState(false);
   const [toastNotification, setToastNotification] = useState<{
@@ -42,30 +43,27 @@ export function useDailySnapshotAutoExport(
   }, []);
 
   const triggerManualExport = useCallback(async () => {
+    if (!isDataReady) throw new Error("انتظر اكتمال تحميل بيانات مساحة العمل قبل التصدير.");
     setIsAutoExporting(true);
     try {
       const result = await performDailyExport(matters, tasks);
       setToastNotification({
         visible: true,
-        title: "تم تصدير اللقطة اليومية بنجاح",
-        message: `تم حفظ لقطة القضايا (${result.record.mattersCount}) والمهام (${result.record.tasksCount})`,
+        title: "تم تجهيز اللقطة وطلب تنزيلها",
+        message: `تم تجهيز لقطة القضايا (${result.record.mattersCount}) والمهام (${result.record.tasksCount})`,
         filename: result.record.filename,
-        destination: result.record.destination === "download_folder"
-          ? "مجلد التنزيل المحلي (Downloads)"
-          : result.record.destination === "cloud_sync"
-          ? "المستودع السحابي المشفر"
-          : "مجلد التنزيل والمستودع السحابي معاً",
+        destination: "تنزيل محلي عبر المتصفح",
       });
     } catch (e) {
       console.error("Manual snapshot export error:", e);
     } finally {
       setIsAutoExporting(false);
     }
-  }, [matters, tasks]);
+  }, [matters, tasks, isDataReady]);
 
   // Run automatic check on mount
   useEffect(() => {
-    if (typeof window === "undefined" || hasExecutedRef.current) return;
+    if (typeof window === "undefined" || hasExecutedRef.current || !isDataReady) return;
 
     // Small timeout to allow initial render to complete smoothly
     const timer = setTimeout(async () => {
@@ -81,14 +79,10 @@ export function useDailySnapshotAutoExport(
         const result = await performDailyExport(matters, tasks, config);
         setToastNotification({
           visible: true,
-          title: "تصدير آلي: تم حفظ اللقطة اليومية للقضايا والمهام",
-          message: `تم إنشاء لقطة معتمدة لجميع القضايا النشطة (${result.record.mattersCount}) والمهام المعلقة (${result.record.tasksCount}) وحفظها تلقائياً`,
+          title: "تصدير آلي: تم طلب تنزيل اللقطة اليومية",
+          message: `تم تجهيز لقطة محلية للقضايا النشطة (${result.record.mattersCount}) والمهام المعلقة (${result.record.tasksCount}) وطلب تنزيلها`,
           filename: result.record.filename,
-          destination: result.record.destination === "download_folder"
-            ? "مجلد التنزيل المحلي (Downloads)"
-            : result.record.destination === "cloud_sync"
-            ? "المستودع السحابي المشفر"
-            : "مجلد التنزيلات والمزامنة السحابية معاً",
+          destination: "تنزيل محلي عبر المتصفح",
         });
       } catch (e) {
         console.error("Daily auto-export failed:", e);
@@ -98,7 +92,7 @@ export function useDailySnapshotAutoExport(
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [matters, tasks]);
+  }, [matters, tasks, isDataReady]);
 
   // Listen to external window events
   useEffect(() => {
@@ -111,14 +105,10 @@ export function useDailySnapshotAutoExport(
         const rec = customEvent.detail.record;
         setToastNotification({
           visible: true,
-          title: "تم تصدير اللقطة اليومية بنجاح",
-          message: `تم حفظ ${rec.mattersCount} قضية نشطة و ${rec.tasksCount} مهمة قضائية`,
+          title: "تم تجهيز اللقطة وطلب تنزيلها",
+          message: `تم تجهيز ${rec.mattersCount} قضية نشطة و ${rec.tasksCount} مهمة قضائية`,
           filename: rec.filename,
-          destination: rec.destination === "download_folder"
-            ? "مجلد التنزيلات (Downloads)"
-            : rec.destination === "cloud_sync"
-            ? "المستودع السحابي المشفر"
-            : "مجلد التنزيلات والمستودع السحابي",
+          destination: "تنزيل محلي عبر المتصفح",
         });
       }
     };

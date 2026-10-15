@@ -72,7 +72,9 @@ test("Team UI contains no mock team or fake local member creation", () => {
   assert.doesNotMatch(teamView, /mock-legal-data/);
   assert.doesNotMatch(teamView, /TM-\$\{Date\.now/);
   assert.doesNotMatch(teamView, /handleCreateMember/);
-  assert.match(teamView, /Invitation\/Auth Phase/);
+  assert.match(teamApi, /inviteMember: false/);
+  assert.match(teamApi, /changeRole: false/);
+  assert.match(teamApi, /removeMember: false/);
 });
 
 test("Administration UI no longer simulates editable RBAC", () => {

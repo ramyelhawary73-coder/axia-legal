@@ -125,7 +125,7 @@ export function DailySnapshotToast({
               type="button"
             >
               <ExternalLink className="size-3" />
-              <span>إدارة الأرشيف وضبط المزامنة السحابية</span>
+              <span>إدارة اللقطة والتنزيل المحلي</span>
             </button>
           </div>
         </div>
