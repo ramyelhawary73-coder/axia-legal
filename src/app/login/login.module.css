@@ -131,6 +131,25 @@
     gap: 10px;
   }
 
+  .authBrand > div:last-child {
+    gap: 12px;
+    max-width: 100%;
+  }
+
+  .authBrand > div:last-child > div:first-child {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+
+  .authBrand > div:last-child > div:last-child {
+    min-width: 0;
+  }
+
+  .authBrand > div:last-child > div:last-child > div > span:last-child {
+    display: none;
+  }
+
   .intro h1 {
     font-size: 27px;
   }

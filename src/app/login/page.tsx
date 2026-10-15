@@ -447,7 +447,7 @@ function LoginPortalContent() {
             onClick={() => scrollToSection("top")}
             className="group flex items-center gap-3 text-right outline-none cursor-pointer"
           >
-            <AxiaBrandLogo mode="lockup" size="md" animated />
+            <AxiaBrandLogo mode="lockup" size="md" showSubtitle={false} animated />
           </button>
 
           {/* Quick Section Navigation */}
@@ -545,7 +545,7 @@ function LoginPortalContent() {
 
               {/* Animated AXIA Brand Header inside the Auth Card */}
               <div className="mb-6 flex flex-col items-start justify-between gap-4 border-b border-[var(--border)] pb-5">
-                <AxiaBrandLogo mode="hero" animated />
+                <AxiaBrandLogo mode="hero" className={styles.authBrand} animated />
               </div>
 
               {/* Mode Switcher: Authorized Login vs. Office License Request */}
