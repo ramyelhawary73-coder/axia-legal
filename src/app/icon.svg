@@ -1,0 +1,18 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" rx="16" fill="#0B0C10"/>
+  <rect x="1" y="1" width="62" height="62" rx="15" stroke="#C59B27" stroke-opacity="0.35" stroke-width="2"/>
+  <defs>
+    <linearGradient id="axia-icon-gold" x1="12" y1="6" x2="52" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F5D061"/>
+      <stop offset="50%" stop-color="#C59B27"/>
+      <stop offset="100%" stop-color="#8F6B10"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 7 L50 14 L56 32 L50 50 L32 57 L14 50 L8 32 L14 14 Z" stroke="url(#axia-icon-gold)" stroke-width="1.5" stroke-opacity="0.35" stroke-linejoin="round"/>
+  <path d="M32 12 V50 M24 50 H40" stroke="url(#axia-icon-gold)" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M32 12 L18 47 M32 12 L46 47 M22.5 36 H41.5" stroke="url(#axia-icon-gold)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 25 H52" stroke="#F5D061" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M15 25 L11.5 34 H18.5 L15 25 Z M49 25 L45.5 34 H52.5 L49 25 Z" stroke="url(#axia-icon-gold)" stroke-width="1.5" stroke-linejoin="round" fill="#C59B27" fill-opacity="0.22"/>
+  <circle cx="32" cy="12" r="2.8" fill="#F7D97E"/>
+  <circle cx="32" cy="25" r="2.2" fill="#C59B27"/>
+</svg>

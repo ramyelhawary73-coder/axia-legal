@@ -37,6 +37,7 @@ import {
 import { useRouter } from "next/navigation";
 import { NavigationTab, LegalTask, Matter, Client, LegalDocument } from "@/types/legal";
 import { logout } from "@/app/login/actions";
+import { AxiaSymbolSvg } from "@/components/axia-brand-logo";
 import { NotificationsPopover } from "@/components/notifications-popover";
 import { getUpcomingDeadlineTasks, getHighPriorityTasksDueWithinHour } from "@/lib/task-utils";
 import { 
@@ -221,7 +222,7 @@ export function AppShell({
               className="flex cursor-pointer items-center gap-2.5 group"
             >
               <div className="grid size-8 place-items-center rounded-lg border border-[var(--axia-gold-dim)] bg-gradient-to-br from-[var(--axia-gold)]/20 to-transparent text-[var(--axia-gold-light)] shadow-sm group-hover:shadow transition-all">
-                <Scale className="size-4" />
+                <AxiaSymbolSvg className="size-5" idPrefix="axia-shell-header" />
               </div>
               <div className="hidden sm:block">
                 <div className="flex items-center gap-1.5">
@@ -617,7 +618,7 @@ export function AppShell({
             <div className="relative w-72 bg-[var(--panel)] border-l border-[var(--border)] p-4 shadow-2xl h-full flex flex-col">
               <div className="flex items-center justify-between border-b border-[var(--border)] pb-3 mb-3">
                 <div className="flex items-center gap-2">
-                  <Scale className="size-4 text-[var(--axia-gold)]" />
+                  <AxiaSymbolSvg className="size-5" idPrefix="axia-shell-mobile" />
                   <span className="font-bold text-[var(--text)] text-sm">AXIA Legal</span>
                 </div>
                 <button

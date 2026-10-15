@@ -1,1379 +1,1721 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo, useTransition } from 'react';
-import { 
-  Shield, 
-  Lock, 
-  Mail, 
-  Eye, 
-  EyeOff, 
-  ChevronDown, 
-  Sparkles, 
-  Calendar, 
-  Scale, 
-  TrendingUp, 
-  CheckCircle2, 
-  Database, 
-  Activity, 
-  Award, 
+import React, { Suspense, useMemo, useRef, useState, useEffect } from "react";
+import { useFormStatus } from "react-dom";
+import { useSearchParams } from "next/navigation";
+import { useTheme } from "next-themes";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Shield,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  Sparkles,
+  Calendar,
+  Scale,
+  TrendingUp,
+  CheckCircle2,
+  Database,
+  Activity,
+  Award,
   Terminal,
   Zap,
   Play,
-  X,
   Fingerprint,
   Cpu,
-  BadgeDollarSign
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { useRouter } from 'next/navigation';
+  BadgeDollarSign,
+  Building2,
+  Users,
+  FileText,
+  Gavel,
+  Briefcase,
+  CheckSquare,
+  BookOpen,
+  BarChart3,
+  Settings,
+  Sun,
+  Moon,
+  ArrowUpLeft,
+  AlertCircle,
+  KeyRound,
+  Check,
+  Copy,
+  Layers,
+  ChevronLeft,
+} from "lucide-react";
+import { login } from "@/app/login/actions";
+import { AxiaBrandLogo, AxiaSymbolSvg } from "@/components/axia-brand-logo";
+import styles from "./login.module.css";
 
-export default function LoginPage() {
-  const router = useRouter();
+type ShowcaseTab = "rajih" | "hearings" | "finance" | "security";
+type AuthTab = "signin" | "request_license";
 
-  // Authentication states
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+interface RajihScenario {
+  id: string;
+  label: string;
+  courtBadge: string;
+  query: string;
+  summary: string;
+  legalBasis: string;
+  recommendation: string;
+}
+
+const RAJIH_SCENARIOS: RajihScenario[] = [
+  {
+    id: "arbitration",
+    label: "طعن بالنقض — بطلان شرط التحكيم",
+    courtBadge: "محكمة النقض · الدائرة التجارية",
+    query:
+      "فحص مدى صحة الدفع ببطلان شرط التحكيم لعدم تفويض الموقع على العقد تفويضاً خاصاً بالتحكيم طبقاً للمادة ٧٠٢ مدني والمادة ١٠ من قانون التحكيم ٢٧ لسنة ١٩٩٤.",
+    summary:
+      "الاتفاق على التحكيم من أعمال التصرف التي تستلزم وكالة خاصة أو تفويضاً صريحاً لمن يبرمه نيابة عن الشخص الاعتباري أو الطبيعي، وإلا وقع الشرط باطلاً بطلاناً يمس أصل ولاية القضاء.",
+    legalBasis:
+      "المادة (٧٠٢/١) من القانون المدني المصري · المواد (١٠، ١١، ٥٣/١-أ) من قانون التحكيم رقم ٢٧ لسنة ١٩٩٤ · استقرار قضاء محكمة النقض (الطعن رقم ١٤٢٠ لسنة ٩٣ ق).",
+    recommendation:
+      "التمسك في صدر المذكرة الختامية ببطلان مشارطة التحكيم وانعدام أثرها القانوني، مع طلب ضم أصل السجل التجاري والنظام الأساسي للشركة لإثبات حدود سلطة التوقيع وقت الإبرام.",
+  },
+  {
+    id: "lease",
+    label: "عقد إيجار تجاري — قانون ٤ لسنة ١٩٩٦",
+    courtBadge: "استئناف عالي · إيجارات كلي",
+    query:
+      "مراجعة بند المدة والتجديد التلقائي في عقد إيجار مقر تجاري لتفادي شبهة التأبيد أو الامتداد غير المقصود.",
+    summary:
+      "البند الحالي يربط التجديد بمحض إرادة المستأجر وحده بعبارة «يتجدد تلقائياً ما دام المستأجر قائماً بسداد الأجرة»، مما يثير نزاعاً قضائياً حول تحديد سقف زمني للعقد.",
+    legalBasis:
+      "القانون رقم ٤ لسنة ١٩٩٦ · المواد (٥٥٨، ٥٦٣) من القانون المدني · مبادئ الهيئة العامة للمواد المدنية والتجارية بمحكمة النقض بشأن العقود غير محددة المدة.",
+    recommendation:
+      "تعديل الصياغة لتنص صراحةً على: «تنتهي مدة هذا العقد حكماً في تاريخ محدد دون حاجة إلى تنبيه أو إنذار، ولا يتجدد إلا بعقد مكتوب مستقل موقع من الطرفين وبأجرة يتفق عليها حينئذٍ».",
+  },
+  {
+    id: "admin_court",
+    label: "مجلس الدولة — وقف تنفيذ قرار إداري",
+    courtBadge: "محكمة القضاء الإداري · دوائر الاستثمار",
+    query:
+      "صياغة ركني الجدية والاستعجال في دعوى وقف تنفيذ وإلغاء قرار سحب تخصيص أرض صناعية رغم سداد الأقساط وتقديم تراخيص البناء.",
+    summary:
+      "متى ثبت التزام المتعاقد أو المخصص له بالجدول الزمني وسداد المستحقات، وتقاعست الجهة الإدارية عن تسليم المرافق، فإن قرار السحب يفتقد ركن السبب ويترتب على تنفيذه نتائج يتعذر تداركها.",
+    legalBasis:
+      "المادة (٤٩) من قانون مجلس الدولة رقم ٤٧ لسنة ١٩٧٢ · قضاء المحكمة الإدارية العليا في منازعات التخصيص الصناعي والتوازن المالي للعقد الإداري.",
+    recommendation:
+      "إرفاق حافظة مستندات تتضمن إيصالات السداد البنكية المعتمدة ومحاضر المعاينة الهندسية، وتقديم طلب عاجل بوقف تنفيذ القرار السلبي لحين الفصل في موضوع الدعوى.",
+  },
+];
+
+const LIVE_HEARINGS_SAMPLE = [
+  {
+    id: "H-01",
+    caseNumber: "١٤٢٠ لسنة ٩٣ ق — نقض مدني",
+    title: "طعن بالنقض في حكم بطلان شرط التحكيم والإلزام بالتعويض",
+    court: "محكمة النقض · دار القضاء العالي",
+    circuit: "دائرة المواد المدنية والتجارية الأولى",
+    date: "اليوم · ٠٩:٣٠ ص",
+    roll: "رول ١٤",
+    status: "today",
+    statusLabel: "جلسة اليوم",
+    decision: "إيداع مذكرة الرد على تقرير نيابة النقض وحافظة مستندات تكميلية",
+  },
+  {
+    id: "H-02",
+    caseNumber: "٣٨٢ لسنة ٢٠٢٥ تجاري كلي القاهرة",
+    title: "منازعة شريك وتنفيذ عقد بيع أسهم وفسخ ملحق الشراكة",
+    court: "المحكمة الاقتصادية بالقاهرة",
+    circuit: "الدائرة الرابعة الابتدائية استثماري",
+    date: "غداً · ١١:٠٠ ص",
+    roll: "رول ٠٨",
+    status: "upcoming",
+    statusLabel: "مجدولة",
+    decision: "مناقشة تقرير الخبير الحسابي المودع وإبداء الدفوع المحاسبية",
+  },
+  {
+    id: "H-03",
+    caseNumber: "٨١٩ لسنة ٢٠٢٤ مدني مستأنف الجيزة",
+    title: "استئناف حكم تعويض عن الإخلال بعقد توريد معدات طبية",
+    court: "محكمة استئناف عالي الجيزة",
+    circuit: "الدائرة ٩ مدني كلي",
+    date: "١٨ أكتوبر ٢٠٢٦",
+    roll: "رول ٢١",
+    status: "judgment",
+    statusLabel: "محجوزة للحكم",
+    decision: "محجوزة للنطق بالحكم مع التصريح بمذكرات في أسبوعين",
+  },
+];
+
+const SYSTEM_MODULES = [
+  {
+    icon: Scale,
+    titleAr: "نظرة عامة وغرفة القيادة",
+    titleEn: "Executive Overview",
+    desc: "لوحة قيادة لحظية تعرض الجلسات العاجلة، المواعيد الحتمية، ومؤشرات الأداء المالي والقضائي للمكتب.",
+    tag: "مباشر",
+  },
+  {
+    icon: Briefcase,
+    titleAr: "سجل القضايا والملفات القضائية",
+    titleEn: "Matters & Dossiers",
+    desc: "إدارة شاملة لدورة حياة القضية من القيد الابتدائي حتى النقض، مع ربط الخصوم، الدوائر، ومراحل التقاضي.",
+    tag: "Core ERP",
+  },
+  {
+    icon: Gavel,
+    titleAr: "رول الجلسات والتقويم القضائي",
+    titleEn: "Hearings & Court Roll",
+    desc: "تتبع يومي للرول والقرارات وتأجيلات المحاكم مع سحب وإفلات ذكي للمواعيد ووضع تركيز خاص ليوم الجلسة.",
+    tag: "تفاعلي",
+  },
+  {
+    icon: Sparkles,
+    titleAr: "محرك الذكاء القضائي «راجح»",
+    titleEn: "RAJIH AI Copilot",
+    desc: "مساعد ذكي مقيد بالمصادر الرسمية يبحث في التشريعات وأحكام النقض ويربط التحليل بملف القضية الفعلي.",
+    tag: "AI سيادي",
+  },
+  {
+    icon: Users,
+    titleAr: "الموكلون وسجل التوكيلات",
+    titleEn: "Clients & POA Registry",
+    desc: "ملفات متكاملة للشركات والأفراد مع تتبع أرقام التوكيلات الرسمية، مكاتب التوثيق، وتنبيهات انتهاء الصلاحية.",
+    tag: "موثق",
+  },
+  {
+    icon: CheckSquare,
+    titleAr: "قلم المحضرين والمواعيد الحتمية",
+    titleEn: "Bailiff & Deadlines",
+    desc: "حماية المكتب من سقوط المواعيد الإجرائية (الاستئناف، النقض، الإعلانات) عبر تنبيهات فورية ومهام مرتبطة بالقضايا.",
+    tag: "تنبيهات ذكية",
+  },
+  {
+    icon: FileText,
+    titleAr: "العقود والأرشيف السحابي المشفر",
+    titleEn: "Encrypted Document Vault",
+    desc: "خزينة مستندات خاصة لكل مكتب مع تحقق من البصمة الرقمية (SHA-256) وروابط تنزيل موقعة ومؤقتة.",
+    tag: "Storage خاص",
+  },
+  {
+    icon: BadgeDollarSign,
+    titleAr: "المالية والأتعاب والدمغات",
+    titleEn: "Legal Finance & Accounting",
+    desc: "إدارة الدفعات، أمانات الخبراء، الرسوم القضائية، وضريبة القيمة المضافة مع صلاحيات مخصصة للشركاء والإدارة.",
+    tag: "حوكمة مالية",
+  },
+  {
+    icon: BookOpen,
+    titleAr: "مكتبة التشريعات وأحكام النقض",
+    titleEn: "Egyptian Legal Corpus",
+    desc: "قاعدة معرفية مهيكلة للقوانين المصرية ومبادئ محكمة النقض والمحكمة الإدارية العليا مع بحث دلالي دقيق.",
+    tag: "مصر EG",
+  },
+  {
+    icon: Users,
+    titleAr: "فريق العمل وتوزيع القضايا",
+    titleEn: "Legal Team & ACL",
+    desc: "تنظيم صلاحيات الشركاء، المحامين بالاستئناف والنقض، الجدول العام، والمتدربين مع عزل الوصول على مستوى كل قضية.",
+    tag: "RBAC + ACL",
+  },
+  {
+    icon: BarChart3,
+    titleAr: "التقارير التنفيذية وتصدير PDF",
+    titleEn: "Analytics & Official Reports",
+    desc: "تقارير أداء مبنية على البيانات الفعلية للمكتب مع تصدير تقارير قانونية ومالية منسقة باللغة العربية.",
+    tag: "تقارير حية",
+  },
+  {
+    icon: Settings,
+    titleAr: "إدارة المكتب وسجل التدقيق",
+    titleEn: "Administration & Audit Trail",
+    desc: "سجل تدقيق إلزامي على مستوى قاعدة البيانات يرصد كافة عمليات الإضافة والتعديل لضمان النزاهة والمساءلة.",
+    tag: "Audit Trail",
+  },
+];
+
+function LoginSubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="group relative w-full overflow-hidden rounded-xl bg-[var(--login-primary)] px-5 py-3.5 text-xs font-extrabold text-[var(--login-primary-text)] shadow-sm transition-all duration-300 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
+    >
+      <span className="relative z-10 flex items-center justify-center gap-2">
+        {pending ? (
+          <>
+            <span className="size-4 rounded-full border-2 border-black border-t-transparent animate-spin" />
+            <span>جارٍ التحقق من الهوية وفتح مساحة العمل المعزولة...</span>
+          </>
+        ) : (
+          <>
+            <KeyRound className="size-4 transition-transform duration-300 group-hover:-translate-x-0.5" />
+            <span>الدخول الآمن إلى مساحة العمل</span>
+            <ArrowUpLeft className="size-4 opacity-80 transition-transform duration-300 group-hover:-translate-x-0.5 group-hover:-translate-y-0.5" />
+          </>
+        )}
+      </span>
+    </button>
+  );
+}
+
+function sanitizeNextPath(raw: string | null): string {
+  if (!raw || !raw.startsWith("/") || raw.startsWith("//")) {
+    return "/";
+  }
+  return raw;
+}
+
+function LoginPortalContent() {
+  const searchParams = useSearchParams();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+
+  const authErrorParam = searchParams.get("error");
+  const nextPath = sanitizeNextPath(searchParams.get("next"));
+
+  const authErrorMessage = useMemo(() => {
+    if (authErrorParam === "missing_credentials") {
+      return "يرجى إدخال البريد الإلكتروني المهني وكلمة المرور للمتابعة.";
+    }
+    if (authErrorParam === "invalid_credentials") {
+      return "بيانات الدخول غير صحيحة أو أن الحساب غير مخول بالوصول إلى مساحة العمل.";
+    }
+    return null;
+  }, [authErrorParam]);
+
+  // Auth capsule states
+  const [authTab, setAuthTab] = useState<AuthTab>("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [isPending, startTransition] = useTransition();
 
-  // Registration states
-  const [officeName, setOfficeName] = useState('');
-  const [founderName, setFounderName] = useState('');
-  const [syndicateId, setSyndicateId] = useState('');
-  const [workspaceUrl, setWorkspaceUrl] = useState('');
-  const [officeType, setOfficeType] = useState('general');
+  // Office License / Demo Request states (Controlled onboarding per Roadmap 5.1 & 9.1)
+  const [firmName, setFirmName] = useState("");
+  const [managingPartner, setManagingPartner] = useState("");
+  const [barRegistrationNo, setBarRegistrationNo] = useState("");
+  const [workEmail, setWorkEmail] = useState("");
+  const [practiceSpecialty, setPracticeSpecialty] = useState("corporate");
+  const [seatTier, setSeatTier] = useState("5-15");
+  const [licenseRequestCode, setLicenseRequestCode] = useState<string | null>(null);
+  const [copiedRequestCode, setCopiedRequestCode] = useState(false);
 
-  // Interactive ROI Calculator states
-  const [lawyersCount, setLawyersCount] = useState(5);
+  // Interactive Showcase Console states
+  const [activeShowcase, setActiveShowcase] = useState<ShowcaseTab>("rajih");
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string>("arbitration");
+  const [isAnalyzingScenario, setIsAnalyzingScenario] = useState(false);
+  const [hearingFilter, setHearingFilter] = useState<"all" | "today" | "judgment">("all");
+  const [hearingTaskGeneratedId, setHearingTaskGeneratedId] = useState<string | null>(null);
 
-  // Marketing Tabs state
-  const [activeTab, setActiveTab] = useState<'ai' | 'schedule' | 'finance' | 'security'>('ai');
+  // Interactive Legal Finance Calculator states
+  const [caseFeeAmount, setCaseFeeAmount] = useState(250000);
+  const [partnerSharePercent, setPartnerSharePercent] = useState(65);
 
-  // Live Playgrounds State Management
-  const [activePlayground, setActivePlayground] = useState<'ai' | 'schedule' | 'finance' | 'security' | null>(null);
-  
-  // AI Playground states
-  const [aiPrompt, setAiPrompt] = useState('فحص ثغرات عقد إيجار تجاري خاضع للقانون ٤ لسنة ١٩٩٦');
-  const [aiOutput, setAiOutput] = useState('');
-  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  // Interactive Security Audit Verifier states
+  const [securityStep, setSecurityStep] = useState(4);
+  const [isRunningSecurityCheck, setIsRunningSecurityCheck] = useState(false);
 
-  // Calendar Playground states
-  const [newMeetingTitle, setNewMeetingTitle] = useState('');
-  const [newMeetingDate, setNewMeetingDate] = useState('');
-  const [newMeetingTime, setNewMeetingTime] = useState('');
-  const [toastNotification, setToastNotification] = useState<string | null>(null);
+  // ROI Calculator states
+  const [lawyersCount, setLawyersCount] = useState(8);
+  const [firmProfile, setFirmProfile] = useState<"corporate" | "litigation" | "arbitration">("corporate");
 
-  // Financial Playground states
-  const [feeAmount, setFeeAmount] = useState(150000);
-  const [partnerSplit, setPartnerSplit] = useState(60);
+  const activeScenario = useMemo(
+    () => RAJIH_SCENARIOS.find((s) => s.id === selectedScenarioId) ?? RAJIH_SCENARIOS[0],
+    [selectedScenarioId],
+  );
 
-  // Security Playground states
-  const [securityLogs, setSecurityLogs] = useState<string[]>([]);
-  const [isSimulatingAttack, setIsSimulatingAttack] = useState(false);
+  const filteredHearings = useMemo(() => {
+    if (hearingFilter === "all") return LIVE_HEARINGS_SAMPLE;
+    return LIVE_HEARINGS_SAMPLE.filter((h) => h.status === hearingFilter);
+  }, [hearingFilter]);
 
-  // Real-time calculated ROI stats
-  const calculatedStats = useMemo(() => {
-    const hoursSavedPerWeek = lawyersCount * 14; 
-    const extraCapacityCases = Math.floor(lawyersCount * 3.5);
-    const estimatedVatEgp = lawyersCount * 2400; 
+  const financeBreakdown = useMemo(() => {
+    const vatAmount = Math.round(caseFeeAmount * 0.14);
+    const barStampAmount = Math.round(caseFeeAmount * 0.015);
+    const netDistributable = caseFeeAmount - vatAmount - barStampAmount;
+    const partnerPayout = Math.round((netDistributable * partnerSharePercent) / 100);
+    const officeReserve = netDistributable - partnerPayout;
     return {
-      hoursSavedPerWeek,
-      extraCapacityCases,
-      estimatedVatEgp
+      vatAmount,
+      barStampAmount,
+      netDistributable,
+      partnerPayout,
+      officeReserve,
     };
-  }, [lawyersCount]);
+  }, [caseFeeAmount, partnerSharePercent]);
 
-  // Handle Login Submit
-  const handleLoginSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    startTransition(async () => {
-      // Simulate enterprise secure handshake
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      router.push('/dashboard');
-    });
+  const roiMetrics = useMemo(() => {
+    const multiplier = firmProfile === "arbitration" ? 1.25 : firmProfile === "corporate" ? 1.15 : 1.0;
+    const weeklyHoursSaved = Math.round(lawyersCount * 11.5 * multiplier);
+    const monthlyExtraMatters = Math.max(2, Math.round(lawyersCount * 2.8 * multiplier));
+    const annualEfficiencyValueEgp = Math.round(lawyersCount * 145000 * multiplier);
+    return {
+      weeklyHoursSaved,
+      monthlyExtraMatters,
+      annualEfficiencyValueEgp,
+    };
+  }, [lawyersCount, firmProfile]);
+
+  const scrollToSection = (sectionId: string) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    if (sectionId === "top") {
+      container.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const target = container.querySelector(`#${sectionId}`);
+    if (target instanceof HTMLElement) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
-  // Handle Register Submit
-  const handleRegisterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    startTransition(async () => {
-      // Simulate workspace setup and security provisioning
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      router.push('/dashboard');
-    });
-  };
-
-  // Launch Live Simulation Toasts
-  const triggerToast = (message: string) => {
-    setToastNotification(message);
+  const handleTriggerScenarioAnalysis = (scenarioId: string) => {
+    setSelectedScenarioId(scenarioId);
+    setIsAnalyzingScenario(true);
     setTimeout(() => {
-      setToastNotification(null);
-    }, 5000);
+      setIsAnalyzingScenario(false);
+    }, 450);
   };
 
-  // Run AI Simulation Generator
-  const runAiSimulation = () => {
-    setIsAiGenerating(true);
-    setAiOutput('جاري تفعيل محرك راجح للذكاء الاصطناعي السيادي لمطابقة البنود مع أحكام النقض المصرية...');
-    
-    setTimeout(() => {
-      if (aiPrompt.includes('إيجار')) {
-        setAiOutput(`[تم التحليل بنجاح وفقاً لأحدث مبادئ الهيئة العامة للمواد المدنية بمحكمة النقض]
-⚠️ الثغرة المكتشفة: البند الرابع يغفل تحديد آلية امتداد واضحة، مما قد يخضعه مستقبلاً لأحكام القانون القديم في حال الوفاة أو الإغلاق في غياب شرط الاستغلال الشخصي.
-💡 التوصية القانونية: يُنصح بإضافة المادة التالية: "يخضع هذا العقد حصرياً لأحكام القانون رقم ٤ لسنة ١٩٩٦ والمادة ٥٥٨ من القانون المدني، ولا يمتد تحت أي ظرف لورثة المستأجر الأصلي إلا لمرة واحدة وبشرط ممارسة ذات النشاط التجاري."`);
-      } else if (aiPrompt.includes('نصب')) {
-        setAiOutput(`[تم صياغة الدفوع القانونية وفقاً للمادة ٣٣٦ من قانون العقوبات المصري]
-💡 الدفع الأول: انتفاء ركن الاحتيال المادي وخلو الأوراق من أي طرق احتيالية خارجية أو مظاهر خارجية تؤيد ادعاءات المجني عليه.
-💡 الدفع الثاني: انتفاء الرابطة السببية بين الطرق الادعائية المفترضة وتسليم المبالغ النقدية؛ حيث تم التسليم طواعية استناداً لمعاملة تجارية مدنية سابقة تخضع لولاية المحاكم المدنية وليس القضاء الجنائي.`);
-      } else {
-        setAiOutput(`[تحليل البند العقد بموجب القانون المدني وقانون التحكيم المصري رقم ٢٧ لسنة ١٩٩٤]
-⚠️ العيب المرصود: بند التحكيم غامض ولا يحدد مركز التحكيم المعتمد أو القانون الإجرائي المطبق.
-💡 الصياغة البديلة المقترحة: "أي نزاع ينشأ عن تنفيذ أو تفسير هذا العقد يتم تسويته نهائياً عن طريق التحكيم وفقاً لقواعد مركز القاهرة الإقليمي للتحكيم التجاري الدولي (CRCICA) بواسطة محكم واحد يتم تعيينه باتفاق الطرفين."`);
-      }
-      setIsAiGenerating(false);
-      triggerToast('✨ تم فحص وصياغة المستند بنجاح بمطابقة أحكام النقض!');
-    }, 1800);
-  };
-
-  // Run Calendar Setup Simulation
-  const runCalendarSimulation = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMeetingTitle) return;
-    triggerToast(`📅 تم جدولة الجلسة: "${newMeetingTitle}" بنجاح ومزامنتها مع تليجرام والموكلين!`);
-    setNewMeetingTitle('');
-    setNewMeetingDate('');
-    setNewMeetingTime('');
-  };
-
-  // Run Security Penetration Block Simulation
-  const runSecuritySimulation = () => {
-    setIsSimulatingAttack(true);
-    setSecurityLogs([]);
-    const logs = [
-      '⚡ بدء محاكاة هجوم اختراق لتجاوز عزل الموكلين (PostgreSQL Tenant Bypass Security Test)...',
-      '🔍 محاولة إرسال استعلام مباشر لتسريب جدول (matters) التابع للعملاء الآخرين...',
-      '🛠️ الكود البرمجي المهاجم: SELECT * FROM matters WHERE organization_id = \'external_tenant_id\';',
-      '🛡️ تفعيل سياسة الحماية الجدارية Row Level Security (RLS) الخاصة بنظام AXIA...',
-      '❌ إيقاف العملية فوراً وحظر عنوان المهاجم وحماية عزل الموكل بالكامل.'
-    ];
-
-    logs.forEach((log, index) => {
+  const handleRunSecurityCheck = () => {
+    setIsRunningSecurityCheck(true);
+    setSecurityStep(1);
+    const timers = [
+      setTimeout(() => setSecurityStep(2), 350),
+      setTimeout(() => setSecurityStep(3), 700),
       setTimeout(() => {
-        setSecurityLogs(prev => [...prev, log]);
-        if (index === logs.length - 1) {
-          setIsSimulatingAttack(false);
-          triggerToast('🔒 تم اعتراض الهجوم وحظر المتسلل بنجاح بنسبة 100%!');
-        }
-      }, (index + 1) * 800);
-    });
+        setSecurityStep(4);
+        setIsRunningSecurityCheck(false);
+      }, 1050),
+    ];
+    return () => timers.forEach(clearTimeout);
   };
 
-  // Calculated variables for finance simulation
-  const computedFinance = useMemo(() => {
-    const vat = feeAmount * 0.14;
-    const syndicateStamp = feeAmount * 0.015;
-    const netProfit = feeAmount - vat - syndicateStamp;
-    const partnerAmount = (netProfit * partnerSplit) / 100;
-    const associatesAmount = netProfit - partnerAmount;
-    return {
-      vat: vat.toLocaleString('ar-EG'),
-      syndicateStamp: syndicateStamp.toLocaleString('ar-EG'),
-      netProfit: netProfit.toLocaleString('ar-EG'),
-      partnerAmount: partnerAmount.toLocaleString('ar-EG'),
-      associatesAmount: associatesAmount.toLocaleString('ar-EG')
-    };
-  }, [feeAmount, partnerSplit]);
+  const handleLicenseRequestSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!firmName.trim() || !workEmail.trim()) return;
+    const suffix = String(
+      (firmName.trim().length * 137 + workEmail.trim().length * 53) % 9000 + 1000,
+    );
+    setLicenseRequestCode(`AXIA-EG-${suffix}`);
+  };
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleCopyRequestCode = async () => {
+    if (!licenseRequestCode) return;
+    try {
+      await navigator.clipboard.writeText(
+        `طلب ترخيص AXIA Legal OS | رقم المرجع: ${licenseRequestCode} | المكتب: ${firmName} | البريد: ${workEmail}`,
+      );
+      setCopiedRequestCode(true);
+      setTimeout(() => setCopiedRequestCode(false), 2500);
+    } catch {
+      setCopiedRequestCode(false);
+    }
   };
 
   return (
-    <div className="relative min-h-screen bg-[#070709] text-white selection:bg-amber-500/20 selection:text-amber-200 antialiased font-sans pb-16">
-      
-      {/* Webkit Autofill Neutralizer Style Block - guarantees transparent background under autocompletes */}
-      <style dangerouslySetInnerHTML={{__html: `
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover, 
-        input:-webkit-autofill:focus,
-        input:-webkit-autofill:active {
-          -webkit-text-fill-color: #ffffff !important;
-          -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
-          transition: background-color 5000s ease-in-out 0s !important;
-        }
-      `}} />
+    <div
+      ref={scrollContainerRef}
+      className={`${styles.portal} relative h-dvh w-full overflow-y-auto overflow-x-hidden scroll-smooth bg-[var(--bg)] text-[var(--text)] selection:bg-[var(--axia-gold)]/20 selection:text-[var(--axia-gold-light)]`}
+    >
+      {/* Quiet page-scoped background; decorative only. */}
+      <div className={styles.backdrop} aria-hidden="true" />
 
-      {/* GLOBAL SYSTEM BACKGROUND WATERMARKS FOR COMPLETE UNIFIED VISUAL SYMMETRY */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-br from-amber-500/5 to-transparent blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-gradient-to-tl from-emerald-500/5 to-transparent blur-[150px]" />
-        
-        {/* Giant Sovereign Scale Of Justice - Center Floating Background Watermark (Fits everything perfectly) */}
-        <div className="fixed inset-0 flex items-center justify-center opacity-[0.04] z-0 pointer-events-none">
-          <svg className="w-[750px] h-[750px] text-amber-500" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-            <path d="M40 85 H60 M50 85 V30" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" />
-            <path d="M15 35 H85" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" />
-            <path d="M15 35 L5 55 M15 35 L25 55" stroke="currentColor" strokeWidth="0.4" />
-            <path d="M0 55 Q15 65 30 55 Z" stroke="currentColor" strokeWidth="0.8" fill="currentColor" fillOpacity="0.03" />
-            <path d="M85 35 L75 55 M85 35 L95 55" stroke="currentColor" strokeWidth="0.4" />
-            <path d="M70 55 Q85 65 100 55 Z" stroke="currentColor" strokeWidth="0.8" fill="currentColor" fillOpacity="0.03" />
-            <circle cx="50" cy="35" r="1.5" fill="currentColor" />
-          </svg>
-        </div>
-      </div>
+      {/* Top Sticky Command Navbar */}
+      <header className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--bg-glass)] backdrop-blur-2xl">
+        <div className={`${styles.pageFrame} mx-auto flex items-center justify-between py-3`}>
+          <button
+            type="button"
+            onClick={() => scrollToSection("top")}
+            className="group flex items-center gap-3 text-right outline-none cursor-pointer"
+          >
+            <AxiaBrandLogo mode="lockup" size="md" showSubtitle={false} animated />
+          </button>
 
-      {/* TOP FLOATING STICKY HEADER - PERMANENT ACCESS AT TOP-0 WITH ACTIVE BLUR */}
-      <header className="sticky top-0 z-50 w-full px-6 py-4 backdrop-blur-xl bg-black/60 border-b border-white/5 shadow-lg">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div onClick={scrollToTop} className="flex items-center gap-3 cursor-pointer">
-            <div className="relative flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500/20 to-amber-600/20 border border-amber-500/30">
-              <Scale className="w-4 h-4 text-amber-500" />
-            </div>
-            <div>
-              <div className="font-bold text-xs tracking-wider text-white">
-                AXIA Legal OS
-              </div>
-              <div className="text-[8px] text-amber-500 tracking-wider font-mono uppercase">
-                Egyptian Practice & Intelligence OS
-              </div>
-            </div>
-          </div>
-
-          {/* Unified System Navigation Anchors */}
-          <nav className="hidden md:flex items-center gap-6 text-[11px] text-neutral-400">
-            <a href="#features-section" className="hover:text-amber-500 transition-colors">مزايا المنظومة</a>
-            <a href="#calculator-section" className="hover:text-amber-500 transition-colors">مؤشرات الأداء</a>
-            <a href="#compliance-section" className="hover:text-amber-500 transition-colors">السيادة والأمان</a>
+          {/* Quick Section Navigation */}
+          <nav className="hidden xl:flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--panel)]/60 p-1 text-xs font-semibold text-[var(--text-muted)]">
+            <button
+              type="button"
+              onClick={() => scrollToSection("top")}
+              className="rounded-full px-3.5 py-1.5 transition-colors hover:bg-[var(--accent-hover)] hover:text-[var(--text)] cursor-pointer"
+            >
+              بوابة الدخول والعرض الحي
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection("modules-section")}
+              className="rounded-full px-3.5 py-1.5 transition-colors hover:bg-[var(--accent-hover)] hover:text-[var(--text)] cursor-pointer"
+            >
+              وحدات النظام (١٢ وحدة)
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection("roi-section")}
+              className="rounded-full px-3.5 py-1.5 transition-colors hover:bg-[var(--accent-hover)] hover:text-[var(--text)] cursor-pointer"
+            >
+              حاسبة العائد للمكتب
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection("security-section")}
+              className="rounded-full px-3.5 py-1.5 transition-colors hover:bg-[var(--accent-hover)] hover:text-[var(--text)] cursor-pointer"
+            >
+              السيادة والأمان (RLS)
+            </button>
           </nav>
 
-          {/* Symmetrical Instant Portal Entry Switcher (Fixes user pathing) */}
-          <div className="flex items-center gap-3">
-            <span className="hidden sm:inline-block px-2.5 py-0.5 text-[8px] font-mono tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-              ● متصل سيادياً v1.2
+          {/* Status, Theme Switcher & CTA */}
+          <div className="flex items-center gap-2.5">
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 font-mono text-[10px] font-bold text-[var(--login-success)]">
+              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              عزل سيادي RLS نشط
             </span>
-            <button 
-              onClick={scrollToTop}
-              className="text-[11px] bg-amber-500/10 hover:bg-amber-500 text-amber-400 hover:text-black border border-amber-500/30 rounded-full px-4 py-1.5 transition-all duration-300 cursor-pointer font-bold"
+
+            {mounted && (
+              <button
+                type="button"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="grid size-9 place-items-center rounded-xl border border-[var(--border)] bg-[var(--panel)] text-[var(--text-muted)] transition-colors hover:border-[var(--axia-gold)]/40 hover:text-[var(--text)] cursor-pointer"
+                title="تبديل المظهر (ليلي / نهاري)"
+                aria-label="تبديل المظهر"
+              >
+                {theme === "dark" ? <Sun className="size-4 text-[var(--axia-gold-light)]" /> : <Moon className="size-4" />}
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setAuthTab(authTab === "signin" ? "request_license" : "signin");
+                scrollToSection("top");
+              }}
+              className="rounded-xl border border-[var(--axia-gold)]/35 bg-[var(--axia-gold)]/12 px-3.5 py-2 text-xs font-bold text-[var(--axia-gold-light)] transition-all hover:bg-[var(--axia-gold)] hover:text-black cursor-pointer"
             >
-              تسجيل الدخول للمكتب 👤
+              {authTab === "signin" ? "طلب ترخيص مكتب" : "دخول الأعضاء"}
             </button>
           </div>
         </div>
       </header>
 
-      {/* MAIN VIEW - NO CLIPPING SYSTEM WITH OPTIMAL DUAL-COLUMN HEIGHTS */}
-      <main className="relative z-10 max-w-7xl mx-auto px-6 py-8 lg:py-16 flex flex-col justify-center min-h-[calc(100vh-100px)]">
-        
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          
-          {/* COLUMN 1: Symmetrical Brand Message Column */}
-          <div className="lg:col-span-6 space-y-6 text-right flex flex-col justify-center">
-            
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-400 mr-auto lg:mr-0 ml-auto">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>صرح التسيير القضائي والذكاء الاصطناعي الأسرع في مصر</span>
-            </div>
-            
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
-              مستقبل الممارسة القانونية في مصر
-              <span className="block mt-2 bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-600 bg-clip-text text-transparent">
-                نظام التشغيل القضائي الفائق AXIA
-              </span>
-            </h1>
-            
-            <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed max-w-xl">
-              منظومة سحابية متكاملة مصممة وفقاً لأرفع المقاييس الأمنية والتقنية في وادي السيليكون، تدمج البحث الذكي في أحكام النقض مع إدارة الجلسات، القضايا والتدفقات المالية بمساعدة محرك الذكاء الاصطناعي السيادي «راجح».
-            </p>
-
-          </div>
-
-          {/* COLUMN 2: Apple Style Micro-Precision Crystal Auth Card (Perfect Sizing) */}
-          <div className="lg:col-span-6 w-full flex justify-center lg:justify-end">
-            
-            <div className="w-full max-w-sm relative">
-              <div className="relative backdrop-blur-3xl bg-[#0b0c10]/40 border border-white/10 rounded-2xl p-6 sm:p-8 shadow-2xl">
-                
-                {/* iOS-Style Precise Micro Switcher */}
-                <div className="relative flex p-1 bg-white/[0.03] rounded-full border border-white/5 mb-6">
-                  <button
-                    onClick={() => setAuthMode('login')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-bold py-2 rounded-full transition-all cursor-pointer ${
-                      authMode === 'login' 
-                        ? 'bg-amber-500 text-black shadow-md font-extrabold' 
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <span>تسجيل الدخول</span>
-                  </button>
-                  
-                  <button
-                    onClick={() => setAuthMode('register')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 text-[11px] font-bold py-2 rounded-full transition-all cursor-pointer ${
-                      authMode === 'register' 
-                        ? 'bg-amber-500 text-black shadow-md font-extrabold' 
-                        : 'text-neutral-400 hover:text-white'
-                    }`}
-                  >
-                    <span>تأسيس مكتب</span>
-                  </button>
-                </div>
-
-                {/* LOGIN FORM - 100% UNBOXED CRYSTAL LINE PATTERN */}
-                {authMode === 'login' ? (
-                  <form onSubmit={handleLoginSubmit} className="space-y-6">
-                    
-                    {/* Username input with crystal bottom border */}
-                    <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5">
-                      <input
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="البريد الإلكتروني المهني لمساحة العمل"
-                        className="w-full bg-transparent border-none text-xs text-white placeholder-neutral-500 outline-none focus:ring-0 px-0 pb-1 pt-1"
-                      />
-                      <span className="absolute left-0 bottom-2 text-neutral-600">
-                        <Mail className="w-3.5 h-3.5" />
-                      </span>
-                    </div>
-
-                    {/* Password input with crystal bottom border */}
-                    <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5 pt-2">
-                      <div className="absolute left-0 top-[-8px] text-[10px] text-neutral-500">
-                        <a href="#" className="hover:text-amber-500 transition-colors font-medium">نسيت كلمة المرور؟</a>
-                      </div>
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="كلمة المرور الأمنية لمساحة العمل"
-                        className="w-full bg-transparent border-none text-xs text-white placeholder-neutral-500 outline-none focus:ring-0 pl-12 pr-0 pb-1 pt-1"
-                      />
-                      <div className="absolute left-0 bottom-2 flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="text-neutral-600 hover:text-neutral-300 transition-colors"
-                        >
-                          {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        </button>
-                        <Lock className="w-3.5 h-3.5 text-neutral-600" />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between px-0.5 pt-1">
-                      <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={rememberMe}
-                          onChange={(e) => setRememberMe(e.target.checked)}
-                          className="rounded border-white/10 bg-white/5 text-amber-500 focus:ring-0 focus:ring-offset-0 w-3 h-3"
-                        />
-                        <span className="text-[10px] text-neutral-400 font-medium">تذكر جلستي</span>
-                      </label>
-                      <span className="flex items-center gap-1 text-[9px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">
-                        <Shield className="w-2.5 h-2.5" />
-                        عزل RLS
-                      </span>
-                    </div>
-
-                    {/* Apple Style Sleek Pill Button */}
-                    <button
-                      type="submit"
-                      disabled={isPending}
-                      className="w-full bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 hover:border-amber-500/20 text-white font-bold text-xs py-3 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg"
-                    >
-                      {isPending ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <span>الدخول لمساحة العمل</span>
-                      )}
-                    </button>
-                  </form>
-                ) : (
-                  /* REGISTER OFFICE FORM - 100% UNBOXED CRYSTAL LINE PATTERN */
-                  <form onSubmit={handleRegisterSubmit} className="space-y-5">
-                    
-                    <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5">
-                      <input
-                        type="text"
-                        required
-                        value={officeName}
-                        onChange={(e) => setOfficeName(e.target.value)}
-                        placeholder="اسم المكتب أو الكيان القانوني الكلي"
-                        className="w-full bg-transparent border-none text-xs text-white placeholder-neutral-500 outline-none focus:ring-0 px-0 pb-1 pt-1"
-                      />
-                    </div>
-
-                    <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5 pt-1">
-                      <input
-                        type="text"
-                        required
-                        value={founderName}
-                        onChange={(e) => setFounderName(e.target.value)}
-                        placeholder="اسم الشريك المؤسس / المدير المسؤول"
-                        className="w-full bg-transparent border-none text-xs text-white placeholder-neutral-500 outline-none focus:ring-0 px-0 pb-1 pt-1"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 pt-1">
-                      <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5">
-                        <input
-                          type="text"
-                          required
-                          value={syndicateId}
-                          onChange={(e) => setSyndicateId(e.target.value)}
-                          placeholder="رقم القيد بالنقابة"
-                          className="w-full bg-transparent border-none text-xs text-white placeholder-neutral-500 outline-none focus:ring-0 px-0 pb-1 pt-1"
-                        />
-                      </div>
-                      <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5">
-                        <select
-                          value={officeType}
-                          onChange={(e) => setOfficeType(e.target.value)}
-                          className="w-full bg-transparent border-none text-xs text-neutral-400 outline-none focus:ring-0 px-0 pb-1 pt-1"
-                        >
-                          <option value="general" className="bg-[#08080A]">قضاء عام وجنائي</option>
-                          <option value="corporate" className="bg-[#08080A]">شركات واستثمار</option>
-                          <option value="civil" className="bg-[#08080A]">مدني وتعويضات</option>
-                          <option value="arbitration" className="bg-[#08080A]">تحكيم وتنازع</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="relative border-b border-white/10 hover:border-white/20 focus-within:border-amber-500/80 transition-colors pb-1.5 pt-1 flex items-center">
-                      <input
-                        type="text"
-                        required
-                        value={workspaceUrl}
-                        onChange={(e) => setWorkspaceUrl(e.target.value)}
-                        placeholder="رابط مساحة العمل المطلوبة"
-                        className="w-full bg-transparent border-none text-xs text-left font-mono text-white placeholder-neutral-600 outline-none focus:ring-0 px-0 pb-1 pt-1"
-                      />
-                      <span className="absolute left-0 bottom-2 text-[10px] font-mono text-neutral-500 pointer-events-none select-none pl-1">
-                        .axia.legal
-                      </span>
-                    </div>
-
-                    <div className="pt-2">
-                      <button
-                        type="submit"
-                        disabled={isPending}
-                        className="w-full bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 hover:border-amber-500/20 text-white font-bold text-xs py-3 rounded-full transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer shadow-lg"
-                      >
-                        {isPending ? (
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <span>تأسيس صرح المكتب السحابي</span>
-                        )}
-                      </button>
-                    </div>
-                  </form>
-                )}
-
-                <div className="mt-6 pt-5 border-t border-white/5 text-center">
-                  <span className="text-[10px] text-neutral-500 leading-relaxed block">
-                    مساحة العمل تخضع كلياً لبروتوكول السرية المتبادلة بموجب لوائح وزارة الاتصالات وتكنولوجيا المعلومات ونقابة المحامين المصرية.
-                  </span>
-                </div>
+      {/* HERO SECTION: SPLIT-SCREEN ENTERPRISE LOGIN + INTERACTIVE SYSTEM SHOWCASE */}
+      <main className={`${styles.pageFrame} relative z-10 mx-auto pt-6 pb-16 lg:pt-8`}>
+            {/* Value Proposition Hero Header */}
+            <div className={styles.intro}>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/10 px-3.5 py-1.5 text-xs font-bold text-[var(--axia-gold-light)]">
+                <Sparkles className="size-3.5" />
+                <span>أول نظام تشغيل قضائي سحابي متكامل للمكاتب القانونية في مصر</span>
               </div>
-            </div>
 
-          </div>
+              <h1 className="text-3xl font-black tracking-tight leading-[1.4] sm:text-[34px] xl:text-[38px]">
+                أدِر مكتبك القانوني بدقة المؤسسات العالمية{" "}
+                <span className="text-[var(--axia-gold-light)]">
+                  وبذكاء «راجح» القضائي
+                </span>
+              </h1>
 
-        </div>
-
-        {/* Scroll indicator with smooth loop down animation */}
-        <div className="flex flex-col items-center justify-center py-4 mt-8">
-          <a href="#features-section" className="flex flex-col items-center gap-2 text-xs text-neutral-500 hover:text-white transition-colors">
-            <span>استكشف صرح المزايا والمحاكاة الحية الفورية</span>
-            <ChevronDown className="w-4 h-4 text-amber-500 animate-bounce" />
-          </a>
-        </div>
-      </main>
-
-      {/* COMPREHENSIVE OUTSIDE SHOWCASE SECTION (FIXED HEIGHT BUGS REMOVED - h-auto NATURAL FLOW) */}
-      <section id="features-section" className="relative z-10 max-w-7xl mx-auto px-6 py-20 border-t border-white/5">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-2xl sm:text-3xl font-extrabold mb-4">
-            أقوى الأدوات في خدمة قضيتك وعملائك
-          </h2>
-          <p className="text-xs sm:text-sm text-neutral-400 max-w-xl mx-auto">
-            انقر على زر <span className="text-amber-500 font-bold">⚡ محاكاة حية</span> بجانب أي تبويب لتجربة واجهة النظام الحقيقية وإطلاق الأتمتة والذكاء بنفسك فوراً!
-          </p>
-        </div>
-
-        {/* Dynamic Showcase Navigation tabs alongside Interactive Sandbox buttons (Flex height layout) */}
-        <div className="flex flex-col lg:flex-row gap-8 items-stretch">
-          
-          {/* Tab Selection Panel with trigger buttons */}
-          <div className="w-full lg:w-1/3 flex flex-col gap-4">
-            
-            {/* TAB 1: RAJIH AI */}
-            <div className={`p-5 rounded-2xl border transition-all relative ${
-              activeTab === 'ai' 
-                ? 'bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/30 shadow-lg' 
-                : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
-            }`}>
-              <div className="flex items-start justify-between">
-                <button 
-                  onClick={() => setActiveTab('ai')}
-                  className="flex-1 text-right outline-none cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <Cpu className="w-5 h-5 text-amber-500" />
-                    <h3 className="font-bold text-sm text-white">الذكاء القضائي «راجح»</h3>
-                  </div>
-                  <p className="text-[11px] text-neutral-400 leading-relaxed">
-                    فحص ثغرات العقود والمذكرات، استكشاف مواد القوانين وصياغة دفوع قوية مبنية على أحكام النقض الحقيقية.
-                  </p>
-                </button>
-                <button
-                  onClick={() => setActivePlayground('ai')}
-                  className="mr-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-md shadow-amber-500/20 transition-all"
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>⚡ محاكاة حية</span>
-                </button>
-              </div>
-            </div>
-
-            {/* TAB 2: COURT CALENDAR */}
-            <div className={`p-5 rounded-2xl border transition-all relative ${
-              activeTab === 'schedule' 
-                ? 'bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/30 shadow-lg' 
-                : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
-            }`}>
-              <div className="flex items-start justify-between">
-                <button 
-                  onClick={() => setActiveTab('schedule')}
-                  className="flex-1 text-right outline-none cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <Calendar className="w-5 h-5 text-amber-500" />
-                    <h3 className="font-bold text-sm text-white">إخطارات قلم الجلسات والمهام</h3>
-                  </div>
-                  <p className="text-[11px] text-neutral-400 leading-relaxed">
-                    مزامنة وتتبع الجلسات وتأجيلات المحاكم مع أتمتة الرسائل الفورية للموكلين لمنع أي تخلف إجرائي.
-                  </p>
-                </button>
-                <button
-                  onClick={() => setActivePlayground('schedule')}
-                  className="mr-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-md shadow-amber-500/20 transition-all"
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>⚡ محاكاة حية</span>
-                </button>
-              </div>
-            </div>
-
-            {/* TAB 3: FINANCE */}
-            <div className={`p-5 rounded-2xl border transition-all relative ${
-              activeTab === 'finance' 
-                ? 'bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/30 shadow-lg' 
-                : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
-            }`}>
-              <div className="flex items-start justify-between">
-                <button 
-                  onClick={() => setActiveTab('finance')}
-                  className="flex-1 text-right outline-none cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <BadgeDollarSign className="w-5 h-5 text-amber-500" />
-                    <h3 className="font-bold text-sm text-white">إيرادات الأتعاب وحوكمة الحسابات</h3>
-                  </div>
-                  <p className="text-[11px] text-neutral-400 leading-relaxed">
-                    تنظيم ودائع الموكلين، مصاريف الخبراء والدمغات القضائية وتوزيع نسب أتعاب الشركاء لحظياً.
-                  </p>
-                </button>
-                <button
-                  onClick={() => setActivePlayground('finance')}
-                  className="mr-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-md shadow-amber-500/20 transition-all"
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>⚡ محاكاة حية</span>
-                </button>
-              </div>
-            </div>
-
-            {/* TAB 4: TENANT SECURITY */}
-            <div className={`p-5 rounded-2xl border transition-all relative ${
-              activeTab === 'security' 
-                ? 'bg-gradient-to-br from-amber-500/10 to-transparent border-amber-500/30 shadow-lg' 
-                : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
-            }`}>
-              <div className="flex items-start justify-between">
-                <button 
-                  onClick={() => setActiveTab('security')}
-                  className="flex-1 text-right outline-none cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <Shield className="w-5 h-5 text-amber-500" />
-                    <h3 className="font-bold text-sm text-white">السيادة المطلقة وحماية البيانات (RLS)</h3>
-                  </div>
-                  <p className="text-[11px] text-neutral-400 leading-relaxed">
-                    جدران حماية سحابية صارمة تعزل ملفات موكليك وقضاياك عن أي مكاتب أو هجمات خارجية بشكل تام.
-                  </p>
-                </button>
-                <button
-                  onClick={() => setActivePlayground('security')}
-                  className="mr-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-black bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 shadow-md shadow-amber-500/20 transition-all"
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>⚡ محاكاة حية</span>
-                </button>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Dynamic Graphic Preview Frame (No fixed height bounds to prevent clipping of inside preview elements) */}
-          <div className="w-full lg:w-2/3 h-auto min-h-[420px] rounded-3xl relative backdrop-blur-xl bg-neutral-950/40 border border-white/10 p-6 sm:p-8 flex flex-col justify-between gap-6">
-            
-            {/* Background aesthetic decor inside the frame */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/[0.02] to-transparent pointer-events-none" />
-            
-            <div className="flex items-center justify-between border-b border-white/5 pb-4">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-red-500/60" />
-                <span className="w-3 h-3 rounded-full bg-yellow-500/60" />
-                <span className="w-3 h-3 rounded-full bg-green-500/60" />
-                <span className="text-xs text-neutral-500 font-mono mr-2">AXIA Legal OS Preview Console</span>
-              </div>
-              <span className="text-[10px] bg-white/5 px-2.5 py-1 rounded-md text-amber-400 border border-white/5 font-mono">
-                {activeTab === 'ai' ? 'RAJIH_AGENT_V1.2' : activeTab === 'schedule' ? 'CALENDAR_DAEMON' : activeTab === 'finance' ? 'FINANCIAL_ENGINE' : 'SECURITY_POSTURE_OK'}
-              </span>
-            </div>
-
-            {/* Content Visuals Based on activeTab */}
-            <div className="flex-1 flex items-center justify-center py-2 overflow-hidden">
-              <AnimatePresence mode="wait">
-                
-                {/* AI Visual */}
-                {activeTab === 'ai' && (
-                  <motion.div 
-                    key="ai"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    transition={{ duration: 0.3 }}
-                    className="w-full max-w-lg space-y-4 text-right"
-                  >
-                    <div className="bg-white/[0.02] border border-white/10 p-4 rounded-xl font-mono text-[11px] leading-relaxed relative">
-                      <div className="text-amber-500 mb-1">{"// استعلام ذكاء اصطناعي سيادي لراجح:"}</div>
-                      <div className="text-neutral-300 mb-3">{"RAJIH.analyze_contract(type: 'commercial_lease', laws: ['Law_4_1996']);"}</div>
-                      <div className="text-emerald-400 font-bold mb-1">{"[الحالة: تم التحقق والمطابقة مع مبدأ محكمة النقض رقم ٥٤٢ لسنة ٨٢ ق]"}</div>
-                      <div className="text-neutral-400">
-                        &quot;مبدأ النقض: عقود الإيجار الخاضعة للقانون ٤ لسنة ١٩٩٦ ينتهي بانتهاء مدتها المحددة فيها، ولا تمتد إلا باتفاق مكتوب جديد.&quot;
-                      </div>
-                    </div>
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() => setActivePlayground('ai')}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 rounded-full text-xs font-bold transition-all cursor-pointer"
-                      >
-                        <Zap className="w-3.5 h-3.5" />
-                        <span>تشغيل صائغ العقود الفوري</span>
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Calendar Visual */}
-                {activeTab === 'schedule' && (
-                  <motion.div 
-                    key="schedule"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    transition={{ duration: 0.3 }}
-                    className="w-full max-w-lg space-y-4"
-                  >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-right">
-                      <div className="bg-white/[0.02] border border-white/10 p-3.5 rounded-xl">
-                        <div className="text-xs text-amber-500 font-semibold mb-1">محكمة النقض (الدائرة المدنية)</div>
-                        <div className="text-[11px] text-white">استئناف بطلان حكم التعويض</div>
-                        <div className="text-[10px] text-neutral-500 font-mono mt-2">الأحد ٢٨ سبتمبر ٢٠٢٦ - الساعة ٠٩:٠٠ ص</div>
-                      </div>
-                      <div className="bg-emerald-500/5 border border-emerald-500/20 p-3.5 rounded-xl">
-                        <div className="text-xs text-emerald-400 font-semibold mb-1">جلسة محكمة الجنايات</div>
-                        <div className="text-[11px] text-white">قضية جنايات التزوير والرشوة</div>
-                        <div className="text-[10px] text-emerald-500 font-mono mt-2">الأربعاء ١ أكتوبر ٢٠٢٦ - الساعة ١١:٠٠ ص</div>
-                      </div>
-                    </div>
-                    <div className="flex justify-center">
-                      <button
-                        onClick={() => setActivePlayground('schedule')}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 rounded-full text-xs font-bold transition-all cursor-pointer"
-                      >
-                        <Zap className="w-3.5 h-3.5" />
-                        <span>تأسيس تنبيه جلسة لحظي</span>
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Finance Visual */}
-                {activeTab === 'finance' && (
-                  <motion.div 
-                    key="finance"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    transition={{ duration: 0.3 }}
-                    className="w-full max-w-md space-y-3"
-                  >
-                    <div className="bg-white/[0.02] border border-white/5 p-4 rounded-xl space-y-2.5 text-right text-xs">
-                      <div className="flex justify-between items-center text-neutral-400">
-                        <span>أتعاب تأسيس وإدراج شركة مساهمة:</span>
-                        <span className="text-white font-semibold">١٥٠,٠٠٠ ج.م</span>
-                      </div>
-                      <div className="flex justify-between items-center text-neutral-400">
-                        <span>ضريبة القيمة المضافة المصرية (١٤%):</span>
-                        <span className="text-red-400">٢١,٠٠٠ ج.م</span>
-                      </div>
-                      <div className="flex justify-between items-center text-neutral-400">
-                        <span>دمغات ورسوم نقابة المحامين (١.٥%):</span>
-                        <span className="text-red-400">٢,٢٥٠ ج.م</span>
-                      </div>
-                      <div className="border-t border-white/5 pt-2 flex justify-between items-center text-emerald-400 font-bold">
-                        <span>صافي الأرباح الموزعة للمكتب:</span>
-                        <span>١٢٦,٧٥٠ ج.م</span>
-                      </div>
-                    </div>
-                    <div className="flex justify-center">
-                      <button
-                        onClick={() => setActivePlayground('finance')}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 rounded-full text-xs font-bold transition-all cursor-pointer"
-                      >
-                        <Zap className="w-3.5 h-3.5" />
-                        <span>فتح الحاسبة المالية المتقدمة</span>
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Security Visual */}
-                {activeTab === 'security' && (
-                  <motion.div 
-                    key="security"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    transition={{ duration: 0.3 }}
-                    className="w-full max-w-lg space-y-4"
-                  >
-                    <div className="bg-neutral-900 border border-white/10 p-4 rounded-xl font-mono text-[10px] leading-relaxed text-right text-emerald-400">
-                      <div>{"$ axia_security_policy --verify --org-id=zulficar"}</div>
-                      <div className="text-white">{"[system] Checking isolation parameters for user claims..."}</div>
-                      <div className="text-emerald-500">{"✔ postgres_row_level_security_filter: ENABLED"}</div>
-                      <div className="text-emerald-500">{"✔ tenant_isolation_data_crypt_handshake: OK"}</div>
-                      <div className="text-white">{"[success] RLS verified. Unauthorized access attempts to database blocked automatically."}</div>
-                    </div>
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() => setActivePlayground('security')}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/5 hover:bg-amber-500 hover:text-black border border-white/10 rounded-full text-xs font-bold transition-all cursor-pointer"
-                      >
-                        <Zap className="w-3.5 h-3.5" />
-                        <span>محاكاة هجوم اختراق والتصدي له</span>
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-
-              </AnimatePresence>
-            </div>
-
-            <div className="border-t border-white/5 pt-4 flex flex-col sm:flex-row justify-between items-center text-[10px] text-neutral-500">
-              <span>جميع العمليات والمخرجات معزولة ومحمية بالكامل ولا تشارك البيانات مع أي خدمات خارجية.</span>
-              <span className="flex items-center gap-1 text-emerald-400 font-mono mt-2 sm:mt-0">
-                <CheckCircle2 className="w-3 h-3" />
-                تأمين حماية فئة عسكرية SSL/TLS
-              </span>
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* INTERACTIVE VALUE & ROI CALCULATOR SECTION */}
-      <section id="calculator-section" className="relative z-10 max-w-7xl mx-auto px-6 py-20 border-t border-white/5">
-        <div className="absolute inset-0 z-0 bg-gradient-to-br from-amber-500/[0.01] to-transparent pointer-events-none" />
-        
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400 mb-4">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>مؤشرات الكفاءة التشغيلية والمالية للمكتب</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold mb-6 leading-tight">
-              احسب مقدار توفير الوقت والأرباح السحابية لمكتبك الموقر
-            </h2>
-            <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed mb-8">
-              قم بسحب المؤشر لتحديد عدد المحامين والمستشارين بمكتبك القانوني لتكتشف فوراً حجم المهام الإدارية التي يتولاها محرك AXIA OS ليوفر الوقت الثمين للتفرغ الكامل للتخطيط القضائي وكتابة المذكرات الحساسة.
-            </p>
-
-            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 space-y-6">
-              <div>
-                <div className="flex justify-between text-xs font-semibold mb-3">
-                  <span className="text-neutral-400">عدد المستشارين والمحامين بالمكتب:</span>
-                  <span className="text-amber-400 font-mono text-sm">{lawyersCount} محامين</span>
-                </div>
-                <input
-                  type="range"
-                  min="1"
-                  max="50"
-                  value={lawyersCount}
-                  onChange={(e) => setLawyersCount(parseInt(e.target.value))}
-                  className="w-full accent-amber-500 bg-white/10 h-2 rounded-lg appearance-none cursor-pointer"
-                />
-                <div className="flex justify-between text-[10px] text-neutral-600 mt-2 font-mono">
-                  <span>١ مستشار</span>
-                  <span>٢٥ مستشار</span>
-                  <span>٥٠ مستشار</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
-            {/* Stat Box 1 */}
-            <div className="backdrop-blur-xl bg-white/[0.02] border border-white/10 p-6 rounded-2xl flex flex-col justify-between h-[150px]">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-neutral-400">ساعات العمل الموفرة أسبوعياً</span>
-                <ClockIcon className="w-5 h-5 text-amber-500" />
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-amber-500 font-mono">
-                  +{calculatedStats.hoursSavedPerWeek} ساعة
-                </div>
-                <div className="text-[10px] text-neutral-500 mt-1">
-                  أتمتة الجلسات، البحث والمطابقة وتنبيه الموكلين
-                </div>
-              </div>
-            </div>
-
-            {/* Stat Box 2 */}
-            <div className="backdrop-blur-xl bg-white/[0.02] border border-white/10 p-6 rounded-2xl flex flex-col justify-between h-[150px]">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-neutral-400">طاقة استيعابية لقضايا إضافية</span>
-                <Scale className="w-5 h-5 text-amber-500" />
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-amber-500 font-mono">
-                  +{calculatedStats.extraCapacityCases} قضايا شهرياً
-                </div>
-                <div className="text-[10px] text-neutral-500 mt-1">
-                  زيادة إنتاجية ومعدلات ربح مستدامة للمكتب
-                </div>
-              </div>
-            </div>
-
-            {/* Stat Box 3 */}
-            <div className="backdrop-blur-xl bg-white/[0.02] border border-white/10 p-6 rounded-2xl flex flex-col justify-between h-[150px]">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-neutral-400">تقديرات القيمة المضافة المحوكمة</span>
-                <BadgeDollarSign className="w-5 h-5 text-amber-500" />
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-amber-500 font-mono">
-                  {calculatedStats.estimatedVatEgp.toLocaleString('ar-EG')} ج.م
-                </div>
-                <div className="text-[10px] text-neutral-500 mt-1">
-                  حوكمة الضرائب والدمغات المستقطعة بدقة برمجية
-                </div>
-              </div>
-            </div>
-
-            {/* Stat Box 4 */}
-            <div className="backdrop-blur-xl bg-white/[0.02] border border-white/10 p-6 rounded-2xl flex flex-col justify-between h-[150px]">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] text-neutral-400">الضمان والموثوقية التقنية</span>
-                <Shield className="w-5 h-5 text-emerald-400" />
-              </div>
-              <div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono">
-                  99.99%
-                </div>
-                <div className="text-[10px] text-neutral-500 mt-1">
-                  معدل استقرار وضمان الخدمة السحابية المشفرة
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-      {/* NATIONAL SOVEREIGN SECURITY & LEGAL COMPLIANCE SEALS (NO CLIPPING, SCROLL NATURAL ROW) */}
-      <section id="compliance-section" className="relative z-10 max-w-7xl mx-auto px-6 py-20 border-t border-white/5">
-        <div className="backdrop-blur-2xl bg-neutral-950/40 border border-white/10 rounded-3xl p-8 sm:p-12 relative">
-          
-          <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] rounded-full bg-emerald-500/[0.02] blur-[120px]" />
-          
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400">
-                <Shield className="w-4 h-4" />
-                <span>الامتثال السيادي والأمن القومي للبيانات</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-extrabold leading-tight">
-                مطابقة تامة لكافة التشريعات الرقمية في جمهورية مصر العربية
-              </h2>
-              <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
-                إن خصوصية الموكلين وحماية سرية الدفاع هي الأساس الأخلاقي لمهنة المحاماة. صممت منظومة AXIA Legal OS لتطابق أعلى معايير الخصوصية وعزل البيانات ومكافحة الجريمة المعلوماتية في مصر.
+              <p className="mx-auto max-w-3xl text-sm leading-7 text-[var(--text-muted)]">
+                منصة <strong className="text-[var(--text)]">AXIA Legal OS</strong> تجمع إدارة القضايا، رول الجلسات، التوكيلات، العقود المشفرة، وحوكمة الأتعاب مع محرك الذكاء الاصطناعي <strong className="text-[var(--axia-gold-light)]">«راجح»</strong> المقيد بأحكام محكمة النقض والتشريعات المصرية، داخل بيئة سحابية معزولة بالكامل لكل مكتب.
               </p>
 
-              <div className="space-y-3.5 text-xs text-neutral-300">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold text-white ml-1">قانون حماية البيانات الشخصية رقم ١٥١ لسنة ٢٠٢٠:</span>
-                    عزل تام لبيانات الموكلين ببيئة سحابية مشفرة مشروطة بمنح حقوق الولوج وإقرار الخصوصية الفوري لكل مكتب.
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold text-white ml-1">قانون مكافحة جرائم تقنية المعلومات رقم ١٧٥ لسنة ٢٠١٨:</span>
-                    أنظمة تتبع وتسجيل الأحداث والولوج (Core Audit Tracker) لمنع ورصد أي تلاعب أو استخدام غير مخول للبيانات.
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold text-white ml-1">السرية المهنية المعتمدة من نقابة المحامين:</span>
-                    المنظومة لا تستخدم ملقمات أو خوادم وسيطة لمشاركة البيانات، بل تعتمد على تشفير مباشر مخصص لكل مساحة عمل.
-                  </div>
-                </div>
-              </div>
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              
-              {/* Badge 1 */}
-              <div className="bg-white/[0.02] border border-white/5 hover:border-white/10 p-6 rounded-2xl text-center space-y-3 transition-colors">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto text-amber-500">
-                  <Fingerprint className="w-6 h-6" />
-                </div>
-                <h4 className="font-bold text-xs text-white">تشفير الهوية الذاتي</h4>
-                <p className="text-[10px] text-neutral-500 leading-normal">
-                  حماية حساب الشريك والمدير بمفاتيح أمنية مشفرة بالكامل.
-                </p>
+        <div className={styles.workspace}>
+          {/* RIGHT COLUMN (RTL Primary — 5 Columns): THE ENTERPRISE AUTH CAPSULE */}
+          <div className={styles.authColumn}>
+            <div className={`${styles.authCard} relative rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)] p-5 sm:p-7`}>
+              {/* Animated AXIA Brand Header inside the Auth Card */}
+              <div className="mb-4 flex flex-col items-start justify-between gap-4 border-b border-[var(--border)] pb-4">
+                <AxiaBrandLogo mode="hero" className={styles.authBrand} animated />
               </div>
 
-              {/* Badge 2 */}
-              <div className="bg-white/[0.02] border border-white/5 hover:border-white/10 p-6 rounded-2xl text-center space-y-3 transition-colors">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto text-amber-500">
-                  <Database className="w-6 h-6" />
-                </div>
-                <h4 className="font-bold text-xs text-white">عزل قواعد البيانات RLS</h4>
-                <p className="text-[10px] text-neutral-500 leading-normal">
-                  فصل بيانات المستندات والقضايا لكل منظمة بشكل حتمي وقاطع.
-                </p>
-              </div>
-
-              {/* Badge 3 */}
-              <div className="bg-white/[0.02] border border-white/5 hover:border-white/10 p-6 rounded-2xl text-center space-y-3 transition-colors">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto text-amber-500">
-                  <Activity className="w-6 h-6" />
-                </div>
-                <h4 className="font-bold text-xs text-white">رصد وسجل التدقيق</h4>
-                <p className="text-[10px] text-neutral-500 leading-normal">
-                  تسجيل حركات الاستعلام والتأكيد الفوري لمكافحة التسريبات.
-                </p>
-              </div>
-
-              {/* Badge 4 */}
-              <div className="bg-white/[0.02] border border-white/5 hover:border-white/10 p-6 rounded-2xl text-center space-y-3 transition-colors">
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto text-emerald-400 animate-pulse">
-                  <Award className="w-6 h-6" />
-                </div>
-                <h4 className="font-bold text-xs text-emerald-400">معايير أمان معتمدة</h4>
-                <p className="text-[10px] text-neutral-500 leading-normal">
-                  مطابقة لأمن الاتصالات القومية والمعايير العسكرية للتشفير.
-                </p>
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-      {/* MODERN FLOATING FOOTER */}
-      <footer className="relative z-10 border-t border-white/5 bg-black/60 backdrop-blur-xl py-12 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-amber-600 flex items-center justify-center">
-              <Scale className="w-4 h-4 text-black" />
-            </div>
-            <div>
-              <span className="font-bold text-xs text-white tracking-wider block">AXIA Legal OS</span>
-              <span className="text-[9px] text-neutral-500 font-mono">The Premium Sovereign AI Platform.</span>
-            </div>
-          </div>
-
-          <div className="text-center md:text-right text-[10px] text-neutral-500 space-y-1">
-            <p>© ٢٠٢٦ مجموعة AXIA الدولية للأنظمة السحابية والحلول القضائية. جميع الحقوق محفوظة.</p>
-            <p>المنصة مرخصة ومسجلة طبقاً للوائح الاتصالات والأمن القومي بجمهورية مصر العربية.</p>
-          </div>
-        </div>
-      </footer>
-
-      {/* STATIC TOASTER PORTAL FOR EMITTED PLATFORM NOTIFICATIONS */}
-      {toastNotification && (
-        <div className="fixed top-24 left-6 z-50 animate-slide-in-left max-w-sm">
-          <div className="backdrop-blur-2xl bg-black/85 border border-amber-500/30 p-4 rounded-2xl shadow-2xl flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
-              <Zap className="w-4 h-4" />
-            </div>
-            <div className="space-y-1 text-right">
-              <h4 className="text-xs font-bold text-white">إخطار محاكاة AXIA</h4>
-              <p className="text-[11px] text-neutral-400 leading-normal">{toastNotification}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* DETAILED INTERACTIVE SIMULATION PLAYGROUND MODALS (RESPONSIVE HEIGHT FOR PERFECT VIEWPORT FIT) */}
-      <AnimatePresence>
-        {activePlayground !== null && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            
-            {/* Dark glass backdrop layout */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.8 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setActivePlayground(null)}
-              className="absolute inset-0 bg-black/90 backdrop-blur-sm cursor-pointer"
-            />
-
-            {/* Modal Glass Container - Responsive Height scroll guaranteed */}
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="relative w-full max-w-lg bg-neutral-950 border border-white/10 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
-            >
-              
-              {/* Header inside the interactive simulator */}
-              <div className="p-5 border-b border-white/10 flex items-center justify-between bg-white/[0.02] shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500">
-                    <Zap className="w-4.5 h-4.5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-xs text-white">
-                      {activePlayground === 'ai' ? 'محاكاة ذكاء راجح القضائي' : activePlayground === 'schedule' ? 'محاكاة قلم الجلسات الذكي' : activePlayground === 'finance' ? 'محاكاة الحسابات والحوكمة الضريبية والشركاء' : 'محاكاة اختبار اختراق RLS'}
-                    </h3>
-                    <p className="text-[9px] text-neutral-500">تجربة تفاعلية لمحاكاة بيئة النظام الفعلية من الخارج</p>
-                  </div>
-                </div>
+              {/* Mode Switcher: Authorized Login vs. Office License Request */}
+              <div
+                role="tablist"
+                aria-label="وضع البوابة"
+                className="mb-4 grid grid-cols-2 gap-1.5 rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-1.5"
+              >
                 <button
-                  onClick={() => setActivePlayground(null)}
-                  className="w-7 h-7 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  type="button"
+                  role="tab"
+                  aria-selected={authTab === "signin"}
+                  onClick={() => setAuthTab("signin")}
+                  className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-extrabold transition-all cursor-pointer ${
+                    authTab === "signin"
+                      ? "bg-[var(--login-selected)] text-[var(--login-selected-text)] shadow-sm"
+                      : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                  }`}
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <Lock className="size-3.5" />
+                  <span>دخول الأعضاء</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={authTab === "request_license"}
+                  onClick={() => setAuthTab("request_license")}
+                  className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-extrabold transition-all cursor-pointer ${
+                    authTab === "request_license"
+                      ? "bg-[var(--login-selected)] text-[var(--login-selected-text)] shadow-sm"
+                      : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                  }`}
+                >
+                  <Building2 className="size-3.5" />
+                  <span>طلب ترخيص مكتب</span>
                 </button>
               </div>
 
-              {/* Dynamic Playground Body Panels (Scroll inner content) */}
-              <div className="p-6 overflow-y-auto flex-1 text-right space-y-5">
-                
-                {/* 1. AI PLAYGROUND PANEL */}
-                {activePlayground === 'ai' && (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="block text-xs font-semibold text-neutral-400">
-                        اختر نموذجاً مسبقاً للفحص أو أدخل مستندك المخصص:
-                      </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <button
-                          onClick={() => setAiPrompt('فحص ثغرات عقد إيجار تجاري خاضع للقانون ٤ لسنة ١٩٩٦')}
-                          className="px-2.5 py-1.5 rounded-xl text-[10px] border border-white/5 bg-white/5 hover:bg-white/10 text-neutral-300 transition-colors"
-                        >
-                          ثغرة عقد إيجار تجاري
-                        </button>
-                        <button
-                          onClick={() => setAiPrompt('دفع في جنحة نصب بموجب المادة ٣٣٦ عقوبات')}
-                          className="px-2.5 py-1.5 rounded-xl text-[10px] border border-white/5 bg-white/5 hover:bg-white/10 text-neutral-300 transition-colors"
-                        >
-                          دفوع جنحة نصب واحتيال
-                        </button>
-                        <button
-                          onClick={() => setAiPrompt('فحص ثغرات شرط تحكيم غامض أو غير مكتمل')}
-                          className="px-2.5 py-1.5 rounded-xl text-[10px] border border-white/5 bg-white/5 hover:bg-white/10 text-neutral-300 transition-colors"
-                        >
-                          ثغرة شرط التحكيم
-                        </button>
+              {/* TAB 1: REAL SUPABASE SSR LOGIN FORM */}
+              {authTab === "signin" ? (
+                <form action={login} className="space-y-4">
+                  <input type="hidden" name="next" value={nextPath} />
+
+                  {/* Error Banner from Server Action Redirect (?error=...) */}
+                  {authErrorMessage && (
+                    <div
+                      role="alert"
+                      className="flex items-start gap-2.5 rounded-2xl border border-red-500/35 bg-red-500/10 p-3.5 text-right text-xs font-semibold text-[var(--login-error)]"
+                    >
+                      <AlertCircle className="mt-0.5 size-4 shrink-0 text-[var(--login-error)]" />
+                      <div className="space-y-0.5">
+                        <p className="font-bold">تعذر تسجيل الدخول</p>
+                        <p className="text-[11px] opacity-90">{authErrorMessage}</p>
                       </div>
                     </div>
+                  )}
 
-                    <div className="space-y-2">
-                      <textarea
-                        value={aiPrompt}
-                        onChange={(e) => setAiPrompt(e.target.value)}
-                        placeholder="اكتب مستندك أو دفعك القانوني هنا..."
-                        rows={3}
-                        className="w-full bg-neutral-900 border border-white/10 rounded-xl p-3.5 text-xs text-white placeholder-neutral-600 outline-none focus:border-amber-500/40"
+                  {/* Protected Destination Indicator when ?next= is non-root */}
+                  {nextPath !== "/" && (
+                    <div className="flex items-center justify-between rounded-xl border border-[var(--axia-gold)]/25 bg-[var(--axia-gold)]/8 px-3 py-2 text-[11px]">
+                      <span className="text-[var(--text-muted)]">سيتم توجيهك بعد الدخول إلى:</span>
+                      <code className="font-mono font-bold text-[var(--axia-gold-light)]" dir="ltr">
+                        {nextPath}
+                      </code>
+                    </div>
+                  )}
+
+                  {/* Email Field */}
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="axia-login-email"
+                      className="block text-xs font-bold text-[var(--text)]"
+                    >
+                      البريد الإلكتروني المهني
+                    </label>
+                    <div className="relative flex items-center rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3.5 py-0 transition-colors focus-within:border-[var(--axia-gold)]">
+                      <Mail className="ml-2.5 size-4 shrink-0 text-[var(--text-muted)]" />
+                      <input
+                        id="axia-login-email"
+                        name="email"
+                        type="email"
+                        required
+                        autoComplete="email"
+                        dir="ltr"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="partner@lawfirm.eg"
+                        className="w-full bg-transparent text-left font-mono text-xs text-[var(--text)] placeholder-[var(--text-muted)]/60 outline-none"
                       />
                     </div>
+                  </div>
 
-                    <div className="flex justify-start">
-                      <button
-                        onClick={runAiSimulation}
-                        disabled={isAiGenerating}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-full shadow-lg cursor-pointer"
+                  {/* Password Field */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor="axia-login-password"
+                        className="block text-xs font-bold text-[var(--text)]"
                       >
-                        {isAiGenerating ? (
-                          <>
-                            <div className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                            <span>جاري معالجة أحكام النقض...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-3 h-3" />
-                            <span>إطلاق فحص وصياغة راجح الذكية</span>
-                          </>
-                        )}
+                        كلمة المرور الأمنية
+                      </label>
+                      <span className="text-[10px] font-medium text-[var(--text-muted)]">
+                        محمية بتشفير الجلسات SSR
+                      </span>
+                    </div>
+                    <div className="relative flex items-center rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3.5 py-0 transition-colors focus-within:border-[var(--axia-gold)]">
+                      <Lock className="ml-2.5 size-4 shrink-0 text-[var(--text-muted)]" />
+                      <input
+                        id="axia-login-password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        autoComplete="current-password"
+                        dir="ltr"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••••••"
+                        className="w-full bg-transparent text-left font-mono text-xs text-[var(--text)] placeholder-[var(--text-muted)]/60 outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="mr-2 text-[var(--text-muted)] transition-colors hover:text-[var(--text)] cursor-pointer"
+                        aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
                     </div>
-
-                    {aiOutput && (
-                      <div className="bg-neutral-900 border border-white/10 rounded-xl p-4 space-y-2 text-right">
-                        <div className="flex items-center gap-2 text-amber-500 border-b border-white/5 pb-2">
-                          <Terminal className="w-3.5 h-3.5" />
-                          <span className="text-[10px] font-bold font-mono">مخرجات محرك الذكاء القضائي السيادي:</span>
-                        </div>
-                        <p className="text-[11px] font-mono leading-relaxed text-neutral-300 whitespace-pre-wrap">
-                          {aiOutput}
-                        </p>
-                      </div>
-                    )}
                   </div>
-                )}
 
-                {/* 2. COURT CALENDAR PLAYGROUND PANEL */}
-                {activePlayground === 'schedule' && (
-                  <form onSubmit={runCalendarSimulation} className="space-y-4">
-                    <div className="space-y-3">
+                  {/* Primary Submit Button wired to Server Action */}
+                  <div className="pt-1">
+                    <LoginSubmitButton />
+                  </div>
+
+                  {/* Security Assurance Footer */}
+                  <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[var(--border)] text-center">
+                    <div className="rounded-xl bg-[var(--accent)] px-2 py-2">
+                      <span className="block font-mono text-[10px] font-bold text-[var(--login-success)]">
+                        RLS Isolated
+                      </span>
+                      <span className="text-[9px] text-[var(--text-muted)]">عزل تام للمكتب</span>
+                    </div>
+                    <div className="rounded-xl bg-[var(--accent)] px-2 py-2">
+                      <span className="block font-mono text-[10px] font-bold text-[var(--axia-gold-light)]">
+                        SSR Cookies
+                      </span>
+                      <span className="text-[9px] text-[var(--text-muted)]">جلسات خادم مشفرة</span>
+                    </div>
+                    <div className="rounded-xl bg-[var(--accent)] px-2 py-2">
+                      <span className="block font-mono text-[10px] font-bold text-[var(--text)]">
+                        Audit Log
+                      </span>
+                      <span className="text-[9px] text-[var(--text-muted)]">توثيق كافة الحركات</span>
+                    </div>
+                  </div>
+                </form>
+              ) : (
+                /* TAB 2: CONTROLLED OFFICE LICENSE / DEMO REQUEST (Preserves "No Public Self-Registration" Security Boundary) */
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-[var(--axia-gold)]/25 bg-[var(--axia-gold)]/8 p-3.5 text-xs leading-relaxed text-[var(--text-muted)]">
+                    حفاظاً على السرية المهنية وعزل قواعد البيانات، لا يُتاح التسجيل العشوائي العام؛ يتم تأسيس مساحات العمل المستقلة للمكاتب بعد مراجعة رقم القيد بالنقابة وتخصيص نطاق معزول (`organization_id`).
+                  </div>
+
+                  {licenseRequestCode ? (
+                    <div className="space-y-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-right">
+                      <div className="flex items-center gap-2.5 text-[var(--login-success)]">
+                        <CheckCircle2 className="size-5 shrink-0" />
+                        <h4 className="text-sm font-extrabold">
+                          تم تجهيز مسودة طلب الترخيص محليًا
+                        </h4>
+                      </div>
+                      <p className="text-xs leading-relaxed text-[var(--text-muted)]">
+                        هذه مسودة محلية لمكتب <strong className="text-[var(--text)]">{firmName}</strong> لم يتم إرسالها أو حفظها على الخادم أو إنشاء مساحة عمل. انسخ التفاصيل للتواصل مع إدارة النظام.
+                      </p>
+                      <div className="flex items-center justify-between rounded-xl border border-[var(--border-strong)] bg-[var(--panel)] px-3.5 py-2.5">
+                        <span className="font-mono text-xs font-extrabold text-[var(--axia-gold-light)]">
+                          {licenseRequestCode}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleCopyRequestCode}
+                          className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent-hover)] px-2.5 py-1 text-[10px] font-bold text-[var(--text)] hover:bg-[var(--axia-gold)] hover:text-black transition-colors cursor-pointer"
+                        >
+                          {copiedRequestCode ? (
+                            <>
+                              <Check className="size-3" />
+                              <span>تم النسخ</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="size-3" />
+                              <span>نسخ المرجع</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLicenseRequestCode(null);
+                            setAuthTab("signin");
+                          }}
+                          className="flex-1 rounded-xl bg-[var(--axia-gold)] py-2.5 text-xs font-extrabold text-black cursor-pointer"
+                        >
+                          العودة لتسجيل الدخول
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleLicenseRequestSubmit} className="space-y-3.5">
                       <div>
-                        <label className="block text-[11px] text-neutral-400 mb-1">عنوان الجلسة أو الإجراء المطلبي</label>
+                        <label className="mb-1 block text-[11px] font-bold text-[var(--text)]">
+                          اسم مكتب المحاماة أو المجموعة القانونية
+                        </label>
                         <input
                           type="text"
                           required
-                          value={newMeetingTitle}
-                          onChange={(e) => setNewMeetingTitle(e.target.value)}
-                          placeholder="مثال: جلسة المرافعة الختامية في دعوى التعويض الكلي"
-                          className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-600 outline-none"
+                          value={firmName}
+                          onChange={(e) => setFirmName(e.target.value)}
+                          placeholder="مثال: مجموعة النيل للاستشارات القانونية والتحكيم"
+                          className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3.5 py-2.5 text-xs text-[var(--text)] placeholder-[var(--text-muted)]/60 outline-none focus:border-[var(--axia-gold)]"
                         />
                       </div>
-                      <div>
-                        <label className="block text-[11px] text-neutral-400 mb-1">الدائرة القضائية</label>
-                        <select className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none">
-                          <option>مدني كلي جنوب القاهرة</option>
-                          <option>جنايات مستأنف شمال</option>
-                          <option>جنح مستعجل الدقي</option>
-                        </select>
-                      </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] text-neutral-400 mb-1">تاريخ الحضور</label>
-                        <input
-                          type="date"
-                          required
-                          value={newMeetingDate}
-                          onChange={(e) => setNewMeetingDate(e.target.value)}
-                          className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
-                        />
+                      <div className={`${styles.licenseGrid} grid grid-cols-1 gap-3 sm:grid-cols-2`}>
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold text-[var(--text)]">
+                            اسم الشريك المؤسس / المدير
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={managingPartner}
+                            onChange={(e) => setManagingPartner(e.target.value)}
+                            placeholder="الاسم الثلاثي والدرجة القضائية"
+                            className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3 py-2 text-xs text-[var(--text)] placeholder-[var(--text-muted)]/60 outline-none focus:border-[var(--axia-gold)]"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold text-[var(--text)]">
+                            رقم القيد بنقابة المحامين
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={barRegistrationNo}
+                            onChange={(e) => setBarRegistrationNo(e.target.value)}
+                            placeholder="مثال: ١٠٠٤٩٢ / نقض"
+                            className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3 py-2 text-xs text-[var(--text)] placeholder-[var(--text-muted)]/60 outline-none focus:border-[var(--axia-gold)]"
+                          />
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-[11px] text-neutral-400 mb-1">توقيت الحضور</label>
-                        <input
-                          type="time"
-                          required
-                          value={newMeetingTime}
-                          onChange={(e) => setNewMeetingTime(e.target.value)}
-                          className="w-full bg-neutral-900 border border-white/10 rounded-xl px-3 py-2 text-xs text-white outline-none"
-                        />
-                      </div>
-                    </div>
 
-                    <div className="pt-2 flex justify-start">
+                      <div className={`${styles.licenseGrid} grid grid-cols-1 gap-3 sm:grid-cols-2`}>
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold text-[var(--text)]">
+                            التخصص الغالب للمكتب
+                          </label>
+                          <select
+                            value={practiceSpecialty}
+                            onChange={(e) => setPracticeSpecialty(e.target.value)}
+                            className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3 py-2 text-xs text-[var(--text)] outline-none focus:border-[var(--axia-gold)]"
+                          >
+                            <option value="corporate">شركات واستثمار ومحاكم اقتصادية</option>
+                            <option value="cassation">نقض مدني وجنائي وتقاضٍ عالٍ</option>
+                            <option value="admin">قضاء إداري ومجلس الدولة</option>
+                            <option value="arbitration">تحكيم دولي وعقود كبرى</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold text-[var(--text)]">
+                            عدد مقاعد المحامين المطلوبة
+                          </label>
+                          <select
+                            value={seatTier}
+                            onChange={(e) => setSeatTier(e.target.value)}
+                            className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3 py-2 text-xs text-[var(--text)] outline-none focus:border-[var(--axia-gold)]"
+                          >
+                            <option value="1-5">١ – ٥ مستشارين ومحامين</option>
+                            <option value="5-15">٥ – ١٥ مستشاراً ومحامياً</option>
+                            <option value="15-50">١٥ – ٥٠ مستشاراً ومحامياً</option>
+                            <option value="50+">أكثر من ٥٠ (مؤسسة كبرى)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-[11px] font-bold text-[var(--text)]">
+                          البريد المهني للتواصل وتفعيل النطاق
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          dir="ltr"
+                          value={workEmail}
+                          onChange={(e) => setWorkEmail(e.target.value)}
+                          placeholder="managing.partner@firm.eg"
+                          className="w-full rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3.5 py-2.5 text-left font-mono text-xs text-[var(--text)] placeholder-[var(--text-muted)]/60 outline-none focus:border-[var(--axia-gold)]"
+                        />
+                      </div>
+
                       <button
                         type="submit"
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-full shadow-lg cursor-pointer"
+                        className="w-full rounded-xl bg-[var(--login-primary)] py-3 text-xs font-extrabold text-[var(--login-primary-text)] shadow-sm transition-all hover:brightness-110 cursor-pointer"
                       >
-                        <Calendar className="w-4 h-4" />
-                        <span>إطلاق أتمتة الجلسة وبث الإشعار</span>
+                        تجهيز مسودة طلب ترخيص المكتب
                       </button>
-                    </div>
-                  </form>
-                )}
+                    </form>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
 
-                {/* 3. FINANCE PLAYGROUND PANEL */}
-                {activePlayground === 'finance' && (
-                  <div className="space-y-4">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between text-[11px] mb-1">
-                          <span className="text-neutral-400">قيمة الأتعاب المقررة للقضية:</span>
-                          <span className="text-amber-500 font-mono font-bold">{feeAmount.toLocaleString('ar-EG')} ج.م</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="10000"
-                          max="1000000"
-                          step="10000"
-                          value={feeAmount}
-                          onChange={(e) => setFeeAmount(parseInt(e.target.value))}
-                          className="w-full accent-amber-500 bg-white/10 h-1 rounded-lg appearance-none cursor-pointer"
-                        />
+          {/* LEFT COLUMN (RTL Showcase — 7 Columns): INTERACTIVE PRODUCT MARKETING & LIVE OS PREVIEW */}
+          <div className={styles.showcaseColumn}>
+            {/* LIVE INTERACTIVE PRODUCT CONSOLE (Try the 4 Core Pillars right on the Login Screen) */}
+            <div className={`${styles.console} overflow-hidden rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)]`}>
+              {/* Console Window Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] bg-[var(--bg)]/70 px-4 py-3 sm:px-5">
+                <div className="flex items-center gap-2">
+                  <span className="size-2.5 rounded-full bg-red-500/70" />
+                  <span className="size-2.5 rounded-full bg-amber-500/70" />
+                  <span className="size-2.5 rounded-full bg-emerald-500/70" />
+                  <span className="mr-2 font-mono text-[11px] font-bold text-[var(--text-muted)]">
+                    AXIA Interactive System Preview — جرب النظام الآن
+                  </span>
+                </div>
+                <span className="rounded-md border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-[var(--axia-gold-light)]">
+                  {activeShowcase === "rajih"
+                    ? "RAJIH_COPILOT_ENGINE"
+                    : activeShowcase === "hearings"
+                    ? "COURT_ROLL_MANAGER"
+                    : activeShowcase === "finance"
+                    ? "EGYPT_LEGAL_FINANCE"
+                    : "TENANT_RLS_GUARD"}
+                </span>
+              </div>
+
+              {/* 4 Pillar Selector Tabs */}
+              <div className={`${styles.showcaseTabs} gap-1.5 border-b border-[var(--border)] bg-[var(--bg)]/40 p-2`}>
+                <button
+                  type="button"
+                  title="ذكاء «راجح» القضائي"
+                  aria-label="ذكاء «راجح» القضائي"
+                  onClick={() => setActiveShowcase("rajih")}
+                  className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all cursor-pointer ${
+                    activeShowcase === "rajih"
+                      ? "bg-[var(--panel)] text-[var(--axia-gold-light)] shadow-sm border border-[var(--axia-gold)]/35"
+                      : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                  }`}
+                >
+                  <Cpu className="size-3.5" />
+                  <span>راجح القضائي</span>
+                </button>
+                <button
+                  type="button"
+                  title="رول الجلسات والمحاكم"
+                  aria-label="رول الجلسات والمحاكم"
+                  onClick={() => setActiveShowcase("hearings")}
+                  className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all cursor-pointer ${
+                    activeShowcase === "hearings"
+                      ? "bg-[var(--panel)] text-[var(--axia-gold-light)] shadow-sm border border-[var(--axia-gold)]/35"
+                      : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                  }`}
+                >
+                  <Calendar className="size-3.5" />
+                  <span>رول الجلسات</span>
+                </button>
+                <button
+                  type="button"
+                  title="حوكمة الأتعاب والضرائب"
+                  aria-label="حوكمة الأتعاب والضرائب"
+                  onClick={() => setActiveShowcase("finance")}
+                  className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all cursor-pointer ${
+                    activeShowcase === "finance"
+                      ? "bg-[var(--panel)] text-[var(--axia-gold-light)] shadow-sm border border-[var(--axia-gold)]/35"
+                      : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                  }`}
+                >
+                  <BadgeDollarSign className="size-3.5" />
+                  <span>حوكمة الأتعاب</span>
+                </button>
+                <button
+                  type="button"
+                  title="العزل السيادي RLS"
+                  aria-label="العزل السيادي RLS"
+                  onClick={() => setActiveShowcase("security")}
+                  className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all cursor-pointer ${
+                    activeShowcase === "security"
+                      ? "bg-[var(--panel)] text-[var(--axia-gold-light)] shadow-sm border border-[var(--axia-gold)]/35"
+                      : "text-[var(--text-muted)] hover:text-[var(--text)]"
+                  }`}
+                >
+                  <Shield className="size-3.5" />
+                  <span>العزل والأمان</span>
+                </button>
+              </div>
+
+              {/* Interactive Console Body */}
+              <div className={`${styles.consoleBody} p-4 sm:p-5`} role="region" aria-label="محتوى العرض التفاعلي">
+                <AnimatePresence mode="wait">
+                  {/* PILLAR 1: RAJIH AI INTERACTIVE SIMULATION */}
+                  {activeShowcase === "rajih" && (
+                    <motion.div
+                      key="rajih-tab"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-[var(--text-muted)]">
+                          اختر قضية أو استشارة لتجربة تحليل «راجح» المدعوم بأحكام النقض:
+                        </span>
+                        <span className="rounded-full bg-emerald-500/10 border border-emerald-500/25 px-2.5 py-0.5 text-[10px] font-bold text-[var(--login-success)]">
+                          مقيد بالمصادر التشريعية المعتمدة
+                        </span>
                       </div>
 
-                      <div>
-                        <div className="flex justify-between text-[11px] mb-1">
-                          <span className="text-neutral-400">نسبة التوزيع للشريك المدير:</span>
-                          <span className="text-amber-500 font-mono font-bold">%{partnerSplit}</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="10"
-                          max="90"
-                          value={partnerSplit}
-                          onChange={(e) => setPartnerSplit(parseInt(e.target.value))}
-                          className="w-full accent-amber-500 bg-white/10 h-1 rounded-lg appearance-none cursor-pointer"
-                        />
+                      {/* Scenario Pills */}
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                        {RAJIH_SCENARIOS.map((sc) => {
+                          const isSelected = sc.id === selectedScenarioId;
+                          return (
+                            <button
+                              key={sc.id}
+                              type="button"
+                              onClick={() => handleTriggerScenarioAnalysis(sc.id)}
+                              className={`rounded-xl border p-3 text-right transition-all cursor-pointer ${
+                                isSelected
+                                  ? "border-[var(--axia-gold)] bg-[var(--axia-gold)]/12 text-[var(--text)] shadow-sm"
+                                  : "border-[var(--border)] bg-[var(--bg)]/60 text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text)]"
+                              }`}
+                            >
+                              <span className="block text-[10px] font-bold text-[var(--axia-gold-light)]">
+                                {sc.courtBadge}
+                              </span>
+                              <span className="mt-1 block text-xs font-extrabold">{sc.label}</span>
+                            </button>
+                          );
+                        })}
                       </div>
-                    </div>
 
-                    <div className="bg-[#121216] border border-white/5 p-4 rounded-xl space-y-2 text-xs leading-relaxed">
-                      <div className="flex justify-between items-center text-neutral-400">
-                        <span>أتعاب الممارسة الكلية:</span>
-                        <span className="text-white font-mono font-semibold">{feeAmount.toLocaleString('ar-EG')} ج.م</span>
-                      </div>
-                      <div className="flex justify-between items-center text-neutral-400">
-                        <span>قيمة مضافة مصرية (١٤%):</span>
-                        <span className="text-red-400 font-mono">+{computedFinance.vat} ج.م</span>
-                      </div>
-                      <div className="flex justify-between items-center text-neutral-400">
-                        <span>دمغة ورسوم صندوق العلاج (١.٥%):</span>
-                        <span className="text-red-400 font-mono">+{computedFinance.syndicateStamp} ج.م</span>
-                      </div>
-                      <div className="border-t border-white/5 pt-2 flex justify-between items-center text-emerald-400 font-bold">
-                        <span>صافي الإيرادات:</span>
-                        <span className="font-mono">{computedFinance.netProfit} ج.م</span>
-                      </div>
-                      <div className="border-t border-white/5 pt-2 flex justify-between items-center text-neutral-400">
-                        <span>نصيب الشريك ({partnerSplit}%):</span>
-                        <span className="text-white font-mono font-bold">{computedFinance.partnerAmount} ج.م</span>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-start">
-                      <button
-                        onClick={() => triggerToast('📈 تم ترحيل الحسابات وتحديث الميزانية بنجاح!')}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs rounded-full cursor-pointer shadow-lg"
-                      >
-                        <BadgeDollarSign className="w-3.5 h-3.5" />
-                        <span>ترحيل وتحديث الميزانية السحابية</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* 4. SECURITY ATTACK SIMULATION PLAYGROUND PANEL */}
-                {activePlayground === 'security' && (
-                  <div className="space-y-4">
-                    <p className="text-[11px] text-neutral-400 leading-relaxed">
-                      اختبر مدى متانة جدار حماية عزل الموكلين (Row Level Security). ستقوم المحاكاة بإطلاق هجوم استعلام غير مخول من طرف مستخدم غريب لتجاوز حدود البيانات ورؤية كيف تتصدى لها حماية الخادم فورياً.
-                    </p>
-
-                    <div className="flex justify-start">
-                      <button
-                        onClick={runSecuritySimulation}
-                        disabled={isSimulatingAttack}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-full cursor-pointer shadow-lg"
-                      >
-                        {isSimulatingAttack ? (
-                          <>
-                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>جاري تصدي الهجوم...</span>
-                          </>
-                        ) : (
-                          <span>بدء اختبار هجوم الاختراق RLS</span>
-                        )}
-                      </button>
-                    </div>
-
-                    {securityLogs.length > 0 && (
-                      <div className="bg-neutral-900 border border-white/10 p-4 rounded-xl space-y-1.5 font-mono text-[10px] text-right">
-                        {securityLogs.map((log, index) => (
-                          <div 
-                            key={index} 
-                            className={log.startsWith('❌') ? 'text-red-500 font-bold' : log.startsWith('🛡️') ? 'text-emerald-400' : 'text-neutral-400'}
+                      {/* Query & Structured Legal Output */}
+                      <div className="rounded-2xl border border-[var(--border-strong)] bg-[var(--bg)] p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] pb-3">
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold text-[var(--axia-gold-light)]">
+                              الاستعلام القانوني محل الفحص:
+                            </span>
+                            <p className="text-xs font-semibold text-[var(--text)] leading-relaxed">
+                              {activeScenario.query}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleTriggerScenarioAnalysis(activeScenario.id)}
+                            className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-[var(--axia-gold)]/15 border border-[var(--axia-gold)]/35 px-2.5 py-1.5 text-[10px] font-bold text-[var(--axia-gold-light)] hover:bg-[var(--axia-gold)] hover:text-black transition-colors cursor-pointer"
                           >
-                            {log}
+                            <Play className="size-3" />
+                            <span>إعادة الفحص</span>
+                          </button>
+                        </div>
+
+                        {isAnalyzingScenario ? (
+                          <div className="flex items-center justify-center gap-2 py-8 text-xs font-bold text-[var(--axia-gold-light)]">
+                            <span className="size-4 rounded-full border-2 border-[var(--axia-gold-light)] border-t-transparent animate-spin" />
+                            <span>جارٍ مطابقة النصوص التشريعية ومبادئ محكمة النقض...</span>
+                          </div>
+                        ) : (
+                          <div className="space-y-3 text-xs leading-relaxed">
+                            <div className="rounded-xl bg-[var(--panel)] p-3 border border-[var(--border)]">
+                              <span className="block text-[11px] font-extrabold text-[var(--login-success)] mb-1">
+                                ١. الخلاصة القانونية:
+                              </span>
+                              <p className="text-[var(--text)]">{activeScenario.summary}</p>
+                            </div>
+
+                            <details className={styles.analysisDetails} key={activeScenario.id}>
+                              <summary className="cursor-pointer text-xs font-bold text-[var(--axia-gold-light)]">
+                                عرض الأساس القانوني والتوصية
+                              </summary>
+                              <div className="mt-3 space-y-3">
+                                <div>
+                                  <h3 className="mb-1 font-bold text-[var(--text)]">الأساس القانوني وأحكام النقض</h3>
+                                  <p className="text-[var(--text-muted)]">{activeScenario.legalBasis}</p>
+                                </div>
+                                <div>
+                                  <h3 className="mb-1 font-bold text-[var(--text)]">التوصية الإجرائية</h3>
+                                  <p className="text-[var(--text)]">{activeScenario.recommendation}</p>
+                                </div>
+                              </div>
+                            </details>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* PILLAR 2: COURT ROLL & HEARINGS SIMULATION */}
+                  {activeShowcase === "hearings" && (
+                    <motion.div
+                      key="hearings-tab"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-[var(--text-muted)]">
+                          غرفة عمليات الجلسات الحية — تصفية حسب حالة الرول:
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {[
+                            { id: "all", label: "كل الجلسات (٣)" },
+                            { id: "today", label: "جلسات اليوم" },
+                            { id: "judgment", label: "محجوزة للحكم" },
+                          ].map((f) => (
+                            <button
+                              key={f.id}
+                              type="button"
+                              onClick={() =>
+                                setHearingFilter(f.id as "all" | "today" | "judgment")
+                              }
+                              className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors cursor-pointer ${
+                                hearingFilter === f.id
+                                  ? "bg-[var(--axia-gold)] text-black"
+                                  : "bg-[var(--bg)] text-[var(--text-muted)] hover:text-[var(--text)]"
+                              }`}
+                            >
+                              {f.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {filteredHearings.map((hearing) => (
+                          <div
+                            key={hearing.id}
+                            className="rounded-2xl border border-[var(--border-strong)] bg-[var(--bg)] p-4 transition-all hover:border-[var(--axia-gold)]/40"
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-mono text-xs font-extrabold text-[var(--axia-gold-light)]">
+                                    {hearing.caseNumber}
+                                  </span>
+                                  <span className="rounded-md bg-[var(--panel)] border border-[var(--border)] px-2 py-0.5 text-[10px] font-bold text-[var(--text-muted)]">
+                                    {hearing.roll}
+                                  </span>
+                                </div>
+                                <h4 className="mt-1 text-xs font-extrabold text-[var(--text)]">
+                                  {hearing.title}
+                                </h4>
+                                <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">
+                                  {hearing.court} · {hearing.circuit}
+                                </p>
+                              </div>
+
+                              <div className="text-left">
+                                <span
+                                  className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
+                                    hearing.status === "today"
+                                      ? "bg-red-500/15 text-[var(--login-error)] border border-red-500/30"
+                                      : hearing.status === "judgment"
+                                      ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                                      : "bg-emerald-500/15 text-[var(--login-success)] border border-emerald-500/30"
+                                  }`}
+                                >
+                                  {hearing.statusLabel}
+                                </span>
+                                <span className="mt-1 block font-mono text-[10px] text-[var(--text-muted)]">
+                                  {hearing.date}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--border)] pt-2.5 text-[11px]">
+                              <span className="text-[var(--text-muted)]">
+                                <strong className="text-[var(--text)]">المطلوب بالجلسة:</strong>{" "}
+                                {hearing.decision}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setHearingTaskGeneratedId(hearing.id)}
+                                className="rounded-lg border border-[var(--axia-gold)]/35 bg-[var(--axia-gold)]/10 px-2.5 py-1 text-[10px] font-bold text-[var(--axia-gold-light)] hover:bg-[var(--axia-gold)] hover:text-black transition-colors cursor-pointer"
+                              >
+                                {hearingTaskGeneratedId === hearing.id
+                                  ? "✓ تم إسناد المهمة لقلم المحضرين"
+                                  : "+ تحويل لقرار ومهمة إجرائية"}
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
-                    )}
-                  </div>
-                )}
+                    </motion.div>
+                  )}
 
+                  {/* PILLAR 3: LEGAL FINANCE & EGYPTIAN TAX GOVERNANCE */}
+                  {activeShowcase === "finance" && (
+                    <motion.div
+                      key="finance-tab"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-4"
+                    >
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-4 space-y-3">
+                          <div>
+                            <div className="flex justify-between text-xs font-bold mb-1.5">
+                              <span className="text-[var(--text-muted)]">دفعة الأتعاب المحصلة:</span>
+                              <span className="font-mono text-[var(--axia-gold-light)]">
+                                {caseFeeAmount.toLocaleString("ar-EG")} ج.م
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min={25000}
+                              max={1000000}
+                              step={25000}
+                              value={caseFeeAmount}
+                              onChange={(e) => setCaseFeeAmount(Number(e.target.value))}
+                              className="w-full accent-[var(--axia-gold)] cursor-pointer"
+                            />
+                          </div>
+
+                          <div>
+                            <div className="flex justify-between text-xs font-bold mb-1.5">
+                              <span className="text-[var(--text-muted)]">نسبة الشريك المسؤول:</span>
+                              <span className="font-mono text-[var(--axia-gold-light)]">
+                                {partnerSharePercent}%
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min={20}
+                              max={85}
+                              step={5}
+                              value={partnerSharePercent}
+                              onChange={(e) => setPartnerSharePercent(Number(e.target.value))}
+                              className="w-full accent-[var(--axia-gold)] cursor-pointer"
+                            />
+                          </div>
+
+                          <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
+                            يحتسب النظام تلقائياً مخصصات ضريبة القيمة المضافة والدمغات النقابية، مع قصر الاطلاع والتعديل المالي على دوري <code className="font-mono text-[var(--axia-gold-light)]">owner</code> و<code className="font-mono text-[var(--axia-gold-light)]">admin</code>.
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl border border-[var(--border-strong)] bg-[var(--bg)] p-4 space-y-2.5 text-xs">
+                          <div className="flex justify-between py-1">
+                            <span className="text-[var(--text-muted)]">إجمالي الدفعة المسجلة:</span>
+                            <span className="font-mono font-bold text-[var(--text)]">
+                              {caseFeeAmount.toLocaleString("ar-EG")} ج.م
+                            </span>
+                          </div>
+                          <div className="flex justify-between py-1">
+                            <span className="text-[var(--text-muted)]">
+                              مخصص القيمة المضافة (١٤٪):
+                            </span>
+                            <span className="font-mono font-semibold text-[var(--login-error)]">
+                              -{financeBreakdown.vatAmount.toLocaleString("ar-EG")} ج.م
+                            </span>
+                          </div>
+                          <div className="flex justify-between py-1">
+                            <span className="text-[var(--text-muted)]">
+                              دمغة النقابة والعلاج (١.٥٪):
+                            </span>
+                            <span className="font-mono font-semibold text-[var(--login-error)]">
+                              -{financeBreakdown.barStampAmount.toLocaleString("ar-EG")} ج.م
+                            </span>
+                          </div>
+                          <div className="flex justify-between border-t border-[var(--border)] pt-2 font-extrabold text-[var(--login-success)]">
+                            <span>صافي العائد القابل للتوزيع:</span>
+                            <span className="font-mono">
+                              {financeBreakdown.netDistributable.toLocaleString("ar-EG")} ج.م
+                            </span>
+                          </div>
+                          <div className="flex justify-between pt-1 text-[11px]">
+                            <span className="text-[var(--text-muted)]">
+                              حصة الشريك ({partnerSharePercent}%):
+                            </span>
+                            <span className="font-mono font-bold text-[var(--axia-gold-light)]">
+                              {financeBreakdown.partnerPayout.toLocaleString("ar-EG")} ج.م
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-[11px]">
+                            <span className="text-[var(--text-muted)]">احتياطي وتشغيل المكتب:</span>
+                            <span className="font-mono font-bold text-[var(--text)]">
+                              {financeBreakdown.officeReserve.toLocaleString("ar-EG")} ج.م
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* PILLAR 4: TENANT RLS & AUDIT ARCHITECTURE */}
+                  {activeShowcase === "security" && (
+                    <motion.div
+                      key="security-tab"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.2 }}
+                      className="space-y-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-[var(--text-muted)]">
+                          طبقات الحماية الأربع المطبقة فعلياً في قاعدة بيانات AXIA Legal:
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handleRunSecurityCheck}
+                          disabled={isRunningSecurityCheck}
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 px-3 py-1.5 text-[11px] font-extrabold text-[var(--login-success)] hover:bg-emerald-500 hover:text-black transition-colors cursor-pointer"
+                        >
+                          <Terminal className="size-3.5" />
+                          <span>
+                            {isRunningSecurityCheck
+                              ? "جارٍ فحص سياسات العزل..."
+                              : "تشغيل فحص العزل السيادي RLS"}
+                          </span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                        {[
+                          {
+                            step: 1,
+                            title: "١. التحقق من الهوية عبر الجلسات المشفرة",
+                            code: "supabase.auth.getClaims() → resolveWorkspace()",
+                            desc: "حظر أي وصول لغير الأعضاء المسجلين في جدول organization_members وعدم استخدام Service Role في المسارات العادية.",
+                          },
+                          {
+                            step: 2,
+                            title: "٢. عزل القضايا بصلاحيات خاصة (Matter ACL)",
+                            code: "private.can_access_matter(matter_id)",
+                            desc: "فحص عضوية المكتب ومستوى الوصول للقضية داخل مخطط private المحمي في PostgreSQL.",
+                          },
+                          {
+                            step: 3,
+                            title: "٣. قيود المفاتيح المركبة للمستأجرين",
+                            code: "matters_client_tenant_fkey (organization_id)",
+                            desc: "منع ربط أي مستند أو جلسة أو معاملة مالية بملف ينتمي لمكتب آخر على مستوى قاعدة البيانات.",
+                          },
+                          {
+                            step: 4,
+                            title: "٤. سجل التدقيق الإلزامي (Core Audit Triggers)",
+                            code: "private.audit_core_row() → public.audit_logs",
+                            desc: "توثيق تلقائي لكل عملية إنشاء أو تعديل على الموكلين والقضايا والجلسات والمهام والمالية والمستندات.",
+                          },
+                        ].map((item) => {
+                          const active = securityStep >= item.step;
+                          return (
+                            <div
+                              key={item.step}
+                              className={`rounded-2xl border p-3.5 transition-all ${
+                                active
+                                  ? "border-emerald-500/35 bg-emerald-500/[0.05]"
+                                  : "border-[var(--border)] bg-[var(--bg)] opacity-50"
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-xs font-extrabold text-[var(--text)]">
+                                  {item.title}
+                                </span>
+                                <CheckCircle2
+                                  className={`size-4 shrink-0 ${
+                                    active ? "text-[var(--login-success)]" : "text-[var(--text-muted)]"
+                                  }`}
+                                />
+                              </div>
+                              <code
+                                dir="ltr"
+                                className="mt-1.5 block rounded bg-[var(--panel)] px-2 py-1 text-left font-mono text-[10px] text-[var(--axia-gold-light)]"
+                              >
+                                {item.code}
+                              </code>
+                              <p className="mt-1.5 text-[11px] leading-relaxed text-[var(--text-muted)]">
+                                {item.desc}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className={styles.metrics}>
+              {/* Key Trust Metrics Bar */}
+              <div className="grid grid-cols-2 gap-3 pt-1 sm:grid-cols-4">
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)]/80 p-3.5">
+                  <span className="block font-mono text-lg font-black text-[var(--axia-gold-light)]">
+                    ١٢ وحدة
+                  </span>
+                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">
+                    تشغيلية وقانونية متكاملة
+                  </span>
+                </div>
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)]/80 p-3.5">
+                  <span className="block font-mono text-lg font-black text-[var(--login-success)]">
+                    100% RLS
+                  </span>
+                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">
+                    عزل بيانات الموكلين والقضايا
+                  </span>
+                </div>
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)]/80 p-3.5">
+                  <span className="block font-mono text-lg font-black text-[var(--text)]">
+                    RAJIH AI
+                  </span>
+                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">
+                    استشهاد موثق بأحكام النقض
+                  </span>
+                </div>
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel)]/80 p-3.5">
+                  <span className="block font-mono text-lg font-black text-[var(--axia-gold-light)]">
+                    ٦ مسارات
+                  </span>
+                  <span className="text-[11px] font-semibold text-[var(--text-muted)]">
+                    تدقيق إلزامي (Audit Triggers)
+                  </span>
+                </div>
+              </div>
+        </div>
+      </main>
+
+      {/* SECTION 2: 12-MODULE ECOSYSTEM BENTO SHOWCASE */}
+      <section
+        id="modules-section"
+        className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)]/40 py-12 sm:py-16"
+      >
+        <div className={`${styles.pageFrame} mx-auto`}>
+          <div className="mx-auto max-w-3xl text-center space-y-3 mb-8">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/10 px-3.5 py-1 text-xs font-bold text-[var(--axia-gold-light)]">
+              <Layers className="size-3.5" />
+              <span>البنية الوظيفية الكاملة لنظام AXIA Legal</span>
+            </div>
+            <h2 className="text-2xl font-black sm:text-3xl">
+              ١٢ وحدة تشغيلية وقانونية تغطي كافة احتياجات المكتب العصري
+            </h2>
+            <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
+              صُممت كل وحدة لتعمل بترابط كامل مع بقية وحدات النظام، بحيث ينعكس إضافة أي جلسة أو مستند أو دفعة مالية فوراً في التقارير، البحث الشامل (`Ctrl+K`)، وسجل التدقيق.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {SYSTEM_MODULES.map((mod) => {
+              const Icon = mod.icon;
+              return (
+                <div
+                  key={mod.titleEn}
+                  className="group rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[var(--axia-gold)]/45 hover:shadow-xl"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="grid size-10 place-items-center rounded-xl border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/10 text-[var(--axia-gold-light)] transition-colors group-hover:bg-[var(--axia-gold)] group-hover:text-black">
+                      <Icon className="size-5" />
+                    </div>
+                    <span className="rounded-full border border-[var(--border)] bg-[var(--bg)] px-2.5 py-0.5 font-mono text-[10px] font-bold text-[var(--axia-gold-light)]">
+                      {mod.tag}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-extrabold text-[var(--text)]">{mod.titleAr}</h3>
+                  <span className="block font-mono text-[10px] text-[var(--text-muted)] mb-2">
+                    {mod.titleEn}
+                  </span>
+                  <p className="text-xs leading-relaxed text-[var(--text-muted)]">{mod.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 3: INTERACTIVE FIRM ROI & CAPACITY CALCULATOR */}
+      <section
+        id="roi-section"
+        className="relative z-10 border-t border-[var(--border)] py-12 sm:py-16"
+      >
+        <div className={`${styles.pageFrame} mx-auto`}>
+          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
+            <div className="lg:col-span-6 space-y-5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/10 px-3.5 py-1 text-xs font-bold text-[var(--axia-gold-light)]">
+                <TrendingUp className="size-3.5" />
+                <span>جدوى التحول الرقمي للمكتب القانوني</span>
               </div>
 
-              {/* Footer within sandbox dialog */}
-              <div className="p-4 bg-white/[0.01] border-t border-white/10 flex justify-end shrink-0">
+              <h2 className="text-2xl font-black leading-tight sm:text-3xl">
+                احسب الوفر الزمني والطاقة الاستيعابية الإضافية لمكتبك
+              </h2>
+
+              <p className="text-xs sm:text-sm leading-relaxed text-[var(--text-muted)]">
+                يقضي المحامي تقليدياً ساعات طويلة أسبوعياً في البحث اليدوي عن أحكام النقض، مطابقة المواعيد الإجرائية، وإعداد تقارير الموكلين. حدد حجم مكتبك وتخصصه لمعاينة الأثر التشغيلي المباشر لنظام AXIA Legal:
+              </p>
+
+              <div className="rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)] p-6 space-y-5">
+                <div>
+                  <div className="flex items-center justify-between text-xs font-bold mb-2">
+                    <span className="text-[var(--text-muted)]">
+                      عدد الشركاء والمستشارين والمحامين بالمكتب:
+                    </span>
+                    <span className="rounded-lg bg-[var(--axia-gold)]/15 px-3 py-1 font-mono text-sm font-black text-[var(--axia-gold-light)]">
+                      {lawyersCount} محامياً
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={50}
+                    value={lawyersCount}
+                    onChange={(e) => setLawyersCount(Number(e.target.value))}
+                    className="w-full accent-[var(--axia-gold)] cursor-pointer"
+                  />
+                  <div className="mt-1 flex justify-between font-mono text-[10px] text-[var(--text-muted)]">
+                    <span>١ محامٍ</span>
+                    <span>٢٥ محامياً</span>
+                    <span>٥٠ محامياً</span>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="mb-2 block text-xs font-bold text-[var(--text-muted)]">
+                    طبيعة القضايا الغالبة في المكتب:
+                  </span>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    {[
+                      { id: "corporate", label: "شركات ومحاكم اقتصادية" },
+                      { id: "litigation", label: "تقاضٍ عام ونقض وجنايات" },
+                      { id: "arbitration", label: "تحكيم دولي وعقود كبرى" },
+                    ].map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() =>
+                          setFirmProfile(p.id as "corporate" | "litigation" | "arbitration")
+                        }
+                        className={`rounded-xl border px-3 py-2 text-xs font-bold transition-all cursor-pointer ${
+                          firmProfile === p.id
+                            ? "border-[var(--axia-gold)] bg-[var(--axia-gold)] text-black"
+                            : "border-[var(--border)] bg-[var(--bg)] text-[var(--text-muted)] hover:text-[var(--text)]"
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)] p-6 flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[var(--text-muted)]">
+                    ساعات العمل الموفرة أسبوعياً
+                  </span>
+                  <Zap className="size-5 text-[var(--axia-gold-light)]" />
+                </div>
+                <div className="my-4">
+                  <span className="font-mono text-3xl font-black text-[var(--axia-gold-light)]">
+                    +{roiMetrics.weeklyHoursSaved} ساعة
+                  </span>
+                  <p className="mt-1 text-[11px] text-[var(--text-muted)]">
+                    توفير وقت البحث في أحكام النقض، صياغة المسودات، وجدولة الرول
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)] p-6 flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[var(--text-muted)]">
+                    طاقة استيعابية لقضايا إضافية
+                  </span>
+                  <Scale className="size-5 text-[var(--axia-gold-light)]" />
+                </div>
+                <div className="my-4">
+                  <span className="font-mono text-3xl font-black text-[var(--text)]">
+                    +{roiMetrics.monthlyExtraMatters} ملفاً / شهر
+                  </span>
+                  <p className="mt-1 text-[11px] text-[var(--text-muted)]">
+                    إدارة ملفات أكثر بنفس الفريق بفضل أتمتة المتابعة الإجرائية
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)] p-6 flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[var(--text-muted)]">
+                    القيمة التشغيلية السنوية المقدرة
+                  </span>
+                  <BadgeDollarSign className="size-5 text-[var(--login-success)]" />
+                </div>
+                <div className="my-4">
+                  <span className="font-mono text-2xl font-black text-[var(--login-success)]">
+                    {roiMetrics.annualEfficiencyValueEgp.toLocaleString("ar-EG")} ج.م
+                  </span>
+                  <p className="mt-1 text-[11px] text-[var(--text-muted)]">
+                    عائد مباشر من رفع إنتاجية المحامين وضبط التحصيل المالي
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-[var(--axia-gold)]/35 bg-gradient-to-br from-[var(--axia-gold)]/15 via-[var(--panel)] to-[var(--panel)] p-6 flex flex-col justify-between">
+                <div>
+                  <span className="text-xs font-extrabold text-[var(--axia-gold-light)]">
+                    جاهز لنقل مكتبك إلى الجيل القادم؟
+                  </span>
+                  <p className="mt-2 text-xs leading-relaxed text-[var(--text-muted)]">
+                    احصل على مساحة عمل معزولة بالكامل لمكتبك مع تفعيل محرك «راجح» واستيراد سجل القضايا.
+                  </p>
+                </div>
                 <button
-                  onClick={() => setActivePlayground(null)}
-                  className="px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-full border border-white/10 transition-colors cursor-pointer"
+                  type="button"
+                  onClick={() => {
+                    setAuthTab("request_license");
+                    scrollToSection("top");
+                  }}
+                  className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--axia-gold)] px-4 py-2.5 text-xs font-extrabold text-black transition-all hover:brightness-110 cursor-pointer"
                 >
-                  إغلاق المحاكاة
+                  <span>اطلب ترخيص مكتبك الآن</span>
+                  <ChevronLeft className="size-4" />
                 </button>
               </div>
-
-            </motion.div>
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      </section>
 
+      {/* SECTION 4: SOVEREIGN SECURITY & EGYPTIAN LEGAL COMPLIANCE */}
+      <section
+        id="security-section"
+        className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)]/40 py-12 sm:py-16"
+      >
+        <div className={`${styles.pageFrame} mx-auto`}>
+          <div className="rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)] p-8 sm:p-12">
+            <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 items-center">
+              <div className="lg:col-span-6 space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-[var(--login-success)]">
+                  <Shield className="size-4" />
+                  <span>معمارية الأمان والسرية المهنية</span>
+                </div>
+
+                <h2 className="text-2xl font-black leading-tight sm:text-3xl">
+                  حماية سيادية مصممة خصيصاً لسرية ملفات الموكلين في مصر
+                </h2>
+
+                <p className="text-xs sm:text-sm leading-relaxed text-[var(--text-muted)]">
+                  التزاماً بأصول السرية المهنية للمحاماة ومتطلبات التشريعات الرقمية المصرية، بُنيت منظومة AXIA Legal على مبدأ <strong className="text-[var(--text)]">انعدام الثقة الافتراضية (Zero-Trust Tenant Isolation)</strong> بحيث يستحيل تقنياً تداخل بيانات مكتب مع آخر أو إرسال مستندات الموكلين السرية لأي نماذج عامة غير معزولة.
+                </p>
+
+                <div className="space-y-3 pt-2 text-xs">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[var(--login-success)]" />
+                    <div>
+                      <strong className="text-[var(--text)]">
+                        التوافق مع مبادئ قانون حماية البيانات الشخصية رقم ١٥١ لسنة ٢٠٢٠:
+                      </strong>{" "}
+                      <span className="text-[var(--text-muted)]">
+                        تحديد صارم لنطاق معالجة البيانات وربط كل سجل بمالكه التنظيمي (`organization_id`) مع منع الحذف العشوائي غير الموثق.
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[var(--login-success)]" />
+                    <div>
+                      <strong className="text-[var(--text)]">
+                        التوافق مع متطلبات الأدلة الرقمية وأمن المعلومات (قانون ١٧٥ لسنة ٢٠١٨):
+                      </strong>{" "}
+                      <span className="text-[var(--text-muted)]">
+                        توليد بصمة رقمية (`content_hash`) للمستندات المرفوعة مع سجل تدقيق آلي غير قابل للتزوير على مستوى قاعدة البيانات.
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-[var(--login-success)]" />
+                    <div>
+                      <strong className="text-[var(--text)]">
+                        حوكمة الذكاء الاصطناعي (RAJIH Safety Policy):
+                      </strong>{" "}
+                      <span className="text-[var(--text-muted)]">
+                        أدوات «راجح» مقيدة بالقراءة فقط (`Read-Only Tools`) ولا تملك صلاحية تعديل أو حذف أي سجل قضائي دون مراجعة واعتماد بشري صريح من المحامي.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-5 space-y-2.5">
+                  <div className="grid size-10 place-items-center rounded-xl bg-[var(--axia-gold)]/12 text-[var(--axia-gold-light)]">
+                    <Fingerprint className="size-5" />
+                  </div>
+                  <h4 className="text-xs font-extrabold text-[var(--text)]">
+                    مصادقة خادم آمنة (SSR Auth)
+                  </h4>
+                  <p className="text-[11px] leading-relaxed text-[var(--text-muted)]">
+                    إدارة الجلسات عبر ملفات تعريف ارتباط محمية من الخادم (`@supabase/ssr`) دون كشف أي مفاتيح إدارية في المتصفح.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-5 space-y-2.5">
+                  <div className="grid size-10 place-items-center rounded-xl bg-[var(--axia-gold)]/12 text-[var(--axia-gold-light)]">
+                    <Database className="size-5" />
+                  </div>
+                  <h4 className="text-xs font-extrabold text-[var(--text)]">
+                    عزل متعدد المستويات (Org + Matter ACL)
+                  </h4>
+                  <p className="text-[11px] leading-relaxed text-[var(--text-muted)]">
+                    عزل مزدوج على مستوى المكتب وعلى مستوى القضية الواحدة عبر دوال `private.can_access_matter`.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-5 space-y-2.5">
+                  <div className="grid size-10 place-items-center rounded-xl bg-[var(--axia-gold)]/12 text-[var(--axia-gold-light)]">
+                    <Activity className="size-5" />
+                  </div>
+                  <h4 className="text-xs font-extrabold text-[var(--text)]">
+                    سجل تدقيق إلزامي (Core Audit)
+                  </h4>
+                  <p className="text-[11px] leading-relaxed text-[var(--text-muted)]">
+                    ستة مشغلات قاعدة بيانات (`Triggers`) تسجل تلقائياً الحقول المعدلة وهوية المستخدم وتوقيت العملية.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-5 space-y-2.5">
+                  <div className="grid size-10 place-items-center rounded-xl bg-emerald-500/12 text-[var(--login-success)]">
+                    <Award className="size-5" />
+                  </div>
+                  <h4 className="text-xs font-extrabold text-[var(--text)]">
+                    حماية السجلات من الحذف الفوري
+                  </h4>
+                  <p className="text-[11px] leading-relaxed text-[var(--text-muted)]">
+                    منع صلاحيات `DELETE` المباشرة على السجلات القانونية والمالية لحماية أرشيف المكتب من الفقدان العرضي.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)] py-10">
+        <div className={`${styles.pageFrame} mx-auto flex flex-col items-center justify-between gap-4 sm:flex-row`}>
+          <AxiaBrandLogo mode="lockup" size="sm" />
+
+          <div className="text-center sm:text-left text-[11px] text-[var(--text-muted)] space-y-1">
+            <p className="font-semibold text-[var(--text)]">
+              AXIA Legal OS — منظومة الإدارة القضائية والذكاء الاصطناعي للمكاتب القانونية
+            </p>
+            <p>
+              جميع الحقوق محفوظة © ٢٠٢٦ · مصمم ومطور للعمل وفق معايير العزل السيادي وأمن البيانات.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
 
-// Custom Clock Icon to clear any unused imports
-function ClockIcon(props: React.SVGProps<SVGSVGElement>) {
+export default function LoginPage() {
   return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-full items-center justify-center bg-[var(--bg)] text-[var(--text)]">
+          <div className="flex flex-col items-center gap-3">
+            <AxiaSymbolSvg className="size-12 animate-pulse" idPrefix="axia-suspense" />
+            <span className="text-xs font-bold text-[var(--text-muted)]">
+              جارٍ تهيئة بوابة AXIA Legal OS...
+            </span>
+          </div>
+        </div>
+      }
     >
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
+      <LoginPortalContent />
+    </Suspense>
   );
 }
