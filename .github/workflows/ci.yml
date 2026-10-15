@@ -13,6 +13,19 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: axia_staff_verification
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - "127.0.0.1:5432:5432"
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,5 +48,31 @@ jobs:
       - name: Safety tests
         run: npm run test:safety
 
+      - name: Staff invitation SQL security tests (isolated PostgreSQL)
+        run: |
+          npm install --prefix "$RUNNER_TEMP/axia-staff-db" --no-audit --no-fund --ignore-scripts @electric-sql/pglite@0.3.14
+          AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-db/node_modules/@electric-sql/pglite/dist/index.js" node scripts/test-staff-db.mjs
+
+      - name: Multi-session invitation concurrency (disposable PostgreSQL 17)
+        run: |
+          npm install --prefix "$RUNNER_TEMP/axia-staff-pg" --no-audit --no-fund --ignore-scripts pg@8.16.3
+          AXIA_SQL_BACKEND=postgres AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-staff-db.mjs
+
       - name: Production build
         run: npm run build
+
+      - name: Desktop and mobile UI contracts (synthetic data on loopback)
+        run: |
+          npm install --prefix "$RUNNER_TEMP/axia-ui" --no-audit --no-fund --ignore-scripts playwright@1.56.1
+          node "$RUNNER_TEMP/axia-ui/node_modules/playwright/cli.js" install --with-deps --only-shell chromium
+          AXIA_BROWSER_MODULE="$RUNNER_TEMP/axia-ui/node_modules/playwright/index.mjs" node scripts/run-ui-verification.mjs
+
+      - name: Upload isolated UI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: axia-integration-ui
+          path: |
+            /tmp/axia-integration-ui/
+            /tmp/axia-integration-ui-server.log
+          retention-days: 7

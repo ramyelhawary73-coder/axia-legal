@@ -16,6 +16,7 @@ import {
   type TeamMemberRecord,
   type TeamRole,
 } from "@/lib/team-client";
+import { StaffInvitationsPanel } from "@/components/staff-invitations-panel";
 
 type TeamFilter =
   | "all"
@@ -29,7 +30,7 @@ function initials(name: string) {
   if (!name || name === "غير مسجل") return "—";
   return name
     .trim()
-    .split(/s+/)
+    .split(/\s+/)
     .slice(0, 2)
     .map((part) => part[0])
     .join("");
@@ -108,10 +109,11 @@ export function TeamView() {
 
         <div className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-2 text-xs text-[var(--text-muted)]">
           <UserPlus className="size-4 text-[var(--axia-gold)]" />
-          <span>دعوة عضو جديد تحتاج Invitation/Auth Phase مستقلة</span>
+          <span>دعوات الموظفين حسب البريد والدور</span>
         </div>
       </div>
 
+      <StaffInvitationsPanel />
       {syncError && (
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs font-semibold text-red-300">
           {syncError}

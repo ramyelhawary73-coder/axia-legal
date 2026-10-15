@@ -35,7 +35,6 @@ import {
   buildDailySnapshot, 
   performDailyExport, 
   downloadSnapshotFile, 
-  syncSnapshotToCloud,
   clearSnapshotRecords,
   getTodayDateString
 } from "@/lib/daily-snapshot-service";
@@ -45,6 +44,7 @@ interface DailySnapshotManagerProps {
   onClose: () => void;
   matters: Matter[];
   tasks: LegalTask[];
+  isDataReady?: boolean;
 }
 
 export function DailySnapshotManager({
@@ -52,15 +52,15 @@ export function DailySnapshotManager({
   onClose,
   matters,
   tasks,
+  isDataReady = false,
 }: DailySnapshotManagerProps) {
   const [activeTab, setActiveTab] = useState<"preview" | "config" | "history">("preview");
   const [config, setConfig] = useState<SnapshotConfig>(() => getSnapshotConfig());
   const [history, setHistory] = useState<SnapshotRecord[]>(() => getSnapshotRecords());
   const [isExporting, setIsExporting] = useState(false);
-  const [isTestingCloud, setIsTestingCloud] = useState(false);
-  const [cloudTestResult, setCloudTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   // Compute live snapshot smoothly without cascading effect re-renders
   const liveSnapshot: DailySnapshot = useMemo(() => {
@@ -73,22 +73,21 @@ export function DailySnapshotManager({
   const isExportedToday = config.lastExportDate === todayDate;
 
   const handleExportNow = async (formatOverride?: SnapshotFormat) => {
+    if (!isDataReady || isExporting) {
+      setExportError("لم يكتمل تحميل بيانات مساحة العمل. أعد المحاولة بعد نجاح التحميل.");
+      return;
+    }
+    setExportError(null);
     setIsExporting(true);
     try {
       const effectiveFormat = formatOverride || config.format;
       const result = await performDailyExport(matters, tasks, { format: effectiveFormat });
       setConfig(getSnapshotConfig());
       setHistory(getSnapshotRecords());
-      setSaveMessage(`تم تصدير اللقطة اليومية بنجاح (${result.record.filename}) إلى ${
-        result.record.destination === "download_folder"
-          ? "مجلد التنزيل المحلي (Download Folder)"
-          : result.record.destination === "cloud_sync"
-          ? "المستودع السحابي (Cloud Sync)"
-          : "مجلد التنزيلات والمزامنة السحابية معاً"
-      }`);
+      setSaveMessage(`تم تجهيز الملف وطلب تنزيله: ${result.record.filename}. تحقق من التنزيلات في المتصفح.`);
       setTimeout(() => setSaveMessage(null), 4000);
     } catch (e) {
-      console.error("Export error:", e);
+      setExportError(e instanceof Error ? e.message : "تعذر تجهيز ملف التصدير.");
     } finally {
       setIsExporting(false);
     }
@@ -100,32 +99,19 @@ export function DailySnapshotManager({
     setTimeout(() => setSaveMessage(null), 3000);
   };
 
-  const handleTestCloudSync = async () => {
-    if (!liveSnapshot) return;
-    setIsTestingCloud(true);
-    setCloudTestResult(null);
+  const handleCopyJson = async () => {
+    if (!isDataReady || !liveSnapshot) return;
     try {
-      const res = await syncSnapshotToCloud(liveSnapshot, config.cloudSyncUrl);
-      setCloudTestResult(res);
-    } catch (e) {
-      setCloudTestResult({
-        success: false,
-        message: e instanceof Error ? e.message : "فشل فحص الاتصال السحابي",
-      });
-    } finally {
-      setIsTestingCloud(false);
+      await navigator.clipboard.writeText(JSON.stringify(liveSnapshot, null, 2));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setExportError("تعذر نسخ اللقطة. استخدم تنزيل الملف بدلًا من ذلك.");
     }
   };
 
-  const handleCopyJson = () => {
-    if (!liveSnapshot) return;
-    navigator.clipboard.writeText(JSON.stringify(liveSnapshot, null, 2));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const handleReDownload = (record: SnapshotRecord) => {
-    if (!liveSnapshot) return;
+    if (!isDataReady || !liveSnapshot) return;
     downloadSnapshotFile(liveSnapshot, record.format);
   };
 
@@ -149,14 +135,14 @@ export function DailySnapshotManager({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-[var(--text)]">
-                  التصدير التلقائي للقطة اليومية للقضايا والمهام
+                  اللقطة اليومية المحلية للقضايا والمهام
                 </h2>
                 <span className="rounded bg-[var(--accent)] px-2 py-0.5 text-[10px] font-mono text-[var(--axia-gold-light)] border border-[var(--border)]">
                   Daily Snapshot OS
                 </span>
               </div>
               <p className="text-xs text-[var(--text-muted)]">
-                أرشفة آمنة وتصدير دوري إلى مجلد التنزيلات المحلي (Downloads) والمزامنة السحابية المشفرة
+                لقطة محلية جزئية للقضايا والمهام. ليست نسخة احتياطية كاملة، ولا تتم مزامنتها سحابيًا.
               </p>
             </div>
           </div>
@@ -171,6 +157,14 @@ export function DailySnapshotManager({
           </div>
         </div>
 
+        {!isDataReady && (
+          <div role="status" className="border-b border-amber-500/30 bg-amber-500/10 px-6 py-3 text-xs text-[var(--text)]">
+            التصدير والنسخ غير متاحين حتى يكتمل تحميل بيانات مساحة العمل بنجاح.
+          </div>
+        )}
+        {exportError && (
+          <div role="alert" className="border-b border-red-500/30 px-6 py-3 text-xs text-[var(--text)]">{exportError}</div>
+        )}
         {/* Global Toast / Feedback */}
         {saveMessage && (
           <div className="bg-emerald-500/10 border-b border-emerald-500/30 px-6 py-2.5 text-xs font-semibold text-emerald-400 flex items-center gap-2 animate-in slide-in-from-top-2 duration-150">
@@ -208,7 +202,7 @@ export function DailySnapshotManager({
               }`}
             >
               <Settings className="size-3.5" />
-              <span>إعدادات الأتمتة والمزامنة السحابية</span>
+              <span>إعدادات التنزيل المحلي</span>
               {config.enabled && (
                 <span className="size-2 rounded-full bg-emerald-400 animate-pulse"></span>
               )}
@@ -230,7 +224,7 @@ export function DailySnapshotManager({
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleExportNow()}
-              disabled={isExporting}
+              disabled={isExporting || !isDataReady}
               className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--axia-gold)] px-3.5 py-1.5 text-xs font-bold text-black shadow-md hover:bg-[var(--axia-gold-light)] transition disabled:opacity-50"
             >
               <Download className={`size-3.5 ${isExporting ? "animate-bounce" : ""}`} />
@@ -271,6 +265,7 @@ export function DailySnapshotManager({
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => handleExportNow("json")}
+                    disabled={!isDataReady || isExporting}
                     className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5 text-xs font-medium text-[var(--text)] hover:bg-[var(--accent)] transition"
                     title="تنزيل كملف JSON البرمجي الشامل"
                   >
@@ -279,6 +274,7 @@ export function DailySnapshotManager({
                   </button>
                   <button
                     onClick={() => handleExportNow("markdown")}
+                    disabled={!isDataReady || isExporting}
                     className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5 text-xs font-medium text-[var(--text)] hover:bg-[var(--accent)] transition"
                     title="تنزيل كتقرير نصي تنفيذي للمحامين"
                   >
@@ -287,6 +283,7 @@ export function DailySnapshotManager({
                   </button>
                   <button
                     onClick={() => handleExportNow("csv")}
+                    disabled={!isDataReady || isExporting}
                     className="inline-flex items-center gap-1 rounded-md border border-[var(--border)] bg-[var(--panel)] px-2.5 py-1.5 text-xs font-medium text-[var(--text)] hover:bg-[var(--accent)] transition"
                     title="تنزيل كجدول إكسيل متوافق"
                   >
@@ -443,6 +440,7 @@ export function DailySnapshotManager({
                   </span>
                   <button
                     onClick={handleCopyJson}
+                    disabled={!isDataReady || isExporting}
                     className="inline-flex items-center gap-1 rounded bg-[var(--panel)] border border-[var(--border)] px-2 py-1 text-[10px] text-[var(--text)] hover:bg-[var(--accent)] transition"
                   >
                     {copied ? <Check className="size-3 text-emerald-400" /> : <Copy className="size-3" />}
@@ -504,41 +502,9 @@ export function DailySnapshotManager({
                       </div>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setConfig({ ...config, destination: "cloud_sync" })}
-                      className={`p-3 rounded-xl border text-right transition flex flex-col justify-between ${
-                        config.destination === "cloud_sync"
-                          ? "border-[var(--axia-gold)] bg-[var(--axia-gold-dim)]/20 text-[var(--text)]"
-                          : "border-[var(--border)] bg-[var(--bg)] text-[var(--text-muted)] hover:border-[var(--axia-gold)]/40"
-                      }`}
-                    >
-                      <Cloud className={`size-5 mb-2 ${config.destination === "cloud_sync" ? "text-[var(--axia-gold)]" : ""}`} />
-                      <div>
-                        <div className="font-bold text-xs text-[var(--text)]">المزامنة السحابية المشفرة</div>
-                        <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                          تشفير وتخزين في المستودع السحابي لمكتب المحاماة
-                        </div>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setConfig({ ...config, destination: "both" })}
-                      className={`p-3 rounded-xl border text-right transition flex flex-col justify-between ${
-                        config.destination === "both"
-                          ? "border-[var(--axia-gold)] bg-[var(--axia-gold-dim)]/20 text-[var(--text)]"
-                          : "border-[var(--border)] bg-[var(--bg)] text-[var(--text-muted)] hover:border-[var(--axia-gold)]/40"
-                      }`}
-                    >
-                      <RefreshCw className={`size-5 mb-2 ${config.destination === "both" ? "text-[var(--axia-gold)]" : ""}`} />
-                      <div>
-                        <div className="font-bold text-xs text-[var(--text)]">كلاهما معاً (موصى به)</div>
-                        <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                          نسخة محلية بمجلد التنزيلات مع نسخة سحابية مشفرة
-                        </div>
-                      </div>
-                    </button>
+                    <div className="rounded-xl border border-[var(--border)] p-3 text-xs text-[var(--text-muted)] sm:col-span-2">
+                      المزامنة السحابية غير مفعّلة. التنزيل المحلي هو الوجهة المتاحة؛ لا تُحفظ ملفات هذه اللقطات على الخادم.
+                    </div>
                   </div>
                 </div>
 
@@ -553,7 +519,7 @@ export function DailySnapshotManager({
                       onChange={(e) => setConfig({ ...config, format: e.target.value as SnapshotFormat })}
                       className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
                     >
-                      <option value="json">JSON - ملف برمجي كامل مع البصمة الرقمية (موصى به)</option>
+                      <option value="json">JSON - بيانات اللقطة الجزئية</option>
                       <option value="markdown">Markdown / Text - تقرير نصي تنفيذي منسق</option>
                       <option value="csv">CSV / Excel - جداول بيانات متوافقة مع إكسيل</option>
                     </select>
@@ -561,10 +527,12 @@ export function DailySnapshotManager({
 
                   <div>
                     <label className="block text-[var(--text-muted)] mb-1 font-semibold">
-                      توقيت التصدير اليومي المفضل
+                      الجدولة في الخلفية غير مفعّلة
                     </label>
                     <input
                       type="time"
+                      disabled
+                      title="الجدولة في الخلفية غير متاحة؛ يعمل التصدير عند فتح الصفحة فقط."
                       value={config.autoExportTime}
                       onChange={(e) => setConfig({ ...config, autoExportTime: e.target.value })}
                       className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none"
@@ -584,55 +552,6 @@ export function DailySnapshotManager({
                     <span>تصدير تلقائي فوري عند أول تشغيل للمنظومة يومياً (إذا لم يتم التصدير بعد)</span>
                   </label>
                 </div>
-              </div>
-
-              {/* Cloud Sync Location Details */}
-              <div className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-5 space-y-4">
-                <div className="flex items-center gap-2 text-sm font-bold text-[var(--text)]">
-                  <Cloud className="size-4 text-[var(--axia-gold)]" />
-                  <span>إعدادات وجهة المزامنة السحابية (Cloud Sync Location)</span>
-                </div>
-                <p className="text-[11px] text-[var(--text-muted)]">
-                  يمكنك تخصيص عنوان نقطة المزامنة السحابية لمكتبك أو السيرفر الخاص بالأرشيف القضائي المشفر (HTTPS Vault)
-                </p>
-
-                <div>
-                  <label className="block text-[var(--text-muted)] mb-1 font-semibold">
-                    عنوان خادم المزامنة السحابية (Endpoint URL)
-                  </label>
-                  <input
-                    type="url"
-                    value={config.cloudSyncUrl}
-                    onChange={(e) => setConfig({ ...config, cloudSyncUrl: e.target.value })}
-                    placeholder="https://vault.yourfirm.com/api/sync"
-                    className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 text-[var(--text)] focus:border-[var(--axia-gold)] focus:outline-none text-left font-mono"
-                    dir="ltr"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between pt-2">
-                  <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)]">
-                    <span className="size-2 rounded-full bg-emerald-400"></span>
-                    <span>المستودع المحلي السحابي جاهز ومحمي بتشفير AES-256</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleTestCloudSync}
-                    disabled={isTestingCloud}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-xs font-semibold text-[var(--text)] hover:bg-[var(--accent)] transition"
-                  >
-                    <RefreshCw className={`size-3.5 ${isTestingCloud ? "animate-spin" : ""}`} />
-                    <span>{isTestingCloud ? "جارٍ الفحص..." : "اختبار الاتصال السحابي"}</span>
-                  </button>
-                </div>
-
-                {cloudTestResult && (
-                  <div className={`p-3 rounded-lg text-xs font-medium ${
-                    cloudTestResult.success ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
-                  }`}>
-                    {cloudTestResult.message}
-                  </div>
-                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
@@ -657,7 +576,7 @@ export function DailySnapshotManager({
                     سجل اللقطات اليومية المصدرة والأرشيف
                   </h3>
                   <p className="text-[11px] text-[var(--text-muted)]">
-                    تتبع كل لقطة تم تصديرها لمجلد التنزيلات أو المستودع السحابي مع فحص البصمة الرقمية
+                    هذا سجل محلي لطلبات التصدير ولا يحتوي على نسخ الملفات. السجلات السحابية القديمة غير متحقق منها.
                   </p>
                 </div>
 
@@ -697,7 +616,7 @@ export function DailySnapshotManager({
                         <th className="px-4 py-2.5 font-medium">المحتويات (قضايا / مهام)</th>
                         <th className="px-4 py-2.5 font-medium">الحجم</th>
                         <th className="px-4 py-2.5 font-medium">الوجهة</th>
-                        <th className="px-4 py-2.5 font-medium">بصمة التحقق (Checksum)</th>
+                        <th className="px-4 py-2.5 font-medium">مؤشر اتساق محلي</th>
                         <th className="px-4 py-2.5 font-medium">الإجراء</th>
                       </tr>
                     </thead>
@@ -722,7 +641,7 @@ export function DailySnapshotManager({
                               {record.destination === "cloud_sync" && <Cloud className="size-3 text-blue-400" />}
                               {record.destination === "both" && <RefreshCw className="size-3 text-emerald-400" />}
                               <span>
-                                {record.destination === "download_folder" ? "تنزيل محلي" : record.destination === "cloud_sync" ? "سحابي" : "تنزيل + سحابي"}
+                                {record.destination === "download_folder" ? "تنزيل محلي" : record.destination === "cloud_sync" ? "سجل سحابي قديم غير مؤكد" : "سجل قديم غير مؤكد"}
                               </span>
                             </span>
                           </td>
@@ -735,10 +654,11 @@ export function DailySnapshotManager({
                             <button
                               type="button"
                               onClick={() => handleReDownload(record)}
+                    disabled={!isDataReady || isExporting}
                               className="inline-flex items-center gap-1 rounded bg-[var(--bg)] border border-[var(--border)] px-2.5 py-1 text-[10px] font-semibold text-[var(--text)] hover:border-[var(--axia-gold)] hover:text-[var(--axia-gold)] transition"
                             >
                               <Download className="size-3" />
-                              <span>إعادة تنزيل</span>
+                              <span>تصدير الحالية بنفس الصيغة</span>
                             </button>
                           </td>
                         </tr>
@@ -756,7 +676,7 @@ export function DailySnapshotManager({
         <div className="border-t border-[var(--border)] bg-[var(--bg)]/40 px-6 py-3 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[var(--text-muted)]">
           <div className="flex items-center gap-2">
             <span className="size-2 rounded-full bg-emerald-400"></span>
-            <span>الأرشيف محمي ومشفر وفقاً لمعايير قانون الإجراءات القضائية المصرية</span>
+            <span>الملف المحلي غير مشفّر؛ احفظه في مكان آمن. النسخ القديمة لا تُحفظ ضمن السجل.</span>
           </div>
 
           <div className="flex items-center gap-3">

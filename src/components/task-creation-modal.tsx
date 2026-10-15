@@ -8,7 +8,7 @@ import {
   CornerDownLeft 
 } from "lucide-react";
 import { LegalTask } from "@/types/legal";
-import type { TaskMatterOption } from "@/lib/tasks-client";
+import type { TaskAssigneeOption, TaskMatterOption } from "@/lib/tasks-client";
 import { 
   getSpeechRecognitionConstructor, 
   IWindowSpeechRecognition, 
@@ -21,6 +21,7 @@ interface TaskCreationModalProps {
   onCreateTask: (task: LegalTask) => boolean | void | Promise<boolean | void>;
   matterOptions?: TaskMatterOption[];
   assigneeLabel?: string;
+  assigneeOptions?: TaskAssigneeOption[];
   defaultCategory?: LegalTask["category"];
   defaultCaseNumber?: string;
   sourceLabel?: string;
@@ -32,11 +33,13 @@ export function TaskCreationModal({
   onCreateTask,
   matterOptions = [],
   assigneeLabel = "المستخدم الحالي",
+  assigneeOptions = [],
   defaultCategory = "قلم المحضرين",
   defaultCaseNumber = "",
   sourceLabel,
 }: TaskCreationModalProps) {
   const [title, setTitle] = useState("");
+  const [assigneeId, setAssigneeId] = useState("");
   const [category, setCategory] = useState<LegalTask["category"]>(defaultCategory);
   const [matterCaseNumber, setMatterCaseNumber] = useState(defaultCaseNumber);
   const [courtOrBailiffOffice, setCourtOrBailiffOffice] = useState("");
@@ -149,6 +152,17 @@ export function TaskCreationModal({
       return;
     }
 
+    const selectedAssignee = assigneeOptions.find(member => member.id === (assigneeId || assigneeOptions[0]?.id));
+    if (assigneeId && !selectedAssignee) {
+      setSaveError("قائمة أعضاء المكتب تغيرت. أعد اختيار المسؤول.");
+      setIsSaving(false);
+      return;
+    }
+    if (selectedAssignee && matchedMatter && !selectedAssignee.matterIds.includes(matchedMatter.id)) {
+      setSaveError("الموظف المختار لا يملك وصولًا للقضية. اختر مسؤولًا آخر.");
+      setIsSaving(false);
+      return;
+    }
     const newTask: LegalTask = {
       id: `pending-${Date.now()}`,
       title: title.trim(),
@@ -160,7 +174,8 @@ export function TaskCreationModal({
         courtOrBailiffOffice.trim() ||
         matchedMatter?.court ||
         "قلم محضرين المحكمة المختصة",
-      assignedTo: assigneeLabel,
+      assignedTo: selectedAssignee?.name ?? assigneeLabel,
+      assignedToUserId: selectedAssignee?.id,
       deadline,
       status: "قيد التنفيذ",
     };
@@ -173,6 +188,7 @@ export function TaskCreationModal({
       }
 
       setTitle("");
+      setAssigneeId("");
       setMatterCaseNumber("");
       setCourtOrBailiffOffice("");
       onClose();
@@ -368,12 +384,11 @@ export function TaskCreationModal({
               <label className="block text-[var(--text-muted)] mb-1.5 font-semibold">
                 المحامي / الموظف المكلف
               </label>
-              <input
-                type="text"
-                readOnly
-                value={assigneeLabel}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-xs text-[var(--text-muted)]"
-              />
+              {assigneeOptions.length ? <select aria-label="المسؤول عن المهمة" value={assigneeId || assigneeOptions[0].id}
+                onChange={event => setAssigneeId(event.target.value)} disabled={isSaving}
+                className="min-h-11 w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-xs text-[var(--text)]">
+                {assigneeOptions.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}
+              </select> : <input type="text" readOnly value={assigneeLabel} className="w-full rounded-xl border border-[var(--border)] bg-[var(--accent)] p-2.5 text-xs text-[var(--text-muted)]" />}
             </div>
           </div>
 
