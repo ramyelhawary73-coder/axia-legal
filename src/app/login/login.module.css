@@ -134,7 +134,7 @@
 
 @media (min-width: 1180px) {
   .workspace {
-    grid-template-columns: minmax(380px, 2fr) minmax(0, 3fr);
+    grid-template-columns: clamp(360px, 32vw, 560px) minmax(0, 1fr);
     gap: 28px;
   }
 
@@ -229,5 +229,40 @@
   .authCard,
   .console {
     min-height: 0;
+  }
+}
+
+/* Shared fluid page frame, with comfortable gutters on every screen. */
+.pageFrame {
+  width: 100%;
+  padding-inline: clamp(16px, 3vw, 64px);
+}
+
+.showcaseColumn {
+  container-type: inline-size;
+}
+
+.showcaseTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.showcaseTabs button {
+  min-width: 0;
+  min-height: 44px;
+  padding-inline: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.showcaseTabs button svg {
+  flex-shrink: 0;
+}
+
+@container (min-width: 680px) {
+  .showcaseTabs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

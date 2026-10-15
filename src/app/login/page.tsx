@@ -426,7 +426,7 @@ function LoginPortalContent() {
 
       {/* Top Sticky Command Navbar */}
       <header className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--bg-glass)] backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+        <div className={`${styles.pageFrame} mx-auto flex items-center justify-between py-3`}>
           <button
             type="button"
             onClick={() => scrollToSection("top")}
@@ -501,7 +501,7 @@ function LoginPortalContent() {
       </header>
 
       {/* HERO SECTION: SPLIT-SCREEN ENTERPRISE LOGIN + INTERACTIVE SYSTEM SHOWCASE */}
-      <main className="relative z-10 mx-auto max-w-[1440px] px-4 pt-6 pb-16 sm:px-6 lg:px-10 lg:pt-8">
+      <main className={`${styles.pageFrame} relative z-10 mx-auto pt-6 pb-16 lg:pt-8`}>
             {/* Value Proposition Hero Header */}
             <div className={styles.intro}>
               <div className="inline-flex items-center gap-2 rounded-full border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/10 px-3.5 py-1.5 text-xs font-bold text-[var(--axia-gold-light)]">
@@ -870,9 +870,11 @@ function LoginPortalContent() {
               </div>
 
               {/* 4 Pillar Selector Tabs */}
-              <div className="grid grid-cols-2 gap-1.5 border-b border-[var(--border)] bg-[var(--bg)]/40 p-2 sm:grid-cols-4">
+              <div className={`${styles.showcaseTabs} gap-1.5 border-b border-[var(--border)] bg-[var(--bg)]/40 p-2`}>
                 <button
                   type="button"
+                  title="ذكاء «راجح» القضائي"
+                  aria-label="ذكاء «راجح» القضائي"
                   onClick={() => setActiveShowcase("rajih")}
                   className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all cursor-pointer ${
                     activeShowcase === "rajih"
@@ -881,10 +883,12 @@ function LoginPortalContent() {
                   }`}
                 >
                   <Cpu className="size-3.5" />
-                  <span>ذكاء «راجح» القضائي</span>
+                  <span>راجح القضائي</span>
                 </button>
                 <button
                   type="button"
+                  title="رول الجلسات والمحاكم"
+                  aria-label="رول الجلسات والمحاكم"
                   onClick={() => setActiveShowcase("hearings")}
                   className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all cursor-pointer ${
                     activeShowcase === "hearings"
@@ -893,10 +897,12 @@ function LoginPortalContent() {
                   }`}
                 >
                   <Calendar className="size-3.5" />
-                  <span>رول الجلسات والمحاكم</span>
+                  <span>رول الجلسات</span>
                 </button>
                 <button
                   type="button"
+                  title="حوكمة الأتعاب والضرائب"
+                  aria-label="حوكمة الأتعاب والضرائب"
                   onClick={() => setActiveShowcase("finance")}
                   className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all cursor-pointer ${
                     activeShowcase === "finance"
@@ -905,10 +911,12 @@ function LoginPortalContent() {
                   }`}
                 >
                   <BadgeDollarSign className="size-3.5" />
-                  <span>حوكمة الأتعاب والضرائب</span>
+                  <span>حوكمة الأتعاب</span>
                 </button>
                 <button
                   type="button"
+                  title="العزل السيادي RLS"
+                  aria-label="العزل السيادي RLS"
                   onClick={() => setActiveShowcase("security")}
                   className={`flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all cursor-pointer ${
                     activeShowcase === "security"
@@ -917,7 +925,7 @@ function LoginPortalContent() {
                   }`}
                 >
                   <Shield className="size-3.5" />
-                  <span>العزل السيادي RLS</span>
+                  <span>العزل والأمان</span>
                 </button>
               </div>
 
@@ -1365,7 +1373,7 @@ function LoginPortalContent() {
         id="modules-section"
         className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)]/40 py-12 sm:py-16"
       >
-        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+        <div className={`${styles.pageFrame} mx-auto`}>
           <div className="mx-auto max-w-3xl text-center space-y-3 mb-8">
             <div className="inline-flex items-center gap-2 rounded-full border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/10 px-3.5 py-1 text-xs font-bold text-[var(--axia-gold-light)]">
               <Layers className="size-3.5" />
@@ -1412,7 +1420,7 @@ function LoginPortalContent() {
         id="roi-section"
         className="relative z-10 border-t border-[var(--border)] py-12 sm:py-16"
       >
-        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+        <div className={`${styles.pageFrame} mx-auto`}>
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
             <div className="lg:col-span-6 space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/10 px-3.5 py-1 text-xs font-bold text-[var(--axia-gold-light)]">
@@ -1566,7 +1574,7 @@ function LoginPortalContent() {
         id="security-section"
         className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)]/40 py-12 sm:py-16"
       >
-        <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
+        <div className={`${styles.pageFrame} mx-auto`}>
           <div className="rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)] p-8 sm:p-12">
             <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 items-center">
               <div className="lg:col-span-6 space-y-4">
@@ -1676,7 +1684,7 @@ function LoginPortalContent() {
 
       {/* FOOTER */}
       <footer className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)] py-10">
-        <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
+        <div className={`${styles.pageFrame} mx-auto flex flex-col items-center justify-between gap-4 sm:flex-row`}>
           <AxiaBrandLogo mode="lockup" size="sm" />
 
           <div className="text-center sm:text-left text-[11px] text-[var(--text-muted)] space-y-1">
