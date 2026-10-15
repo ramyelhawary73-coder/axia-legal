@@ -60,6 +60,11 @@ async function fixtureContext(viewport,theme,{autoExport=false}={}) {
 async function fits(page,label) {
   const metrics=await page.evaluate(()=>({viewport:innerWidth,document:document.documentElement.scrollWidth}));
   assert.ok(metrics.document<=metrics.viewport+1,`${label}: horizontal overflow ${JSON.stringify(metrics)}`);
+  for(const button of await page.locator("header button").all()) {
+    if(!await button.isVisible()) continue;
+    const box=await button.boundingBox();
+    assert.ok(box && box.x>=-1 && box.x+box.width<=metrics.viewport+1,`${label}: clipped header control`);
+  }
   records.push({label,...metrics});
 }
 async function nav(page,name) {
@@ -79,7 +84,7 @@ try {
     await page.screenshot({path:path.join(output,`login-${width}-${theme}.png`),fullPage:true});
     await context.close();
   }
-  for(const width of [1440,390]) for(const theme of ["light","dark"]) {
+  for(const width of [1440,390,320]) for(const theme of ["light","dark"]) {
     console.log(`UI staff/task/acceptance ${width}px ${theme}`);
     const {context,mutations}=await fixtureContext({width,height:900},theme);
     const page=await context.newPage();const errors=[];

@@ -209,7 +209,7 @@ export function AppShell({
     <div className="h-screen w-full flex flex-col overflow-hidden bg-[var(--bg)] text-[var(--text)] selection:bg-[var(--axia-gold-dim)] selection:text-[var(--text)]">
       {/* Top Navbar - Premium Apple-like compact header */}
       <header className="shrink-0 z-40 border-b border-[var(--border)] bg-[var(--bg-glass)] backdrop-blur-xl">
-        <div className="mx-auto flex h-14 w-full items-center justify-between px-4 lg:px-6">
+        <div className="mx-auto flex min-h-14 w-full flex-wrap items-center justify-between gap-y-2 px-4 py-2 sm:h-14 sm:flex-nowrap sm:py-0 lg:px-6">
           {/* Brand & Mobile Hamburger */}
           <div className="flex items-center gap-3">
             <button
@@ -228,7 +228,7 @@ export function AppShell({
               <div className="grid size-8 place-items-center rounded-lg border border-[var(--axia-gold-dim)] bg-gradient-to-br from-[var(--axia-gold)]/20 to-transparent text-[var(--axia-gold-light)] shadow-sm group-hover:shadow transition-all">
                 <AxiaSymbolSvg className="size-5" idPrefix="axia-shell-header" />
               </div>
-              <div className="hidden sm:block">
+              <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-bold tracking-tight">AXIA Legal</span>
                   <span className="rounded bg-[var(--axia-gold)]/10 border border-[var(--axia-gold)]/20 px-1 py-0.5 text-[9px] font-bold text-[var(--axia-gold)]">
@@ -255,7 +255,7 @@ export function AppShell({
           </div>
 
           {/* User & Quick Status */}
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-wrap items-center justify-between gap-1 sm:w-auto sm:flex-nowrap sm:justify-start sm:gap-2">
             {/* Mobile Search Trigger Button */}
             <GlobalSearchBar
               isMobileTriggerOnly
@@ -324,8 +324,9 @@ export function AppShell({
               <button
                 type="button"
                 id="profile-dropdown-trigger"
+                aria-label="قائمة الحساب والمكتب"
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--panel)]/50 px-2.5 py-1.5 cursor-pointer hover:bg-[var(--accent)] hover:border-[var(--axia-gold-light)]/40 transition duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[var(--axia-gold)]"
+                className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--panel)]/50 px-1.5 py-1.5 sm:px-2.5 cursor-pointer hover:bg-[var(--accent)] hover:border-[var(--axia-gold-light)]/40 transition duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[var(--axia-gold)]"
                 aria-expanded={isProfileOpen}
                 aria-haspopup="true"
               >
@@ -348,14 +349,14 @@ export function AppShell({
                     د. رامي الهواري
                   </span>
                 </div>
-                <ChevronLeft className={`size-3 text-[var(--text-muted)] transition-transform duration-200 ${isProfileOpen ? "-rotate-90" : ""}`} />
+                <ChevronLeft className={`hidden size-3 text-[var(--text-muted)] transition-transform duration-200 sm:block ${isProfileOpen ? "-rotate-90" : ""}`} />
               </button>
 
               {/* The dropdown panel - Premium UI matching Apple/Google accounts view */}
               {isProfileOpen && (
                 <div 
                   id="profile-dropdown-menu"
-                  className="absolute left-0 mt-2 w-80 sm:w-96 origin-top-left rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                  className="absolute left-0 mt-2 w-[min(24rem,calc(100vw-2rem))] origin-top-left rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150"
                   dir="rtl"
                 >
                   {/* Header: User Profile Card */}
