@@ -83,14 +83,14 @@ export function AxiaSymbolSvg({
     >
       <defs>
         <linearGradient id={goldGradId} x1="12" y1="6" x2="52" y2="58" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor={monochrome ? "currentColor" : "#F5D061"} />
-          <stop offset="48%" stopColor={monochrome ? "currentColor" : "#C59B27"} />
-          <stop offset="100%" stopColor={monochrome ? "currentColor" : "#8F6B10"} />
+          <stop offset="0%" stopColor={monochrome ? "currentColor" : "var(--axia-logo-highlight, #F5D061)"} />
+          <stop offset="48%" stopColor={monochrome ? "currentColor" : "var(--axia-logo-gold, #C59B27)"} />
+          <stop offset="100%" stopColor={monochrome ? "currentColor" : "var(--axia-logo-shade, #8F6B10)"} />
         </linearGradient>
         <linearGradient id={beamGradId} x1="8" y1="26" x2="56" y2="26" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor={monochrome ? "currentColor" : "#E5B842"} stopOpacity="0.3" />
-          <stop offset="50%" stopColor={monochrome ? "currentColor" : "#F7D97E"} stopOpacity="1" />
-          <stop offset="100%" stopColor={monochrome ? "currentColor" : "#E5B842"} stopOpacity="0.3" />
+          <stop offset="0%" stopColor={monochrome ? "currentColor" : "var(--axia-logo-gold, #E5B842)"} stopOpacity="0.3" />
+          <stop offset="50%" stopColor={monochrome ? "currentColor" : "var(--axia-logo-highlight, #F7D97E)"} stopOpacity="1" />
+          <stop offset="100%" stopColor={monochrome ? "currentColor" : "var(--axia-logo-gold, #E5B842)"} stopOpacity="0.3" />
         </linearGradient>
         <filter id={glowId} x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="1.8" result="blur" />
@@ -128,7 +128,7 @@ export function AxiaSymbolSvg({
         strokeWidth="2.8"
         strokeLinecap="round"
         strokeLinejoin="round"
-        filter={!monochrome ? `url(#${glowId})` : undefined}
+        filter={!monochrome ? `var(--axia-logo-filter, url(#${glowId}))` : undefined}
         initial={animated ? { pathLength: 0, opacity: 0.3 } : false}
         animate={animated ? { pathLength: 1, opacity: 1 } : undefined}
         transition={{ duration: 0.65, delay: 0.08, ease: "easeOut" }}
@@ -151,7 +151,7 @@ export function AxiaSymbolSvg({
         stroke={`url(#${goldGradId})`}
         strokeWidth="1.6"
         strokeLinejoin="round"
-        fill={monochrome ? "currentColor" : "#C59B27"}
+        fill={monochrome ? "currentColor" : "var(--axia-logo-gold, #C59B27)"}
         fillOpacity="0.18"
         initial={animated ? { opacity: 0, y: -3 } : false}
         animate={animated ? { opacity: 1, y: 0 } : undefined}
@@ -159,10 +159,10 @@ export function AxiaSymbolSvg({
       />
 
       {/* Constellation Precision Nodes (Apex, Fulcrum, Wing Anchors) */}
-      <circle cx="32" cy="10" r="2.6" fill={monochrome ? "currentColor" : "#F7D97E"} />
-      <circle cx="32" cy="24" r="2.2" fill={monochrome ? "currentColor" : "#C59B27"} />
-      <circle cx="14" cy="24" r="1.7" fill={monochrome ? "currentColor" : "#F5D061"} />
-      <circle cx="50" cy="24" r="1.7" fill={monochrome ? "currentColor" : "#F5D061"} />
+      <circle cx="32" cy="10" r="2.6" fill={monochrome ? "currentColor" : "var(--axia-logo-highlight, #F7D97E)"} />
+      <circle cx="32" cy="24" r="2.2" fill={monochrome ? "currentColor" : "var(--axia-logo-gold, #C59B27)"} />
+      <circle cx="14" cy="24" r="1.7" fill={monochrome ? "currentColor" : "var(--axia-logo-highlight, #F5D061)"} />
+      <circle cx="50" cy="24" r="1.7" fill={monochrome ? "currentColor" : "var(--axia-logo-highlight, #F5D061)"} />
     </svg>
   );
 }
@@ -197,7 +197,7 @@ export function AxiaBrandLogo({
     return (
       <div className={`relative inline-flex flex-col items-center select-none ${className}`}>
         {/* Ambient sovereign radial aura */}
-        <div className="pointer-events-none absolute -inset-6 rounded-full bg-gradient-to-tr from-[var(--axia-gold)]/25 via-amber-500/10 to-transparent blur-2xl" />
+        <div className="pointer-events-none absolute -inset-6 rounded-full bg-gradient-to-tr from-[var(--axia-gold)]/25 via-amber-500/10 to-transparent blur-2xl" style={{ opacity: "var(--axia-logo-aura-opacity, 1)" }} />
 
         <div className="relative flex items-center gap-4">
           <motion.div

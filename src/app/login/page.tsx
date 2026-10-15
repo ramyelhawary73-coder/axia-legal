@@ -236,7 +236,7 @@ function LoginSubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="group relative w-full overflow-hidden rounded-xl bg-gradient-to-l from-[var(--axia-gold)] via-[var(--login-gold-highlight)] to-[var(--axia-gold)] px-5 py-3.5 text-xs font-extrabold text-black shadow-lg shadow-[var(--axia-gold)]/20 transition-all duration-300 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
+      className="group relative w-full overflow-hidden rounded-xl bg-[var(--login-primary)] px-5 py-3.5 text-xs font-extrabold text-[var(--login-primary-text)] shadow-sm transition-all duration-300 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
     >
       <span className="relative z-10 flex items-center justify-center gap-2">
         {pending ? (
@@ -421,23 +421,8 @@ function LoginPortalContent() {
       ref={scrollContainerRef}
       className={`${styles.portal} relative h-dvh w-full overflow-y-auto overflow-x-hidden scroll-smooth bg-[var(--bg)] text-[var(--text)] selection:bg-[var(--axia-gold)]/20 selection:text-[var(--axia-gold-light)]`}
     >
-      {/* Ambient Sovereign Architectural Backdrop */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -top-40 right-[-10%] h-[520px] w-[520px] rounded-full bg-gradient-to-bl from-[var(--axia-gold)]/12 via-amber-500/5 to-transparent blur-[130px]" />
-        <div className="absolute bottom-[-15%] left-[-10%] h-[480px] w-[480px] rounded-full bg-gradient-to-tr from-emerald-500/8 via-[var(--axia-gold)]/5 to-transparent blur-[140px]" />
-        <div
-          className="absolute inset-0 opacity-[0.012] dark:opacity-[0.025]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)",
-            backgroundSize: "56px 56px",
-          }}
-        />
-        {/* Subtle Watermark Emblem */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-[0.012] dark:opacity-[0.025]">
-          <AxiaSymbolSvg className="h-[680px] w-[680px]" monochrome idPrefix="axia-bg-watermark" />
-        </div>
-      </div>
+      {/* Quiet page-scoped background; decorative only. */}
+      <div className={styles.backdrop} aria-hidden="true" />
 
       {/* Top Sticky Command Navbar */}
       <header className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--bg-glass)] backdrop-blur-2xl">
@@ -524,7 +509,7 @@ function LoginPortalContent() {
                 <span>أول نظام تشغيل قضائي سحابي متكامل للمكاتب القانونية في مصر</span>
               </div>
 
-              <h1 className="text-3xl font-black tracking-tight leading-[1.4] sm:text-4xl xl:text-[42px]">
+              <h1 className="text-3xl font-black tracking-tight leading-[1.4] sm:text-[34px] xl:text-[38px]">
                 أدِر مكتبك القانوني بدقة المؤسسات العالمية{" "}
                 <span className="text-[var(--axia-gold-light)]">
                   وبذكاء «راجح» القضائي
@@ -540,11 +525,8 @@ function LoginPortalContent() {
           {/* RIGHT COLUMN (RTL Primary — 5 Columns): THE ENTERPRISE AUTH CAPSULE */}
           <div className={styles.authColumn}>
             <div className={`${styles.authCard} relative rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)] p-5 sm:p-7`}>
-              {/* Top Golden Accent Line */}
-              <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-l from-transparent via-[var(--login-gold-highlight)] to-transparent" />
-
               {/* Animated AXIA Brand Header inside the Auth Card */}
-              <div className="mb-6 flex flex-col items-start justify-between gap-4 border-b border-[var(--border)] pb-5">
+              <div className="mb-4 flex flex-col items-start justify-between gap-4 border-b border-[var(--border)] pb-4">
                 <AxiaBrandLogo mode="hero" className={styles.authBrand} animated />
               </div>
 
@@ -552,7 +534,7 @@ function LoginPortalContent() {
               <div
                 role="tablist"
                 aria-label="وضع البوابة"
-                className="mb-6 grid grid-cols-2 gap-1.5 rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-1.5"
+                className="mb-4 grid grid-cols-2 gap-1.5 rounded-2xl border border-[var(--border)] bg-[var(--bg)] p-1.5"
               >
                 <button
                   type="button"
@@ -561,7 +543,7 @@ function LoginPortalContent() {
                   onClick={() => setAuthTab("signin")}
                   className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-extrabold transition-all cursor-pointer ${
                     authTab === "signin"
-                      ? "bg-gradient-to-l from-[var(--axia-gold)] to-[var(--login-gold-highlight)] text-black shadow-md"
+                      ? "bg-[var(--login-selected)] text-[var(--login-selected-text)] shadow-sm"
                       : "text-[var(--text-muted)] hover:text-[var(--text)]"
                   }`}
                 >
@@ -575,7 +557,7 @@ function LoginPortalContent() {
                   onClick={() => setAuthTab("request_license")}
                   className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-extrabold transition-all cursor-pointer ${
                     authTab === "request_license"
-                      ? "bg-gradient-to-l from-[var(--axia-gold)] to-[var(--login-gold-highlight)] text-black shadow-md"
+                      ? "bg-[var(--login-selected)] text-[var(--login-selected-text)] shadow-sm"
                       : "text-[var(--text-muted)] hover:text-[var(--text)]"
                   }`}
                 >
@@ -621,7 +603,7 @@ function LoginPortalContent() {
                     >
                       البريد الإلكتروني المهني
                     </label>
-                    <div className="relative flex items-center rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3.5 py-2.5 transition-colors focus-within:border-[var(--axia-gold)]">
+                    <div className="relative flex items-center rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3.5 py-0 transition-colors focus-within:border-[var(--axia-gold)]">
                       <Mail className="ml-2.5 size-4 shrink-0 text-[var(--text-muted)]" />
                       <input
                         id="axia-login-email"
@@ -651,7 +633,7 @@ function LoginPortalContent() {
                         محمية بتشفير الجلسات SSR
                       </span>
                     </div>
-                    <div className="relative flex items-center rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3.5 py-2.5 transition-colors focus-within:border-[var(--axia-gold)]">
+                    <div className="relative flex items-center rounded-xl border border-[var(--border-strong)] bg-[var(--bg)] px-3.5 py-0 transition-colors focus-within:border-[var(--axia-gold)]">
                       <Lock className="ml-2.5 size-4 shrink-0 text-[var(--text-muted)]" />
                       <input
                         id="axia-login-password"
@@ -772,7 +754,7 @@ function LoginPortalContent() {
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className={`${styles.licenseGrid} grid grid-cols-1 gap-3 sm:grid-cols-2`}>
                         <div>
                           <label className="mb-1 block text-[11px] font-bold text-[var(--text)]">
                             اسم الشريك المؤسس / المدير
@@ -801,7 +783,7 @@ function LoginPortalContent() {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className={`${styles.licenseGrid} grid grid-cols-1 gap-3 sm:grid-cols-2`}>
                         <div>
                           <label className="mb-1 block text-[11px] font-bold text-[var(--text)]">
                             التخصص الغالب للمكتب
@@ -851,7 +833,7 @@ function LoginPortalContent() {
 
                       <button
                         type="submit"
-                        className="w-full rounded-xl bg-gradient-to-l from-[var(--axia-gold)] to-[var(--login-gold-highlight)] py-3 text-xs font-extrabold text-black shadow-lg transition-all hover:brightness-110 cursor-pointer"
+                        className="w-full rounded-xl bg-[var(--login-primary)] py-3 text-xs font-extrabold text-[var(--login-primary-text)] shadow-sm transition-all hover:brightness-110 cursor-pointer"
                       >
                         تجهيز مسودة طلب ترخيص المكتب
                       </button>
@@ -940,7 +922,7 @@ function LoginPortalContent() {
               </div>
 
               {/* Interactive Console Body */}
-              <div className={`${styles.consoleBody} p-4 sm:p-5`} tabIndex={0} role="region" aria-label="محتوى العرض التفاعلي">
+              <div className={`${styles.consoleBody} p-4 sm:p-5`} role="region" aria-label="محتوى العرض التفاعلي">
                 <AnimatePresence mode="wait">
                   {/* PILLAR 1: RAJIH AI INTERACTIVE SIMULATION */}
                   {activeShowcase === "rajih" && (
@@ -1020,21 +1002,21 @@ function LoginPortalContent() {
                               <p className="text-[var(--text)]">{activeScenario.summary}</p>
                             </div>
 
-                            <div className="rounded-xl bg-[var(--panel)] p-3 border border-[var(--border)]">
-                              <span className="block text-[11px] font-extrabold text-[var(--axia-gold-light)] mb-1">
-                                ٢. الأساس القانوني وأحكام النقض:
-                              </span>
-                              <p className="text-[var(--text-muted)] font-medium">
-                                {activeScenario.legalBasis}
-                              </p>
-                            </div>
-
-                            <div className="rounded-xl bg-[var(--axia-gold)]/8 p-3 border border-[var(--axia-gold)]/25">
-                              <span className="block text-[11px] font-extrabold text-[var(--axia-gold-light)] mb-1">
-                                ٣. التوصية الإجرائية للمحامي المسؤول (تتطلب اعتماد بشري):
-                              </span>
-                              <p className="text-[var(--text)]">{activeScenario.recommendation}</p>
-                            </div>
+                            <details className={styles.analysisDetails} key={activeScenario.id}>
+                              <summary className="cursor-pointer text-xs font-bold text-[var(--axia-gold-light)]">
+                                عرض الأساس القانوني والتوصية
+                              </summary>
+                              <div className="mt-3 space-y-3">
+                                <div>
+                                  <h3 className="mb-1 font-bold text-[var(--text)]">الأساس القانوني وأحكام النقض</h3>
+                                  <p className="text-[var(--text-muted)]">{activeScenario.legalBasis}</p>
+                                </div>
+                                <div>
+                                  <h3 className="mb-1 font-bold text-[var(--text)]">التوصية الإجرائية</h3>
+                                  <p className="text-[var(--text)]">{activeScenario.recommendation}</p>
+                                </div>
+                              </div>
+                            </details>
                           </div>
                         )}
                       </div>
@@ -1381,10 +1363,10 @@ function LoginPortalContent() {
       {/* SECTION 2: 12-MODULE ECOSYSTEM BENTO SHOWCASE */}
       <section
         id="modules-section"
-        className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)]/40 py-20"
+        className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)]/40 py-12 sm:py-16"
       >
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center space-y-3 mb-14">
+          <div className="mx-auto max-w-3xl text-center space-y-3 mb-8">
             <div className="inline-flex items-center gap-2 rounded-full border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/10 px-3.5 py-1 text-xs font-bold text-[var(--axia-gold-light)]">
               <Layers className="size-3.5" />
               <span>البنية الوظيفية الكاملة لنظام AXIA Legal</span>
@@ -1428,7 +1410,7 @@ function LoginPortalContent() {
       {/* SECTION 3: INTERACTIVE FIRM ROI & CAPACITY CALCULATOR */}
       <section
         id="roi-section"
-        className="relative z-10 border-t border-[var(--border)] py-20"
+        className="relative z-10 border-t border-[var(--border)] py-12 sm:py-16"
       >
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
@@ -1582,7 +1564,7 @@ function LoginPortalContent() {
       {/* SECTION 4: SOVEREIGN SECURITY & EGYPTIAN LEGAL COMPLIANCE */}
       <section
         id="security-section"
-        className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)]/40 py-20"
+        className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)]/40 py-12 sm:py-16"
       >
         <div className="mx-auto max-w-[1440px] px-4 sm:px-6 lg:px-8">
           <div className="rounded-3xl border border-[var(--border-strong)] bg-[var(--panel)] p-8 sm:p-12">
