@@ -69,6 +69,7 @@ async function nav(page,name) {
 }
 try {
   for(const width of [1440,390,320]) for(const theme of ["light","dark"]) {
+    console.log(`UI login ${width}px ${theme}`);
     const {context}=await fixtureContext({width,height:900},theme);
     const page=await context.newPage();
     page.setDefaultNavigationTimeout(90000);
@@ -79,10 +80,14 @@ try {
     await context.close();
   }
   for(const width of [1440,390]) for(const theme of ["light","dark"]) {
+    console.log(`UI staff/task/acceptance ${width}px ${theme}`);
     const {context,mutations}=await fixtureContext({width,height:900},theme);
     const page=await context.newPage();const errors=[];
     page.setDefaultNavigationTimeout(90000);
     page.on("pageerror",error=>errors.push(error.message));
+    page.on("console",message=>{
+      if(message.type()==="error" && /hydrat/i.test(message.text())) errors.push(message.text());
+    });
     await page.goto(base+"/");
     await nav(page,"فريق العمل والمتدربون");
     await page.getByRole("heading",{name:"دعوات الموظفين بالبريد",exact:true}).waitFor();

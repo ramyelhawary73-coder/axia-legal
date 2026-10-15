@@ -32,7 +32,7 @@ try {
       stdio:"inherit",env:{...process.env,AXIA_UI_BASE_URL:base},
     });
     test.on("error",reject);test.on("exit",resolve);
-    const timeout=setTimeout(()=>test.kill("SIGTERM"),180000);
+    const timeout=setTimeout(()=>test.kill("SIGTERM"),360000);
     test.on("exit",()=>clearTimeout(timeout));
   });
   if(code!==0) process.exitCode=1;

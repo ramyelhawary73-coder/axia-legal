@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from "react";
 import { NavigationTab, LegalTask } from "@/types/legal";
 import {
   isSpeechRecognitionSupported,
@@ -12,6 +12,9 @@ import {
   SpeechRecognitionEvent,
   SpeechRecognitionErrorEvent,
 } from "@/lib/web-speech-service";
+
+const subscribeToSpeechSupport = () => () => {};
+const speechSupportOnServer = () => false;
 
 export interface UseVoiceCommandOptions {
   onNavigate?: (tab: NavigationTab) => void;
@@ -26,9 +29,11 @@ export function useVoiceCommand({
   defaultLang = "ar-EG",
   enableAudioFeedback = true,
 }: UseVoiceCommandOptions = {}) {
-  const [isSupported] = useState<boolean>(() => {
-    return typeof window !== "undefined" ? isSpeechRecognitionSupported() : false;
-  });
+  const isSupported = useSyncExternalStore(
+    subscribeToSpeechSupport,
+    isSpeechRecognitionSupported,
+    speechSupportOnServer,
+  );
   const [isListening, setIsListening] = useState<boolean>(false);
   const [transcript, setTranscript] = useState<string>("");
   const [interimTranscript, setInterimTranscript] = useState<string>("");

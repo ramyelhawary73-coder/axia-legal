@@ -10,6 +10,7 @@
 - Integration branch: `feat/axia-staff-activation-acceptance`, created from latest main. Neither source PR was merged, closed, reset, or rewritten.
 - Combined both complete patches. Conflicts were limited to roadmap state and Team heading copy. Kept the newer invitation heading, corrected initials splitting, snapshot readiness guard, local-only export, real legal library, invitation APIs/UI and assignment/reassignment controls.
 - Added accessible labels to the existing mobile navigation controls so keyboard/screen-reader and automated navigation can use them.
+- Browser inspection exposed a pre-existing hydration mismatch in speech-support detection. Switched that capability read to an SSR-safe external-store snapshot; voice behavior is preserved and hydration errors are checked in browser automation.
 - No application dependency, package.json, lockfile, live database, SMTP, Auth setting, secret or Production configuration was changed.
 
 ## Activation decision: HOLD
@@ -41,13 +42,19 @@ Story: office management creates an email-bound invitation → an existing confi
 | Actual Preview/build | Exact-head default build, CI and Vercel deployment status attached to PR | Deployment success alone is not live acceptance |
 | Live SQL/Auth/SMTP | No mutation; activation held | Needs proven Development mapping and authorized test identities |
 
+### Initial integrated CI result
+
+[Run 38787119284](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38787119284) passed on `fd8f41e1c081d7024b42b5ed2f4d5e4faaf9f85a`: Typecheck, Lint, all 113 application tests, 19 PGlite checks, 22 native PostgreSQL 17.11 checks including all three concurrency cases, production build and 22 browser layout checks with complete invitation/assignment flows at desktop and mobile widths. All measured document widths equalled their viewports. [UI evidence artifact](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38787119284/artifacts/11998133054) contains screenshots and the JSON report.
+
+[Preview](https://axia-legal-git-feat-axia-8d7ae8-ramyelhawary73-coders-projects.vercel.app) was Ready for that commit. Its readiness is a deployment status, not an authenticated live acceptance test. A follow-up commit corrects the speech hydration warning, adds progress output and extends the isolated runner timeout; final exact-head status is recorded in PR #42.
+
 ### Browser verification design
 
 Pinned test-only Playwright 1.56.1 and Chromium headless shell are installed outside application dependencies. The runner starts the app and browser in the same loopback context, waits for the server's TCP listener, runs the checks, and stops its own server. This avoids the earlier cross-session network failure and does not cancel initial page compilation with repeated short HTTP probes.
 
 Checks exercise actual application components and browser events: mobile menu navigation, creating a link without claiming delivery, rendering reviewed metadata, saving task assignment, accepting a fixture invitation and removing its token from the address bar, plus document-width overflow checks. Screenshots and JSON evidence are uploaded as a seven-day CI artifact. All identities are `example.invalid` fixtures; external requests are blocked. No real account, recipient or provider is contacted.
 
-This is UI contract verification, not a substitute for real Supabase/Auth acceptance. Local development compilation was too slow in the execution environment; CI uses the production build and the same checked-in automation. Do not report unmeasured browser results as successful.
+This is UI contract verification, not a substitute for real Supabase/Auth acceptance. The first local development run exceeded its overall timeout during repeated acceptance-page navigation. CI passed using the production build and the same checked-in automation. Do not treat a timed-out local run as a pass.
 
 ### Concurrent SQL checks
 
@@ -75,6 +82,7 @@ The native test adapter has a fixed loopback host and fixed disposable database 
 Concrete sequence:
 
 1. Owner supplies the sender domain/address and the available transactional provider, plus controlled test recipients. Check current Auth signup/confirmation and redirect settings without exposing credentials.
+   Read-only inspection found one `auth.users` insertion trigger, `public.handle_new_user()`, which creates only a profile. It does not automatically create an office or owner membership. Recheck this contract before implementing signup; current signup/confirmation configuration has not been verified.
 2. Review a separate scope for SMTP/provider secrets and any additional delivery-state fields/RPCs. No key is pasted into chat or source. No provider cost or domain change is assumed authorized.
 3. Add invite-guided signup: validate the invitation, let the employee set their password privately in the product, send confirmation, then require the confirmed Auth email to match the invitation. Possessing an Auth account alone grants no office membership. Restrict redirects and keep invitation tokens out of query strings/logs.
 4. Send invitation mail server-side only after the database authorizes create/rotation. Distinguish pending, provider-accepted, delivery-failed and accepted states. Never equate an API acknowledgement with inbox delivery. Use idempotency and controlled resend/rotation; no client/case details in email.
