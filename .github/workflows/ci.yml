@@ -35,5 +35,10 @@ jobs:
       - name: Safety tests
         run: npm run test:safety
 
+      - name: Staff invitation SQL security tests (isolated PostgreSQL)
+        run: |
+          npm install --prefix "$RUNNER_TEMP/axia-staff-db" --no-audit --no-fund --ignore-scripts @electric-sql/pglite@0.3.14
+          AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-db/node_modules/@electric-sql/pglite/dist/index.js" node scripts/test-staff-db.mjs
+
       - name: Production build
         run: npm run build

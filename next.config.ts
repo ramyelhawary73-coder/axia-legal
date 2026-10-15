@@ -18,6 +18,13 @@ const nextConfig: NextConfig = {
         headers: securityHeaders,
       },
       {
+        source: "/invitations/:path*",
+        headers: [
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+      {
         source: "/_next/:path*",
         headers: [
           { key: "Access-Control-Allow-Origin", value: "*" }

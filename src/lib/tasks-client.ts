@@ -12,9 +12,13 @@ export type TaskWorkspace = {
   organizationId: string;
   userId: string;
   assigneeLabel: string;
+  assignees: TaskAssigneeOption[];
+  canReassign: boolean;
   matters: TaskMatterOption[];
   tasks: LegalTask[];
 };
+
+export type TaskAssigneeOption = { id: string; name: string; matterIds: string[] };
 
 export async function loadTaskWorkspace(): Promise<TaskWorkspace> {
   const response = await fetch("/api/tasks", {
