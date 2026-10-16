@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { apiError, databaseErrorCode, workspaceErrorResponse } from "@/lib/api/errors";
-import { isIsoDate, readJsonObject } from "@/lib/api/validation";
+import { isIsoDate, isUuid, readJsonObject } from "@/lib/api/validation";
 import { resolveWorkspace } from "@/lib/api/workspace";
 import type { LegalTask } from "@/types/legal";
+import { canAssignOthers, loadTaskAssignees } from "@/lib/api/task-assignees";
+import { hasStaffFoundation } from "@/lib/api/staff-foundation";
 
 type TaskRow = {
   id: string;
@@ -132,14 +134,18 @@ export async function GET(request: Request) {
       return apiError("QUERY_FAILED", "تعذر تحميل المهام.", 502);
     }
 
+    const assignees = await loadTaskAssignees(workspace, matters.map(matter => matter.id));
     return NextResponse.json({
       organizationId: workspace.organizationId,
       userId: workspace.userId,
       assigneeLabel: workspace.userLabel,
+      assignees,
+      canReassign: canAssignOthers(workspace.role) && await hasStaffFoundation(workspace),
       matters,
-      tasks: ((data ?? []) as TaskRow[]).map((row) =>
-        mapTaskRow(row, matters, workspace.userId, workspace.userLabel),
-      ),
+      tasks: ((data ?? []) as TaskRow[]).map((row) => ({
+        ...mapTaskRow(row, matters, workspace.userId, workspace.userLabel),
+        assignedTo: assignees.find(member => member.id === row.assigned_to)?.name ?? (row.assigned_to ? "عضو فريق العمل" : "غير مسندة"),
+      })),
     });
   } catch {
     return apiError("QUERY_FAILED", "تعذر تحميل بيانات المهام.", 502);
@@ -191,6 +197,18 @@ export async function POST(request: Request) {
       );
     }
 
+    let assignedTo = workspace.userId;
+    let assigneeLabel = workspace.userLabel;
+    if (task.assignedToUserId !== undefined) {
+      if (!isUuid(task.assignedToUserId)) return apiError("VALIDATION_ERROR", "المسؤول المختار غير صالح.", 400);
+      const assignees = await loadTaskAssignees(workspace, matters.map(matter => matter.id));
+      const assignee = assignees.find(member => member.id === task.assignedToUserId);
+      if (!assignee || (matchedMatter && !assignee.matterIds.includes(matchedMatter.id)))
+        return apiError("FORBIDDEN", "المسؤول المختار غير متاح للمهمة أو القضية.", 403);
+      assignedTo = assignee.id;
+      assigneeLabel = assignee.name;
+    }
+
     const { data, error } = await workspace.supabase
       .from("tasks")
       .insert({
@@ -200,7 +218,7 @@ export async function POST(request: Request) {
         category: task.category,
         court_or_office:
           task.courtOrBailiffOffice?.trim() || matchedMatter?.court || null,
-        assigned_to: workspace.userId,
+        assigned_to: assignedTo,
         deadline: task.deadline,
         priority: priorityToDb[task.priority],
         status: statusToDb[task.status],
@@ -221,8 +239,8 @@ export async function POST(request: Request) {
       task: mapTaskRow(
         data as TaskRow,
         matters,
-        workspace.userId,
-        workspace.userLabel,
+        assignedTo,
+        assigneeLabel,
       ),
     });
   } catch {

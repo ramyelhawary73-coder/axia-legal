@@ -302,6 +302,7 @@ export default function HomePage() {
         onCreateTask={handleCreateTask}
         taskMatterOptions={taskWorkspace?.matters ?? []}
         taskAssigneeLabel={taskWorkspace?.assigneeLabel ?? "المستخدم الحالي"}
+        taskAssignees={taskWorkspace?.assignees ?? []}
         matters={matters}
         clients={clients}
         documents={documents}
@@ -384,8 +385,12 @@ export default function HomePage() {
               onToggleTaskStatus={handleToggleTaskStatus}
               onCreateTask={handleCreateTask}
               onBulkUpdateTaskStatus={handleBulkUpdateTaskStatus}
+              onTaskAssigned={taskWorkspace?.canReassign ? (taskId, userId, name) => {
+                setTasks(current => current.map(task => task.id === taskId ? { ...task, assignedToUserId: userId, assignedTo: name } : task));
+              } : undefined}
               taskMatterOptions={taskWorkspace?.matters ?? []}
               taskAssigneeLabel={taskWorkspace?.assigneeLabel ?? "المستخدم الحالي"}
+              taskAssignees={taskWorkspace?.assignees ?? []}
               onNavigate={setActiveTab}
             />
           </>

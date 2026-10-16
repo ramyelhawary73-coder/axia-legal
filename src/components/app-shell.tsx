@@ -51,7 +51,7 @@ import { TaskCreationModal } from "@/components/task-creation-modal";
 import { KeyboardShortcutsModal } from "@/components/keyboard-shortcuts-modal";
 import { VoiceCommandModal } from "@/components/voice-command-modal";
 import { GlobalSearchBar } from "@/components/global-search-bar";
-import type { TaskMatterOption } from "@/lib/tasks-client";
+import type { TaskAssigneeOption, TaskMatterOption } from "@/lib/tasks-client";
 
 interface AppShellProps {
   activeTab: NavigationTab;
@@ -64,6 +64,7 @@ interface AppShellProps {
   onCreateTask?: (task: LegalTask) => boolean | void | Promise<boolean | void>;
   taskMatterOptions?: TaskMatterOption[];
   taskAssigneeLabel?: string;
+  taskAssignees?: TaskAssigneeOption[];
   matters?: Matter[];
   clients?: Client[];
   documents?: LegalDocument[];
@@ -99,6 +100,7 @@ export function AppShell({
   onCreateTask,
   taskMatterOptions = [],
   taskAssigneeLabel = "المستخدم الحالي",
+  taskAssignees = [],
   matters,
   clients,
   documents,
@@ -727,6 +729,7 @@ export function AppShell({
         onCreateTask={handleCreateTaskFromModal}
         matterOptions={taskMatterOptions}
         assigneeLabel={taskAssigneeLabel}
+        assigneeOptions={taskAssignees}
         sourceLabel="اختصار سريع (Ctrl+N)"
       />
 
