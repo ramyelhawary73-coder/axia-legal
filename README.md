@@ -1,51 +1,26 @@
-# AXIA Legal
+# AXIA Legal — Egyptian Legal Practice & Intelligence OS (Android)
 
-**AXIA Legal — Egyptian Legal Practice & Intelligence OS**  
-Powered by **ASIA AURA** · Legal copilot: **RAJIH AI — راجح**
+Native Android implementation of **AXIA Legal**, the premier Egyptian Legal Practice & Intelligence OS, engineered with **Kotlin** and **Jetpack Compose (Material 3)**.
 
-## Canonical project status
+## Core Features & Capabilities
 
-The live project state, completed phases, planned roadmap, audit findings, risk register, architectural decisions, owner requirements, and exact next action are maintained in:
+- **Executive Overview & Cockpit (نظرة عامة وغرفة القيادة):** Real-time key metrics, urgent court hearings roll, active litigation dossiers, and procedural deadline counters.
+- **Matters & Dossiers (سجل القضايا والملفات القضائية):** Full lifecycle litigation management spanning Egyptian Court of Cassation (محكمة النقض), High Courts of Appeal (استئناف عالي), Cairo Economic Court (المحكمة الاقتصادية), State Council (مجلس الدولة), and First Instance Courts.
+- **Court Rolls & Calendar (رول الجلسات والتقويم القضائي):** Daily tracking of court halls, roll numbers, scheduled decisions, and attending attorneys.
+- **Clients & POA Registry (الموكلون وسجل التوكيلات):** Corporate and individual client records linked with official Powers of Attorney (توكيلات رسمية عامة وخاصة), notary offices, and fee balances.
+- **Bailiff & Deadlines (قلم المحضرين ومواعيد السقوط):** Strict protection against procedural statute of limitations drops (إيداع مذكرات، طعون الاستئناف والنقض، وسداد الرسوم).
+- **Encrypted Document Vault (خزينة المستندات):** Structured document categorization (صحف دعاوى، مذكرات دفاع، أحكام تمهيدية وقطعية، وعقود).
+- **Legal Finance & Retainers (المالية والأتعاب والدمغات):** Retainers, expert deposits (أمانات الخبراء), court fees, and success fees.
+- **RAJIH AI Copilot (محرك الذكاء القضائي «راجح»):** Sovereign Egyptian legal assistant anchored to Egyptian codes, Court of Cassation precedents, and structured defense strategies.
+- **Legal Document Templates Library (مكتبة الصيغ والنماذج):** Official Egyptian legal drafting templates (إنذارات على يد محضر بتكليف بالوفاء، عقود إيجار تجارية بالقانون 4 لسنة 1996، وصحف دعاوى صحة ونفاذ).
+- **Firm Defense Team (فريق العمل وهيئة الدفاع):** Managing partners and practice chairs.
 
-**[`docs/AXIA_MASTER_ROADMAP.md`](docs/AXIA_MASTER_ROADMAP.md)**
+## Architecture & Technology Stack
 
-> The Master Roadmap is the authoritative handoff for continuing AXIA work. Always verify the latest `main` first, then read the roadmap before starting a new implementation phase.
-
-This README is intentionally not used as a phase-by-phase status tracker.
-
-## Technical foundation
-
-AXIA currently uses:
-
-- Next.js + React + TypeScript
-- Arabic-first RTL product shell
-- Supabase Auth / PostgreSQL / RLS / Storage
-- Vercel deployment
-- GitHub CI
-- RAJIH AI legal copilot architecture
-
-For current implementation maturity and known gaps, use the Master Roadmap rather than this summary.
-
-## Local development
-
-```bash
-npm install
-cp .env.example .env.local
-npm run dev
-```
-
-Never commit secrets or Service Role credentials.
-
-## Quality gate
-
-```bash
-npm run check
-```
-
-Feature work may require additional RLS, safety, integration, Preview, and workflow verification beyond the base check.
-
-## Delivery policy
-
-Feature work must be implemented on a dedicated branch, verified in CI and Vercel Preview where applicable, reviewed, and explicitly approved before merge to `main`.
-
-Every implementation PR must also update `docs/AXIA_MASTER_ROADMAP.md` when it changes project state, architecture, risks, phase status, or the next action.
+- **Platform:** Android (Min SDK 26, Target SDK 36, Compile SDK 36)
+- **Language:** Kotlin 2.1.0 (JVM 21)
+- **UI Framework:** Jetpack Compose with Material Design 3 (M3)
+- **Architecture:** MVVM with Kotlin Coroutines & StateFlow
+- **Layout:** Adaptive edge-to-edge layout (`WindowInsets.safeDrawing`, `WindowInsets.navigationBars`) with adaptive NavigationRail on expanded screens and NavigationBar on compact handhelds
+- **Theme:** High-contrast luxury Egyptian legal dark theme with Axia Gold (`#C59B27`) and Deep Navy (`#0E131F`)
+- **Iconography:** Custom adaptive launcher icon with Egyptian Scales of Justice emblem across all density buckets (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi)
