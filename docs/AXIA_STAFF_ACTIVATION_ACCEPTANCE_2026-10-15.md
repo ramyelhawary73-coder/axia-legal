@@ -1,6 +1,6 @@
-# AXIA Staff Activation & Integration Verification — 2026-10-15
+# AXIA Staff Activation & Integration Verification — verified 2026-10-16
 
-**حالة التسليم:** الحزمتان مجمّعتان على فرع مستقل للمراجعة. SQL الحي لم يُطبّق، وإرسال البريد وإنشاء حسابات الموظفين الجديدة غير مفعّلين.
+**حالة التسليم:** طُبّقت Migration الدعوات وحدها على مشروع Supabase المشترك بموافقة صريحة. فحوص قاعدة البيانات نجحت دون تغيير البيانات الحالية. PR #42 ما زال Draft؛ لا Merge أو نشر كود Production أو بريد حقيقي أو إنشاء حسابات جديدة.
 
 ## Verified baseline and integration
 
@@ -12,33 +12,42 @@
 - Added accessible labels to the existing mobile navigation controls so keyboard/screen-reader and automated navigation can use them.
 - Screenshot review caught clipped header controls at phone width despite a passing document-width check. The phone toolbar now uses a separate wrapping row, the account control is compact and named, and its popover is viewport-bounded. Browser checks now assert visible header-button bounds and cover Team/Library/Tasks/acceptance at 320px too (30 layout checks in total).
 - Browser inspection exposed a pre-existing hydration mismatch in speech-support detection. Switched that capability read to an SSR-safe external-store snapshot; voice behavior is preserved and hydration errors are checked in browser automation.
-- No application dependency, package.json, lockfile, live database, SMTP, Auth setting, secret or Production configuration was changed.
+- Integration preserved application dependencies, package.json and lockfile. The separately approved database activation below is the only live change; SMTP, Auth settings, secrets and Production code deployment were not changed.
 
-## Activation decision: HOLD — shared Production target, single-database workflow selected
+## Activation result: APPLIED — explicitly approved shared Production target
 
-Read-only live checks confirmed 21 migration history records, no `public.staff_invitations` table and no `public.axia_staff_accept(text)` RPC. The new migration has not been applied.
+The owner supplied Vercel Dashboard screenshots showing Production and All Pre-Production Environments using `https://qshgczulivsxztgrbqew.supabase.co`, then declined a second cloud project and chose one database. Direct Vercel project inspection remains unavailable (403); dashboard configuration does not independently prove the build-time configuration of every deployed build. Treat this shared target as Production.
 
-The owner supplied two Vercel Dashboard screenshots. Both Production and All Pre-Production Environments set `NEXT_PUBLIC_SUPABASE_URL` to `https://qshgczulivsxztgrbqew.supabase.co`. Current dashboard configuration therefore shares one Supabase project. This is configuration evidence, not independent inspection inside every deployed build. Direct Vercel project access still returns 403. Do not ask for these URLs again or treat the Development project name as isolation.
+The earlier migration attempt was blocked before execution because its original authorization was Development-only. The owner subsequently explicitly approved this exact file, project and table/RLS/functions/task-trigger scope, while forbidding historical migration edits, Secrets/SMTP, actual email, Merge and Production code deployment. That approval cleared the previous authorization blocker. No second project, plan upgrade, environment-variable change or alternate execution route was used.
 
-The owner declined a second cloud project because the account is free and chose to continue using the existing project. No new project, plan upgrade or environment-variable change is required by the chosen workflow. Keep code changes on a dedicated branch and run isolated local/CI tests; every persistent write to this database must be treated as a Production write.
+The exact reviewed file was applied once on 2026-10-16 through the migration tool. Supabase allocated live version **`20261016083929`**, name **`axia_staff_email_invitations`**, at 08:39:29 UTC / 11:39:29 Cairo. The source filename remains `20261015081218_axia_staff_email_invitations.sql`; do not rename it or repair old history to match the execution timestamp.
 
-An attempt to apply the exact reviewed migration through the migration tool was rejected by automatic approval review. Its stated reason was the original requirement for a separate Development target and a stop on shared Production, plus the new table/functions/RLS and task-write trigger. The rejection prevented execution. A subsequent read confirmed 21 history entries, latest `20260921111252`, and no invitation table, acceptance RPC or task guard. Do not retry through SQL Editor, raw SQL or another connection to bypass the rejection. Obtain explicit approval naming this file and this shared Production project before another attempt; the owner's one-database decision remains recorded.
+### Verified database results
 
-### Completed preparation for controlled activation
+- History increased from 21 to 22 records. All 21 original version/name/statement-hash records are identical.
+- All 21 original public-table row counts and SHA-256 data fingerprints match before application, after application and after rolled-back smoke tests: **1,673 original rows unchanged**.
+- All **207 existing table-security/function/grant/policy/trigger fingerprints** match. Nine new tracked security objects were added as expected: table, policy, six functions and task trigger.
+- **22/22 public tables have RLS**. `staff_invitations` also has FORCE RLS. Its metadata columns are readable only through manager RLS; `authenticated` cannot SELECT `token_hash`, INSERT invitations directly or INSERT memberships directly.
+- Public RPC wrappers are SECURITY INVOKER; privileged implementations remain in private with empty search paths. `anon` has no execution; `authenticated` cannot directly execute the task trigger function.
+- The task-assignee BEFORE INSERT/UPDATE trigger exists. Preflight found zero incompatible current tasks; authenticated legacy task update and new task creation passed the live rollback test.
+- Final persisted state: **0 invitations, 2 users, 2 memberships, 1 task**. No test record, test audit event, new account or membership was retained.
+- Security advisors found no new warning. The two pre-existing findings remain unchanged: [vector extension in public](https://supabase.com/docs/guides/database/database-linter?lint=0014_extension_in_public) and [disabled leaked-password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). No setting was changed to address them in this scope.
 
-- Rechecked PR #42 at `e55c7213129cfb2563f086701ef6abf4004704eb`: draft/unmerged, with [successful CI 38787956872](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38787956872). It passed Typecheck/Lint/Build, 113 application tests, 19 PGlite checks, 22 native SQL checks and 30 browser checks. Subsequent changes in this revision are documentation only.
-- Confirmed required helpers, referenced table/column contracts including the five `auth.users` columns, existing grants/policies and audit/update triggers. No new-object name conflicts were found.
-- Checked existing task compatibility with recipient membership/role/case rules: zero incompatible rows. Current counts remain two users, two offices, two memberships and one task.
-- Captured row counts and SHA-256 fingerprints for all 21 existing public tables (1,673 total rows), historical migration statement hashes and prerequisite definitions. This is a comparison checkpoint, **not a restorable full database backup**; full database/Auth/Storage recovery has not been verified.
-- No application code, migration bytes, Auth settings, roles, memberships, SMTP, secret or live data were changed in this preparation. No real email was sent.
+### Live permission smoke tests: 18 passed, every test write rolled back
 
-### Proposed exact live scope and recovery limits
+These use the two existing confirmed owner identities by transaction-local database role/claim simulation, not a browser login or an actual JWT/session. No Auth user/setting was changed and no message was sent.
 
-Only `20261015081218_axia_staff_email_invitations.sql`, with the fingerprint below, is proposed for the existing shared Production project. It creates the invitation table/indexes, checked functions/grants and the task-assignee trigger. It does not rewrite historical migrations, existing RLS policies or business rows. The trigger can affect future task inserts/updates, including rejecting writes without an authenticated actor; this remains a material Production behavior change.
+Coverage: own-office versus other-office capabilities; cross-office management denial; forbidden owner grant; create/list invitation; token-hash SELECT and direct mutation denial; renewal cooldown; cross-office invitation RLS; rejecting acceptance into a second office; expired link denial; token renewal; old-token rejection; revoked-link rejection; existing task update; task creation; cross-office assignee denial; audit events/redaction; anonymous execution denial. Capability assertions and audit assertions are grouped into 18 checks.
 
-The SQL transaction rolls back its new objects if execution fails before commit. After commit, do not claim that reverting frontend code reverses database state. Preserve invitation rows, memberships and audit records; diagnose a failure before proposing a narrowly scoped repair. Never automatically drop the table, delete memberships, weaken RLS or restore an old full database over newer business data.
+The test transaction ended in ROLLBACK. Repeated data fingerprints and explicit table counts proved that all temporary invitation/task/audit writes were discarded. Initial test-script alias ambiguity was corrected before the successful run; no application SQL correction or second migration was needed.
 
-After a separately approved successful application: verify new RLS/grants/function security, confirm the original 21 migration records and row fingerprints are unchanged, run advisors and controlled permission smoke tests, and report actual Auth/employee acceptance gaps. Merge, Production code deployment, SMTP/Secrets, actual sends and new-account provisioning remain separate scope.
+### Evidence limits and recovery
+
+All local/CI suites passed on `53fd12c4cef33f3920df2b287ff4212a36bbe069`: [CI 38791472975](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38791472975), with 113 application tests, 19 PGlite checks, 22 native SQL checks, 30 browser layout checks, Typecheck/Lint/Build. Follow-up changes in this activation report are documentation only; final PR-head evidence is linked in PR #42.
+
+Successful **new employee acceptance through real browser/Auth sessions remains unverified**: both currently available accounts are owners already attached to offices. Lower-role and concurrent acceptance behavior passed isolated native PostgreSQL tests; do not label those as live employee login proof. Invite-guided new-account registration and sender delivery are not implemented by this migration.
+
+The row/hash/schema checkpoint is **not a restorable full database/Auth/Storage backup**. Recovery verification remains a first-client gate. The migration transaction protects pre-commit execution, but reverting frontend code does not undo committed database state. Preserve invitation rows, memberships and audit logs; investigate before a narrowly scoped repair. Do not automatically drop the table, delete memberships, weaken RLS or restore an old database over newer work.
 
 ### Exact migration identity
 
@@ -46,7 +55,7 @@ File: `supabase/migrations/20261015081218_axia_staff_email_invitations.sql`.
 
 SHA-256: `1e2a29f97c109689cf2a9abacc5f970e87920bae418116cbb3b12f828646ad2b`.
 
-Byte-for-byte equal to PR #41. No SQL correction or historical migration repair was introduced. Live history remains 21 records versus 19 baseline source files; do not replay, rename, reset, or blanket-push those migrations. Revalidate the prerequisite tables/helpers/grants and reviewed fingerprint immediately before any future activation.
+Byte-for-byte equal to PR #41. No SQL correction or historical migration repair was introduced. Live history is now 22 records versus 20 source migration files (19 baseline plus this one). The new live version was allocated at execution time; the historical mismatch predates this change. Do not replay, rename, reset, repair or blanket-push migration history. This file is already applied and must not be applied again.
 
 ## Verification story and evidence limits
 
@@ -59,7 +68,7 @@ Story: office management creates an email-bound invitation → an existing confi
 | Multi-session SQL | Added a disposable PostgreSQL 17 service and three concurrent checks to CI | Exact-head CI result is authoritative; no Supabase host is used |
 | Desktop/mobile rendering | Browser contract automation for light/dark login and Team/Library/Tasks/acceptance at 1440/390/320px | Uses synthetic API responses on loopback; never claims real login, email or live tenant acceptance |
 | Actual Preview/build | Exact-head default build, CI and Vercel deployment status attached to PR | Deployment success alone is not live acceptance |
-| Live SQL/Auth/SMTP | No mutation; migration attempt rejected; shared target documented | Needs explicit approval for the exact shared-Production migration and authorized test identities |
+| Live SQL/Auth/SMTP | Exact migration applied; data/security/history checks and 18 rollback permission checks passed | Browser/Auth employee acceptance remains unverified; no SMTP, actual email or new account provisioning |
 
 ### Initial integrated CI result
 
@@ -85,14 +94,14 @@ The same 19 security checks can run against either PGlite or a real PostgreSQL d
 
 The native test adapter has a fixed loopback host and fixed disposable database name. It does not accept a live connection URL. The service is loopback-bound and contains only synthetic data; it is destroyed with the job. No Service Role or application secret is used.
 
-## Controlled acceptance after explicit shared-Production approval
+## Remaining acceptance before merge and first-client delivery
 
-1. Refresh main/PR heads, project mapping, prerequisite object definitions and migration history; compare the exact SHA-256 above. Apply this one migration only after explicit approval of this shared Production target and a clean preflight; do not rely on the earlier Development-only authorization.
-2. Inspect new table RLS/FORCE RLS, column grants, invoker wrappers, private function execution, assignee guard and security advisors. Confirm original policies and memberships were not rewritten.
-3. Use explicitly authorized test identities with confirmed email. Verify owner/admin role restrictions; wrong/expired/revoked/rotated links; repeat acceptance; inviter demotion; existing-member non-promotion; case and tenant denials; create/reassign/refresh persistence.
-4. Verify actual login, inline account switching, session expiry and mobile behavior in Preview. Test email delivery only in the later approved sender scope; fixtures are not delivery proof.
-5. Keep audit records and business data. On pre-commit SQL failure, the migration transaction rolls back. After activation, prefer code rollback with tables/memberships/audit retained; do not automatically drop tables or delete memberships.
-6. Present exact-head results and remaining risks; require separate merge/Production approval.
+1. Do not reapply this migration. Refresh current PR/CI/Preview and confirm main is unchanged before any future code rollout.
+2. Review the actual Team and Tasks UI in Preview with the owner's current login; fixture screenshots do not establish a live browser session.
+3. Prepare invite-guided registration and approved test identities not already joined to another office. Verify confirmation, correct membership, duplicate/expired/revoked/renewed links and case/task access through real Auth sessions. No arbitrary account creation or outbound email is authorized by this activation.
+4. Keep sender/SMTP/Secrets and actual delivery tests in the separately approved sender scope. Retain truthful manual-link/no-email UI until delivery is enabled.
+5. Prove an appropriate data recovery procedure before first-client handoff. Data fingerprints are comparison evidence, not a restoration method.
+6. Present exact-head evidence and residual risks for separate Merge/Production code-deployment approval. These actions have not occurred.
 
 ## Next delivery package: sender delivery and new employee accounts
 

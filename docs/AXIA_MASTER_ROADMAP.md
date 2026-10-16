@@ -6,7 +6,7 @@
 >
 > **Rule:** every implementation PR must update this file before it is considered complete.
 >
-> **Last verified:** 2026-10-15
+> **Last verified:** 2026-10-16
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
 > **Verified main SHA:** `dfb557f2741ca521b13fd727abeb0f2c25803fd5`
@@ -83,7 +83,7 @@ Statements under **Current State** should be treated as verified only when a liv
 
 # 3. Current State
 
-Verified 2026-10-15. Detailed evidence, limits, employee invitation design and delivery gates: [Combined integration acceptance](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md). Historical sections below retain their original verification dates; they do not override this current audit.
+Verified 2026-10-16. Detailed evidence, limits, employee invitation design and delivery gates: [Combined integration acceptance](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md). Historical sections below retain their original verification dates; they do not override this current audit.
 
 ## GitHub and deployment
 
@@ -96,23 +96,23 @@ Verified 2026-10-15. Detailed evidence, limits, employee invitation design and d
 - Current integration branch combines PR #40 at `2a189f0bbde7141f43160dc3b714861eb6684c10` and PR #41 at `576bf1fcdf39d78fc3a6d6e5fb908b112eecf05f`. Both source PRs remain open/draft and main is unchanged. Exact-head CI/Preview evidence is attached to the integration PR.
 - Cleanup Batches 1/2 remain closed; this is delivery readiness work authorized by the owner's current request, not Cleanup Batch 3.
 
-## Supabase read-only audit
+## Supabase audit and explicitly approved activation
 
 - `qshgczulivsxztgrbqew`: **AXIA Legal Development**, `ACTIVE_HEALTHY`.
-- 21 public tables have RLS enabled. FORCE RLS is enabled on profiles, organizations and organization_members, not every core table.
-- Exact counts: 2 Auth users, 2 organizations, 2 owner memberships, 2 clients, 2 matters, 1 task, 0 document metadata rows. No data deleted or test records inserted.
-- Transaction-scoped authenticated SELECT tests for each existing owner exposed one organization and zero other-tenant organizations/clients/matters/tasks. Write, staff-role and Storage isolation still require tests.
+- 22/22 public tables have RLS enabled after the approved invitation migration. FORCE RLS is enabled on profiles, organizations, organization_members and staff_invitations, not every core table.
+- Exact final counts: 2 Auth users, 2 organizations, 2 owner memberships, 2 clients, 2 matters, 1 task, 0 documents and 0 staff invitations. All 21 original table fingerprints (1673 rows) remain identical; transaction-local smoke fixtures/audit events were rolled back.
+- 18 live transaction-local permission checks passed for invitation management, tenant denial, role restrictions, renewal/expiry/revocation, audit redaction and task create/update/assignee protection. These simulate two existing owners via DB roles/claims; actual employee browser/Auth acceptance and Storage write isolation remain unverified.
 - `legal-documents` bucket is private, with 25 MiB limit and MIME restrictions.
 - Six business audit triggers observed; documents INSERT only, other five INSERT/UPDATE.
-- 21 live migration records versus 19 baseline source files require read-only prerequisite/history comparison; never replay or rewrite the historical records as a blanket repair.
-- Two security WARNs: vector extension in public and disabled leaked-password protection. Performance advisor findings are documented in the linked report. No settings, schema, grants or policies changed.
+- Live migration `20261016083929_axia_staff_email_invitations` was applied once from unchanged source `20261015081218_axia_staff_email_invitations.sql`. History is now 22 records versus 20 source files; all 21 older records are byte-hash identical. Do not replay/rename/repair old history or reapply this source file.
+- Security advisors show the same two pre-existing WARNs: vector extension in public and disabled leaked-password protection; no new security warning. Only approved new invitation objects/grants/RLS and task trigger were added. All 207 pre-existing tracked security objects are unchanged. Auth settings, SMTP and Secrets were not modified.
 
 ## Delivery status
 
 - **Not ready for real customer onboarding:** production data boundary, staff onboarding, persisted editor drafts, recovery and authenticated workflow acceptance are open gates.
-- Live employee invitations and role mutation remain unavailable. This branch implements email-bound invitation links/acceptance and task assignment/reassignment, with isolated tests. Sender delivery and account provisioning remain unimplemented; no live migration has been applied.
-- This branch retains the snapshot/library fixes and staff invitation/assignment foundation together. SQL is byte-identical to PR #41. CI on `e55c721` passed 113 application tests, 19 PGlite checks, 22 native SQL checks, 30 UI checks and Typecheck/Lint/Build. Live DB/Auth/RLS/SMTP/Secrets remain unchanged.
-- Owner selected the existing single-database workflow and declined a second cloud project. A migration attempt was blocked by automatic approval review because the earlier scope required isolated Development. Read-after-rejection confirmed no migration/table/RPC/guard was added. Explicit approval naming this exact shared-Production change is the next gate; do not bypass it through another tool or SQL Editor.
+- Invitation database foundation and assignment guard are activated on the shared project. PR #42 contains the unmerged UI/API integration. Sender delivery and new employee account provisioning remain unimplemented; actual new employee Auth acceptance is unverified.
+- This branch retains snapshot/library fixes and staff invitation/assignment foundation together. SQL is byte-identical to PR #41. CI on `53fd12c` passed 113 application tests, 19 PGlite checks, 22 native SQL checks, 30 UI checks and Typecheck/Lint/Build. No Merge, Production code deployment, actual email or new account creation occurred.
+- Owner selected the existing single-database workflow, then explicitly approved this exact shared-Production migration after the earlier authorization rejection. It was applied successfully on 2026-10-16. No second cloud project, plan upgrade, environment-variable change or alternate execution route was used. Recovery verification remains outstanding.
 
 ---
 
@@ -319,7 +319,7 @@ This section records the read-only audit findings that must influence future pha
 
 Dashboard configuration shows one shared target, despite its Development name. Owner explicitly chose the current project because of the free-account constraint. No additional cloud project or paid infrastructure is to be created without a changed decision. Local/CI isolation remains available and must be used before any controlled live change.
 
-Required next evidence: explicit approval for the reviewed shared-Production migration after the automatic rejection; immutable migration/history identity; unchanged existing data; post-application RLS/permission/task compatibility; actual employee Auth acceptance. Every write on this shared target is a Production write. Recovery verification remains an open first-client gate.
+Exact shared-Production approval was received and this migration passed data/history/security comparisons and 18 live rollback checks. Required next evidence: actual employee browser/Auth acceptance and a proven recovery procedure. Every persistent write on this target remains a Production write; the owner-selected single-database arrangement does not provide environment isolation.
 
 ### P0-B — Legal draft editor is still local-device state
 
@@ -3237,17 +3237,18 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: SINGLE-DATABASE WORKFLOW — EXACT PRODUCTION ACTIVATION APPROVAL REQUIRED**
+**Current mode: DATABASE FOUNDATION ACTIVATED — LIVE EMPLOYEE ACCEPTANCE PENDING**
 
-Main remains `dfb557f2741ca521b13fd727abeb0f2c25803fd5`. Integration branch: `feat/axia-staff-activation-acceptance`. PR #40 and PR #41 are combined here without merging either into main.
+Main remains `dfb557f2741ca521b13fd727abeb0f2c25803fd5`. Integration branch/PR: `feat/axia-staff-activation-acceptance`, Draft PR #42. Source PRs #40/#41 remain open and unmerged.
 
-1. Review the [integration report](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md), exact-head CI, browser artifact and Preview. Keep synthetic UI checks distinct from real Supabase/Auth acceptance.
-2. Production/Pre-Production URL screenshots are supplied and show a shared project. Do not ask for them again or create a second project. Owner chose the current single-database workflow; isolated local/CI testing still applies.
-3. Automatic review rejected the migration attempt. Obtain explicit approval naming `20261015081218_axia_staff_email_invitations.sql` on shared Production project `qshgczulivsxztgrbqew`. Recheck prerequisites/history and SHA-256 `1e2a29f97c109689cf2a9abacc5f970e87920bae418116cbb3b12f828646ad2b` before any approved attempt. No old-history replay/repair and no alternate SQL route to bypass rejection.
-4. After approved activation, verify original table fingerprints/history, new RLS/grants and task compatibility, then run controlled Auth/tenant/role/assignment acceptance and advisors. No arbitrary account/fixture creation/deletion or real email is implied.
-5. Follow the report's separate transactional sender and invite-guided account registration plan. Sender/Secrets/SMTP changes, actual sends, merge and Production rollout require explicit approval.
+1. Review the [activation report](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md), latest CI and Preview. Do not reapply the migration or request the same approval again: it was explicitly approved and applied as live version `20261016083929`.
+2. Keep the selected single-database workflow. Do not request the two supplied URLs again, create a second project or change Vercel configuration. Isolated local/CI testing remains required before future controlled live changes.
+3. Review actual Team/Tasks UI in Preview using the owner's current login, then prepare invite-guided new employee registration/confirmation and approved test identities. Both current users already own offices, so successful new staff browser/Auth acceptance has not been proven. No arbitrary Auth account creation or real email is implied.
+4. Follow the separately approved transactional sender/SMTP/Secrets and actual delivery scope. Current invitation UI must continue to state honestly that it creates a link without sending email.
+5. Prove database/Auth/Storage recovery before first-client handoff. The 1,673-row fingerprint comparison is not a full restorable backup. Keep persisted/versioned legal drafts and complete business-workflow acceptance as the remaining P0 delivery gates.
+6. Present exact-head evidence for separate Merge and Production code-deployment approval. No Merge or Production code rollout has occurred.
 
-The row/hash/schema checkpoint is not a full restorable backup. Live activation and recovery verification remain outstanding. No main/Production/Supabase live change has been made by this package; no new infrastructure or environment-variable change is required by the selected workflow.
+Verified: 22/22 tables RLS, new invitation FORCE RLS, restricted token/direct membership access, unchanged 207 existing security objects and 21 historic migration entries, unchanged 21 original table data fingerprints, 18 live rollback checks and zero retained test records. Auth settings, Secrets and SMTP are unchanged.
 
 ---
 
