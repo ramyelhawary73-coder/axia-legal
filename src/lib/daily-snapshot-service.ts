@@ -10,7 +10,7 @@ import {
 
 const CONFIG_STORAGE_KEY = "axia_daily_snapshot_config";
 const HISTORY_STORAGE_KEY = "axia_daily_snapshot_history";
-const CLOUD_VAULT_STORAGE_KEY = "axia_cloud_snapshot_vault";
+// Legacy local vault data is intentionally retained; it is not a cloud backup.
 
 export const DEFAULT_SNAPSHOT_CONFIG: SnapshotConfig = {
   enabled: true,
@@ -18,12 +18,12 @@ export const DEFAULT_SNAPSHOT_CONFIG: SnapshotConfig = {
   format: "json",
   autoExportTime: "17:00",
   autoDownloadOnAppOpen: true,
-  cloudSyncUrl: "https://vault.axia-legal.eg/api/v1/sync/daily-snapshots",
+  cloudSyncUrl: "",
   cloudSyncStatus: "idle",
   retentionDays: 30,
 };
 
-// Simple robust string hash for data integrity checksum
+// Local consistency marker only; this is not a cryptographic signature.
 function computeChecksum(str: string): string {
   let hash1 = 5381;
   let hash2 = 52711;
@@ -76,7 +76,7 @@ export function getSnapshotConfig(): SnapshotConfig {
   try {
     const stored = localStorage.getItem(CONFIG_STORAGE_KEY);
     if (stored) {
-      return { ...DEFAULT_SNAPSHOT_CONFIG, ...JSON.parse(stored) };
+      return normalizeSnapshotConfig(JSON.parse(stored));
     }
   } catch (e) {
     console.error("Failed to load snapshot config:", e);
@@ -84,10 +84,28 @@ export function getSnapshotConfig(): SnapshotConfig {
   return DEFAULT_SNAPSHOT_CONFIG;
 }
 
+export function normalizeSnapshotConfig(value: unknown): SnapshotConfig {
+  const stored = value && typeof value === "object" && !Array.isArray(value)
+    ? value as Partial<SnapshotConfig> : {};
+  return {
+    ...DEFAULT_SNAPSHOT_CONFIG,
+    ...stored,
+    format: ["json", "markdown", "csv"].includes(String(stored.format))
+      ? stored.format as SnapshotFormat : "json",
+    destination: "download_folder",
+    lastExportDate: stored.destination === "cloud_sync" ? undefined : stored.lastExportDate,
+    cloudSyncUrl: "",
+    cloudSyncStatus: "idle",
+    enabled: typeof stored.enabled === "boolean" ? stored.enabled : true,
+    autoDownloadOnAppOpen: typeof stored.autoDownloadOnAppOpen === "boolean"
+      ? stored.autoDownloadOnAppOpen : true,
+  };
+}
+
 export function saveSnapshotConfig(config: SnapshotConfig): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config));
+    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(normalizeSnapshotConfig(config)));
   } catch (e) {
     console.error("Failed to save snapshot config:", e);
   }
@@ -170,8 +188,8 @@ export function buildDailySnapshot(matters: Matter[], tasks: LegalTask[]): Daily
 
   const rawJsonForChecksum = JSON.stringify({
     date: today,
-    matters: activeMattersList.map(m => m.caseNumber),
-    tasks: pendingTasksList.map(t => t.id),
+    matters: activeMattersList,
+    tasks: pendingTasksList,
     timestamp: now.toISOString(),
   });
 
@@ -183,18 +201,18 @@ export function buildDailySnapshot(matters: Matter[], tasks: LegalTask[]): Daily
     generatedAt: now.toISOString(),
     generatedAtArabic: getFormattedArabicDateTime(now),
     firm: {
-      name: "مكتب د. رامي الهواري للاستشارات القانونية وأعمال المحاماة والتحكيم",
-      barRegistration: "قيد نقابة المحامين: ١٤٥٢١ / جدول محكمة النقض والدستورية العليا",
-      address: "١٤ شارع قصر النيل، وسط البلد، القاهرة، جمهورية مصر العربية",
-      managingPartner: "د. رامي الهواري",
+      name: "مساحة العمل الحالية",
+      barRegistration: "غير مسجل",
+      address: "غير مسجل",
+      managingPartner: "غير مسجل",
     },
     metrics: {
       totalActiveMatters: activeMattersList.length,
       totalPendingTasks: pendingTasksList.length,
       criticalDeadlinesCount,
       upcomingHearingsCount: activeMattersList.filter(m => !!m.nextHearingDate).length,
-      totalAgreedFees: "١,٤٥٠,٠٠٠ ج.م",
-      totalPaidFees: "٩٨٠,٠٠٠ ج.م",
+      totalAgreedFees: "غير متاح في هذه اللقطة",
+      totalPaidFees: "غير متاح في هذه اللقطة",
     },
     activeMatters: activeMattersList,
     pendingTasks: pendingTasksList,
@@ -206,11 +224,11 @@ export function buildDailySnapshot(matters: Matter[], tasks: LegalTask[]): Daily
 
 // Generate Markdown Format
 function snapshotToMarkdown(snapshot: DailySnapshot): string {
-  let md = `# اللقطة اليومية المعتمدة للقضايا النشطة والمهام المعلقة
+  let md = `# اللقطة اليومية المحلية للقضايا النشطة والمهام المعلقة
 **التاريخ**: ${snapshot.date} (${snapshot.generatedAtArabic})  
 **المنشأة**: ${snapshot.firm.name}  
 **القيد**: ${snapshot.firm.barRegistration}  
-**رمز التحقق والأمان (Checksum)**: \`${snapshot.checksum}\`  
+**مؤشر اتساق محلي (غير مشفر)**: \`${snapshot.checksum}\`
 **التصنيف**: ${snapshot.securityClassification}  
 
 ---
@@ -244,10 +262,16 @@ function snapshotToMarkdown(snapshot: DailySnapshot): string {
   });
 
   md += `\n---
-*تم إنشاء هذا التقرير وتصديره تلقائياً عبر نظام AXIA Legal الذكي. معتمد رسمياً.*
+*تم إنشاء هذا التقرير وتصديره تلقائياً عبر نظام AXIA Legal الذكي. هذه لقطة محلية جزئية وليست نسخة احتياطية كاملة.*
 `;
 
   return md;
+}
+
+export function snapshotCsvCell(value: unknown): string {
+  const text = String(value ?? "");
+  const safe = /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${safe.replace(/"/g, '\"\"')}"`;
 }
 
 // Generate CSV Format
@@ -257,20 +281,20 @@ function snapshotToCsv(snapshot: DailySnapshot): string {
   let csv = BOM;
 
   csv += `"تقرير اللقطة اليومية للقضايا النشطة والمهام - ${snapshot.date}"\n`;
-  csv += `"رمز المطابقة والأمان:","${snapshot.checksum}"\n`;
+  csv += `"مؤشر اتساق محلي:","${snapshot.checksum}"\n`;
   csv += `"وقت التصدير:","${snapshot.generatedAtArabic}"\n\n`;
 
   // Matters
   csv += `"=== أولاً: القضايا النشطة المتداولة (${snapshot.activeMatters.length}) ==="\n`;
   csv += `"رقم القضية","موضوع الدعوى","المحكمة","الدائرة","الموكل","صفة الموكل","الخصم","المرحلة","الجلسة القادمة","المطلوب بالجلسة","المحامي المسؤول","قيمة المطالبة","الأتعاب المتفق عليها","المسدد"\n`;
   snapshot.activeMatters.forEach((m) => {
-    csv += `"${m.caseNumber}","${m.title}","${m.court}","${m.circuit}","${m.clientName}","${m.clientRole}","${m.opponentName}","${m.stage}","${m.nextHearingDate}","${m.nextHearingGoal}","${m.assignedLawyer}","${m.claimAmount || ''}","${m.agreedFees}","${m.paidFees}"\n`;
+    csv += [m.caseNumber, m.title, m.court, m.circuit, m.clientName, m.clientRole, m.opponentName, m.stage, m.nextHearingDate, m.nextHearingGoal, m.assignedLawyer, m.claimAmount, m.agreedFees, m.paidFees].map(snapshotCsvCell).join(",") + "\n";
   });
 
   csv += `\n"=== ثانياً: المهام القضائية المعلقة ومواعيد المحضرين (${snapshot.pendingTasks.length}) ==="\n`;
   csv += `"المهمة والإجراء","التصنيف","رقم الدعوى","القلم / الجهة","المسؤول المكلف","الميعاد الحتمي","درجة الأهمية","الحالة"\n`;
   snapshot.pendingTasks.forEach((t) => {
-    csv += `"${t.title}","${t.category}","${t.matterCaseNumber || ''}","${t.courtOrBailiffOffice}","${t.assignedTo}","${t.deadline}","${t.priority}","${t.status}"\n`;
+    csv += [t.title, t.category, t.matterCaseNumber, t.courtOrBailiffOffice, t.assignedTo, t.deadline, t.priority, t.status].map(snapshotCsvCell).join(",") + "\n";
   });
 
   return csv;
@@ -283,7 +307,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-// Download file to browser's secure local Download folder
+// Request a browser download; the browser controls its destination and completion.
 export function downloadSnapshotFile(
   snapshot: DailySnapshot, 
   format: SnapshotFormat = "json"
@@ -311,7 +335,7 @@ export function downloadSnapshotFile(
   const sizeBytes = blob.size;
   const sizeFormatted = formatBytes(sizeBytes);
 
-  // Trigger browser download directly to user's OS Download directory
+  // A successful click requests a download; it cannot confirm a file was saved.
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -327,41 +351,18 @@ export function downloadSnapshotFile(
   return { filename, sizeBytes, sizeFormatted };
 }
 
-// Sync to cloud storage location / vault
+// Cloud backup is unavailable until an authenticated server integration is approved.
+// Never claim remote durability or write sensitive snapshots to an unscoped local vault.
 export async function syncSnapshotToCloud(
-  snapshot: DailySnapshot, 
-  cloudUrl: string
+  snapshot: DailySnapshot,
+  cloudUrl: string,
 ): Promise<{ success: boolean; message: string }> {
-  try {
-    // 1. Store locally in encrypted cloud vault mirror
-    if (typeof window !== "undefined") {
-      const existingVault = localStorage.getItem(CLOUD_VAULT_STORAGE_KEY);
-      const vaultData = existingVault ? JSON.parse(existingVault) : {};
-      vaultData[snapshot.date] = {
-        snapshot,
-        syncedAt: new Date().toISOString(),
-        cloudEndpoint: cloudUrl,
-        verified: true,
-      };
-      localStorage.setItem(CLOUD_VAULT_STORAGE_KEY, JSON.stringify(vaultData));
-    }
-
-    // 2. Simulated network cloud sync attempt (or real POST if external endpoint is reachable)
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    return {
-      success: true,
-      message: `تمت المزامنة السحابية بنجاح إلى المستودع الآمن: ${cloudUrl}`,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : "فشل الاتصال بالمستودع السحابي",
-    };
-  }
+  void snapshot;
+  void cloudUrl;
+  return { success: false, message: "المزامنة السحابية غير متاحة حاليًا. استخدم تنزيل الملف المحلي." };
 }
 
-// Execute the full daily snapshot export (local download and/or cloud sync)
+// Export a partial local snapshot. Cloud destinations fail before side effects.
 export async function performDailyExport(
   matters: Matter[],
   tasks: LegalTask[],
@@ -373,20 +374,13 @@ export async function performDailyExport(
   cloudResult?: { success: boolean; message: string };
 }> {
   const currentConfig = { ...getSnapshotConfig(), ...(customConfig || {}) };
+  if (currentConfig.destination !== "download_folder") {
+    throw new Error("المزامنة السحابية غير متاحة. اختر تنزيل الملف المحلي أولًا.");
+  }
   const snapshot = buildDailySnapshot(matters, tasks);
 
-  let downloadResult: { filename: string; sizeBytes: number; sizeFormatted: string } | undefined;
-  let cloudResult: { success: boolean; message: string } | undefined;
-
-  // 1. Local Download Folder Export
-  if (currentConfig.destination === "download_folder" || currentConfig.destination === "both") {
-    downloadResult = downloadSnapshotFile(snapshot, currentConfig.format);
-  }
-
-  // 2. Cloud Sync Location Export
-  if (currentConfig.destination === "cloud_sync" || currentConfig.destination === "both") {
-    cloudResult = await syncSnapshotToCloud(snapshot, currentConfig.cloudSyncUrl);
-  }
+  const downloadResult = downloadSnapshotFile(snapshot, currentConfig.format);
+  const cloudResult = undefined;
 
   // File size fallback
   const approxSize = downloadResult?.sizeBytes || 
@@ -407,7 +401,7 @@ export async function performDailyExport(
     fileSizeBytes: approxSize,
     fileSizeFormatted: sizeFormatted,
     checksum: snapshot.checksum,
-    status: cloudResult && !cloudResult.success ? "warning" : "success",
+    status: "success",
   };
 
   addSnapshotRecord(record);
@@ -417,8 +411,8 @@ export async function performDailyExport(
     ...currentConfig,
     lastExportDate: snapshot.date,
     lastExportTimestamp: snapshot.generatedAtArabic,
-    cloudSyncStatus: cloudResult ? (cloudResult.success ? "synced" : "error") : currentConfig.cloudSyncStatus,
-    cloudSyncLastMessage: cloudResult?.message,
+    cloudSyncStatus: "idle",
+    cloudSyncLastMessage: undefined,
   };
   saveSnapshotConfig(updatedConfig);
 

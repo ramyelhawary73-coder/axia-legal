@@ -58,8 +58,8 @@ export default function HomePage() {
     requestId: number;
   } | null>(null);
 
-  // Background Auto-Export: automatically exports daily snapshot to Downloads / Cloud Sync on app startup
-  const { toastNotification, dismissToast } = useDailySnapshotAutoExport(matters, tasks);
+  const snapshotDataReady = !coreLoading && !tasksLoading && !coreSyncError && !taskSyncError && taskWorkspace !== null;
+  const { toastNotification, dismissToast } = useDailySnapshotAutoExport(matters, tasks, snapshotDataReady);
 
   useEffect(() => {
     let cancelled = false;
@@ -422,8 +422,9 @@ export default function HomePage() {
         onOpenManager={() => setIsSnapshotManagerOpen(true)}
       />
 
-      {/* Daily Snapshot & Cloud Sync Manager Modal */}
+      {/* Local daily snapshot manager */}
       <DailySnapshotManager
+        isDataReady={snapshotDataReady}
         isOpen={isSnapshotManagerOpen}
         onClose={() => setIsSnapshotManagerOpen(false)}
         matters={matters}
