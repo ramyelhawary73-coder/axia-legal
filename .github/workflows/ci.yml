@@ -2,7 +2,7 @@ name: AXIA Legal CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, feat/axia-staff-activation-acceptance]
   push:
     branches: [main]
 

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSupabasePublicConfig } from "@/lib/supabase/config";
 import { readJsonObject } from "@/lib/api/validation";
 import { isInvitationToken } from "@/lib/staff-invitations";
+import { getStaffRegistrationConfig } from "@/lib/staff-registration";
 import {
   isSameOrigin,
   staffJson,
@@ -12,11 +13,13 @@ export async function GET() {
   if (!getSupabasePublicConfig()) return staffRpcError({ code: "PGRST202" });
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) return staffJson({ authenticated: false }, 401);
+  const registrationEnabled = Boolean(getStaffRegistrationConfig());
+  if (error || !data.user) return staffJson({ authenticated: false, registrationEnabled }, 401);
   return staffJson({
     authenticated: true,
     email: data.user.email ?? "",
     confirmed: Boolean(data.user.email_confirmed_at),
+    registrationEnabled,
   });
 }
 export async function POST(request: Request) {

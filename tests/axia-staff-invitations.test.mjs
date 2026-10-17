@@ -215,6 +215,7 @@ test("acceptance validates fresh Auth user without requiring preexisting members
     "@/lib/supabase/config": { getSupabasePublicConfig: () => ({}) },
   });
   const api = load("src/app/api/staff-invitations/accept/route.ts", {
+    "@/lib/staff-registration": { getStaffRegistrationConfig: () => null },
     "@/lib/supabase/server": {
       createClient: async () => ({
         auth: {

@@ -10,7 +10,7 @@
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
 > **Verified main SHA:** `558245314e156ea856347cd7ea5aae6d4f7202e9`
-> **Current implementation branch:** `feat/axia-staff-activation-acceptance`
+> **Current implementation branch:** `feat/axia-invite-guided-staff-registration`
 
 ---
 
@@ -105,6 +105,17 @@ GitHub/build integration verified 2026-10-17; the detailed live database/securit
 - Android is currently a mock-data/in-memory native foundation. Its packaging, live backend integration and emulator/device acceptance have not been verified; preserve it for later work rather than expanding first-client web scope.
 - Read-only Supabase check on 2026-10-17: latest migration `20261016083929`, 22 migration records, acceptance RPC present, 0 invitations, 2 Auth users and 2 memberships. No SQL mutation was performed. The 18 live rollback tests and complete data/security fingerprints below remain evidence from 2026-10-16, not fresh repetitions.
 
+## 2026-10-17 employee registration — application implementation only
+
+The owner approved starting the proposed registration package. Branch `feat/axia-invite-guided-staff-registration` starts from tested PR #42 head `f46f705`, which already contains current main. Its [Draft PR #43](https://github.com/ramyelhawary73-coder/axia-legal/pull/43) is based on that integration branch; main and PR #42 were not changed or merged.
+
+- Invite-guided signup UI, a bounded signup API and a safe email-confirmation return route are implemented. Existing owner login is preserved. Signup/confirmation do not grant office membership; acceptance remains through the existing checked RPC.
+- Hosted activation is **off by default**. Non-secret flags require a reviewed HTTPS application origin and explicit activation. No real account/email, Auth/SMTP/Secret/URL configuration change or SQL write is part of this package.
+- Read-only live check confirms 2 Auth users, 2 memberships, 0 invitations and latest migration `20261016083929`. `handle_new_user()` creates a profile only. Hosted signup/confirmation/redirect/provider settings remain unverified.
+- New behavioral tests cover Origin/body validation, duplicate-email responses, owner-session preservation, OTP/PKCE restrictions, safe redirects and exact Proxy exceptions. Browser fixtures cover registration and return-to-invitation on Desktop/mobile/light/dark. Exact-head CI/Preview evidence is attached to the new Draft PR.
+- SQL, RLS, dependencies, Android and existing login actions are unchanged. CI accepts this stacked PR's exact base branch without changing job permissions or adding deployments.
+- [Registration acceptance and controlled activation plan](AXIA_STAFF_REGISTRATION_ACCEPTANCE_2026-10-17.md) is the current next-package handoff. No first-client delivery claim is made from synthetic tests.
+
 ## Supabase audit and explicitly approved activation
 
 - `qshgczulivsxztgrbqew`: **AXIA Legal Development**, `ACTIVE_HEALTHY`.
@@ -119,7 +130,7 @@ GitHub/build integration verified 2026-10-17; the detailed live database/securit
 ## Delivery status
 
 - **Not ready for real customer onboarding:** production data boundary, staff onboarding, persisted editor drafts, recovery and authenticated workflow acceptance are open gates.
-- Invitation database foundation and assignment guard are activated on the shared project. PR #42 contains the unmerged UI/API integration. Sender delivery and new employee account provisioning remain unimplemented; actual new employee Auth acceptance is unverified.
+- Invitation database foundation and assignment guard are activated on the shared project. PR #42 contains the unmerged UI/API integration. Sender delivery remains unimplemented. Invite-guided account registration is implemented on the separate registration branch with hosted activation disabled; actual new employee Auth acceptance is unverified.
 - This branch retains snapshot/library fixes and staff invitation/assignment foundation together. SQL is byte-identical to PR #41. Historical CI on `53fd12c` passed 113 application tests, 19 PGlite checks, 22 native SQL checks, 30 UI checks and Typecheck/Lint/Build. The 2026-10-17 refresh repeats verification after incorporating main; use exact-head results linked in PR #42, not the historical SHA. No Merge, Production code deployment, actual email or new account creation occurred.
 - Owner selected the existing single-database workflow, then explicitly approved this exact shared-Production migration after the earlier authorization rejection. It was applied successfully on 2026-10-16. No second cloud project, plan upgrade, environment-variable change or alternate execution route was used. Recovery verification remains outstanding.
 
@@ -3246,18 +3257,18 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PR #42 REFRESHED FROM MAIN — LIVE EMPLOYEE ACCEPTANCE PENDING**
+**Current mode: STAFF REGISTRATION IMPLEMENTED — HOSTED ACTIVATION DISABLED**
 
-Verified main is `558245314e156ea856347cd7ea5aae6d4f7202e9`; incorporated into the integration branch with Android contents preserved and web route discovery repaired. Integration branch/PR: `feat/axia-staff-activation-acceptance`, Draft PR #42. Source PRs #40/#41 remain open and unmerged.
+Verified main: `558245314e156ea856347cd7ea5aae6d4f7202e9`. PR #42 remains Draft at `f46f705681a3d9fb329fd9704782c583c7857a7b`. Registration branch: `feat/axia-invite-guided-staff-registration`, based on that tested integration head; [Draft PR #43](https://github.com/ramyelhawary73-coder/axia-legal/pull/43) targets the integration branch. No PR was merged or Production code deployed.
 
-1. Review the [activation/refresh report](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md), final exact-head CI and Preview. Confirm `main` has not advanced again before any later code rollout. Do not reapply the migration or request the same approval again: it was explicitly approved and applied as live version `20261016083929`.
-2. Keep the selected single-database workflow. Do not request the two supplied URLs again, create a second project or change Vercel configuration. Isolated local/CI testing remains required before future controlled live changes.
-3. Review actual Team/Tasks UI in Preview using the owner's current login. Next proposed package is **AXIA Invite-Guided Staff Registration — isolated implementation**: invitation-page signup, confirmation return handling, existing checked acceptance RPC and tests, on a separate branch after explicit approval for that Auth-code scope. Live signup/confirmation sends email and is excluded until separately approved. Then test approved employee identities. Both current users already own offices, so successful new staff browser/Auth acceptance has not been proven. No arbitrary Auth account creation or real email is implied.
-4. Follow the separately approved transactional sender/SMTP/Secrets and actual delivery scope. Current invitation UI must continue to state honestly that it creates a link without sending email.
-5. Prove database/Auth/Storage recovery before first-client handoff. The 1,673-row fingerprint comparison is not a full restorable backup. Keep persisted/versioned legal drafts and complete business-workflow acceptance as the remaining P0 delivery gates.
-6. Present exact-head evidence for separate Merge and Production code-deployment approval. No Merge or Production code rollout has occurred.
+1. Review the new registration Draft PR, final exact-head CI/Preview and [acceptance/activation plan](AXIA_STAFF_REGISTRATION_ACCEPTANCE_2026-10-17.md). Keep hosted registration off until the controlled configuration and test scope are concrete and approved. Synthetic Auth/UI tests are not live employee acceptance.
+2. Next package: **AXIA Staff Onboarding — Controlled Activation Review**. Inspect actual signup/email-confirmation/redirect/SMTP settings read-only, select the project's approved sender/domain/provider, and identify one controlled employee test email/office/role. Prepare exact configuration and live-send/account actions for owner review. Do not fetch or disclose credentials, auto-send, disable confirmation, or change settings under a read-only review.
+3. Then activate only the approved Preview scope and prove invitation → new account → email confirmation → explicit membership → task with real sessions. Preview shares Production's database: new users/memberships are live writes. Current owners already belong to offices and cannot stand in for a new employee.
+4. Never reapply `20261015081218_axia_staff_email_invitations.sql`; it is already live as `20261016083929`. Keep one cloud database as selected. No new project, old-history repair, Service Role or direct membership grants.
+5. Prove appropriate database/Auth/Storage recovery, persisted/versioned legal drafts and full client/matter/task/hearing/finance/document workflow before first-client handoff. Fingerprints are comparison evidence, not a restorable backup. Native Android packaging/integration remains later work.
+6. Obtain separate final-head approval before integrating PRs, merge or Production code deployment. Re-read main and both PR heads before choosing rollout order.
 
-Verified: 22/22 tables RLS, new invitation FORCE RLS, restricted token/direct membership access, unchanged 207 existing security objects and 21 historic migration entries, unchanged 21 original table data fingerprints, 18 live rollback checks and zero retained test records. Auth settings, Secrets and SMTP are unchanged.
+Historical database security/data evidence remains dated 2026-10-16; this package's live inspection was read-only. Auth settings, Secrets and SMTP are unchanged.
 
 ---
 

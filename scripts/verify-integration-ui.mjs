@@ -17,7 +17,7 @@ const employee="00000000-0000-4000-8000-000000000002";
 const taskId="00000000-0000-4000-8000-000000000101";
 const inviteId="00000000-0000-4000-8000-000000000201";
 const records=[];
-async function fixtureContext(viewport,theme,{autoExport=false}={}) {
+async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=false,registrationEnabled=registrationFlow}={}) {
   const context=await browser.newContext({viewport,colorScheme:theme,locale:"ar-EG",acceptDownloads:true});
   await context.addInitScript(({theme,autoExport})=>{
     localStorage.setItem("theme",theme);
@@ -26,11 +26,18 @@ async function fixtureContext(viewport,theme,{autoExport=false}={}) {
   let invitations=[];
   let assignedTo=owner;
   const mutations=[];
+  const registrationRequests=[];
+  const events={accepted:0};
+  let staffConfirmed=!registrationFlow;
   await context.route("**/*",async route=>{
     const request=route.request(),url=new URL(request.url());
     if(!["127.0.0.1","localhost"].includes(url.hostname)) return route.abort();
+    if(registrationFlow && url.pathname==="/auth/confirm") {
+      staffConfirmed=true;
+      return route.fulfill({status:303,headers:{location:"/invitations/accept?confirmation=success"},body:""});
+    }
     if(!url.pathname.startsWith("/api/")) return route.continue();
-    let data={};
+    let data={},status=200;
     if(url.pathname==="/api/clients") data={clients:[]};
     if(url.pathname==="/api/matters") data={matters:[],clients:[]};
     if(url.pathname==="/api/hearings") data={hearings:[]};
@@ -51,11 +58,24 @@ async function fixtureContext(viewport,theme,{autoExport=false}={}) {
       assignedTo=request.postDataJSON().assigneeId;
       data={taskId,assignedToUserId:assignedTo,assignedTo:"موظف الاختبار"};
     }
-    if(url.pathname==="/api/staff-invitations/accept") data=request.method()==="GET"?
-      {authenticated:true,email:"employee@example.invalid",confirmed:true}:{accepted:true,organizationId:"office-test"};
-    await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify(data)});
+    if(url.pathname==="/api/staff-invitations/accept") {
+      if(request.method()==="GET") {
+        status=staffConfirmed?200:401;
+        data={authenticated:staffConfirmed,email:"employee@example.invalid",confirmed:staffConfirmed,registrationEnabled};
+      } else {
+        assert.ok(staffConfirmed,"acceptance requires confirmed identity");
+        events.accepted++;
+        data={accepted:true,organizationId:"office-test"};
+      }
+    }
+    if(url.pathname==="/api/staff-registration") {
+      assert.ok(registrationEnabled,"disabled registration must never be submitted");
+      registrationRequests.push(request.postDataJSON());
+      data={status:"check_email"};status=202;
+    }
+    await route.fulfill({status,contentType:"application/json",body:JSON.stringify(data)});
   });
-  return {context,mutations};
+  return {context,mutations,registrationRequests,events};
 }
 async function fits(page,label) {
   const metrics=await page.evaluate(()=>({viewport:innerWidth,document:document.documentElement.scrollWidth}));
@@ -73,6 +93,12 @@ async function nav(page,name) {
   await page.getByRole("button",{name:new RegExp(name)}).click();
 }
 try {
+  // Real compiled HTTP handlers, no response fixtures: activation is forced off by the runner.
+  const disabledRegistration=await fetch(base+"/api/staff-registration",{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({email:"fixture@example.invalid",password:"Fixture-password-2026",passwordConfirmation:"Fixture-password-2026"})});
+  assert.equal(disabledRegistration.status,503,await disabledRegistration.text());
+  const disabledConfirmation=await fetch(base+"/auth/confirm?code=fixture-only",{redirect:"manual"});
+  assert.equal(disabledConfirmation.status,303);
+  assert.match(disabledConfirmation.headers.get("location"),/\/invitations\/accept\?confirmation=unavailable$/);
   for(const width of [1440,390,320]) for(const theme of ["light","dark"]) {
     console.log(`UI login ${width}px ${theme}`);
     const {context}=await fixtureContext({width,height:900},theme);
@@ -119,6 +145,49 @@ try {
     assert.equal(new URL(page.url()).hash,"");
     await fits(page,`accept-${width}-${theme}`);
     await context.close();
+  }
+  for(const width of [1440,390,320]) for(const theme of ["light","dark"]) {
+    console.log(`UI employee registration ${width}px ${theme}`);
+    const {context,registrationRequests,events}=await fixtureContext({width,height:900},theme,{registrationFlow:true});
+    const page=await context.newPage();
+    const errors=[];page.on("pageerror",e=>errors.push(e.message));
+    await page.goto(base+"/invitations/accept#token="+"a".repeat(64));
+    await page.getByRole("button",{name:"ليس لدي حساب — إنشاء حساب",exact:true}).click();
+    await page.getByLabel("البريد الإلكتروني",{exact:true}).fill("employee@example.invalid");
+    await page.getByLabel("كلمة المرور",{exact:true}).fill("Test-fixture-only-2026");
+    await page.getByLabel("تأكيد كلمة المرور",{exact:true}).fill("Test-fixture-only-2026");
+    await fits(page,`signup-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`signup-${width}-${theme}.png`),fullPage:true});
+    await page.getByRole("button",{name:"إنشاء الحساب ومتابعة التأكيد",exact:true}).click();
+    await page.getByRole("status").filter({hasText:"إذا كان التسجيل متاحًا"}).waitFor();
+    assert.equal(registrationRequests.length,1);
+    assert.deepEqual(Object.keys(registrationRequests[0]).sort(),["email","password","passwordConfirmation"]);
+    assert.equal(events.accepted,0);
+    assert.equal(new URL(page.url()).hash,"");
+    const stored=await page.evaluate(()=>JSON.stringify([Object.entries(localStorage),Object.entries(sessionStorage)]));
+    assert.ok(!stored.includes("a".repeat(64)),"staff token must not persist in browser storage");
+    await fits(page,`signup-pending-${width}-${theme}`);
+    await page.goto(base+"/auth/confirm?code=fixture-only");
+    await page.getByRole("status").filter({hasText:"تم تأكيد بريدك"}).waitFor();
+    assert.equal(await page.getByRole("button",{name:"قبول الدعوة",exact:true}).count(),0);
+    assert.equal(events.accepted,0,"confirmation alone cannot create membership");
+    assert.equal(new URL(page.url()).search,"");
+    await fits(page,`confirmation-${width}-${theme}`);
+    await page.goto(base+"/invitations/accept#token="+"a".repeat(64));
+    await page.getByRole("button",{name:"قبول الدعوة",exact:true}).click();
+    await page.getByText("تم قبول الدعوة. صلاحياتك مرتبطة بمكتبك والدور المحدد لك.",{exact:true}).waitFor();
+    assert.equal(events.accepted,1);
+    await fits(page,`new-employee-accepted-${width}-${theme}`);
+    assert.deepEqual(errors,[]);
+    await context.close();
+  }
+  {
+    const {context,registrationRequests}=await fixtureContext({width:390,height:900},"light",{registrationFlow:true,registrationEnabled:false});
+    const page=await context.newPage();await page.goto(base+"/invitations/accept#token="+"a".repeat(64));
+    await page.getByRole("button",{name:"تسجيل الدخول للمتابعة",exact:true}).waitFor();
+    assert.equal(await page.getByRole("button",{name:"ليس لدي حساب — إنشاء حساب",exact:true}).count(),0);
+    assert.equal(registrationRequests.length,0);
+    await fits(page,"registration-disabled-390-light");await context.close();
   }
   await fs.writeFile(path.join(output,"report.json"),JSON.stringify({mode:"loopback UI contracts with synthetic API responses; not real Auth or email",checks:records},null,2));
   console.log(JSON.stringify({checks:records.length,output,records}));
