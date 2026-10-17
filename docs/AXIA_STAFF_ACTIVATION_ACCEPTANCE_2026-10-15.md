@@ -2,7 +2,7 @@
 
 **حالة التسليم:** طُبّقت Migration الدعوات وحدها على مشروع Supabase المشترك بموافقة صريحة. فحوص قاعدة البيانات نجحت دون تغيير البيانات الحالية. PR #42 ما زال Draft؛ لا Merge أو نشر كود Production أو بريد حقيقي أو إنشاء حسابات جديدة.
 
-## Verified baseline and integration
+## Initial verified baseline and integration — 2026-10-15/16
 
 - Initial integration main: `dfb557f2741ca521b13fd727abeb0f2c25803fd5`; refreshed main: `558245314e156ea856347cd7ea5aae6d4f7202e9`.
 - PR #40: `2a189f0bbde7141f43160dc3b714861eb6684c10`, open/draft.
@@ -12,7 +12,7 @@
 - Added accessible labels to the existing mobile navigation controls so keyboard/screen-reader and automated navigation can use them.
 - Screenshot review caught clipped header controls at phone width despite a passing document-width check. The phone toolbar now uses a separate wrapping row, the account control is compact and named, and its popover is viewport-bounded. Browser checks now assert visible header-button bounds and cover Team/Library/Tasks/acceptance at 320px too (30 layout checks in total).
 - Browser inspection exposed a pre-existing hydration mismatch in speech-support detection. Switched that capability read to an SSR-safe external-store snapshot; voice behavior is preserved and hydration errors are checked in browser automation.
-- Integration preserved application dependencies, package.json and lockfile. The separately approved database activation below is the only live change; SMTP, Auth settings, secrets and Production code deployment were not changed.
+- The initial integration preserved application dependencies, package.json and lockfile; the 2026-10-17 compatibility changes are detailed below. The separately approved database activation below is the only live change; SMTP, Auth settings, secrets and Production code deployment were not changed.
 
 ## 2026-10-17 main refresh and compatibility repair
 
@@ -65,7 +65,7 @@ The test transaction ended in ROLLBACK. Repeated data fingerprints and explicit 
 
 ### Evidence limits and recovery
 
-All local/CI suites passed on `53fd12c4cef33f3920df2b287ff4212a36bbe069`: [CI 38791472975](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38791472975), with 113 application tests, 19 PGlite checks, 22 native SQL checks, 30 browser layout checks, Typecheck/Lint/Build. Follow-up changes in this activation report are documentation only; final PR-head evidence is linked in PR #42.
+All local/CI suites passed on `53fd12c4cef33f3920df2b287ff4212a36bbe069`: [CI 38791472975](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/38791472975), with 113 application tests, 19 PGlite checks, 22 native SQL checks, 30 browser layout checks, Typecheck/Lint/Build. The later `38b3a76` report update was documentation only. The 2026-10-17 refresh above changes the build/path/lock compatibility and repeats verification; final exact-head evidence is linked in PR #42.
 
 Successful **new employee acceptance through real browser/Auth sessions remains unverified**: both currently available accounts are owners already attached to offices. Lower-role and concurrent acceptance behavior passed isolated native PostgreSQL tests; do not label those as live employee login proof. Invite-guided new-account registration and sender delivery are not implemented by this migration.
 
