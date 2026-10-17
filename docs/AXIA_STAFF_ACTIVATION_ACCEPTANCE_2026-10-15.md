@@ -1,10 +1,10 @@
-# AXIA Staff Activation & Integration Verification — verified 2026-10-16
+# AXIA Staff Activation & Integration Verification — integration refreshed 2026-10-17
 
 **حالة التسليم:** طُبّقت Migration الدعوات وحدها على مشروع Supabase المشترك بموافقة صريحة. فحوص قاعدة البيانات نجحت دون تغيير البيانات الحالية. PR #42 ما زال Draft؛ لا Merge أو نشر كود Production أو بريد حقيقي أو إنشاء حسابات جديدة.
 
 ## Verified baseline and integration
 
-- Main: `dfb557f2741ca521b13fd727abeb0f2c25803fd5`.
+- Initial integration main: `dfb557f2741ca521b13fd727abeb0f2c25803fd5`; refreshed main: `558245314e156ea856347cd7ea5aae6d4f7202e9`.
 - PR #40: `2a189f0bbde7141f43160dc3b714861eb6684c10`, open/draft.
 - PR #41: `576bf1fcdf39d78fc3a6d6e5fb908b112eecf05f`, open/draft.
 - Integration branch: `feat/axia-staff-activation-acceptance`, created from latest main. Neither source PR was merged, closed, reset, or rewritten.
@@ -13,6 +13,28 @@
 - Screenshot review caught clipped header controls at phone width despite a passing document-width check. The phone toolbar now uses a separate wrapping row, the account control is compact and named, and its popover is viewport-bounded. Browser checks now assert visible header-button bounds and cover Team/Library/Tasks/acceptance at 320px too (30 layout checks in total).
 - Browser inspection exposed a pre-existing hydration mismatch in speech-support detection. Switched that capability read to an SSR-safe external-store snapshot; voice behavior is preserved and hydration errors are checked in browser automation.
 - Integration preserved application dependencies, package.json and lockfile. The separately approved database activation below is the only live change; SMTP, Auth settings, secrets and Production code deployment were not changed.
+
+## 2026-10-17 main refresh and compatibility repair
+
+The owner authorized updating the existing PR branch, preserving Android and all existing work, resolving integration issues, running verification, updating the roadmap and presenting employee registration scope. Main and PR #42 were re-read first. Main had advanced by `bcd88dfb8002bb6b0677c4654170187b8118e99a` and `558245314e156ea856347cd7ea5aae6d4f7202e9`; the PR head was `38b3a7698e0af99ba5e84352fc2664ceca56d54c`. Neither source PR #40/#41 nor PR #42 was merged to main.
+
+### Reproduced failure and minimal correction
+
+Git combined the branches without textual conflicts. A functional path collision remained: Android's root `app/` takes precedence over Next.js `src/app/`. The installed Next.js 16.3.3 `find-pages-dir.js` and bundled `src-folder.md` confirm this rule. The initial production build exited successfully but listed only `/404`; its app manifest lacked all eight critical web entry points. This reproduces a source-tree defect, not a direct observation of the current Production deployment.
+
+All **44 native Android files** moved to `android/app/` with byte-identical Git blob hashes. Root Gradle configuration remains in place and `settings.gradle.kts` maps the existing `:app` module to `android/app/`. No native screen, Kotlin model, asset or behavior was changed. The Android ViewModel uses `MockLegalDataSource` and in-memory state; no native release build/device test or live Android integration is claimed. The checkout has no Gradle wrapper; no Android tooling/provisioning was added.
+
+`package.json` appends `scripts/check-web-build.mjs` to the existing production build. The guard rejected the broken output, then passed for all eight required routes after relocation. The repaired build contains the real pages, API handlers and Proxy. `tsconfig.json` includes the development types path requested automatically by this Next.js version, with no formatter-only rewrite.
+
+The updated main lockfile initially failed `npm ci` with npm 11.9.0 due to missing optional-platform package records; npm 10.9.4 could install it. The lock metadata was completed with 79 missing optional/transitive records; all 450 existing main lock entries keep their versions and production dependency declarations are unchanged. A fresh npm 11.9.0 `npm ci` then passed. This preserves main's resolved dependency updates instead of reverting them. Native-platform/optional transitive metadata is not a new application capability.
+
+### Verification and limits for this refresh
+
+- Local Typecheck/Lint, 113 application tests, 19 disposable PGlite checks, production build and 30 browser layout/flow checks passed. The route guard has a demonstrated negative case on the broken build and a positive case after the correction.
+- Browser checks cover login, Team, Tasks, Library and invitation acceptance at 1440/390/320px in light/dark. No document overflow or clipped visible header control was observed. API responses use synthetic loopback fixtures with external requests blocked; they do not establish real employee login/acceptance.
+- Native PostgreSQL concurrency is executed by the existing disposable CI service, not against Supabase. Final exact-head CI and Vercel status/Preview are attached to PR #42 after publishing this refresh; historical checks below are not substituted for final-head results.
+- Direct Vercel inspection again returned 403 for the specified team/project. No authenticated Vercel CLI is installed. Use the exact-commit GitHub Vercel status for readiness, and report direct deployment/runtime inspection as unavailable. No credentials, protection bypass or Vercel configuration change was used.
+- Read-only live Supabase check on 2026-10-17 confirms latest version `20261016083929`, 22 migration records, acceptance RPC present, 0 invitations, 2 Auth users and 2 memberships. No live SQL write, migration replay, account creation or email occurred. Complete security/data fingerprints and 18 rollback permission checks below are dated 2026-10-16 and were not rerun.
 
 ## Activation result: APPLIED — explicitly approved shared Production target
 
@@ -96,7 +118,7 @@ The native test adapter has a fixed loopback host and fixed disposable database 
 
 ## Remaining acceptance before merge and first-client delivery
 
-1. Do not reapply this migration. Refresh current PR/CI/Preview and confirm main is unchanged before any future code rollout.
+1. Do not reapply this migration. Current main `5582453` is incorporated into the refreshed branch. Check final exact-head PR/CI/Preview and confirm main has not advanced again before any future code rollout.
 2. Review the actual Team and Tasks UI in Preview with the owner's current login; fixture screenshots do not establish a live browser session.
 3. Prepare invite-guided registration and approved test identities not already joined to another office. Verify confirmation, correct membership, duplicate/expired/revoked/renewed links and case/task access through real Auth sessions. No arbitrary account creation or outbound email is authorized by this activation.
 4. Keep sender/SMTP/Secrets and actual delivery tests in the separately approved sender scope. Retain truthful manual-link/no-email UI until delivery is enabled.
@@ -118,3 +140,20 @@ Concrete sequence:
 6. Request separate approval for real sender/Secret/SMTP activation, actual email sends, merge and Production rollout. No such action is included in this integration package.
 
 After employee onboarding, the remaining first-client gates are persisted/versioned legal drafts, a proven recovery procedure, and the full client → matter → hearing/task → finance → document workflow. PWA, broader modules and optional refinements remain later scope.
+
+
+## Proposed next scope — AXIA Invite-Guided Staff Registration
+
+**Planning only; not implemented by this refresh.** Recommend a separate branch after approval for Auth application-code changes, before sender activation. Keep the current owner's email/password login and all existing authorization rules.
+
+1. Add an employee signup choice within the invitation page. The employee privately enters their own password; existing account holders continue to sign in. Use the existing publishable-key/SSR client, never Auth Admin or Service Role. Do not create an organization or assign a role during signup.
+2. Implement confirmation return handling using the current Supabase SSR contract, fixed internal redirects and generic responses for existing emails. Inspect live signup/confirmation/redirect settings read-only first. If settings or templates require changes, prepare them for separate approval; do not disable email confirmation.
+3. Resume via the original invitation after confirmation; the raw staff token must remain out of query strings, server logs, analytics and durable browser storage. Email confirmation and invitation acceptance are separate steps. Opening a confirmation URL or creating an Auth account alone grants no office access.
+4. Call existing `axia_staff_accept` only after the authenticated, confirmed email matches the invitation. The database remains the authority for office/role, expiry, revocation, duplicate acceptance, inviter demotion and single-office conflict. The current public API does not offer anonymous invite lookup; do not describe a signup screen as preventing all non-invited Auth account creation. A strict pre-signup admission gate needs a separate security design/approval.
+5. Expected app files: `src/app/invitations/accept/page.tsx`, its `actions.ts`, a proposed `src/app/auth/confirm/route.ts`, narrowly scoped public-route matching in `src/lib/supabase/proxy.ts`, and invitation/Auth tests. Any new path is proposed, not claimed to exist. No migration/RLS or role change is planned; if review finds one necessary, stop and present it separately.
+6. Verify existing owner login, new and existing employees, unconfirmed/wrong email, expired/revoked/rotated links, repeat submits, confirmation in another tab/device, safe redirects, tenant/task/case denial and mobile layout using synthetic Auth fixtures or a disposable local Auth/mail-capture environment. No hosted `signUp`, `resend` or real account creation during isolated checks: those calls can emit real confirmation email.
+7. Then request one separate controlled-live activation scope covering the approved sender/domain, SMTP/Secrets/redirect/template changes if needed, exact test recipient and account creation/confirmation/delivery. The owner enters any credentials directly in the provider dashboard. Present exact results before requesting merge or Production code deployment.
+
+**Risk:** medium for the future Auth-code package; the security boundary is membership acceptance, not the visibility of the registration form. Current blockers are unverified Auth/email configuration and lack of an approved new employee test identity. Sender selection/delivery remains separate; no Android expansion is required to deliver the first web client.
+
+References reviewed for this plan: [Supabase Next.js user management](https://supabase.com/docs/guides/getting-started/tutorials/with-nextjs), [Auth email templates](https://supabase.com/docs/guides/auth/auth-email-templates), and [changelog](https://supabase.com/changelog.md), including the upcoming TLS cipher deprecation (not a reason to change this app's Auth settings).

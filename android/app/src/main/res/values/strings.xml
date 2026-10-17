@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">AXIA Legal</string>
+    <string name="app_tagline">نظام الإدارة والذكاء القضائي المصري</string>
+    <string name="tab_overview">الرئيسية</string>
+    <string name="tab_matters">القضايا</string>
+    <string name="tab_hearings">الجلسات</string>
+    <string name="tab_clients">الموكلون</string>
+    <string name="tab_tasks">المهام</string>
+    <string name="tab_documents">المستندات</string>
+    <string name="tab_finance">المالية</string>
+    <string name="tab_rajih">راجح AI</string>
+    <string name="tab_library">الصيغ</string>
+    <string name="search_placeholder">بحث سريع في القضايا، الموكلين، والجلسات…</string>
+</resources>

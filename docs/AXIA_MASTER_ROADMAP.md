@@ -6,10 +6,10 @@
 >
 > **Rule:** every implementation PR must update this file before it is considered complete.
 >
-> **Last verified:** 2026-10-16
+> **Last verified:** 2026-10-17
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
-> **Verified main SHA:** `dfb557f2741ca521b13fd727abeb0f2c25803fd5`
+> **Verified main SHA:** `558245314e156ea856347cd7ea5aae6d4f7202e9`
 > **Current implementation branch:** `feat/axia-staff-activation-acceptance`
 
 ---
@@ -83,18 +83,27 @@ Statements under **Current State** should be treated as verified only when a liv
 
 # 3. Current State
 
-Verified 2026-10-16. Detailed evidence, limits, employee invitation design and delivery gates: [Combined integration acceptance](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md). Historical sections below retain their original verification dates; they do not override this current audit.
+GitHub/build integration verified 2026-10-17; the detailed live database/security activation audit is dated 2026-10-16. Detailed evidence, limits, employee invitation design and delivery gates: [Combined integration acceptance](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md). Historical sections below retain their original verification dates; they do not override this current audit.
 
 ## GitHub and deployment
 
 - Repository: `ramyelhawary73-coder/axia-legal`; default branch `main`.
-- Verified main SHA: `dfb557f2741ca521b13fd727abeb0f2c25803fd5`.
+- Verified main SHA: `558245314e156ea856347cd7ea5aae6d4f7202e9`. It adds Android foundation commit `bcd88df` and build/lockfile commit `5582453` after the previous integration baseline `dfb557f`.
 - Owner-approved PR #39 merged the AXIA visual/login work; tested head `0df76142b511459edb9c5cba6d275efa0e7a1d82`.
-- Main CI run `38697796918` succeeded; GitHub Vercel status succeeded. Public Production login inspected at `https://axia-legal-psi.vercel.app/login`.
+- Latest main CI run `38878776863` reports success. However, reproducing its combined source tree exposed a route-discovery collision: root Android `app/` shadows `src/app/`, and Next.js can succeed with only `/404`. Build success alone is insufficient. The branch refresh below corrects this; current Production behavior has not been inspected in this refresh.
 - Authenticated login, employee flows and full mobile workflow acceptance are not established by visual approval or successful builds.
 - Direct Vercel project inspection returns 403. Owner-supplied Dashboard screenshots show Production and All Pre-Production Environments sharing `qshgczulivsxztgrbqew`; independent inspection inside each deployed build remains unavailable.
-- Current integration branch combines PR #40 at `2a189f0bbde7141f43160dc3b714861eb6684c10` and PR #41 at `576bf1fcdf39d78fc3a6d6e5fb908b112eecf05f`. Both source PRs remain open/draft and main is unchanged. Exact-head CI/Preview evidence is attached to the integration PR.
+- Current integration branch combines PR #40 at `2a189f0bbde7141f43160dc3b714861eb6684c10` and PR #41 at `576bf1fcdf39d78fc3a6d6e5fb908b112eecf05f`. Both source PRs remain open/draft. The integration branch now incorporates current main while preserving both patches and the Android additions. Exact-head CI/Preview evidence is attached to the integration PR.
 - Cleanup Batches 1/2 remain closed; this is delivery readiness work authorized by the owner's current request, not Cleanup Batch 3.
+
+## 2026-10-17 branch refresh — web/Android coexistence
+
+- Owner authorized updating PR #42 only; no merge to main, Production deployment, Auth/SMTP/Secrets change, real email or database mutation is included.
+- There were no textual Git conflicts. The functional directory conflict was reproduced: a successful Next.js build contained only `/404`. All 44 Android files moved from `app/` to `android/app/` with identical Git blob hashes; `:app` maps to the new path in `settings.gradle.kts`. Root Gradle files remain in place. Native source, assets and behavior are unchanged.
+- `npm run build` now runs `scripts/check-web-build.mjs` after Next.js and requires eight compiled entry points: home, login, invitation acceptance, invitation APIs, tasks/assignment and library. This guard rejected the broken build and passed after relocation. `tsconfig.json` retains Next.js's development type include without formatter-only changes.
+- Latest main's resolved dependency versions are preserved. Its incomplete optional-platform lock metadata failed `npm ci` under npm 11.9.0; the lockfile was completed without changing any existing locked package version or production dependency declaration. Verification results and exact-head CI/Preview are recorded in the integration report/PR.
+- Android is currently a mock-data/in-memory native foundation. Its packaging, live backend integration and emulator/device acceptance have not been verified; preserve it for later work rather than expanding first-client web scope.
+- Read-only Supabase check on 2026-10-17: latest migration `20261016083929`, 22 migration records, acceptance RPC present, 0 invitations, 2 Auth users and 2 memberships. No SQL mutation was performed. The 18 live rollback tests and complete data/security fingerprints below remain evidence from 2026-10-16, not fresh repetitions.
 
 ## Supabase audit and explicitly approved activation
 
@@ -111,7 +120,7 @@ Verified 2026-10-16. Detailed evidence, limits, employee invitation design and d
 
 - **Not ready for real customer onboarding:** production data boundary, staff onboarding, persisted editor drafts, recovery and authenticated workflow acceptance are open gates.
 - Invitation database foundation and assignment guard are activated on the shared project. PR #42 contains the unmerged UI/API integration. Sender delivery and new employee account provisioning remain unimplemented; actual new employee Auth acceptance is unverified.
-- This branch retains snapshot/library fixes and staff invitation/assignment foundation together. SQL is byte-identical to PR #41. CI on `53fd12c` passed 113 application tests, 19 PGlite checks, 22 native SQL checks, 30 UI checks and Typecheck/Lint/Build. No Merge, Production code deployment, actual email or new account creation occurred.
+- This branch retains snapshot/library fixes and staff invitation/assignment foundation together. SQL is byte-identical to PR #41. Historical CI on `53fd12c` passed 113 application tests, 19 PGlite checks, 22 native SQL checks, 30 UI checks and Typecheck/Lint/Build. The 2026-10-17 refresh repeats verification after incorporating main; use exact-head results linked in PR #42, not the historical SHA. No Merge, Production code deployment, actual email or new account creation occurred.
 - Owner selected the existing single-database workflow, then explicitly approved this exact shared-Production migration after the earlier authorization rejection. It was applied successfully on 2026-10-16. No second cloud project, plan upgrade, environment-variable change or alternate execution route was used. Recovery verification remains outstanding.
 
 ---
@@ -3237,13 +3246,13 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: DATABASE FOUNDATION ACTIVATED — LIVE EMPLOYEE ACCEPTANCE PENDING**
+**Current mode: PR #42 REFRESHED FROM MAIN — LIVE EMPLOYEE ACCEPTANCE PENDING**
 
-Main remains `dfb557f2741ca521b13fd727abeb0f2c25803fd5`. Integration branch/PR: `feat/axia-staff-activation-acceptance`, Draft PR #42. Source PRs #40/#41 remain open and unmerged.
+Verified main is `558245314e156ea856347cd7ea5aae6d4f7202e9`; incorporated into the integration branch with Android contents preserved and web route discovery repaired. Integration branch/PR: `feat/axia-staff-activation-acceptance`, Draft PR #42. Source PRs #40/#41 remain open and unmerged.
 
-1. Review the [activation report](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md), latest CI and Preview. Do not reapply the migration or request the same approval again: it was explicitly approved and applied as live version `20261016083929`.
+1. Review the [activation/refresh report](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md), final exact-head CI and Preview. Confirm `main` has not advanced again before any later code rollout. Do not reapply the migration or request the same approval again: it was explicitly approved and applied as live version `20261016083929`.
 2. Keep the selected single-database workflow. Do not request the two supplied URLs again, create a second project or change Vercel configuration. Isolated local/CI testing remains required before future controlled live changes.
-3. Review actual Team/Tasks UI in Preview using the owner's current login, then prepare invite-guided new employee registration/confirmation and approved test identities. Both current users already own offices, so successful new staff browser/Auth acceptance has not been proven. No arbitrary Auth account creation or real email is implied.
+3. Review actual Team/Tasks UI in Preview using the owner's current login. Next proposed package is **AXIA Invite-Guided Staff Registration — isolated implementation**: invitation-page signup, confirmation return handling, existing checked acceptance RPC and tests, on a separate branch after explicit approval for that Auth-code scope. Live signup/confirmation sends email and is excluded until separately approved. Then test approved employee identities. Both current users already own offices, so successful new staff browser/Auth acceptance has not been proven. No arbitrary Auth account creation or real email is implied.
 4. Follow the separately approved transactional sender/SMTP/Secrets and actual delivery scope. Current invitation UI must continue to state honestly that it creates a link without sending email.
 5. Prove database/Auth/Storage recovery before first-client handoff. The 1,673-row fingerprint comparison is not a full restorable backup. Keep persisted/versioned legal drafts and complete business-workflow acceptance as the remaining P0 delivery gates.
 6. Present exact-head evidence for separate Merge and Production code-deployment approval. No Merge or Production code rollout has occurred.

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="axia_gold">#C59B27</color>
+    <color name="axia_gold_dark">#997316</color>
+    <color name="axia_dark_navy">#0E131F</color>
+    <color name="axia_surface_dark">#151C2C</color>
+    <color name="axia_border_gold">#33C59B27</color>
+</resources>
