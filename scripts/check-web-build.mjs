@@ -7,6 +7,8 @@ const required = [
   "/page",
   "/login/page",
   "/invitations/accept/page",
+  "/auth/confirm/route",
+  "/api/staff-registration/route",
   "/api/staff-invitations/route",
   "/api/staff-invitations/accept/route",
   "/api/tasks/route",

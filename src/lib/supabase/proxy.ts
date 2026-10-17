@@ -55,8 +55,9 @@ export async function updateSession(request: NextRequest) {
   const { data, error } = await supabase.auth.getClaims();
   const claims = error ? null : data?.claims;
   const pathname = request.nextUrl.pathname;
+  const staffPublicEndpoint = pathname === "/auth/confirm" || pathname === "/api/staff-registration";
 
-  if (!claims && !matchesRoute(pathname, [...PUBLIC_ROUTES, ...INVITATION_ROUTES])) {
+  if (!claims && !staffPublicEndpoint && !matchesRoute(pathname, [...PUBLIC_ROUTES, ...INVITATION_ROUTES])) {
     if (matchesRoute(pathname, JSON_AUTH_ROUTES)) {
       return supabaseResponse;
     }
