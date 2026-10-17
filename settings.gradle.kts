@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "AXIA Legal"
 include(":app")
+project(":app").projectDir = file("android/app")

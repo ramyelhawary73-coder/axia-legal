@@ -1,4 +1,10 @@
-# AXIA Legal — Egyptian Legal Practice & Intelligence OS (Android)
+# AXIA Legal — Egyptian Legal Practice & Intelligence OS
+
+This repository contains the Next.js web application in `src/` and a native Android foundation in `android/app/`. The web application is the current first-client delivery target. The canonical project state and next action are maintained in [`docs/AXIA_MASTER_ROADMAP.md`](docs/AXIA_MASTER_ROADMAP.md); integration verification and its limits are recorded in the [staff activation report](docs/AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md).
+
+## Native Android foundation
+
+The Android screens below currently use `MockLegalDataSource` and in-memory ViewModel state. They do not establish live Supabase integration, persistent Android data or a verified Android release. The native module remains `:app`, mapped by `settings.gradle.kts` to `android/app/`; its source and assets are preserved. Keeping it outside root `app/` prevents Next.js from ignoring the web routes in `src/app/`.
 
 Native Android implementation of **AXIA Legal**, the premier Egyptian Legal Practice & Intelligence OS, engineered with **Kotlin** and **Jetpack Compose (Material 3)**.
 
@@ -24,3 +30,16 @@ Native Android implementation of **AXIA Legal**, the premier Egyptian Legal Prac
 - **Layout:** Adaptive edge-to-edge layout (`WindowInsets.safeDrawing`, `WindowInsets.navigationBars`) with adaptive NavigationRail on expanded screens and NavigationBar on compact handhelds
 - **Theme:** High-contrast luxury Egyptian legal dark theme with Axia Gold (`#C59B27`) and Deep Navy (`#0E131F`)
 - **Iconography:** Custom adaptive launcher icon with Egyptian Scales of Justice emblem across all density buckets (mdpi, hdpi, xhdpi, xxhdpi, xxxhdpi)
+
+
+## Web application
+
+- Next.js, React and TypeScript; Arabic-first RTL interface.
+- Supabase Auth, PostgreSQL/RLS and Storage; Vercel hosting.
+- Existing login and invitation acceptance behavior are unchanged by the Android path correction.
+
+Use Node.js 22 as in CI, then install with `npm ci` and run `npm run dev`. Configure local public environment values privately using `.env.example`; never commit credentials or use Service Role for application flows.
+
+Run `npm run check` for Typecheck, Lint, application tests and the production build. The build also checks eight required compiled web routes, so an empty `/404`-only build cannot be reported as a valid release. CI adds isolated SQL/concurrency and browser checks. These do not establish a real employee Auth session or successful email delivery.
+
+Work on a dedicated branch, verify CI and Preview, and obtain owner approval before merge or Production deployment. Native Android packaging/integration is separate follow-up scope and must not delay the first web-client delivery.

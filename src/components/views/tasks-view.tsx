@@ -35,7 +35,8 @@ import {
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 import { VoiceCommandModal } from "@/components/voice-command-modal";
 import { TaskCreationModal } from "@/components/task-creation-modal";
-import type { TaskMatterOption } from "@/lib/tasks-client";
+import { TaskAssigneeEditor } from "@/components/task-assignee-editor";
+import type { TaskAssigneeOption, TaskMatterOption } from "@/lib/tasks-client";
 import { useActionContextMenu } from "@/components/action-context-menu";
 
 interface TasksEmptyStateProps {
@@ -146,6 +147,8 @@ interface TasksViewProps {
   onBulkUpdateTaskStatus?: (taskIds: string[], status: LegalTask["status"]) => void | Promise<void>;
   taskMatterOptions?: TaskMatterOption[];
   taskAssigneeLabel?: string;
+  taskAssignees?: TaskAssigneeOption[];
+  onTaskAssigned?: (taskId: string, userId: string, name: string) => void;
   onBulkDeleteTasks?: (taskIds: string[]) => void;
   onDeleteTask?: (taskId: string) => void;
   onNavigate?: (tab: NavigationTab) => void;
@@ -158,6 +161,8 @@ export function TasksView({
   onBulkUpdateTaskStatus: propBulkUpdateStatus,
   taskMatterOptions = [],
   taskAssigneeLabel = "المستخدم الحالي",
+  taskAssignees = [],
+  onTaskAssigned,
   onBulkDeleteTasks: propBulkDelete,
   onDeleteTask: propDeleteTask,
   onNavigate,
@@ -861,7 +866,7 @@ export function TasksView({
                               </div>
                               <div className="flex justify-between items-center">
                                 <span>المسؤول:</span>
-                                <strong className="text-[var(--text)]">{task.assignedTo}</strong>
+                                {onTaskAssigned ? <TaskAssigneeEditor task={task} options={taskAssignees} onSaved={onTaskAssigned} /> : <strong className="text-[var(--text)]">{task.assignedTo}</strong>}
                               </div>
                             </div>
 
@@ -1020,7 +1025,7 @@ export function TasksView({
 
                         <div className="mt-2.5 flex flex-wrap items-center gap-4 text-xs text-[var(--text-muted)]">
                           <span>الجهة: <strong className="text-[var(--text)]">{task.courtOrBailiffOffice}</strong></span>
-                          <span>المسؤول: <strong className="text-[var(--text)]">{task.assignedTo}</strong></span>
+                          <span>المسؤول: {onTaskAssigned ? <TaskAssigneeEditor task={task} options={taskAssignees} onSaved={onTaskAssigned} /> : <strong className="text-[var(--text)]">{task.assignedTo}</strong>}</span>
                         </div>
                       </div>
                     </div>
@@ -1097,6 +1102,7 @@ export function TasksView({
         }}
         matterOptions={taskMatterOptions}
         assigneeLabel={taskAssigneeLabel}
+        assigneeOptions={taskAssignees}
       />
       {/* Legal PDF Report Modal */}
       <LegalPdfReportModal

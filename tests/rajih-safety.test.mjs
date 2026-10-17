@@ -216,7 +216,9 @@ test("Phase 2A.2 task creation uses accessible real matters and current user ass
   assert.match(taskModal, /matchedMatter/);
   assert.match(taskModal, /اختر قضية من القضايا المتاحة/);
   assert.match(taskModal, /assigneeLabel/);
-  assert.match(tasksRoute, /assigned_to: workspace\.userId/);
+  assert.match(tasksRoute, /let assignedTo = workspace\.userId/);
+  assert.match(tasksRoute, /assigned_to: assignedTo/);
+  assert.match(tasksRoute, /loadTaskAssignees/);
   assert.match(tasksRoute, /created_by: workspace\.userId/);
 });
 

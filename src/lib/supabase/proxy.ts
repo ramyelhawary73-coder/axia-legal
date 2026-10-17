@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getSupabasePublicConfig } from "@/lib/supabase/config";
 
 const PUBLIC_ROUTES = ["/login"];
-const JSON_AUTH_ROUTES = ["/api/rajih"];
+const INVITATION_ROUTES = ["/invitations/accept"];
+const JSON_AUTH_ROUTES = ["/api/rajih", "/api/staff-invitations"];
 
 function matchesRoute(pathname: string, routes: string[]) {
   return routes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
@@ -55,7 +56,7 @@ export async function updateSession(request: NextRequest) {
   const claims = error ? null : data?.claims;
   const pathname = request.nextUrl.pathname;
 
-  if (!claims && !matchesRoute(pathname, PUBLIC_ROUTES)) {
+  if (!claims && !matchesRoute(pathname, [...PUBLIC_ROUTES, ...INVITATION_ROUTES])) {
     if (matchesRoute(pathname, JSON_AUTH_ROUTES)) {
       return supabaseResponse;
     }

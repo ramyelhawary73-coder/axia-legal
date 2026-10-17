@@ -6,11 +6,11 @@
 >
 > **Rule:** every implementation PR must update this file before it is considered complete.
 >
-> **Last verified:** 2026-09-23  
+> **Last verified:** 2026-10-17
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
-> **Verified main SHA:** `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`  
-> **Current documentation branch:** `docs/axia-cleanup-batch2-closeout-v1`
+> **Verified main SHA:** `558245314e156ea856347cd7ea5aae6d4f7202e9`
+> **Current implementation branch:** `feat/axia-staff-activation-acceptance`
 
 ---
 
@@ -83,47 +83,45 @@ Statements under **Current State** should be treated as verified only when a liv
 
 # 3. Current State
 
-## GitHub
+GitHub/build integration verified 2026-10-17; the detailed live database/security activation audit is dated 2026-10-16. Detailed evidence, limits, employee invitation design and delivery gates: [Combined integration acceptance](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md). Historical sections below retain their original verification dates; they do not override this current audit.
 
-- Repository: `ramyelhawary73-coder/axia-legal`
-- Default branch: `main`
-- Verified main SHA: `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`
-- PR #31 — Cleanup Batch 2 Matter creation/domain consolidation — merged using merge commit `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`.
-- PR #30 — Cleanup Batch 2 scope-review results — merged using merge commit `48d68903eee7412333b6cc26260b9ec220d2481a`.
-- PR #29 — Cleanup Batch 2 scope-review plan — merged using merge commit `fe23cc2213810abd91715d81cecf84ec2e6a46b7`.
-- PR #28 — Cleanup Batch 1 post-merge documentation closeout — merged using merge commit `93f214d5998aa2864c3314b4e7a274ef0ec02345`.
-- PR #27 — Cleanup Batch 1 client infrastructure — merged using merge commit `6efe7d5f1732f94f5ec0878331ada0cc190740d1`.
-- Exact-content verification from tested PR #31 head `3ecacfd841a97d202ba505d6797fcec70f5b1687` to merged `main`: 0 file differences; `main` is ahead by the merge commit only.
-- Merge commits remain the approved merge strategy.
-- CI installs dependencies with `npm ci` and runs Typecheck, Lint, Safety tests, and Production build.
-- Cleanup Batch 2 is merged, verified, and closed. Cleanup Batch 3 has not started.
+## GitHub and deployment
 
-## Supabase Development
+- Repository: `ramyelhawary73-coder/axia-legal`; default branch `main`.
+- Verified main SHA: `558245314e156ea856347cd7ea5aae6d4f7202e9`. It adds Android foundation commit `bcd88df` and build/lockfile commit `5582453` after the previous integration baseline `dfb557f`.
+- Owner-approved PR #39 merged the AXIA visual/login work; tested head `0df76142b511459edb9c5cba6d275efa0e7a1d82`.
+- Latest main CI run `38878776863` reports success. However, reproducing its combined source tree exposed a route-discovery collision: root Android `app/` shadows `src/app/`, and Next.js can succeed with only `/404`. Build success alone is insufficient. The branch refresh below corrects this; current Production behavior has not been inspected in this refresh.
+- Authenticated login, employee flows and full mobile workflow acceptance are not established by visual approval or successful builds.
+- Direct Vercel project inspection returns 403. Owner-supplied Dashboard screenshots show Production and All Pre-Production Environments sharing `qshgczulivsxztgrbqew`; independent inspection inside each deployed build remains unavailable.
+- Current integration branch combines PR #40 at `2a189f0bbde7141f43160dc3b714861eb6684c10` and PR #41 at `576bf1fcdf39d78fc3a6d6e5fb908b112eecf05f`. Both source PRs remain open/draft. The integration branch now incorporates current main while preserving both patches and the Android additions. Exact-head CI/Preview evidence is attached to the integration PR.
+- Cleanup Batches 1/2 remain closed; this is delivery readiness work authorized by the owner's current request, not Cleanup Batch 3.
 
-- Project ID: `qshgczulivsxztgrbqew`
-- Last verified state: `ACTIVE_HEALTHY`
-- Core tenant data is protected with RLS.
-- Core authenticated access does not expose ordinary client/matter/task/document data to `anon`.
-- `legal-documents` Storage bucket is private.
-- Storage access is intentionally limited; ordinary delete capability is not enabled.
-- Core update grants were added only for PATCH-backed resources during Phase 4A.
-- No approved general DELETE grant exists for core legal records.
+## 2026-10-17 branch refresh — web/Android coexistence
 
-## Vercel
+- Owner authorized updating PR #42 only; no merge to main, Production deployment, Auth/SMTP/Secrets change, real email or database mutation is included.
+- There were no textual Git conflicts. The functional directory conflict was reproduced: a successful Next.js build contained only `/404`. All 44 Android files moved from `app/` to `android/app/` with identical Git blob hashes; `:app` maps to the new path in `settings.gradle.kts`. Root Gradle files remain in place. Native source, assets and behavior are unchanged.
+- `npm run build` now runs `scripts/check-web-build.mjs` after Next.js and requires eight compiled entry points: home, login, invitation acceptance, invitation APIs, tasks/assignment and library. This guard rejected the broken build and passed after relocation. `tsconfig.json` retains Next.js's development type include without formatter-only changes.
+- Latest main's resolved dependency versions are preserved. Its incomplete optional-platform lock metadata failed `npm ci` under npm 11.9.0; the lockfile was completed without changing any existing locked package version or production dependency declaration. Verification results and exact-head CI/Preview are recorded in the integration report/PR.
+- Android is currently a mock-data/in-memory native foundation. Its packaging, live backend integration and emulator/device acceptance have not been verified; preserve it for later work rather than expanding first-client web scope.
+- Read-only Supabase check on 2026-10-17: latest migration `20261016083929`, 22 migration records, acceptance RPC present, 0 invitations, 2 Auth users and 2 memberships. No SQL mutation was performed. The 18 live rollback tests and complete data/security fingerprints below remain evidence from 2026-10-16, not fresh repetitions.
 
-- AXIA production project remains deployed.
-- PR #31 exact-head Vercel Preview status for `3ecacfd841a97d202ba505d6797fcec70f5b1687` was `success`.
-- After merge, GitHub Vercel status for merge SHA `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982` changed from `pending` to `success`.
-- Direct Vercel deployment-detail verification is temporarily unavailable because the connected Vercel account currently returns `403 Forbidden` for the project team scope and requires re-authentication.
-- Therefore the merge-SHA Vercel status is verified through GitHub, while the exact post-merge Production deployment ID/runtime details remain unverified in this closeout.
-- No Vercel configuration was changed by Cleanup Batch 1 or Cleanup Batch 2.
-- Production Supabase isolation from Development remains a required verification item before real client data.
+## Supabase audit and explicitly approved activation
 
-## Real Development data last observed
+- `qshgczulivsxztgrbqew`: **AXIA Legal Development**, `ACTIVE_HEALTHY`.
+- 22/22 public tables have RLS enabled after the approved invitation migration. FORCE RLS is enabled on profiles, organizations, organization_members and staff_invitations, not every core table.
+- Exact final counts: 2 Auth users, 2 organizations, 2 owner memberships, 2 clients, 2 matters, 1 task, 0 documents and 0 staff invitations. All 21 original table fingerprints (1673 rows) remain identical; transaction-local smoke fixtures/audit events were rolled back.
+- 18 live transaction-local permission checks passed for invitation management, tenant denial, role restrictions, renewal/expiry/revocation, audit redaction and task create/update/assignee protection. These simulate two existing owners via DB roles/claims; actual employee browser/Auth acceptance and Storage write isolation remain unverified.
+- `legal-documents` bucket is private, with 25 MiB limit and MIME restrictions.
+- Six business audit triggers observed; documents INSERT only, other five INSERT/UPDATE.
+- Live migration `20261016083929_axia_staff_email_invitations` was applied once from unchanged source `20261015081218_axia_staff_email_invitations.sql`. History is now 22 records versus 20 source files; all 21 older records are byte-hash identical. Do not replay/rename/repair old history or reapply this source file.
+- Security advisors show the same two pre-existing WARNs: vector extension in public and disabled leaked-password protection; no new security warning. Only approved new invitation objects/grants/RLS and task trigger were added. All 207 pre-existing tracked security objects are unchanged. Auth settings, SMTP and Secrets were not modified.
 
-- Development contains a small amount of test/working data.
-- Do not delete Development data without explicit owner approval.
-- Test fixtures used during safe verification must always be rolled back or removed before completion.
+## Delivery status
+
+- **Not ready for real customer onboarding:** production data boundary, staff onboarding, persisted editor drafts, recovery and authenticated workflow acceptance are open gates.
+- Invitation database foundation and assignment guard are activated on the shared project. PR #42 contains the unmerged UI/API integration. Sender delivery and new employee account provisioning remain unimplemented; actual new employee Auth acceptance is unverified.
+- This branch retains snapshot/library fixes and staff invitation/assignment foundation together. SQL is byte-identical to PR #41. Historical CI on `53fd12c` passed 113 application tests, 19 PGlite checks, 22 native SQL checks, 30 UI checks and Typecheck/Lint/Build. The 2026-10-17 refresh repeats verification after incorporating main; use exact-head results linked in PR #42, not the historical SHA. No Merge, Production code deployment, actual email or new account creation occurred.
+- Owner selected the existing single-database workflow, then explicitly approved this exact shared-Production migration after the earlier authorization rejection. It was applied successfully on 2026-10-16. No second cloud project, plan upgrade, environment-variable change or alternate execution route was used. Recovery verification remains outstanding.
 
 ---
 
@@ -324,20 +322,13 @@ This section records the read-only audit findings that must influence future pha
 
 ## 5.2 P0 / must be resolved before real client production data
 
-### P0-A — Production vs Development Supabase isolation is not yet formally verified
+### P0-A — Shared Production/Preview database; controlled single-database workflow
 
-**Status:** `READY_FOR_SCOPE`
+**Status:** `BLOCKED`
 
-Before real client onboarding, confirm that Vercel Production does not rely on the Development Supabase project unless that is an explicit temporary decision.
+Dashboard configuration shows one shared target, despite its Development name. Owner explicitly chose the current project because of the free-account constraint. No additional cloud project or paid infrastructure is to be created without a changed decision. Local/CI isolation remains available and must be used before any controlled live change.
 
-Required future evidence:
-
-- Production Supabase project identity;
-- Preview/Development project identity;
-- environment variable mapping by environment;
-- migration parity;
-- RLS parity;
-- no real client data in Development.
+Exact shared-Production approval was received and this migration passed data/history/security comparisons and 18 live rollback checks. Required next evidence: actual employee browser/Auth acceptance and a proven recovery procedure. Every persistent write on this target remains a Production write; the owner-selected single-database arrangement does not provide environment isolation.
 
 ### P0-B — Legal draft editor is still local-device state
 
@@ -1981,7 +1972,9 @@ No cleanup implementation has started.
 
 ## Phase 5 — AXIA Brand Identity & Premium Login
 
-**Status:** `PLANNED`
+**Status:** `MERGED`
+
+Owner approved the visual/login work merged in PR #39 on 2026-10-15. Public login and deployment status were checked. Authenticated keyboard/mobile end-to-end acceptance remains an open delivery gate; visual approval alone does not establish it.
 
 Objective: establish the distinctive commercial identity of AXIA.
 
@@ -3253,39 +3246,18 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: CLEANUP BATCH 2 CLOSED — CLEANUP BATCH 3 NOT STARTED**
+**Current mode: PR #42 REFRESHED FROM MAIN — LIVE EMPLOYEE ACCEPTANCE PENDING**
 
-Verified baseline:
+Verified main is `558245314e156ea856347cd7ea5aae6d4f7202e9`; incorporated into the integration branch with Android contents preserved and web route discovery repaired. Integration branch/PR: `feat/axia-staff-activation-acceptance`, Draft PR #42. Source PRs #40/#41 remain open and unmerged.
 
-- GitHub `main`: `41bcb9437cc4c980c2d476d57a4e6d9d1c6a6982`;
-- PR #31 is merged;
-- Cleanup Batch 1 is closed;
-- Cleanup Batch 2 is verified and closed;
-- exact tested PR #31 head: `3ecacfd841a97d202ba505d6797fcec70f5b1687`;
-- tested-head-to-merge comparison: 0 file differences;
-- CI #176 succeeded;
-- exact-head Vercel Preview succeeded;
-- post-merge Vercel status succeeded;
-- no API route, Supabase, RLS/Auth, migration, dependency, or Vercel configuration change was introduced by Cleanup Batch 2;
-- Cleanup Batch 3 has not started.
+1. Review the [activation/refresh report](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md), final exact-head CI and Preview. Confirm `main` has not advanced again before any later code rollout. Do not reapply the migration or request the same approval again: it was explicitly approved and applied as live version `20261016083929`.
+2. Keep the selected single-database workflow. Do not request the two supplied URLs again, create a second project or change Vercel configuration. Isolated local/CI testing remains required before future controlled live changes.
+3. Review actual Team/Tasks UI in Preview using the owner's current login. Next proposed package is **AXIA Invite-Guided Staff Registration — isolated implementation**: invitation-page signup, confirmation return handling, existing checked acceptance RPC and tests, on a separate branch after explicit approval for that Auth-code scope. Live signup/confirmation sends email and is excluded until separately approved. Then test approved employee identities. Both current users already own offices, so successful new staff browser/Auth acceptance has not been proven. No arbitrary Auth account creation or real email is implied.
+4. Follow the separately approved transactional sender/SMTP/Secrets and actual delivery scope. Current invitation UI must continue to state honestly that it creates a link without sending email.
+5. Prove database/Auth/Storage recovery before first-client handoff. The 1,673-row fingerprint comparison is not a full restorable backup. Keep persisted/versioned legal drafts and complete business-workflow acceptance as the remaining P0 delivery gates.
+6. Present exact-head evidence for separate Merge and Production code-deployment approval. No Merge or Production code rollout has occurred.
 
-### Recommended next action
-
-Stop after this documentation closeout. Do not begin Cleanup Batch 3, including read-only scope review, until the owner gives separate explicit approval.
-
-Explicitly excluded:
-
-- API route changes;
-- Supabase/RLS/Auth changes;
-- UI redesign;
-- shared mega-form;
-- new business fields;
-- dependency changes;
-- Cleanup Batch 3+.
-
-### Explicit stop condition
-
-**WAITING FOR OWNER APPROVAL BEFORE ANY CLEANUP BATCH 3 WORK.**
+Verified: 22/22 tables RLS, new invitation FORCE RLS, restricted token/direct membership access, unchanged 207 existing security objects and 21 historic migration entries, unchanged 21 original table data fingerprints, 18 live rollback checks and zero retained test records. Auth settings, Secrets and SMTP are unchanged.
 
 ---
 
@@ -3295,11 +3267,11 @@ When opening a new ChatGPT conversation for AXIA, use this instruction:
 
 > Work on `ramyelhawary73-coder/axia-legal`. First perform a fresh read-only verification of the latest `main`, then read `docs/AXIA_MASTER_ROADMAP.md` from that same current main. Treat it as the canonical project state, roadmap, risk register, and handoff. Do not rely on an old SHA if live GitHub differs. Continue from the `NEXT ACTION` section. Do not modify main directly. Before implementation, explain scope, affected systems, risks, and verification; use a dedicated branch and follow Preview → owner approval → merge → post-merge verification. Do not expose secrets or use Service Role in ordinary user-facing flows.
 
-If the roadmap is newer on an unmerged documentation branch, explicitly identify that branch and ask the owner whether it should be merged before implementation work begins.
+If the roadmap is newer on an unmerged branch, identify it and inspect its current PR evidence. Continue authorized branch work without treating an unmerged roadmap as production state; obtain approval for merge and live permission/configuration changes.
 
 ---
 
-# 25. Documentation Branch Scope
+# 25. Historical Documentation Branch Scope
 
 For `docs/axia-cleanup-batch2-closeout-v1`:
 
