@@ -27,7 +27,6 @@ import {
   CheckCircle2, 
   LogOut,
   Building2,
-  BadgeCheck,
   Server,
   MapPin,
   CreditCard,
@@ -331,7 +330,7 @@ export function AppShell({
                 aria-haspopup="true"
               >
                 <div className="relative size-6 shrink-0 rounded bg-gradient-to-br from-[var(--axia-gold-light)] to-[var(--axia-gold)] text-white font-bold grid place-items-center text-[10px] shadow-sm">
-                  ر.هـ
+                  <Users className="size-3.5" aria-hidden="true" />
                   <span className="absolute -top-0.5 -left-0.5 flex h-1.5 w-1.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
@@ -346,7 +345,7 @@ export function AppShell({
                       : "شؤون الشركات والاستثمار"}
                   </span>
                   <span className="block text-[9px] text-[var(--text-muted)] mt-0.5 truncate leading-none">
-                    د. رامي الهواري
+                    {taskAssigneeLabel}
                   </span>
                 </div>
                 <ChevronLeft className={`hidden size-3 text-[var(--text-muted)] transition-transform duration-200 sm:block ${isProfileOpen ? "-rotate-90" : ""}`} />
@@ -362,18 +361,14 @@ export function AppShell({
                   {/* Header: User Profile Card */}
                   <div className="flex items-start gap-3 border-b border-[var(--border)] pb-3">
                     <div className="size-12 rounded-xl bg-gradient-to-br from-[var(--axia-gold-light)] to-[var(--axia-gold)] text-white font-bold grid place-items-center text-lg shadow-md ring-2 ring-[var(--axia-gold-dim)] shrink-0">
-                      ر.هـ
+                      <Users className="size-6" aria-hidden="true" />
                     </div>
                     <div className="flex-1 space-y-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <h4 className="text-sm font-bold text-[var(--text)] truncate">د. رامي الهواري</h4>
-                        <span title="مستشار معتمد ومقيد بالنقابة">
-                          <BadgeCheck className="size-4 text-emerald-500 shrink-0" />
-                        </span>
+                        <h4 className="text-sm font-bold text-[var(--text)] truncate">{taskAssigneeLabel}</h4>
                       </div>
-                      <p className="text-xs text-[var(--text-muted)] font-medium leading-none truncate">ramyelhawary73@gmail.com</p>
                       <p className="text-[10px] text-[var(--axia-gold-light)] font-semibold leading-relaxed">
-                        المستشار العام والنائب الأول لنقابة المحامين (شريك مؤسس)
+                        الحساب الحالي
                       </p>
                     </div>
                   </div>
