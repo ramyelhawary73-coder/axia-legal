@@ -639,8 +639,8 @@ export class MockSupabaseClient {
         data: {
           claims: {
             sub: "mock-user-id",
-            email: "ramyelhawary73@gmail.com",
-            full_name: "د. رامي الهواري",
+            email: "staff.demo@example.invalid",
+            full_name: "موظف تجريبي",
           },
         },
         error: null,
