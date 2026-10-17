@@ -107,7 +107,7 @@ GitHub/build integration verified 2026-10-17; the detailed live database/securit
 
 ## 2026-10-17 employee registration — application implementation only
 
-The owner approved starting the proposed registration package. Branch `feat/axia-invite-guided-staff-registration` starts from tested PR #42 head `f46f705`, which already contains current main. Its Draft PR is based on that integration branch; main and PR #42 were not changed or merged.
+The owner approved starting the proposed registration package. Branch `feat/axia-invite-guided-staff-registration` starts from tested PR #42 head `f46f705`, which already contains current main. Its [Draft PR #43](https://github.com/ramyelhawary73-coder/axia-legal/pull/43) is based on that integration branch; main and PR #42 were not changed or merged.
 
 - Invite-guided signup UI, a bounded signup API and a safe email-confirmation return route are implemented. Existing owner login is preserved. Signup/confirmation do not grant office membership; acceptance remains through the existing checked RPC.
 - Hosted activation is **off by default**. Non-secret flags require a reviewed HTTPS application origin and explicit activation. No real account/email, Auth/SMTP/Secret/URL configuration change or SQL write is part of this package.
@@ -3259,7 +3259,7 @@ Before marking a PR ready:
 
 **Current mode: STAFF REGISTRATION IMPLEMENTED — HOSTED ACTIVATION DISABLED**
 
-Verified main: `558245314e156ea856347cd7ea5aae6d4f7202e9`. PR #42 remains Draft at `f46f705681a3d9fb329fd9704782c583c7857a7b`. Registration branch: `feat/axia-invite-guided-staff-registration`, based on that tested integration head; its Draft PR targets the integration branch. No PR was merged or Production code deployed.
+Verified main: `558245314e156ea856347cd7ea5aae6d4f7202e9`. PR #42 remains Draft at `f46f705681a3d9fb329fd9704782c583c7857a7b`. Registration branch: `feat/axia-invite-guided-staff-registration`, based on that tested integration head; [Draft PR #43](https://github.com/ramyelhawary73-coder/axia-legal/pull/43) targets the integration branch. No PR was merged or Production code deployed.
 
 1. Review the new registration Draft PR, final exact-head CI/Preview and [acceptance/activation plan](AXIA_STAFF_REGISTRATION_ACCEPTANCE_2026-10-17.md). Keep hosted registration off until the controlled configuration and test scope are concrete and approved. Synthetic Auth/UI tests are not live employee acceptance.
 2. Next package: **AXIA Staff Onboarding — Controlled Activation Review**. Inspect actual signup/email-confirmation/redirect/SMTP settings read-only, select the project's approved sender/domain/provider, and identify one controlled employee test email/office/role. Prepare exact configuration and live-send/account actions for owner review. Do not fetch or disclose credentials, auto-send, disable confirmation, or change settings under a read-only review.

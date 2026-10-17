@@ -4,7 +4,7 @@
 
 ## Baseline and branch
 
-Fresh read-only verification found main `558245314e156ea856347cd7ea5aae6d4f7202e9` and Draft PR #42 at `f46f705681a3d9fb329fd9704782c583c7857a7b`, both unchanged. The owner authorized starting the previously proposed isolated registration package. Branch `feat/axia-invite-guided-staff-registration` starts at that tested PR head, retaining the complete invitation/assignment, operational-readiness and Android compatibility work. Its Draft PR targets the PR #42 branch so reviewers see this package separately. Neither PR is merged by this work.
+Fresh read-only verification found main `558245314e156ea856347cd7ea5aae6d4f7202e9` and Draft PR #42 at `f46f705681a3d9fb329fd9704782c583c7857a7b`, both unchanged. The owner authorized starting the previously proposed isolated registration package. Branch `feat/axia-invite-guided-staff-registration` starts at that tested PR head, retaining the complete invitation/assignment, operational-readiness and Android compatibility work. [Draft PR #43](https://github.com/ramyelhawary73-coder/axia-legal/pull/43) targets the PR #42 branch so reviewers see this package separately. Neither PR is merged by this work.
 
 Supabase was inspected read-only: `qshgczulivsxztgrbqew`, latest migration `20261016083929`, 2 Auth users, 2 memberships, 0 invitations. The actual `public.handle_new_user()` trigger inserts only a profile (id/full_name), not an organization or role. No migration was replayed or authored. Auth signup/confirmation/redirect/SMTP configuration is not independently verified; no credential retrieval was attempted.
 
