@@ -9,8 +9,8 @@
 > **Last verified:** 2026-10-17
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
-> **Verified main SHA:** `558245314e156ea856347cd7ea5aae6d4f7202e9`
-> **Current implementation branch:** `feat/axia-invite-guided-staff-registration`
+> **Verified application main SHA:** `8c23e47b57f3f3997c1d07be37bdcacbe8192f76`
+> **Current handoff branch:** `docs/axia-merge-developer-handoff`
 
 ---
 
@@ -88,15 +88,15 @@ GitHub/build integration verified 2026-10-17; the detailed live database/securit
 ## GitHub and deployment
 
 - Repository: `ramyelhawary73-coder/axia-legal`; default branch `main`.
-- Verified main SHA: `558245314e156ea856347cd7ea5aae6d4f7202e9`. It adds Android foundation commit `bcd88df` and build/lockfile commit `5582453` after the previous integration baseline `dfb557f`.
+- Verified application main SHA: `8c23e47b57f3f3997c1d07be37bdcacbe8192f76`. The owner explicitly approved merge on 2026-10-17. PR #42 merged as `3b802f00e2548a6f1fbbf9484bde13a9a25ad64f`; PR #43 was then retargeted to main and merged as `8c23e47b57f3f3997c1d07be37bdcacbe8192f76`. Both were merged with exact expected-head guards; branches were retained.
 - Owner-approved PR #39 merged the AXIA visual/login work; tested head `0df76142b511459edb9c5cba6d275efa0e7a1d82`.
-- Latest main CI run `38878776863` reports success. However, reproducing its combined source tree exposed a route-discovery collision: root Android `app/` shadows `src/app/`, and Next.js can succeed with only `/404`. Build success alone is insufficient. The branch refresh below corrects this; current Production behavior has not been inspected in this refresh.
+- Final main tree `0c7518d1fd277129dd7784e5c20037dfd63f9d24` exactly matches tested PR #43 head `47b397e`. [Pre-merge CI](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/39016845609) passed 130 application tests, 19 PGlite checks, 22 native PostgreSQL checks, Typecheck, Lint, Build, 10 compiled routes, 55 browser checks and two compiled HTTP safety checks. [Post-merge CI](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/39057155789) and the normal Vercel Git deployment started automatically; inspect their final statuses rather than assuming completion. The earlier root Android directory collision is fixed in merged main.
 - Authenticated login, employee flows and full mobile workflow acceptance are not established by visual approval or successful builds.
 - Direct Vercel project inspection returns 403. Owner-supplied Dashboard screenshots show Production and All Pre-Production Environments sharing `qshgczulivsxztgrbqew`; independent inspection inside each deployed build remains unavailable.
-- Current integration branch combines PR #40 at `2a189f0bbde7141f43160dc3b714861eb6684c10` and PR #41 at `576bf1fcdf39d78fc3a6d6e5fb908b112eecf05f`. Both source PRs remain open/draft. The integration branch now incorporates current main while preserving both patches and the Android additions. Exact-head CI/Preview evidence is attached to the integration PR.
+- Merged PR #42 combines PR #40 at `2a189f0bbde7141f43160dc3b714861eb6684c10` and PR #41 at `576bf1fcdf39d78fc3a6d6e5fb908b112eecf05f`, preserving both patches and Android additions. The source PRs were not merged separately; do not duplicate their integration.
 - Cleanup Batches 1/2 remain closed; this is delivery readiness work authorized by the owner's current request, not Cleanup Batch 3.
 
-## 2026-10-17 branch refresh — web/Android coexistence
+## 2026-10-17 branch refresh — historical implementation scope
 
 - Owner authorized updating PR #42 only; no merge to main, Production deployment, Auth/SMTP/Secrets change, real email or database mutation is included.
 - There were no textual Git conflicts. The functional directory conflict was reproduced: a successful Next.js build contained only `/404`. All 44 Android files moved from `app/` to `android/app/` with identical Git blob hashes; `:app` maps to the new path in `settings.gradle.kts`. Root Gradle files remain in place. Native source, assets and behavior are unchanged.
@@ -107,14 +107,22 @@ GitHub/build integration verified 2026-10-17; the detailed live database/securit
 
 ## 2026-10-17 employee registration — application implementation only
 
-The owner approved starting the proposed registration package. Branch `feat/axia-invite-guided-staff-registration` starts from tested PR #42 head `f46f705`, which already contains current main. Its [Draft PR #43](https://github.com/ramyelhawary73-coder/axia-legal/pull/43) is based on that integration branch; main and PR #42 were not changed or merged.
+The owner approved starting the proposed registration package, then separately approved merging it on 2026-10-17. Branch `feat/axia-invite-guided-staff-registration` started from tested PR #42 head `f46f705`. [PR #43](https://github.com/ramyelhawary73-coder/axia-legal/pull/43) is now merged into main after PR #42. The bullets below describe application implementation boundaries, not live activation.
 
 - Invite-guided signup UI, a bounded signup API and a safe email-confirmation return route are implemented. Existing owner login is preserved. Signup/confirmation do not grant office membership; acceptance remains through the existing checked RPC.
 - Hosted activation is **off by default**. Non-secret flags require a reviewed HTTPS application origin and explicit activation. No real account/email, Auth/SMTP/Secret/URL configuration change or SQL write is part of this package.
 - Read-only live check confirms 2 Auth users, 2 memberships, 0 invitations and latest migration `20261016083929`. `handle_new_user()` creates a profile only. Hosted signup/confirmation/redirect/provider settings remain unverified.
-- New behavioral tests cover Origin/body validation, duplicate-email responses, owner-session preservation, OTP/PKCE restrictions, safe redirects and exact Proxy exceptions. Browser fixtures cover registration and return-to-invitation on Desktop/mobile/light/dark. Exact-head CI/Preview evidence is attached to the new Draft PR.
+- New behavioral tests cover Origin/body validation, duplicate-email responses, owner-session preservation, OTP/PKCE restrictions, safe redirects and exact Proxy exceptions. Browser fixtures cover registration and return-to-invitation on Desktop/mobile/light/dark. Exact-head CI/Preview evidence is attached to merged PR #43.
 - SQL, RLS, dependencies, Android and existing login actions are unchanged. CI accepts this stacked PR's exact base branch without changing job permissions or adding deployments.
 - [Registration acceptance and controlled activation plan](AXIA_STAFF_REGISTRATION_ACCEPTANCE_2026-10-17.md) is the current next-package handoff. No first-client delivery claim is made from synthetic tests.
+
+## Developer identity and separate test employee — READY_FOR_SCOPE
+
+- Owner requirement accepted on 2026-10-17: the owner's confirmed developer identity should administer the platform separately from normal office staffing; employee testing should use a separate identity with fictitious business data.
+- Fresh read-only inspection found that identity is the sole `owner` of its existing office, with no other owner. Current workspace APIs require an `organization_members` membership, and no independent platform/developer role table exists. Removing the membership now would remove office access without providing platform control. No membership, profile or Auth record was changed.
+- Next implementation must introduce a separately reviewed platform role tied to verified user identity, explicit administrative capabilities, audit logging and tenant boundaries. No hardcoded email bypass, blanket RLS bypass or ordinary staff promotion into platform administration. Prove replacement access and office ownership continuity before removing the current owner membership.
+- Existing automated tests use isolated synthetic identities and data; they are not real mailboxes or hosted Auth users. Prepare a separate sandbox office and least-privilege employee fixture for controlled live acceptance. A real confirmation test needs an explicitly selected mailbox under the owner's control; do not invent a recipient or send to `example.invalid`.
+- Merging these application changes does not activate hosted signup or authorize SMTP/Secrets changes, real email or account creation. These remain separate gates.
 
 ## Supabase audit and explicitly approved activation
 
@@ -130,13 +138,19 @@ The owner approved starting the proposed registration package. Branch `feat/axia
 ## Delivery status
 
 - **Not ready for real customer onboarding:** production data boundary, staff onboarding, persisted editor drafts, recovery and authenticated workflow acceptance are open gates.
-- Invitation database foundation and assignment guard are activated on the shared project. PR #42 contains the unmerged UI/API integration. Sender delivery remains unimplemented. Invite-guided account registration is implemented on the separate registration branch with hosted activation disabled; actual new employee Auth acceptance is unverified.
+- Invitation database foundation and assignment guard are activated on the shared project. UI/API integration and invite-guided account registration are merged through PRs #42/#43. Hosted activation remains disabled and sender delivery unimplemented; actual new employee Auth acceptance is unverified.
 - This branch retains snapshot/library fixes and staff invitation/assignment foundation together. SQL is byte-identical to PR #41. Historical CI on `53fd12c` passed 113 application tests, 19 PGlite checks, 22 native SQL checks, 30 UI checks and Typecheck/Lint/Build. The 2026-10-17 refresh repeats verification after incorporating main; use exact-head results linked in PR #42, not the historical SHA. No Merge, Production code deployment, actual email or new account creation occurred.
 - Owner selected the existing single-database workflow, then explicitly approved this exact shared-Production migration after the earlier authorization rejection. It was applied successfully on 2026-10-16. No second cloud project, plan upgrade, environment-variable change or alternate execution route was used. Recovery verification remains outstanding.
 
 ---
 
 # 4. Completed Delivery History
+
+## Staff activation and guided registration — MERGED, 2026-10-17
+
+- PR #42: `3b802f00e2548a6f1fbbf9484bde13a9a25ad64f`; integration, Android preservation/route repair and staff invitation/assignment UI.
+- PR #43: `8c23e47b57f3f3997c1d07be37bdcacbe8192f76`; default-disabled registration and safe confirmation flow. Final main source tree equals the tested final PR tree.
+- Owner authorized merge explicitly. No migration replay, SQL write, Auth/SMTP/Secrets configuration change, real email or account creation accompanied the merges. Normal Git CI/Vercel jobs started automatically. Runtime acceptance and developer-role separation remain open.
 
 ## Phase 1 / Foundation — COMPLETED
 
@@ -3257,16 +3271,16 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: STAFF REGISTRATION IMPLEMENTED — HOSTED ACTIVATION DISABLED**
+**Current mode: STAFF CHANGES MERGED — DEVELOPER SEPARATION NEXT — HOSTED ACTIVATION DISABLED**
 
-Verified main: `558245314e156ea856347cd7ea5aae6d4f7202e9`. PR #42 remains Draft at `f46f705681a3d9fb329fd9704782c583c7857a7b`. Registration branch: `feat/axia-invite-guided-staff-registration`, based on that tested integration head; [Draft PR #43](https://github.com/ramyelhawary73-coder/axia-legal/pull/43) targets the integration branch. No PR was merged or Production code deployed.
+Verified application main: `8c23e47b57f3f3997c1d07be37bdcacbe8192f76`. PRs #42/#43 merged with owner approval. Check the post-merge CI/Vercel results linked under Current State; no hosted signup or mail activation was performed.
 
-1. Review the new registration Draft PR, final exact-head CI/Preview and [acceptance/activation plan](AXIA_STAFF_REGISTRATION_ACCEPTANCE_2026-10-17.md). Keep hosted registration off until the controlled configuration and test scope are concrete and approved. Synthetic Auth/UI tests are not live employee acceptance.
-2. Next package: **AXIA Staff Onboarding — Controlled Activation Review**. Inspect actual signup/email-confirmation/redirect/SMTP settings read-only, select the project's approved sender/domain/provider, and identify one controlled employee test email/office/role. Prepare exact configuration and live-send/account actions for owner review. Do not fetch or disclose credentials, auto-send, disable confirmation, or change settings under a read-only review.
+1. Next package: **AXIA Developer Control & Isolated Staff Acceptance**. Read latest main and live role definitions; prepare the exact platform-role capabilities, bootstrap identity, tenant access boundaries, audit and replacement-owner procedure on a separate branch. Preserve the current sole owner until replacement access is proven. The owner's email alone must never bypass authorization.
+2. Prepare a separate fictitious-data office/employee fixture. Inspect actual signup/email-confirmation/redirect/SMTP settings read-only, select the project's approved sender/domain/provider, and identify one controlled employee test mailbox/office/role. Keep hosted registration off until concrete configuration and live-send/account actions are approved. Do not fetch or disclose credentials, auto-send, disable confirmation, or invent a real recipient.
 3. Then activate only the approved Preview scope and prove invitation → new account → email confirmation → explicit membership → task with real sessions. Preview shares Production's database: new users/memberships are live writes. Current owners already belong to offices and cannot stand in for a new employee.
 4. Never reapply `20261015081218_axia_staff_email_invitations.sql`; it is already live as `20261016083929`. Keep one cloud database as selected. No new project, old-history repair, Service Role or direct membership grants.
 5. Prove appropriate database/Auth/Storage recovery, persisted/versioned legal drafts and full client/matter/task/hearing/finance/document workflow before first-client handoff. Fingerprints are comparison evidence, not a restorable backup. Native Android packaging/integration remains later work.
-6. Obtain separate final-head approval before integrating PRs, merge or Production code deployment. Re-read main and both PR heads before choosing rollout order.
+6. PRs #42/#43 are already merged; do not merge their original source PRs again or assume they activated real signup. For subsequent implementation, present exact-head CI/Preview and concrete live changes before rollout. Re-read current main instead of continuing from an old branch.
 
 Historical database security/data evidence remains dated 2026-10-16; this package's live inspection was read-only. Auth settings, Secrets and SMTP are unchanged.
 
