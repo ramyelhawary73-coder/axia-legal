@@ -1,9 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ControlCenter, controlRequest } from "@/components/control-center";
 import type { PlatformAudit, PlatformOffice, PlatformPage } from "@/lib/platform-control";
 
 export function PlatformConsole({ onMfaRequired }: { onMfaRequired: () => void }) {
+  const [mode, setMode] = useState<"loading" | "foundation" | "control" | "unavailable">("loading");
+  useEffect(() => {
+    const controller = new AbortController();
+    void controlRequest<{ version: number }>("capabilities", null, {}, controller.signal)
+      .then(data => { if (!controller.signal.aborted) setMode(data.version === 1 ? "control" : "unavailable"); })
+      .catch(error => { if (!controller.signal.aborted) { if (error.message === "MFA_REQUIRED") onMfaRequired(); else setMode(error.message === "CONTROL_DISABLED" ? "foundation" : "unavailable"); } });
+    return () => controller.abort();
+  }, [onMfaRequired]);
+  if (mode === "loading") return <p role="status">جارٍ تحميل أدوات إدارة المنصة…</p>;
+  if (mode === "control") return <ControlCenter onMfaRequired={onMfaRequired} />;
+  return <>{mode === "unavailable" ? <p role="alert" className="mb-4 text-sm">مركز التحكم غير متاح حاليًا. العمليات الجديدة متوقفة؛ دليل المنصة الأساسي متاح أدناه.</p> : null}<FoundationPlatformConsole onMfaRequired={onMfaRequired} /></>;
+}
+
+function FoundationPlatformConsole({ onMfaRequired }: { onMfaRequired: () => void }) {
   const [tab, setTab] = useState<"offices" | "audit">("offices");
   const [cursor, setCursor] = useState<string | null>(null);
   const [data, setData] = useState<PlatformPage<PlatformOffice | PlatformAudit>>({ items: [], nextCursor: null });

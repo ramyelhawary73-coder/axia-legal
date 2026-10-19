@@ -19,6 +19,8 @@ const required = [
   "/api/platform/offices/route",
   "/api/platform/audit/route",
   "/api/platform/mfa/route",
+  "/api/platform/control/route",
+  "/api/drafts/route",
 ];
 const manifest = JSON.parse(
   await fs.readFile(".next/server/app-paths-manifest.json", "utf8"),

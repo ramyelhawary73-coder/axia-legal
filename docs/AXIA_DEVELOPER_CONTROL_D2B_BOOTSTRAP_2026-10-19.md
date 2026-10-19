@@ -1,6 +1,6 @@
 # AXIA Developer Control D2-B — Audited Operator Bootstrap
 
-Date: 2026-10-19. Bootstrap status: `VERIFIED`. Preview activation and actual app MFA/cookie acceptance remain `BLOCKED` by unavailable Vercel/browser access and the user's required private authenticator interaction. The owner authorized this step, including the real grant; another permission request is not the missing prerequisite.
+Date: 2026-10-19. Bootstrap status: `VERIFIED`. **Later same-day update:** the user completed private TOTP enrollment and protected app reads. Metadata checked at 11:21:50 UTC confirmed one verified own TOTP, a matching valid server `aal2` session and actual registry/audit user events. Owner Dashboard screenshots showed the correct branch redeployed Ready at `c8c14c0`. New-tab continuity and live revoke/restore remain unverified. The sections below preserve the earlier bootstrap observations, including its then-zero factors; they are not current factor counts. See [D3 acceptance](AXIA_CONTROL_CENTER_D3_ACCEPTANCE_2026-10-19.md) for the current scope and activation limits.
 
 ## Scope and current observations
 

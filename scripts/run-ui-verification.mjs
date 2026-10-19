@@ -10,7 +10,7 @@ const logPath=process.env.AXIA_UI_SERVER_LOG ?? "/tmp/axia-integration-ui-server
 const log=fs.openSync(logPath,"w");
 const dev=process.env.AXIA_UI_DEV === "1";
 const server=spawn(process.execPath,["node_modules/next/dist/bin/next",dev?"dev":"start",...(dev?["--webpack"]:[]),"-p",String(port),"-H","127.0.0.1"],{
-  stdio:["ignore",log,log],env:{...process.env,NEXT_TELEMETRY_DISABLED:"1",VERCEL_ENV:"preview",NEXT_PUBLIC_SUPABASE_URL:"",NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:"",AXIA_STAFF_REGISTRATION_ENABLED:"0",AXIA_STAFF_REGISTRATION_ORIGIN:"",AXIA_PLATFORM_CONTROL_ENABLED:"0",AXIA_PLATFORM_CONTROL_ORIGIN:""},
+  stdio:["ignore",log,log],env:{...process.env,NEXT_TELEMETRY_DISABLED:"1",VERCEL_ENV:"preview",NEXT_PUBLIC_SUPABASE_URL:"",NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:"",AXIA_STAFF_REGISTRATION_ENABLED:"0",AXIA_STAFF_REGISTRATION_ORIGIN:"",AXIA_PLATFORM_CONTROL_ENABLED:"0",AXIA_PLATFORM_CONTROL_ORIGIN:"",AXIA_CONTROL_CENTER_ENABLED:"0"},
 });
 try {
   let ready=false;

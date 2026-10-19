@@ -7,6 +7,9 @@ export type ApiErrorCode =
   | "WORKSPACE_MISSING"
   | "WORKSPACE_AMBIGUOUS"
   | "WORKSPACE_FORBIDDEN"
+  | "WORKSPACE_SUSPENDED"
+  | "WORKSPACE_EXPIRED"
+  | "MEMBER_SUSPENDED"
   | "VALIDATION_ERROR"
   | "NOT_FOUND"
   | "FORBIDDEN"
@@ -50,6 +53,12 @@ export function workspaceErrorResponse(code: WorkspaceErrorCode) {
         "الحساب مرتبط بأكثر من مؤسسة. يلزم تحديد مساحة العمل أولاً.",
         409,
       );
+    case "WORKSPACE_SUSPENDED":
+      return apiError(code, "وصول المكتب معلّق. تواصل مع إدارة المنصة؛ بيانات المكتب محفوظة.", 403);
+    case "WORKSPACE_EXPIRED":
+      return apiError(code, "انتهت مدة اشتراك المكتب. تواصل مع إدارة المنصة للتجديد.", 403);
+    case "MEMBER_SUSPENDED":
+      return apiError(code, "وصول حسابك لهذا المكتب معلّق. راجع إدارة المكتب أو المنصة.", 403);
     case "WORKSPACE_FORBIDDEN":
       return apiError(code, "مساحة العمل المطلوبة غير متاحة لهذا الحساب.", 403);
     default:
