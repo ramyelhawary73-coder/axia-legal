@@ -1,6 +1,6 @@
 # AXIA Developer Control D2-B — Audited Operator Bootstrap
 
-Date: 2026-10-19. Status: `IN_PROGRESS`. The owner approved starting the next step with authority to execute it. A real grant is not claimed until the live evidence is appended below.
+Date: 2026-10-19. Bootstrap status: `VERIFIED`. Preview activation and actual app MFA/cookie acceptance remain `BLOCKED` by unavailable Vercel/browser access and the user's required private authenticator interaction. The owner authorized this step, including the real grant; another permission request is not the missing prerequisite.
 
 ## Scope and current observations
 
@@ -35,8 +35,32 @@ Comparison manifest for the eight D1 function definitions: `fa47e6f2ac221d0d6286
 
 This branch starts from the reviewed D1 head and incorporates the five current documentation files from PR #47 at `2c9b811e9193b25067293cecaa1c79e673e1f92a`. D1 code, acceptance and review files are retained. The current Roadmap is reconciled here, so PR #45/#47 must not be merged separately as duplicate implementations.
 
-After exact-source CI passes, execute only the tested bootstrap with private identity inputs and capture one intended principal/event, unchanged tenant data/security/history and continued MFA-required/other-user denial. No migration replay. Do not infer user readiness from the row alone: real app TOTP/cookie acceptance still requires the user's own private authenticator flow and a reviewed Preview origin/flag. Never expose QR/seed/code in chat, screenshots or logs. App-switch off is not DB-principal revocation.
+The tested bootstrap has now been executed with private identity inputs after exact-source native CI passed. No migration replay. Do not infer user readiness from the row alone: real app TOTP/cookie acceptance still requires the user's own private authenticator flow and the reviewed Preview origin/flag. Never expose QR/seed/code in chat, screenshots or logs. App-switch off is not DB-principal revocation.
 
 ### Hosted result
 
-Pending exact-source CI and bootstrap execution. No live role grant or real MFA/cookie acceptance is claimed by this preparation commit.
+Source commit `e8290ccac235ce14a5ad3c98d611f0d0542273a9`; operator SQL SHA256 `47b5c5e69c613074dc47cae479675981893a7e0e0e1ca1550f9ecd07f16950b6`. [Source CI 39222494572](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/39222494572) completed/success: 147 app tests; 19 staff + 21 platform + 19 operator PGlite checks; 22 staff + 23 platform + 19 operator native PostgreSQL checks; Typecheck/Lint/Build with 15 required routes and 82 browser checks. Native version 17.11; hosted 17.6; PGlite 17.5. These runtimes differ.
+
+[Hosted metadata/hash evidence](evidence/axia-d2b-bootstrap-2026-10-19.json) confirms:
+
+- One active `platform_owner`, bound to exactly the privately verified developer identity; one automatic `platform.owner.bootstrap` event with operator attribution/null actor and the intended subject. No manual second event, foreign principal, new account or factor.
+- Existing 22 public tables / 1674 rows, public policies/grants/triggers, existing function definitions/ACLs/ownership, original history and selected Auth/factor/bucket metadata match before/after snapshots at 08:25:46 and 08:28:23 UTC. Migration count remains 23/latest `20261019080134`; no history repair/replay. Current office memberships are unchanged.
+- Transaction-local database acceptance used `SET LOCAL ROLE authenticated` and temporary claims with the developer's existing own session identifier. The context required MFA; registry/audit and direct private-table reads were denied. The existing other identity/metadata was forbidden and its registry read denied. The test transaction rolled back; principal/event counts remain 1/1. This is **database claim simulation, not a real signed-in browser/SDK/cookie acceptance test**; no token was minted/read, no factor enrolled and no successful privileged read recorded.
+- Verified/pending TOTP remain 0/0. Live revoke/restore were not performed; those exact transactions passed disposable tests. Security advisors have the same two WARNs and two expected private-table/no-policy INFO notices. Recovery remains unproved; no backup was created under the owner's instruction.
+
+### Exact owner action to finish Preview activation
+
+The Vercel connector is forbidden for the intended team, the extension lacks an originating browser context, and no local CLI/token/OIDC credentials are available. An anonymous request reached `https://vercel.com/login`, not the app API. No protection was disabled or bypass secret fetched. This is an access limitation, not missing owner authorization.
+
+1. Open [AXIA Vercel environment settings](https://vercel.com/ramyelhawary73-coders-projects/axia-legal/settings/environment-variables) in the owner's signed-in browser.
+2. Add/update only these non-secret **Config** values with **Preview** selected and Git branch **`feat/axia-developer-control-foundation`**. Do not apply them to Production or all Preview branches, and preserve every existing variable.
+
+| Key | Exact value |
+| --- | --- |
+| `AXIA_PLATFORM_CONTROL_ENABLED` | `1` |
+| `AXIA_PLATFORM_CONTROL_ORIGIN` | `https://axia-legal-git-feat-axia-ad3ef0-ramyelhawary73-coders-projects.vercel.app` |
+
+3. Redeploy the latest **Preview** for that same branch. Environment changes apply to new deployments, not an already-built one; [Vercel environment guidance](https://vercel.com/docs/environment-variables) confirms branch overrides and this behavior. No Merge or Production promotion is needed.
+4. Open the [exact branch-origin platform URL](https://axia-legal-git-feat-axia-ad3ef0-ramyelhawary73-coders-projects.vercel.app/platform), sign into the developer's existing app account and complete its private authenticator flow. Use this origin rather than a different deployment hostname because MFA POST validates the exact Origin. Do not send the QR, seed or six-digit code to chat or screenshots. Report success/error text without credentials.
+
+After the owner's private interaction, recheck actual factor/session `aal2`, app context and protected reads/cookie behavior, then perform separately bounded live revocation/restoration acceptance if needed. The console currently provides protected office registry/audit reads, not a blanket bypass of tenant legal data or every future administrative command. Preserve the sole Office Owner until the separate D3 handoff.

@@ -2,6 +2,8 @@
 
 Date: 2026-10-19. Status: `VERIFIED` for the migration and checks below; actual platform-user activation remains incomplete.
 
+Later same-day update: [D2-B](AXIA_DEVELOPER_CONTROL_D2B_BOOTSTRAP_2026-10-19.md) records the subsequently authorized, tested real bootstrap and current one-principal/one-event state. The zero-principal observations below belong to the earlier D2-A application step. Never rerun the migration to continue D2-B.
+
 ## Owner instruction and scope
 
 The owner explicitly requested SQL execution directly on the existing Supabase project, without creating a backup. That session instruction supersedes the preflight's proposed backup/restore prerequisite for this application. The increased recovery risk was explained before execution. No backup, logical export, restore drill or second hosted project was created. Recovery remains unproved; comparison hashes cannot restore data.
