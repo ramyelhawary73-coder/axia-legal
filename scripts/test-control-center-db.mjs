@@ -195,6 +195,9 @@ try {
   });
   await check('new offices require a confirmed existing unassigned owner, never create Auth accounts',async()=>{
     const before=Number((await db.query('select count(*) n from auth.users')).rows[0].n);
+    await db.query("update auth.users set email='fixture9@example.invalid' where id=$1",[uuid(10)]);
+    await deny(()=>call(1,'create',null,{name:'Ambiguous synthetic office',slug:'ambiguous-office',ownerEmail:'fixture9@example.invalid',reason}));
+    await db.query("update auth.users set email='fixture10@example.invalid' where id=$1",[uuid(10)]);
     for(const n of [8,2])await deny(()=>call(1,'create',null,{name:'Synthetic new office',slug:'synthetic-new',ownerEmail:`fixture${n}@example.invalid`,reason}));
     const r=await call(1,'create',null,{name:'Synthetic new office',slug:'synthetic-new',ownerEmail:"fixture9@example.invalid",reason});assert.ok(r.id);
     assert.equal(Number((await db.query('select count(*) n from auth.users')).rows[0].n),before);

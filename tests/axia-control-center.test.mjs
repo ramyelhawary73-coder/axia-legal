@@ -81,7 +81,7 @@ function draftHarness(options={}) {
   query.then=(resolve,reject)=>Promise.resolve({data:options.rows??[],error:options.readError??null}).then(resolve,reject);
   const client={auth:{getUser:async()=>{calls.push('fresh');return {data:{user:{id:options.foreignUser?id(2):uid}},error:null};}},from:table=>{calls.push(['from',table]);return query;},rpc:async(name,args)=>{calls.push({name,args});return {data:{id:draftId,revision:2},error:options.error??null};}};
   const api=load('src/app/api/drafts/route.ts',{
-    '@/lib/supabase/config':{getSupabasePublicConfig:()=>({url:'https://db.example'})},
+    '@/lib/supabase/config':{getSupabasePublicConfig:()=>options.unconfigured?null:({url:'https://db.example'})},
     '@/lib/api/workspace':{resolveWorkspace:async()=>{calls.push('workspace');return options.workspaceError?{ok:false,code:options.workspaceError}:{ok:true,supabase:client,userId:uid,organizationId:office,role:options.role??'staff'};}},
     '@/lib/api/errors':{workspaceErrorResponse:code=>Response.json({code},{status:403})},
     '@/lib/api/platform':{platformJson:(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'private, no-store'}})},
@@ -92,6 +92,7 @@ function draftHarness(options={}) {
 const draftRequest=(change={},headers={})=>new Request(origin+'/api/drafts',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json',...headers},body:JSON.stringify({officeId:office,id:draftId,revision:1,draft,...change})});
 test('draft activation, Origin, streamed size and payload identity fail before workspace or RPC',async()=>{
   const off=draftHarness({disabled:true});assert.equal((await off.api.GET(new Request(origin+'/api/drafts'))).status,503);assert.equal(off.calls.length,0);
+  const missing=draftHarness({unconfigured:true});const unavailable=await missing.api.GET(new Request(origin+'/api/drafts'));assert.equal(unavailable.status,503);assert.equal((await unavailable.json()).enabled,undefined);assert.equal(missing.calls.length,0);
   for(const req of [draftRequest({}, {Origin:'https://attacker.example'}),draftRequest({actorId:uid}),draftRequest({draft:{...draft,id:id(602)}}),draftRequest({draft:{...draft,contentHtml:'x'.repeat(1100001)}})]){
     const h=draftHarness();assert.ok((await h.api.POST(req)).status>=400);assert.equal(h.calls.length,0);
   }

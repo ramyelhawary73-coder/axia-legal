@@ -11,7 +11,7 @@
 > **Default branch:** `main`  
 > **Verified application main SHA:** `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`
 > **Current handoff branch:** `feat/axia-control-center-client-readiness`
-> **Current implementation:** isolated D3 control center, based on PR #46 (`c8c14c0`); no D3 hosted application or Merge. PR #45/#47 documentation incorporated.
+> **Current implementation PR:** Draft #48, isolated D3 control center based on PR #46 (`c8c14c0`); no D3 hosted application or Merge. PR #45/#47 documentation incorporated.
 
 ---
 
@@ -157,7 +157,7 @@ The following bootstrap bullets retain their earlier timestamp. Later at 11:21:5
 - The owner approved office-wide developer administration, monitoring and per-office backups. Branch `feat/axia-control-center-client-readiness` contains current PR #46 plus the new control center, manual subscription/status/limits, protected per-office member management, timed support and immutable audit.
 - Durable tenant/case-bound legal drafts now have conflict-safe saves, immutable revisions, archive and explicit legacy imports. Encrypted backup includes 17 fixed tenant datasets and all office file bytes. A fresh disposable database recovery verifies typed rows/FKs/history and exact staged binary hashes; hosted Storage service restore and real customer recovery are still unverified.
 - New migration source `20261019142538_axia_control_center_office_operations.sql` is **not applied**. No old migration edit/replay, membership removal, Auth account creation, mail, Secrets/SMTP change, Merge or Production deployment. `AXIA_CONTROL_CENTER_ENABLED` is default-off; a new branch does not inherit #46's branch-only origin/configuration.
-- [D3 acceptance and activation gates](AXIA_CONTROL_CENTER_D3_ACCEPTANCE_2026-10-19.md) records implementation, exact limits and evidence. Local Typecheck/Lint, 164 application tests, 27 isolated SQL checks and Build/17 routes are the verification targets; exact-head CI/Preview/browser evidence is recorded on the new Draft PR. Hosted history remains 23, two offices/two memberships; new controls/drafts are absent.
+- [D3 acceptance and activation gates](AXIA_CONTROL_CENTER_D3_ACCEPTANCE_2026-10-19.md) records implementation, exact limits and evidence. Local Typecheck/Lint, 164 application tests, 27 isolated SQL checks, Build/17 routes and 145 UI checks passed. Initial-source [CI 39290697289](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/39290697289) also passed, including 31 D3 native checks. Final exact-head CI/Preview is tracked on [Draft PR #48](https://github.com/ramyelhawary73-coder/axia-legal/pull/48); new-branch [Preview](https://axia-legal-git-feat-axia-d1c7df-ramyelhawary73-coders-projects.vercel.app/platform). Hosted history remains 23, two offices/two memberships; new controls/drafts are absent.
 - No blanket first-client readiness claim: real employee onboarding/mail, new-branch MFA/session acceptance, actual Storage quota/finalization and service recovery need their own controlled acceptance. Preserve the existing sole office owner membership.
 
 ## Supabase invitation audit and activation — historical 2026-10-16 evidence

@@ -160,6 +160,9 @@ try {
   }
   const disabledMfa=await fetch(base+"/api/platform/mfa",{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({action:"enroll"})});
   assert.equal(disabledMfa.status,503);assert.equal((await disabledMfa.json()).code,"PLATFORM_DISABLED");
+  const disabledControl=await fetch(base+"/api/platform/control",{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({action:"capabilities"})});
+  assert.equal(disabledControl.status,503);assert.equal((await disabledControl.json()).code,"CONTROL_DISABLED");
+  const disabledDrafts=await fetch(base+"/api/drafts");assert.equal(disabledDrafts.status,503);assert.equal((await disabledDrafts.json()).enabled,false);
   for(const width of [1440,390,320]) for(const theme of ["light","dark"]) {
     console.log(`UI login ${width}px ${theme}`);
     const {context}=await fixtureContext({width,height:900},theme);
@@ -363,6 +366,6 @@ try {
     assert.equal(draftRequests.length,1);assert.equal(await page.getByRole("button",{name:"تنزيل التعديلات غير المحفوظة",exact:true}).count(),1);
     await fits(page,"persistent-conflict-390-light");await context.close();
   }
-  await fs.writeFile(path.join(output,"report.json"),JSON.stringify({mode:"loopback UI contracts with synthetic API responses; not real Auth, MFA or email",compiledHttpSafetyChecks:7,checks:records},null,2));
+  await fs.writeFile(path.join(output,"report.json"),JSON.stringify({mode:"loopback UI contracts with synthetic API responses; not real Auth, MFA or email",compiledHttpSafetyChecks:9,checks:records},null,2));
   console.log(JSON.stringify({checks:records.length,output,records}));
 } finally {await browser.close();}

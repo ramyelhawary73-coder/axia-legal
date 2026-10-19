@@ -360,7 +360,9 @@ begin
       returning to_jsonb(office_controls) into after_row;
     result:=after_row;
   elsif p_action='create' then
-    select id into target from auth.users where lower(email)=lower(btrim(p_input->>'ownerEmail'));
+    -- Email is an operator selector, not authority: ambiguous identities fail closed.
+    select case when count(*)=1 then min(id::text)::uuid else null end into target
+      from auth.users where lower(email)=lower(btrim(p_input->>'ownerEmail'));
     if length(btrim(coalesce(p_input->>'name',''))) not between 2 and 120 or coalesce(p_input->>'slug','')!~'^[a-z0-9]+(-[a-z0-9]+)*$'
       or length(p_input->>'slug') not between 2 and 64 then raise exception using errcode='22023',message='CONTROL_INVALID'; end if;
     perform 1 from auth.users where id=target and email_confirmed_at is not null and not coalesce(is_anonymous,false)

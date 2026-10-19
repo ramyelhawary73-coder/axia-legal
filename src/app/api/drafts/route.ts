@@ -5,9 +5,10 @@ import { platformJson } from "@/lib/api/platform";
 import { PLATFORM_UUID } from "@/lib/platform-control";
 import { validDraft } from "@/lib/legal-draft-persistence";
 
-const enabled = () => process.env.AXIA_CONTROL_CENTER_ENABLED === "1" && !!getSupabasePublicConfig();
+const enabled = () => process.env.AXIA_CONTROL_CENTER_ENABLED === "1";
 export async function GET(request: Request) {
   if (!enabled()) return platformJson({ enabled: false }, 503);
+  if (!getSupabasePublicConfig()) return platformJson({ error: "إعداد الحفظ الدائم غير مكتمل. لم يتم تحميل بيانات بديلة." }, 503);
   const workspace = await resolveWorkspace(request);
   if (!workspace.ok) return workspaceErrorResponse(workspace.code);
   const auth = await workspace.supabase.auth.getUser();
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
   return platformJson({ enabled: true, organizationId: workspace.organizationId, userId: workspace.userId, userLabel: workspace.userLabel, drafts: data, canWrite: workspace.role !== "viewer" });
 }
 export async function POST(request: Request) {
-  if (!enabled()) return platformJson({ error: "الحفظ الدائم غير مفعّل." }, 503);
+  if (!enabled() || !getSupabasePublicConfig()) return platformJson({ error: "الحفظ الدائم غير مفعّل أو غير مهيأ." }, 503);
   if (request.headers.get("origin") !== new URL(request.url).origin) return platformJson({ error: "طلب غير مسموح." }, 403);
   const length = request.headers.get("content-length");
   if (length && (!/^\d+$/.test(length) || Number(length) > 1100000)) return platformJson({ error: "المسودة أكبر من الحد المدعوم." }, 413);
