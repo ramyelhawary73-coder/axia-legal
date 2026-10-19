@@ -3,6 +3,8 @@
 Date: 2026-10-18. Baseline: `main` at `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`.
 Branch: `feat/axia-developer-control-foundation`.
 
+2026-10-19 follow-up: this is the historical D1 source-preparation acceptance. The exact migration was subsequently applied under owner instruction as `20261019080134`; [D2-A report](AXIA_DEVELOPER_CONTROL_D2A_ACTIVATION_2026-10-19.md). [D2-B](AXIA_DEVELOPER_CONTROL_D2B_BOOTSTRAP_2026-10-19.md) records the separately authorized operator work and its current result. Do not replay D1 SQL, infer real role/MFA acceptance from this older report, or merge the incorporated PR #45/#47 documentation separately.
+
 The owner approved D1 according to [review PR #45](https://github.com/ramyelhawary73-coder/axia-legal/pull/45). That review's two documentation files are included here; do not merge the review branch separately as another implementation. D1 is application/source preparation and disposable tests only. No hosted SQL, role grant, account creation, email, Auth/provider configuration, Secrets/SMTP, membership removal, Merge or Production deployment is included.
 
 ## Implemented behavior
