@@ -1,8 +1,10 @@
 # AXIA Developer Control D2 — Read-only Preflight
 
-Date: 2026-10-18. Review status: `VERIFIED` for the observations below. Live activation: `BLOCKED` pending the recovery/configuration evidence and separate approvals below.
+Historical preflight date: 2026-10-18. Review status: `VERIFIED` for those observations. On that date live activation was `BLOCKED` pending the proposed evidence and separate approvals below.
 
-This package reviews the isolated D1 foundation. It does not activate it. No hosted SQL mutation, principal grant, Auth/MFA change, account creation, email, Secrets/SMTP change, merge or Production deployment was performed. The developer's existing sole-owner membership is preserved.
+**2026-10-19 update:** the owner explicitly requested direct execution on the existing project without creating a backup. The exact reviewed foundation migration has now been applied once as `20261019080134`. [D2-A activation report](AXIA_DEVELOPER_CONTROL_D2A_ACTIVATION_2026-10-19.md) is the current state and records that instruction, unchanged-data/security checks and remaining privilege/configuration gates. Do not reapply the source or treat the older backup proposal below as a new approval requirement for this completed action. No principal was seeded; recovery remains unproved.
+
+This historical package reviewed the isolated D1 foundation. During the 2026-10-18 preflight no hosted SQL mutation, principal grant, Auth/MFA change, account creation, email, Secrets/SMTP change, merge or Production deployment was performed. The developer's existing sole-owner membership is preserved.
 
 ## Source and deployment evidence
 
@@ -111,11 +113,11 @@ No ordinary endpoint grants/revokes roles, transfers office ownership, deletes f
 
 D2-D evidence must omit cookie values, tokens, codes, QR, seeds, emails and legal data. Browser fixtures cannot substitute for this acceptance. An owner-controlled existing second user may be used only with explicit test authorization; the current two owners are not new employee fixtures. Do not create a hidden test account or membership.
 
-## Immediate next action
+## Historical next action at the end of the 2026-10-18 preflight
 
 Complete the **recovery and exposed-schema evidence**, then prepare/test the exact operator transaction before asking for any live activation approval. The owner can privately open:
 
 - [Data API settings](https://supabase.com/dashboard/project/qshgczulivsxztgrbqew/settings/api): provide only the Exposed schemas names.
 - [Database Backups](https://supabase.com/dashboard/project/qshgczulivsxztgrbqew/database/backups): establish whether a usable backup exists. On the free plan, use a private logical export and local restore drill when hosted restore is unavailable; do not create a second hosted project or post a database URL/password.
 
-This is a preflight handoff, not a request to paste/run SQL now. No Merge or Production deployment is approved. The developer platform identity is prepared but has no live authority yet; first-client readiness remains blocked by the documented staff, recovery and business-workflow acceptance gates.
+This was a preflight handoff, not a request to paste/run SQL. The new foundation has since been applied under the owner's 2026-10-19 instruction; see the linked activation report before continuing. No Merge or Production deployment is approved. The developer platform identity has no live authority yet; staff and business-workflow acceptance and unproved recovery remain delivery concerns.
