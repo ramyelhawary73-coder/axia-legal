@@ -1,0 +1,355 @@
+{
+  "scope": "D2 read-only preflight; no hosted mutation or restore",
+  "project_ref": "qshgczulivsxztgrbqew",
+  "main_sha": "c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d",
+  "d1_pr": 46,
+  "d1_head": "f1e68b0f713d183b948e3dfe972c7a282d6a8bf4",
+  "migration_source": "20261018173401_axia_platform_owner_foundation.sql",
+  "migration_sha256": "2f9a60b32b3ad1f29956953d9c06a68859742f40840bf208d08c1e107f657ce8",
+  "fingerprint_method": "MD5 comparison only, not backup/integrity protection. Per table: md5(string_agg(md5(to_jsonb(row)::text), '' order by md5(to_jsonb(row)::text))); empty input uses ''. Captured in one repeatable-read read-only transaction.",
+  "baseline": {
+    "captured_at": "2026-10-18T18:51:18.376777+00:00",
+    "public_data": [
+      {
+        "rows_md5": "576d60263ffaedaef16ca766aa94ab26",
+        "row_count": 3,
+        "table_name": "audit_logs"
+      },
+      {
+        "rows_md5": "d41d8cd98f00b204e9800998ecf8427e",
+        "row_count": 0,
+        "table_name": "client_powers_of_attorney"
+      },
+      {
+        "rows_md5": "901009b45b37104e9879dabec878f86e",
+        "row_count": 2,
+        "table_name": "clients"
+      },
+      {
+        "rows_md5": "d41d8cd98f00b204e9800998ecf8427e",
+        "row_count": 0,
+        "table_name": "documents"
+      },
+      {
+        "rows_md5": "d41d8cd98f00b204e9800998ecf8427e",
+        "row_count": 0,
+        "table_name": "financial_records"
+      },
+      {
+        "rows_md5": "d41d8cd98f00b204e9800998ecf8427e",
+        "row_count": 0,
+        "table_name": "hearings"
+      },
+      {
+        "rows_md5": "32ff7badb73a2670f9227e311920438b",
+        "row_count": 1,
+        "table_name": "legal_document_reviews"
+      },
+      {
+        "rows_md5": "d41d8cd98f00b204e9800998ecf8427e",
+        "row_count": 0,
+        "table_name": "legal_ingestion_jobs"
+      },
+      {
+        "rows_md5": "a8755fb4081d6a92595b87f345a945d2",
+        "row_count": 5,
+        "table_name": "legal_ingestion_scope"
+      },
+      {
+        "rows_md5": "15eea28cd47a1118f35c9a350acc7c44",
+        "row_count": 1644,
+        "table_name": "legal_knowledge_chunks"
+      },
+      {
+        "rows_md5": "c312a8c22087ab7e3b15ea5193b0f426",
+        "row_count": 2,
+        "table_name": "legal_knowledge_documents"
+      },
+      {
+        "rows_md5": "121c4b45638df3c6b4d04935e2675bae",
+        "row_count": 1,
+        "table_name": "legal_source_snapshots"
+      },
+      {
+        "rows_md5": "f17a20df64f4b05ceb93c8ce6446fb12",
+        "row_count": 5,
+        "table_name": "legal_sources"
+      },
+      {
+        "rows_md5": "7772ef823adbe2889848ca8a9234d027",
+        "row_count": 2,
+        "table_name": "matter_members"
+      },
+      {
+        "rows_md5": "d41d8cd98f00b204e9800998ecf8427e",
+        "row_count": 0,
+        "table_name": "matter_parties"
+      },
+      {
+        "rows_md5": "220dede7ed25d90d748d3f3a16065a0a",
+        "row_count": 2,
+        "table_name": "matters"
+      },
+      {
+        "rows_md5": "561cd97ea3668885ce601a4db7d66bbd",
+        "row_count": 2,
+        "table_name": "organization_members"
+      },
+      {
+        "rows_md5": "83d47f117f025e806f747eb038af7da3",
+        "row_count": 2,
+        "table_name": "organizations"
+      },
+      {
+        "rows_md5": "0cd59bdabfa547337a555f439a7728b1",
+        "row_count": 2,
+        "table_name": "profiles"
+      },
+      {
+        "rows_md5": "d41d8cd98f00b204e9800998ecf8427e",
+        "row_count": 0,
+        "table_name": "rajih_action_requests"
+      },
+      {
+        "rows_md5": "d41d8cd98f00b204e9800998ecf8427e",
+        "row_count": 0,
+        "table_name": "staff_invitations"
+      },
+      {
+        "rows_md5": "186469728f25be894c3c1a4cc55089c6",
+        "row_count": 1,
+        "table_name": "tasks"
+      }
+    ],
+    "public_policies_md5": "a2aa00335883d19df807056c6b8f9ff3",
+    "public_triggers_md5": "827a6de6f8623e2834dabdec1ba9abe3",
+    "migration_history_md5": "5fb7f698b4d23341994ed7cb74c93bf1",
+    "public_table_grants_md5": "a160795008ad16cbf72844d2b6677de7",
+    "public_private_functions_md5": "9a05e5db0c2b7ccf5e65742bbeceac7f"
+  },
+  "prerequisites": {
+    "counts": {
+      "users": 2,
+      "offices": 2,
+      "migrations": 22,
+      "invitations": 0,
+      "memberships": 2
+    },
+    "pg_version": "PostgreSQL 17.6 on aarch64-unknown-linux-gnu, compiled by gcc (GCC) 15.2.0, 64-bit",
+    "public_rls": {
+      "forced": 4,
+      "tables": 22,
+      "enabled": 22
+    },
+    "latest_migration": "20261016083929",
+    "platform_relations": [],
+    "private_schema_acl": "{postgres=UC/postgres,authenticated=U/postgres}",
+    "prerequisite_columns": [
+      {
+        "type": "uuid",
+        "table": "users",
+        "column": "id"
+      },
+      {
+        "type": "timestamptz",
+        "table": "users",
+        "column": "email_confirmed_at"
+      },
+      {
+        "type": "timestamptz",
+        "table": "users",
+        "column": "banned_until"
+      },
+      {
+        "type": "bool",
+        "table": "users",
+        "column": "is_anonymous"
+      },
+      {
+        "type": "uuid",
+        "table": "mfa_factors",
+        "column": "id"
+      },
+      {
+        "type": "uuid",
+        "table": "mfa_factors",
+        "column": "user_id"
+      },
+      {
+        "type": "factor_type",
+        "table": "mfa_factors",
+        "column": "factor_type"
+      },
+      {
+        "type": "factor_status",
+        "table": "mfa_factors",
+        "column": "status"
+      },
+      {
+        "type": "uuid",
+        "table": "sessions",
+        "column": "id"
+      },
+      {
+        "type": "uuid",
+        "table": "sessions",
+        "column": "user_id"
+      },
+      {
+        "type": "uuid",
+        "table": "sessions",
+        "column": "factor_id"
+      },
+      {
+        "type": "aal_level",
+        "table": "sessions",
+        "column": "aal"
+      },
+      {
+        "type": "timestamptz",
+        "table": "sessions",
+        "column": "not_after"
+      }
+    ],
+    "configured_pgrst_schemas": [],
+    "connection_pgrst_schemas": null
+  },
+  "collision_review": {
+    "tables": [
+      "audit_logs",
+      "client_powers_of_attorney",
+      "clients",
+      "documents",
+      "financial_records",
+      "hearings",
+      "legal_document_reviews",
+      "legal_ingestion_jobs",
+      "legal_ingestion_scope",
+      "legal_knowledge_chunks",
+      "legal_knowledge_documents",
+      "legal_source_snapshots",
+      "legal_sources",
+      "matter_members",
+      "matter_parties",
+      "matters",
+      "organization_members",
+      "organizations",
+      "profiles",
+      "rajih_action_requests",
+      "staff_invitations",
+      "tasks"
+    ],
+    "server_time": "2026-10-18T18:50:50.074623+00:00",
+    "platform_types": [],
+    "platform_triggers": [],
+    "platform_functions": [],
+    "private_default_acl": [],
+    "tenant_helper_fingerprints": [
+      {
+        "md5": "badb3ca7e08aa432d00c2adb69f98e0f",
+        "signature": "private.add_organization_owner()"
+      },
+      {
+        "md5": "ba7f315cbc806fd0397f3dde927e58fe",
+        "signature": "private.has_organization_role(uuid,app_role[])"
+      },
+      {
+        "md5": "8ed5533d0e6c7e401ad2a46a2b530c1d",
+        "signature": "private.is_organization_member(uuid)"
+      }
+    ],
+    "public_security_fingerprint": "a2aa00335883d19df807056c6b8f9ff3"
+  },
+  "runtime_prerequisites": {
+    "extensions": [
+      {
+        "version": "1.11",
+        "extension": "pg_stat_statements"
+      },
+      {
+        "version": "1.3",
+        "extension": "pgcrypto"
+      },
+      {
+        "version": "1.0",
+        "extension": "plpgsql"
+      },
+      {
+        "version": "0.3.1",
+        "extension": "supabase_vault"
+      },
+      {
+        "version": "1.1",
+        "extension": "uuid-ossp"
+      },
+      {
+        "version": "0.8.2",
+        "extension": "vector"
+      }
+    ],
+    "operator_role": "postgres",
+    "storage_buckets": 1,
+    "storage_objects": 0,
+    "auth_factor_enums": [
+      {
+        "type": "aal_level",
+        "value": "aal1"
+      },
+      {
+        "type": "aal_level",
+        "value": "aal2"
+      },
+      {
+        "type": "aal_level",
+        "value": "aal3"
+      },
+      {
+        "type": "factor_status",
+        "value": "unverified"
+      },
+      {
+        "type": "factor_status",
+        "value": "verified"
+      },
+      {
+        "type": "factor_type",
+        "value": "totp"
+      },
+      {
+        "type": "factor_type",
+        "value": "webauthn"
+      },
+      {
+        "type": "factor_type",
+        "value": "phone"
+      },
+      {
+        "type": "factor_type",
+        "value": "recovery_code"
+      }
+    ],
+    "operator_has_no_user_claim": true
+  },
+  "developer_identity_check": {
+    "matched_users": 1,
+    "confirmed": true,
+    "anonymous": false,
+    "banned": false,
+    "owner_memberships": 1,
+    "other_office_owners": 0,
+    "verified_totp": 0,
+    "pending_totp": 0,
+    "identity_values_omitted": true
+  },
+  "unresolved_gates": [
+    "Restorable database/Auth backup and recovery proof",
+    "Actual Data API exposed schema list",
+    "Vercel scoped environment configuration and exact Preview origin",
+    "Separate approval for hosted migration/bootstrap/MFA/configuration"
+  ],
+  "recheck": {
+    "captured_at": "2026-10-18T18:55:35.170089+00:00",
+    "all_baseline_values_identical": true,
+    "comparison_covers": "All 22 public table row counts/hashes, public policies/grants/triggers, public/private function definitions/ACLs/ownership and the existing migration history. Auth internals, live provider configuration and Storage file bytes are outside these fingerprints."
+  }
+}

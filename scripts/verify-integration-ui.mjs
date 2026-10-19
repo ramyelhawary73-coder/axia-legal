@@ -17,7 +17,7 @@ const employee="00000000-0000-4000-8000-000000000002";
 const taskId="00000000-0000-4000-8000-000000000101";
 const inviteId="00000000-0000-4000-8000-000000000201";
 const records=[];
-async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=false,registrationEnabled=registrationFlow}={}) {
+async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=false,registrationEnabled=registrationFlow,platformMode=null,platformNoOffice=false}={}) {
   const context=await browser.newContext({viewport,colorScheme:theme,locale:"ar-EG",acceptDownloads:true});
   await context.addInitScript(({theme,autoExport})=>{
     localStorage.setItem("theme",theme);
@@ -28,6 +28,8 @@ async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=
   const mutations=[];
   const registrationRequests=[];
   const events={accepted:0};
+  let platformState=platformMode;
+  const platformRequests=[];
   let staffConfirmed=!registrationFlow;
   await context.route("**/*",async route=>{
     const request=route.request(),url=new URL(request.url());
@@ -46,6 +48,22 @@ async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=
     if(url.pathname==="/api/tasks") data={organizationId:"office-test",userId:owner,assigneeLabel:"مالك الاختبار",canReassign:true,
       matters:[],assignees:[{id:owner,name:"مالك الاختبار",matterIds:[]},{id:employee,name:"موظف الاختبار",matterIds:[]}],
       tasks:[{id:taskId,title:"مهمة اختبار",category:"قلم المحضرين",courtOrBailiffOffice:"مكتب اختبار",assignedToUserId:assignedTo,assignedTo:assignedTo===owner?"مالك الاختبار":"موظف الاختبار",deadline:"2030-10-20",priority:"عادية",status:"قيد التنفيذ"}]};
+    if(url.pathname==="/api/tasks" && platformNoOffice) {status=409;data={code:"WORKSPACE_MISSING",error:"لا توجد مؤسسة مرتبطة بهذا الحساب."};}
+    if(url.pathname==="/api/platform/context") {
+      status=platformState==="forbidden"?403:platformState==="missing"?503:platformState?200:503;
+      data=platformState==="ready"||platformState==="mfa_required"?{state:platformState}:{code:platformState==="forbidden"?"PLATFORM_FORBIDDEN":platformState==="missing"?"PLATFORM_UNAVAILABLE":"PLATFORM_DISABLED"};
+    }
+    if(url.pathname==="/api/platform/offices") data={items:[{id:owner,name:"مكتب تجربة وهمي",slug:"synthetic-office",createdAt:"2026-01-01"}],nextCursor:null};
+    if(url.pathname==="/api/platform/audit") data={items:[{id:inviteId,actorId:null,actorType:"operator",subjectId:owner,action:"platform.owner.bootstrap",createdAt:"2026-01-01"}],nextCursor:null};
+    if(url.pathname==="/api/platform/mfa") {
+      if(request.method()==="GET") data={factors:[]};
+      else {
+        const body=request.postDataJSON();platformRequests.push(body);
+        if(body.action==="enroll") data={factorId:inviteId,qrCode:"data:image/svg+xml;utf-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192"><rect width="192" height="192" fill="white"/></svg>')};
+        else if(body.code==="123456") {platformState="ready";data={verified:true};}
+        else {status=503;data={code:"MFA_UNAVAILABLE"};}
+      }
+    }
     if(url.pathname==="/api/library") data={documents:[{id:"reviewed-test",title:"مصدر اختبار مراجَع",version:"١",court:"محكمة الاختبار",legalArea:"مدني",sourceUrl:"https://example.invalid/legal",publicationDate:"2026-01-01",reviewedAt:"2026-10-15T10:00:00Z"}],truncated:false};
     if(url.pathname==="/api/staff-invitations") {
       if(request.method()==="POST") {
@@ -75,7 +93,7 @@ async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=
     }
     await route.fulfill({status,contentType:"application/json",body:JSON.stringify(data)});
   });
-  return {context,mutations,registrationRequests,events};
+  return {context,mutations,registrationRequests,events,platformRequests};
 }
 async function fits(page,label) {
   const metrics=await page.evaluate(()=>({viewport:innerWidth,document:document.documentElement.scrollWidth}));
@@ -99,6 +117,13 @@ try {
   const disabledConfirmation=await fetch(base+"/auth/confirm?code=fixture-only",{redirect:"manual"});
   assert.equal(disabledConfirmation.status,303);
   assert.match(disabledConfirmation.headers.get("location"),/\/invitations\/accept\?confirmation=unavailable$/);
+  for(const endpoint of ["context","offices","audit","mfa"]) {
+    const response=await fetch(base+"/api/platform/"+endpoint);
+    assert.equal(response.status,503);assert.equal((await response.json()).code,"PLATFORM_DISABLED");
+    assert.match(response.headers.get("cache-control"),/no-store/);assert.equal(response.headers.get("x-frame-options"),"DENY");
+  }
+  const disabledMfa=await fetch(base+"/api/platform/mfa",{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({action:"enroll"})});
+  assert.equal(disabledMfa.status,503);assert.equal((await disabledMfa.json()).code,"PLATFORM_DISABLED");
   for(const width of [1440,390,320]) for(const theme of ["light","dark"]) {
     console.log(`UI login ${width}px ${theme}`);
     const {context}=await fixtureContext({width,height:900},theme);
@@ -189,6 +214,47 @@ try {
     assert.equal(registrationRequests.length,0);
     await fits(page,"registration-disabled-390-light");await context.close();
   }
-  await fs.writeFile(path.join(output,"report.json"),JSON.stringify({mode:"loopback UI contracts with synthetic API responses; not real Auth or email",checks:records},null,2));
+  for(const width of [1440,390,320]) for(const theme of ["light","dark"]) {
+    console.log(`UI platform ${width}px ${theme}`);
+    const {context}=await fixtureContext({width,height:900},theme,{platformMode:"ready",platformNoOffice:true});
+    const page=await context.newPage();const errors=[];page.on("pageerror",e=>errors.push(e.message));
+    await page.goto(base+"/");
+    await page.getByRole("button",{name:"قائمة الحساب والمكتب",exact:true}).click();
+    await page.getByRole("link",{name:"إدارة المنصة",exact:true}).click();
+    await page.waitForURL(base+"/platform");
+    assert.equal(new URL(page.url()).pathname,"/platform");
+    await page.getByRole("heading",{name:"مكتب تجربة وهمي",exact:true}).waitFor();
+    await fits(page,`platform-offices-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`platform-offices-${width}-${theme}.png`),fullPage:true});
+    await page.getByRole("button",{name:"سجل إدارة المنصة",exact:true}).click();
+    await page.getByRole("heading",{name:"platform.owner.bootstrap",exact:true}).waitFor();
+    await fits(page,`platform-audit-${width}-${theme}`);assert.deepEqual(errors,[]);await context.close();
+
+    const mfa=await fixtureContext({width,height:900},theme,{platformMode:"mfa_required"});
+    const mfaPage=await mfa.context.newPage();await mfaPage.goto(base+"/platform");
+    await mfaPage.getByRole("button",{name:"ربط تطبيق المصادقة",exact:true}).waitFor();
+    await fits(mfaPage,`platform-mfa-${width}-${theme}`);
+    // Capture only the initial state. Never capture/log an enrollment QR or seed.
+    await mfaPage.screenshot({path:path.join(output,`platform-mfa-${width}-${theme}.png`),fullPage:true});
+    await mfaPage.getByRole("button",{name:"ربط تطبيق المصادقة",exact:true}).click();
+    await mfaPage.getByLabel("رمز تطبيق المصادقة",{exact:true}).fill("000000");
+    await mfaPage.getByRole("button",{name:"تأكيد الرمز",exact:true}).click();
+    await mfaPage.getByRole("alert").waitFor();
+    await mfaPage.getByLabel("رمز تطبيق المصادقة",{exact:true}).fill("123456");
+    await mfaPage.getByRole("button",{name:"تأكيد الرمز",exact:true}).click();
+    await mfaPage.getByRole("heading",{name:"مكتب تجربة وهمي",exact:true}).waitFor();
+    assert.deepEqual(mfa.platformRequests.map(x=>x.action),["enroll","verify","verify"]);
+    const stored=await mfaPage.evaluate(()=>JSON.stringify([Object.entries(localStorage),Object.entries(sessionStorage)]));
+    assert.ok(!stored.includes("data:image")&&!stored.includes(inviteId),"MFA seed/factor data must not persist");
+    await fits(mfaPage,`platform-verified-${width}-${theme}`);await mfa.context.close();
+  }
+  for(const platformMode of [null,"forbidden","missing"]) {
+    const {context}=await fixtureContext({width:320,height:900},"light",{platformMode});
+    const page=await context.newPage();await page.goto(base+"/platform");
+    await page.getByRole("heading",{name:platformMode?"الوصول إلى إدارة المنصة غير متاح":"إدارة المنصة غير مفعلة",exact:true}).waitFor();
+    assert.equal(await page.getByRole("button",{name:"ربط تطبيق المصادقة",exact:true}).count(),0);
+    await fits(page,`platform-unavailable-${platformMode??"disabled"}`);await context.close();
+  }
+  await fs.writeFile(path.join(output,"report.json"),JSON.stringify({mode:"loopback UI contracts with synthetic API responses; not real Auth, MFA or email",compiledHttpSafetyChecks:7,checks:records},null,2));
   console.log(JSON.stringify({checks:records.length,output,records}));
 } finally {await browser.close();}

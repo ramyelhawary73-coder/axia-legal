@@ -6,11 +6,12 @@
 >
 > **Rule:** every implementation PR must update this file before it is considered complete.
 >
-> **Last verified:** 2026-10-17
+> **Last verified:** 2026-10-19
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
-> **Verified application main SHA:** `8c23e47b57f3f3997c1d07be37bdcacbe8192f76`
-> **Current handoff branch:** `docs/axia-merge-developer-handoff`
+> **Verified application main SHA:** `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`
+> **Current handoff branch:** `feat/axia-platform-owner-bootstrap`
+> **Current implementation PR:** #46 (`feat/axia-developer-control-foundation`); PR #45/#47 documentation incorporated
 
 ---
 
@@ -83,14 +84,14 @@ Statements under **Current State** should be treated as verified only when a liv
 
 # 3. Current State
 
-GitHub/build integration verified 2026-10-17; the detailed live database/security activation audit is dated 2026-10-16. Detailed evidence, limits, employee invitation design and delivery gates: [Combined integration acceptance](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md). Historical sections below retain their original verification dates; they do not override this current audit.
+GitHub/main and hosted developer bootstrap verified 2026-10-19. [D2-B report](AXIA_DEVELOPER_CONTROL_D2B_BOOTSTRAP_2026-10-19.md) is the current authority state: one intended active Platform Owner and one operator audit event, existing memberships/data/security preserved, real MFA/Preview acceptance pending. [D2-A](AXIA_DEVELOPER_CONTROL_D2A_ACTIVATION_2026-10-19.md) records the already-applied foundation source; [historical preflight](AXIA_DEVELOPER_CONTROL_D2_PREFLIGHT_2026-10-18.md) retains its earlier observations. The detailed invitation rollback-test audit remains dated 2026-10-16: [Combined integration acceptance](AXIA_STAFF_ACTIVATION_ACCEPTANCE_2026-10-15.md). Historical sections do not override newer observations or turn simulated claims into real Auth/cookie acceptance.
 
 ## GitHub and deployment
 
 - Repository: `ramyelhawary73-coder/axia-legal`; default branch `main`.
-- Verified application main SHA: `8c23e47b57f3f3997c1d07be37bdcacbe8192f76`. The owner explicitly approved merge on 2026-10-17. PR #42 merged as `3b802f00e2548a6f1fbbf9484bde13a9a25ad64f`; PR #43 was then retargeted to main and merged as `8c23e47b57f3f3997c1d07be37bdcacbe8192f76`. Both were merged with exact expected-head guards; branches were retained.
+- Verified application main SHA: `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`. Owner-approved PRs #42/#43/#44 merged on 2026-10-17 as `3b802f00e2548a6f1fbbf9484bde13a9a25ad64f`, `8c23e47b57f3f3997c1d07be37bdcacbe8192f76` and `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`. Expected-head guards were used; branches were retained.
 - Owner-approved PR #39 merged the AXIA visual/login work; tested head `0df76142b511459edb9c5cba6d275efa0e7a1d82`.
-- Final main tree `0c7518d1fd277129dd7784e5c20037dfd63f9d24` exactly matches tested PR #43 head `47b397e`. [Pre-merge CI](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/39016845609) passed 130 application tests, 19 PGlite checks, 22 native PostgreSQL checks, Typecheck, Lint, Build, 10 compiled routes, 55 browser checks and two compiled HTTP safety checks. [Post-merge CI](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/39057155789) and the normal Vercel Git deployment started automatically; inspect their final statuses rather than assuming completion. The earlier root Android directory collision is fixed in merged main.
+- Main tree `449246ec4e57debc830a655d99bda8fac57a7fb2` matches tested PR #44 head `b52f82a`. [Main CI](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/39057754119) is completed/success on that exact main, rechecked 2026-10-18; its recorded baseline is 130 application tests, 19 PGlite checks, 22 native PostgreSQL checks, Typecheck/Lint/Build, 10 routes and 55 browser checks. The same-head [Vercel status](https://vercel.com/ramyelhawary73-coders-projects/axia-legal/XKM5LcgRsNous9FxheHTZ8w18C5u) is success. The Android directory collision is fixed in merged main.
 - Authenticated login, employee flows and full mobile workflow acceptance are not established by visual approval or successful builds.
 - Direct Vercel project inspection returns 403. Owner-supplied Dashboard screenshots show Production and All Pre-Production Environments sharing `qshgczulivsxztgrbqew`; independent inspection inside each deployed build remains unavailable.
 - Merged PR #42 combines PR #40 at `2a189f0bbde7141f43160dc3b714861eb6684c10` and PR #41 at `576bf1fcdf39d78fc3a6d6e5fb908b112eecf05f`, preserving both patches and Android additions. The source PRs were not merged separately; do not duplicate their integration.
@@ -116,16 +117,40 @@ The owner approved starting the proposed registration package, then separately a
 - SQL, RLS, dependencies, Android and existing login actions are unchanged. CI accepts this stacked PR's exact base branch without changing job permissions or adding deployments.
 - [Registration acceptance and controlled activation plan](AXIA_STAFF_REGISTRATION_ACCEPTANCE_2026-10-17.md) is the current next-package handoff. No first-client delivery claim is made from synthetic tests.
 
-## Developer identity and separate test employee — READY_FOR_SCOPE
+## Developer identity and separate test employee — IN_PROGRESS
 
 - Owner requirement accepted on 2026-10-17: the owner's confirmed developer identity should administer the platform separately from normal office staffing; employee testing should use a separate identity with fictitious business data.
 - Fresh read-only inspection found that identity is the sole `owner` of its existing office, with no other owner. Current workspace APIs require an `organization_members` membership, and no independent platform/developer role table exists. Removing the membership now would remove office access without providing platform control. No membership, profile or Auth record was changed.
-- Next implementation must introduce a separately reviewed platform role tied to verified user identity, explicit administrative capabilities, audit logging and tenant boundaries. No hardcoded email bypass, blanket RLS bypass or ordinary staff promotion into platform administration. Prove replacement access and office ownership continuity before removing the current owner membership.
+- D1 now prepares a separate UUID-based role, bounded console, MFA and audit on unmerged PR #46. No live platform authority exists yet. No hardcoded email bypass, blanket RLS bypass or ordinary staff promotion. Prove platform access and real replacement office ownership before removing the current sole owner membership.
 - Existing automated tests use isolated synthetic identities and data; they are not real mailboxes or hosted Auth users. Prepare a separate sandbox office and least-privilege employee fixture for controlled live acceptance. A real confirmation test needs an explicitly selected mailbox under the owner's control; do not invent a recipient or send to `example.invalid`.
-- Follow-up UI fix removes the developer's hardcoded email, personal profile name/avatar and unverified professional badge from the account menu. It uses the existing server-resolved task/workspace user label with a neutral fallback. The legacy mock client now uses `staff.demo@example.invalid` and a fictitious employee name. This changes display/fixtures only; it does not create a platform role or remove live office membership. Other pre-existing demo office labels remain a separate data-binding task.
+- Merged PR #44 removed the developer's hardcoded email, personal profile name/avatar and unverified professional badge from the account menu. It uses the existing server-resolved task/workspace user label with a neutral fallback. The legacy mock client uses `staff.demo@example.invalid` and a fictitious employee name. This changed display/fixtures only; it created no platform role or membership change. Other demo office labels remain a separate data-binding task.
 - Merging these application changes does not activate hosted signup or authorize SMTP/Secrets changes, real email or account creation. These remain separate gates.
 
-## Supabase audit and explicitly approved activation
+## Developer Control D1 — PREVIEW_READY, unmerged application; database foundation now applied
+
+- [Draft PR #46](https://github.com/ramyelhawary73-coder/axia-legal/pull/46), branch `feat/axia-developer-control-foundation`. Initial D1 head was `f1e68b0f713d183b948e3dfe972c7a282d6a8bf4` with 27 files; D2-B's tested operator source is `e8290ccac235ce14a5ad3c98d611f0d0542273a9`, followed by result documentation. Read PR #46 for its latest exact head/CI. [Pinned initial acceptance](https://github.com/ramyelhawary73-coder/axia-legal/blob/f1e68b0f713d183b948e3dfe972c7a282d6a8bf4/docs/AXIA_DEVELOPER_CONTROL_D1_ACCEPTANCE_2026-10-18.md) includes PR #45's contract; #45/#47 are incorporated documentation, not separate runtime merges.
+- `/platform` and guarded context/registry/audit/MFA routes are prepared. Registry fields are bounded office metadata, not legal contents. Default switch/origin keep activation off. Existing SSR login, tenant authority, memberships and Android remain preserved.
+- New migration source `20261018173401_axia_platform_owner_foundation.sql`, SHA256 `2f9a60b32b3ad1f29956953d9c06a68859742f40840bf208d08c1e107f657ce8`, was applied once on 2026-10-19 as `20261019080134_axia_platform_owner_foundation`. The hosted statement hash exactly matches the source. It seeds nobody and changes no old migration or tenant policy/helper. Bootstrap/revoke/restore audit is generated by its trigger, not fabricated user claims. Never rename/replay this source or repair older history.
+- Exact-head [CI](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/39151943804) and Vercel status success: 147 app tests, 19+21 staff/platform PGlite checks, 22+23 staff/platform native checks, Typecheck/Lint/Build, 15 routes and 82 browser checks. Native logs prove two platform locking races. The [D1 Preview](https://axia-legal-git-feat-axia-ad3ef0-ramyelhawary73-coders-projects.vercel.app/platform) is prepared, not authenticated hosted acceptance. No factor, account, mail, role grant, merge or Production activation occurred.
+
+## Developer Control D2-A — database foundation VERIFIED; user/Preview activation pending
+
+- [Current activation report](AXIA_DEVELOPER_CONTROL_D2A_ACTIVATION_2026-10-19.md) and [before/after evidence](evidence/axia-d2a-activation-2026-10-19.json) record the exact hosted application. On 2026-10-19 the owner explicitly requested execution on the existing project without creating a backup. No backup/export/restore was performed; recovery remains unproved. This instruction supersedes the old backup proposal for this completed application, not every future high-impact action.
+- Fresh shared-project state: PostgreSQL 17.6; 2 users, 2 offices, 2 memberships, 0 invitations; 23 migration records/latest `20261019080134`. Two new private platform tables have RLS enabled/forced and no direct client table privileges; eight functions, five enabled triggers and five valid indexes match the reviewed boundary. Public RLS remains enabled on 22 tables, four FORCE it.
+- Before/after comparison matched all 1674 rows across 22 public tables, public policies/grants/triggers, existing public/private function definitions/ACLs/ownership, original 22 migration records, selected Auth identity/factor metadata and bucket metadata. Storage object count remains zero. Fingerprints are comparison evidence, not a backup. No live business test write or actual-user MFA test was performed.
+- At the end of D2-A, principals/events were zero and empty-context RPC returned forbidden. The subsequent D2-B result below records the one intended active principal/operator event. Existing office membership and Auth settings were preserved. Advisors add two expected INFO notices for private RLS tables without policies; existing two WARNs remain. Do not add broad table policies/grants to silence INFO.
+- Next: prepare/disposable-test the exact private UUID bootstrap/no-op/revoke/restore transactions and present the concrete role-grant scope. Actual Data API exposure, independent operator recovery and scoped Vercel settings/origin remain unverified before privileged user/Preview activation. Do not request the completed migration again or fetch credentials. App flag off is not DB-principal revocation. Preserve existing ownership until D3 proves its replacement.
+- This documentation branch does not contain D1 runtime source; its own CI/Preview exercise unchanged main code. PR #46 remains the unmerged application implementation. No Merge or Production application deployment occurred.
+
+## Developer Control D2-B — Bootstrap VERIFIED; Preview/MFA acceptance BLOCKED by access
+
+- The owner authorized the next step on 2026-10-19. [D2-B report](AXIA_DEVELOPER_CONTROL_D2B_BOOTSTRAP_2026-10-19.md) and [evidence](evidence/axia-d2b-bootstrap-2026-10-19.json) now confirm one intended active Platform Owner and one automatic operator/null-actor bootstrap event. No other identity, office membership, existing tenant security/data or Auth/factor metadata changed; migration count remains 23. No migration replay or manual audit duplication.
+- Fresh REST validation now confirms exposed schemas are only `public` and `graphql_public`; private/Auth schemas are not exposed. No secret/Service Role key or business row was retrieved. The Browser extension is unavailable from this conversation, so scoped Vercel settings and private user TOTP remain unverified.
+- Exact-source [CI 39222494572](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/39222494572) passed on `e8290cc`: 147 app tests; staff/platform suites plus 19 operator checks on both PGlite and native PostgreSQL, Typecheck/Lint/Build with 15 routes and 82 browser checks. The real bootstrap then ran from that tested SQL. Transaction-local DB claims verified MFA-required/registry-audit denial and rejection of the other identity, then rolled back. Real browser/SDK/cookie acceptance and live revoke/restore are still unverified; TOTP factors remain 0/0.
+- This D1 follow-up incorporates all five documentation files from current PR #47 at `2c9b811`, while retaining D1 runtime/Android work. Continue through PR #46 after exact-head CI; PR #45/#47 are incorporated documentation, not separate runtime merges. No application MFA enrollment, new account, mail, Merge or Production deployment is part of source preparation.
+- The owner already authorized Preview/MFA work; the remaining blocker is access, not another approval request. Vercel returns a team-scope denial, Browser context is unavailable, and the Preview redirects anonymous requests to Vercel login. No CLI/token/OIDC credentials exist locally. The report gives two exact non-secret Config values scoped only to Preview + `feat/axia-developer-control-foundation`, then a Preview redeploy and private user TOTP flow. Do not disable protection, fetch bypass secrets, broaden environments or ask for the QR/code.
+
+## Supabase invitation audit and activation — historical 2026-10-16 evidence
 
 - `qshgczulivsxztgrbqew`: **AXIA Legal Development**, `ACTIVE_HEALTHY`.
 - 22/22 public tables have RLS enabled after the approved invitation migration. FORCE RLS is enabled on profiles, organizations, organization_members and staff_invitations, not every core table.
@@ -146,6 +171,21 @@ The owner approved starting the proposed registration package, then separately a
 ---
 
 # 4. Completed Delivery History
+
+## Developer control preparation — 2026-10-18, not merged/live
+
+- D1 isolated source completed on Draft PR #46 with exact-head CI/Preview success; the new migration/principal/MFA remain unactivated.
+- D2 read-only preflight completed on a separate documentation branch. Its runbook identifies recovery/configuration blockers and separates migration, private bootstrap, Preview/MFA acceptance and D3 ownership gates. No live permission or configuration changed.
+
+## Developer foundation migration — VERIFIED, 2026-10-19
+
+- Owner requested direct application on the existing shared project without a backup. Applied only reviewed source `20261018173401_axia_platform_owner_foundation.sql` as `20261019080134`; exact source/stored-statement SHA256 matched. Old migration records and existing data/security fingerprints matched before/after.
+- Two guarded private tables and the reviewed functions/indexes/triggers are live, with zero seeded principals/events. This did not grant a real account platform authority or activate app MFA, staff registration, mail, merge or Production code. No backup was made; recovery and actual privileged-session acceptance remain unproved.
+
+## Developer operator bootstrap — VERIFIED, 2026-10-19; MFA pending
+
+- Owner-authorized D2-B applied the exact tested operator transaction after source CI passed. One intended active principal and one automatic operator bootstrap event; public data/security, office memberships, selected Auth/factor metadata and old migration history match before/after. No new migration or account/factor was created.
+- Data API exposure verified as `public, graphql_public`. Transaction-local DB claims required MFA for the root and denied other-identity/private-table/registry access; the test rolled back. Actual Preview configuration and private user TOTP/cookie acceptance remain blocked by Vercel/browser access, not missing authorization. The D2-B report supplies exact branch-only Config values and the next user action.
 
 ## Staff activation and guided registration — MERGED, 2026-10-17
 
@@ -3272,18 +3312,19 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: STAFF CHANGES MERGED — DEVELOPER SEPARATION NEXT — HOSTED ACTIVATION DISABLED**
+**Current mode: D2-B OWNER BOOTSTRAP VERIFIED — PRIVATE PREVIEW/MFA COMPLETION NEEDED**
 
-Verified application main: `8c23e47b57f3f3997c1d07be37bdcacbe8192f76`. PRs #42/#43 merged with owner approval. Check the post-merge CI/Vercel results linked under Current State; no hosted signup or mail activation was performed.
+Verified application main: `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`; PRs #42/#43/#44 are merged. PR #46 remains an unmerged Draft and now includes D2-B operator code and PR #47 documentation. [D2-B](AXIA_DEVELOPER_CONTROL_D2B_BOOTSTRAP_2026-10-19.md) records exact-source CI and one intended live Platform Owner/operator event. No new signup, factor or mail was created. Latest documentation-head CI/Preview are recorded on PR #46; do not infer them from the earlier source head.
 
-1. Next package: **AXIA Developer Control & Isolated Staff Acceptance**. Read latest main and live role definitions; prepare the exact platform-role capabilities, bootstrap identity, tenant access boundaries, audit and replacement-owner procedure on a separate branch. Preserve the current sole owner until replacement access is proven. The owner's email alone must never bypass authorization.
-2. Prepare a separate fictitious-data office/employee fixture. Inspect actual signup/email-confirmation/redirect/SMTP settings read-only, select the project's approved sender/domain/provider, and identify one controlled employee test mailbox/office/role. Keep hosted registration off until concrete configuration and live-send/account actions are approved. Do not fetch or disclose credentials, auto-send, disable confirmation, or invent a real recipient.
-3. Then activate only the approved Preview scope and prove invitation → new account → email confirmation → explicit membership → task with real sessions. Preview shares Production's database: new users/memberships are live writes. Current owners already belong to offices and cannot stand in for a new employee.
-4. Never reapply `20261015081218_axia_staff_email_invitations.sql`; it is already live as `20261016083929`. Keep one cloud database as selected. No new project, old-history repair, Service Role or direct membership grants.
-5. Prove appropriate database/Auth/Storage recovery, persisted/versioned legal drafts and full client/matter/task/hearing/finance/document workflow before first-client handoff. Fingerprints are comparison evidence, not a restorable backup. Native Android packaging/integration remains later work.
-6. PRs #42/#43 are already merged; do not merge their original source PRs again or assume they activated real signup. For subsequent implementation, present exact-head CI/Preview and concrete live changes before rollout. Re-read current main instead of continuing from an old branch.
+1. **Immediate next:** complete the already-authorized branch Preview configuration using the two exact non-secret values in the D2-B report. Only Preview + `feat/axia-developer-control-foundation`; redeploy that branch's Preview. The owner must perform this through their signed-in Vercel UI while connector/browser access is unavailable. No Supabase SQL, account grant, new approval or migration replay is needed for this handoff.
+2. Verify Production/Preview project refs, feature switches and exact Preview origin through the correct Vercel scope. The current connector is forbidden; same-SHA deployment success is not configuration proof. Keep activation off while these gates remain open.
+3. Data API exposure is now verified as `public, graphql_public` by a row-free REST validation probe; private/Auth schemas are unexposed. Recovery remains unproved because the owner declined a backup; do not misreport a hash as recovery or require another cloud project. No passwords, database URLs, QR, seeds, tokens or full exports in chat/source/CI.
+4. Then the user completes their own TOTP enrollment on the exact configured branch origin, keeping QR/seed/code private. Recheck actual cookie `aal2`, ready context, bounded registry/audit and existing office login before relying on platform access. Live revocation/restoration acceptance remains unverified. The app switch is not DB revocation. Preserve the current sole Office Owner until D3 proves replacement ownership/access.
+5. D3 separately selects an owner-controlled employee mailbox/fictitious-data office and proves invitation → new account → confirmation → membership → task/case access. Keep staff registration off until real account/mail/configuration actions are approved. Current two owners and `example.invalid` are not new employee acceptance identities.
+6. Never replay staff source `20261015081218_axia_staff_email_invitations.sql` (live as `20261016083929`) or platform source `20261018173401_axia_platform_owner_foundation.sql` (live as `20261019080134`), rename source timestamps, repair old history, use Service Role or remove memberships. D1 remains unmerged; #45 is its incorporated review. No duplicate source-PR merges, Merge or Production application deployment without explicit approval. Re-read current main before each package.
+7. First-client delivery still requires recovery, persisted/versioned legal drafts and the full authenticated business workflow. Native Android packaging/integration remains later work. Synthetic tests and hashes do not close these gates.
 
-Historical database security/data evidence remains dated 2026-10-16; this package's live inspection was read-only. Auth settings, Secrets and SMTP are unchanged.
+Historical live rollback-test evidence remains dated 2026-10-16. The 2026-10-19 foundation application added exactly one migration record and only its reviewed new objects/grants; old history, tenant security/data, memberships, Auth settings, Secrets and SMTP were preserved. Recovery and real privileged Auth/session acceptance are not verified by these checks.
 
 ---
 
