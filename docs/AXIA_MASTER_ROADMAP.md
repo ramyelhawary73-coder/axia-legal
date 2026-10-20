@@ -11,7 +11,7 @@
 > **Default branch:** `main`  
 > **Verified application main SHA:** `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`
 > **Current handoff branch:** `feat/axia-control-center-client-readiness`
-> **Current implementation PR:** Draft #48, D3 database migration verified live from `d26e2da`; Preview activation and hosted workflows pending. PR #45/#47 documentation incorporated. No Merge.
+> **Current implementation PR:** Draft #48, D3 database verified from `d26e2da`; owner screenshots establish Preview deployment/console entry. UI/RTL refinement in progress; hosted business workflows pending. PR #45/#47 documentation incorporated. No Merge.
 
 ---
 
@@ -84,7 +84,7 @@ Statements under **Current State** should be treated as verified only when a liv
 
 # 3. Current State
 
-GitHub/main and shared hosted state rechecked 2026-10-20. [D3 hosted activation](AXIA_CONTROL_CENTER_D3_ACTIVATION_2026-10-20.md) records the owner's approved one-time application from `d26e2da`, stored as `20261020054338`; history is now 24. All 1,674 existing public rows, two memberships, old history/security definitions and selected Auth/MFA/Storage metadata match before/after. Six new tables are empty. The intended Platform Owner and verified TOTP remain unchanged; successful actual root MFA/registry reads were established on 2026-10-19, not repeated as a new browser acceptance today. Preview flags and D3 hosted business/Storage/recovery workflows remain unverified. Historical source-preparation reports do not override this applied state or authorize replay.
+GitHub/main and shared hosted state rechecked 2026-10-20. [D3 hosted activation](AXIA_CONTROL_CENTER_D3_ACTIVATION_2026-10-20.md) records the owner's approved one-time application from `d26e2da`, stored as `20261020054338`; history is now 24. All 1,674 existing public rows, two memberships, old history/security definitions and selected Auth/MFA/Storage metadata match before/after. Six new tables are empty. The intended Platform Owner and verified TOTP remain unchanged; successful actual root MFA/registry reads were established on 2026-10-19, not repeated as a new browser acceptance today. Owner screenshots subsequently show the three branch-scoped Configs, Ready Preview `24bc325`, and the authenticated D3 office list/overview. This is owner-provided evidence, not independent browser or API configuration verification. D3 hosted business/Storage/recovery workflows remain unverified. Historical source-preparation reports do not override this applied state or authorize replay.
 
 ## GitHub and deployment
 
@@ -152,12 +152,13 @@ The following bootstrap bullets retain their earlier timestamp. Later at 11:21:5
 - This D1 follow-up incorporates all five documentation files from current PR #47 at `2c9b811`, while retaining D1 runtime/Android work. Continue through PR #46 after exact-head CI; PR #45/#47 are incorporated documentation, not separate runtime merges. No application MFA enrollment, new account, mail, Merge or Production deployment is part of source preparation.
 - The owner already authorized Preview/MFA work; the remaining blocker is access, not another approval request. Vercel returns a team-scope denial, Browser context is unavailable, and the Preview redirects anonymous requests to Vercel login. No CLI/token/OIDC credentials exist locally. The report gives two exact non-secret Config values scoped only to Preview + `feat/axia-developer-control-foundation`, then a Preview redeploy and private user TOTP flow. Do not disable protection, fetch bypass secrets, broaden environments or ask for the QR/code.
 
-## Control Center D3 — database migration VERIFIED; Preview/workflow activation pending
+## Control Center D3 — database VERIFIED; owner Preview entry observed; workflow acceptance pending
 
 - The owner approved office-wide developer administration, monitoring and per-office backups. Branch `feat/axia-control-center-client-readiness` contains current PR #46 plus the new control center, manual subscription/status/limits, protected per-office member management, timed support and immutable audit.
 - Durable tenant/case-bound legal drafts now have conflict-safe saves, immutable revisions, archive and explicit legacy imports. Encrypted backup includes 17 fixed tenant datasets and all office file bytes. A fresh disposable database recovery verifies typed rows/FKs/history and exact staged binary hashes; hosted Storage service restore and real customer recovery are still unverified.
 - Owner-approved source `20261019142538_axia_control_center_office_operations.sql` from `d26e2da` was applied **once** on 2026-10-20 as `20261020054338_axia_control_center_office_operations`; stored/source SHA256 `c8a05cb238e27730a774a6b8962e9e34b20ebe2a6648f73e6943001843e9fbbf` matches. No old history edit/replay, membership removal, Auth account creation, mail, Secrets/SMTP change, Merge or Production application deployment. Never replay or rename this source. `AXIA_CONTROL_CENTER_ENABLED` is default-off; no Preview Config was changed.
 - [Source acceptance](AXIA_CONTROL_CENTER_D3_ACCEPTANCE_2026-10-19.md) retains implementation limits. [Applied result/evidence](AXIA_CONTROL_CENTER_D3_ACTIVATION_2026-10-20.md) verifies all existing data, old history/policies/triggers/ACLs and selected identity/Storage metadata are preserved. Six new RLS tables, eighteen new policies and seventeen enabled triggers match scope; 24 public tables have RLS. Read-only no-identity checks deny root/private access. New controls/drafts/leases/events are empty. [Source CI 39291506517](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/39291506517) passed 164 app tests, 27 D3 PGlite + 31 native checks, all existing suites, Build/17 routes and 145 UI + nine compiled HTTP checks. [Draft PR #48](https://github.com/ramyelhawary73-coder/axia-legal/pull/48) and [branch Preview](https://axia-legal-git-feat-axia-d1c7df-ramyelhawary73-coders-projects.vercel.app/platform) remain unmerged; app flag configuration is not verified by deployment build success.
+- 2026-10-20 UI follow-up: [Control Center interface/RTL refinement](AXIA_CONTROL_CENTER_UI_REFINEMENT_2026-10-20.md) expands the workspace, corrects route scrolling/background tokens, splits native RTL datetime into labelled LTR date/time controls with an explicit open-ended switch, and improves office navigation, states, theme and isolated audit dates. Source work stays on the already configured PR #48 branch. No new permission, migration, live business write, account or mail action.
 - No blanket first-client readiness claim: real employee onboarding/mail, new-branch MFA/session acceptance, actual Storage quota/finalization and service recovery need their own controlled acceptance. Preserve the existing sole office owner membership.
 
 ## Supabase invitation audit and activation — historical 2026-10-16 evidence
@@ -3322,7 +3323,7 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: D3 DATABASE VERIFIED — PREVIEW ACTIVATION / HOSTED ACCEPTANCE NEXT**
+**Current mode: D3 DATABASE VERIFIED — PREVIEW ENTRY OBSERVED / UI REFINEMENT & HOSTED ACCEPTANCE NEXT**
 
 Verified application main: `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`; PRs #42/#43/#44 are merged. Draft #48 retains PR #46/Android. D3 SQL source `d26e2da` was explicitly approved and applied once as `20261020054338` on 2026-10-20. [Verified result](AXIA_CONTROL_CENTER_D3_ACTIVATION_2026-10-20.md) separates database verification from still-pending hosted UI/Storage/employee acceptance.
 

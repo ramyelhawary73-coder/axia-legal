@@ -22,7 +22,7 @@ const officeA="00000000-0000-4000-8000-000000000301",officeB="00000000-0000-4000
 const storedDraftId="00000000-0000-4000-8000-000000000601";
 const syntheticDraft={id:storedDraftId,title:"مسودة اختبار محفوظة",docType:"مذكرة دفاع",clientName:"بدون ربط",contentHtml:'<p>نص آمن</p><img src=x onerror="window.axiaXss=true"><svg onload="window.axiaXss=true"></svg><a href="javascript:window.axiaXss=true">نص رابط</a>',versions:[],status:"مسودة قيد التحرير",createdAt:"2026-10-19T12:00:00Z",updatedAt:"2026-10-19T12:00:00Z",currentVersionNumber:"v1.0"};
 async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=false,registrationEnabled=registrationFlow,platformMode=null,platformNoOffice=false,controlMode=false,draftMode=false,draftConflict=false}={}) {
-  const context=await browser.newContext({viewport,colorScheme:theme,locale:"ar-EG",acceptDownloads:true});
+  const context=await browser.newContext({viewport,colorScheme:theme,locale:"ar-EG",acceptDownloads:true,...(controlMode?{timezoneId:"Africa/Cairo"}:{})});
   await context.addInitScript(({theme,autoExport})=>{
     localStorage.setItem("theme",theme);
     localStorage.setItem("axia_daily_snapshot_config",JSON.stringify({enabled:autoExport,autoDownloadOnAppOpen:autoExport,format:"json",destination:"download_folder"}));
@@ -294,19 +294,47 @@ try {
     assert.equal(await page.getByRole("button",{name:"ربط تطبيق المصادقة",exact:true}).count(),0);
     await fits(page,`platform-unavailable-${platformMode??"disabled"}`);await context.close();
   }
-  for(const width of [1440,1024,768,390,320]) for(const theme of ["light","dark"]) {
+  for(const width of [1920,1440,1280,1024,768,390,320]) for(const theme of ["light","dark"]) {
     console.log(`UI control center ${width}px ${theme}`);
-    const {context,controlRequests}=await fixtureContext({width,height:900},theme,{platformMode:"ready",controlMode:true});
+    const {context,controlRequests}=await fixtureContext({width,height:width===1024?600:900},theme,{platformMode:"ready",controlMode:true});
     const page=await context.newPage();const errors=[];page.on("pageerror",e=>errors.push(e.message));page.on("dialog",d=>d.accept());
     await page.goto(base+"/platform");
+    await page.getByLabel("البحث في المكاتب المعروضة",{exact:true}).fill("الثاني");
+    assert.equal(await page.getByRole("button",{name:/مكتب الاختبار الأول/}).count(),0);
+    await page.getByRole("button",{name:/مكتب الاختبار الثاني/}).waitFor();
+    await page.getByLabel("البحث في المكاتب المعروضة",{exact:true}).fill("");
     await page.getByRole("button",{name:/مكتب الاختبار الأول/}).click();
+    assert.equal(await page.getByRole("button",{name:"حفظ إعدادات المكتب",exact:true}).isDisabled(),true);
+    assert.equal(await page.getByLabel("تاريخ انتهاء الاشتراك",{exact:true}).isDisabled(),true);
+    await page.getByLabel("مدة مفتوحة بدون تاريخ انتهاء",{exact:true}).uncheck();
+    await page.getByLabel("تاريخ انتهاء الاشتراك",{exact:true}).fill("2030-02-14");
+    await page.getByLabel("وقت انتهاء الاشتراك",{exact:true}).fill("18:30");
+    for(const name of ["تاريخ انتهاء الاشتراك","وقت انتهاء الاشتراك"]){
+      const input=page.getByLabel(name,{exact:true});
+      assert.equal(await input.getAttribute("dir"),"ltr");
+      const metrics=await input.evaluate(el=>({width:el.clientWidth,scroll:el.scrollWidth}));
+      assert.ok(metrics.scroll<=metrics.width+1,`native date/time overflow ${width} ${name}`);
+    }
     await page.getByLabel("سبب الإجراء أو المتابعة",{exact:false}).fill("اختبار قبول معزول للمكتب الأول");
     await page.getByLabel("اسم الباقة اليدوية").fill("first-client-test");
     await page.getByRole("button",{name:"حفظ إعدادات المكتب",exact:true}).click();
     await page.getByText("تم حفظ الإعدادات وتسجيل العملية.",{exact:true}).waitFor();
     assert.equal(controlRequests.filter(r=>r.action==="configure").length,1);
+    assert.equal(controlRequests.find(r=>r.action==="configure").input.expiresAt,"2030-02-14T16:30:00.000Z");
+    assert.equal(await page.getByLabel("تاريخ انتهاء الاشتراك",{exact:true}).inputValue(),"2030-02-14");
+    assert.equal(await page.getByLabel("وقت انتهاء الاشتراك",{exact:true}).inputValue(),"18:30");
+    const geometry=await page.locator("main").evaluate(el=>({client:el.clientHeight,scroll:el.scrollHeight,overflow:getComputedStyle(el).overflowY,content:el.firstElementChild.getBoundingClientRect().width,width:el.clientWidth,scrollWidth:el.scrollWidth}));
+    assert.equal(geometry.overflow,"auto");
+    assert.ok(geometry.scrollWidth<=geometry.width+1,"platform main horizontal overflow");
+    if(width>=1440) assert.ok(geometry.content>=width*.8,"platform workspace must use the desktop width");
+    await page.getByRole("button",{name:"حفظ إعدادات المكتب",exact:true}).scrollIntoViewIfNeeded();
+    assert.ok(await page.getByRole("button",{name:"حفظ إعدادات المكتب",exact:true}).isVisible());
     await fits(page,`control-settings-${width}-${theme}`);
     await page.screenshot({path:path.join(output,`control-settings-${width}-${theme}.png`),fullPage:true});
+    await page.getByLabel("مدة مفتوحة بدون تاريخ انتهاء",{exact:true}).check();
+    const openEndedResponse=page.waitForResponse(r=>r.url().endsWith("/api/platform/control")&&r.request().postDataJSON()?.action==="configure");
+    await page.getByRole("button",{name:"حفظ إعدادات المكتب",exact:true}).click();await openEndedResponse;
+    assert.equal(controlRequests.filter(r=>r.action==="configure").at(-1).input.expiresAt,null);
     await page.getByRole("button",{name:"الأعضاء والصلاحيات",exact:true}).click();
     await page.getByText("حساب منصة محمي",{exact:true}).waitFor();
     assert.equal(await page.getByRole("combobox",{name:"دور developer@example.invalid",exact:true}).isDisabled(),true);
@@ -334,6 +362,12 @@ try {
       await page.getByRole("status").filter({hasText:"تم التحقق من سلامة 3 سجل و0 ملف"}).waitFor();
     }
     await page.getByRole("button",{name:"سجل الإدارة",exact:true}).click();await page.getByText("control.configure",{exact:true}).waitFor();
+    const auditTime=page.locator("time").last();
+    assert.equal(await auditTime.getAttribute("dateTime"),"2026-10-19T12:00:00Z");
+    assert.ok((await auditTime.innerText()).includes("أكتوبر"));
+    await page.getByRole("button",{name:"تبديل المظهر",exact:true}).click();
+    assert.equal(await page.locator("html").evaluate(el=>el.classList.contains("dark")),theme!=="dark");
+    await page.getByRole("button",{name:"تبديل المظهر",exact:true}).click();
     await fits(page,`control-audit-${width}-${theme}`);assert.deepEqual(errors,[]);await context.close();
   }
   for(const width of [1440,390,320]) for(const theme of ["light","dark"]) {

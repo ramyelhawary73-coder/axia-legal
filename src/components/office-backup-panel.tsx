@@ -1,4 +1,6 @@
 "use client";
+import styles from "@/components/platform-workspace.module.css";
+import { Archive } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { completeOfficeSnapshot, decryptOfficeSnapshot, encryptOfficeSnapshot, verifyOfficeSnapshot, type OfficeSnapshot } from "@/lib/office-backup";
 
@@ -53,12 +55,12 @@ export function OfficeBackupPanel({ officeId, reason, request }: { officeId: str
     } catch (error) { setMessage(error instanceof Error ? error.message : "تعذر التحقق من النسخة."); }
     finally { setBusy(false); }
   }
-  return <section aria-labelledby="office-backup-heading" className="space-y-4 rounded-2xl border border-[var(--border)] p-5">
-    <h3 id="office-backup-heading" className="text-lg font-bold">نسخة المكتب والتحقق منها</h3>
+  return <section aria-labelledby="office-backup-heading" className={`${styles.surface} space-y-4`}>
+    <h3 id="office-backup-heading" className={styles.sectionHeading}><Archive size={20} aria-hidden="true" />نسخة المكتب والتحقق منها</h3>
     <p className="text-sm leading-7 text-[var(--text-muted)]">تشمل البيانات المحفوظة والمراجعات والملفات. التشفير يتم على جهازك؛ عبارة الحماية لا تُرسل إلى السيرفر. لا تتضمن كلمات مرور أو أسرار الدخول. الحد الحالي 10,000 سجل و200 ملف وإجمالي ملفات 64 MB؛ التصدير يتوقف لو النسخة غير مكتملة أو تجاوزت الحد.</p>
-    <div className="grid gap-3 sm:grid-cols-2"><label className="space-y-2"><span>عبارة حماية النسخة</span><input type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} maxLength={512} className="block w-full rounded-xl border border-[var(--border)] bg-[var(--background)] p-3" /></label><label className="space-y-2"><span>تأكيد عبارة الحماية للتصدير</span><input type="password" autoComplete="new-password" value={confirmation} onChange={e => setConfirmation(e.target.value)} maxLength={512} className="block w-full rounded-xl border border-[var(--border)] bg-[var(--background)] p-3" /></label></div>
-    <button type="button" disabled={busy || reason.trim().length < 8} onClick={() => void exportOffice()} className="rounded-xl bg-[var(--axia-gold)] px-5 py-3 font-bold text-slate-950 disabled:opacity-50">تصدير نسخة مشفرة للمكتب</button>
-    <div className="space-y-3 border-t border-[var(--border)] pt-4"><label className="block space-y-2"><span>فحص نسخة محفوظة — على جهازك فقط</span><input type="file" accept=".json" disabled={busy} onChange={e => setFile(e.target.files?.[0] ?? null)} className="block max-w-full text-sm" /></label><button type="button" disabled={busy || !file || password.length < 12} onClick={() => void verify()} className="rounded-xl border border-[var(--border)] px-4 py-2 disabled:opacity-50">فك النسخة والتحقق من اكتمالها</button></div>
+    <div className="grid gap-3 sm:grid-cols-2"><label className="space-y-2"><span>عبارة حماية النسخة</span><input type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} maxLength={512} className={styles.field} /></label><label className="space-y-2"><span>تأكيد عبارة الحماية للتصدير</span><input type="password" autoComplete="new-password" value={confirmation} onChange={e => setConfirmation(e.target.value)} maxLength={512} className={styles.field} /></label></div>
+    <button type="button" disabled={busy || reason.trim().length < 8} onClick={() => void exportOffice()} className={`${styles.button} ${styles.primary}`}>تصدير نسخة مشفرة للمكتب</button>
+    <div className="space-y-3 border-t border-[var(--border)] pt-4"><label className="block space-y-2"><span>فحص نسخة محفوظة — على جهازك فقط</span><input type="file" accept=".json" disabled={busy} onChange={e => setFile(e.target.files?.[0] ?? null)} className="block max-w-full text-sm" /></label><button type="button" disabled={busy || !file || password.length < 12} onClick={() => void verify()} className={styles.button}>فك النسخة والتحقق من اكتمالها</button></div>
     {message ? <p role="status" className="text-sm leading-7 break-words">{message}</p> : null}
   </section>;
 }

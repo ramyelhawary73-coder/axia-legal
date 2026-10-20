@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ShieldCheck, ArrowUpRight } from "lucide-react";
+import { PlatformThemeToggle } from "@/components/platform-theme-toggle";
+import styles from "@/components/platform-workspace.module.css";
 import { resolvePlatformContext } from "@/lib/api/platform";
 import { PlatformEntry } from "@/components/platform-entry";
 
@@ -8,11 +11,11 @@ export const metadata: Metadata = { title: "إدارة المنصة | AXIA Legal
 
 export default async function PlatformPage() {
   const context = await resolvePlatformContext(true);
-  return <main dir="rtl" className="min-h-dvh bg-[var(--background)] px-4 py-6 text-[var(--text)] sm:px-8 lg:px-12">
-    <div className="mx-auto w-full max-w-6xl space-y-7">
-      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)] pb-5">
-        <div><p className="text-xs font-bold tracking-widest text-[var(--axia-gold)]" dir="ltr">AXIA LEGAL</p><h1 className="mt-2 text-2xl font-bold sm:text-3xl">إدارة المنصة</h1></div>
-        <Link prefetch={false} href="/" className="rounded-xl border border-[var(--border)] px-4 py-2 text-sm">مساحة المكتب</Link>
+  return <main dir="rtl" className={styles.shell}>
+    <div className={styles.container}>
+      <header className={styles.header}>
+        <div className={styles.identity}><span className={styles.mark}><ShieldCheck size={25} aria-hidden="true" /></span><div><p className={styles.eyebrow} dir="ltr">AXIA LEGAL · CONTROL CENTER</p><h1>إدارة المنصة</h1></div></div>
+        <div className={styles.actions}><PlatformThemeToggle /><Link prefetch={false} href="/" className={styles.button}>مساحة المكتب<ArrowUpRight size={16} aria-hidden="true" /></Link></div>
       </header>
       <PlatformEntry initialState={context.ok ? context.state : context.code === "PLATFORM_DISABLED" ? "PLATFORM_DISABLED" : "unavailable"} />
     </div>
