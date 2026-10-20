@@ -19,13 +19,31 @@ The original route constrained every screen to `max-w-6xl` (1152 px), used undef
 
 ## Verification
 
-Pending exact-head CI browser results. Local browser execution is blocked: the runtime Playwright 1.62.1 browser executable is absent and the download returned an incomplete/non-ZIP response. CI uses the repository-pinned Playwright 1.56.1. Typecheck, strict Lint, 164 application tests and production Build/17 route checks have passed locally. An old Turbopack persistence cache could not load after workspace restoration; moving the generated `.next` directory aside (without deleting it) and rebuilding cleanly succeeded. No application workaround or dependency change was needed.
+Runtime/test head `fdbed8f400bc026a074fbda862b716c5c0e0f90a` passed [CI 39412941041](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/39412941041): Typecheck, strict Lint, all 164 application tests, PGlite 19+21+19+27 and native PostgreSQL 22+23+19+31 checks, Build/17 required routes, 165 browser layout checks and nine compiled HTTP handler checks. The same-head Vercel status is success. No live business mutation is implied by these isolated fixtures. Local browser execution is blocked: the runtime Playwright 1.62.1 browser executable is absent and the download returned an incomplete/non-ZIP response. CI uses the repository-pinned Playwright 1.56.1. Typecheck, strict Lint, 164 application tests and production Build/17 route checks have passed locally. An old Turbopack persistence cache could not load after workspace restoration; moving the generated `.next` directory aside (without deleting it) and rebuilding cleanly succeeded. No application workaround or dependency change was needed.
 
 The expanded browser suite uses synthetic API responses on loopback only, with external requests aborted. It checks light/dark layouts at 320, 390, 768, 1024, 1280, 1440 and 1920 px, short desktop height, explicit date/time direction and sizing, Cairo local-to-UTC conversion/reload, null expiry, reason gating, local search, theme switching and preserved member/support/encrypted-backup behavior. Native browser widget appearance can differ on Windows, Android and iOS; the owner's actual device check remains required after Preview deploys.
 
 ## CI lifecycle correction
 
-Initial run 39412452118 passed all 164 application tests, PGlite suites and all native PostgreSQL security/concurrency checks (including 31 control checks), then raised 57P01 on an idle pool during forced database teardown. The disposable control/restore test already awaits pool shutdown; removing unnecessary DROP DATABASE FORCE allows normal backend exit and lets any real leaked connection fail visibly. This changes only the isolated test harness, never hosted SQL or migration history. Build/UI steps had been skipped by that initial teardown failure; follow-up CI is required.
+Initial run 39412452118 passed all 164 application tests, PGlite suites and all native PostgreSQL security/concurrency checks (including 31 control checks), then raised 57P01 on an idle pool during forced database teardown. The disposable control/restore test already awaits pool shutdown; removing unnecessary DROP DATABASE FORCE allows normal backend exit and lets any real leaked connection fail visibly. This changes only the isolated test harness, never hosted SQL or migration history. Build/UI steps had been skipped by that initial teardown failure; Follow-up CI 39412941041 passed the same native suite and teardown, then the production Build and complete browser suite.
+
+## Visual review and files
+
+CI artifact `12260247758` (`axia-integration-ui`, runtime/test head `fdbed8f`) has digest `sha256:66870910a443eea9c93c9963315f3caadd68e99371c0414f75e15b7e2a45e304`, available through the linked run until 2026-10-27. Four generated screenshots were downloaded and visually inspected: `control-settings-1920-light.png`, `control-settings-1440-dark.png`, `control-settings-390-light.png` and `control-settings-320-dark.png`. Native date/time values and the connected Arabic date summary are readable; fields and actions fit narrow screens. Browser-native day/month order and picker appearance still depend on device locale; the explicit Arabic date summary identifies the actual selected date. Screenshots show the lower form after scrolling to Save, not the initial top-of-page view.
+
+Changed relative paths from the owner's reviewed Preview head `24bc325`:
+
+- `src/app/platform/page.tsx`
+- `src/components/control-center.tsx`
+- `src/components/office-backup-panel.tsx`
+- `src/components/platform-theme-toggle.tsx`
+- `src/components/platform-workspace.module.css`
+- `src/components/subscription-expiry.tsx`
+- `src/lib/control-presentation.ts`
+- `scripts/verify-integration-ui.mjs`
+- `scripts/test-control-center-db.mjs`
+- `docs/AXIA_MASTER_ROADMAP.md`
+- `docs/AXIA_CONTROL_CENTER_UI_REFINEMENT_2026-10-20.md`
 
 ## Preserved scope and next acceptance
 
