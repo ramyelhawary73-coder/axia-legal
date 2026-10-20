@@ -1,6 +1,6 @@
 # AXIA Control Center D3 — isolated implementation and acceptance
 
-Date: 2026-10-19. Scope: source, disposable verification and Draft PR/Preview only. **No D3 SQL has been applied to the shared hosted database.** No office, membership, real account, mail, Secrets, SMTP, Merge or Production deployment was changed in this package.
+Date: 2026-10-19 source acceptance, updated 2026-10-20. **Later explicitly approved hosted result:** exact source `d26e2da` was applied once as `20261020054338`; [activation report and preservation evidence](AXIA_CONTROL_CENTER_D3_ACTIVATION_2026-10-20.md) are authoritative for current database state. Earlier pre-activation observations below are historical. No office configuration, membership, real account, mail, Secrets, SMTP, Merge or Production application deployment was changed.
 
 ## Current source and hosted baseline
 
@@ -31,7 +31,7 @@ Draft acknowledgements are the only source of a saved status. Pending edits warn
 
 ## Migration and feature switch
 
-New source only: `supabase/migrations/20261019142538_axia_control_center_office_operations.sql`, SHA256 `c8a05cb238e27730a774a6b8962e9e34b20ebe2a6648f73e6943001843e9fbbf`. It is one explicit transaction and seeds no controls, root, account or office. Old migrations were not edited, renamed or replayed. It does change shared tenant helpers/policies when applied; this is not an additive UI-only activation.
+Source: `supabase/migrations/20261019142538_axia_control_center_office_operations.sql`, SHA256 `c8a05cb238e27730a774a6b8962e9e34b20ebe2a6648f73e6943001843e9fbbf`. **Applied once on 2026-10-20 as `20261020054338`; do not replay.** It is one explicit transaction and seeds no controls, root, account or office. Old migrations were not edited, renamed or replayed. The approved shared tenant helper/policy changes are now installed; this is not an additive UI-only activation.
 
 `AXIA_CONTROL_CENTER_ENABLED` defaults off. It gates the new API/UI, durable drafts and application entitlement/status checks. It does **not** undo SQL policies or previously configured office suspension/expiry. D1's separately enabled flag and exact origin remain required for root operations. The existing #46 branch-only Config values will not automatically activate this new branch. Keep the new switch off until the reviewed migration and hosted acceptance are separately authorized.
 
@@ -51,12 +51,12 @@ Local compiled browser verification passed **145 UI checks**, widths 320/390/768
 
 CI runs the complete existing suites plus D3 in pinned PGlite and native PostgreSQL 17. Native-only checks race configuration, existing draft saves, first saves and competing owner demotions. Browser tests use real compiled components with synthetic HTTP responses on loopback only, covering switch isolation, protected identity, support, actual WebCrypto download/decrypt, drafts/history/XSS and conflict retention, plus nine real compiled HTTP disabled-state checks. Their fixtures do not prove hosted Auth/Storage/customer acceptance.
 
-[New branch Preview](https://axia-legal-git-feat-axia-d1c7df-ramyelhawary73-coders-projects.vercel.app/platform). Vercel reported initial source Ready on deployment `3r4VXRqPuBqNKnnRXX1tFUB7Pkpg`; exact-head deployment status is on #48. It remains protected and the new controls default off; no hosted D3 migration or new branch activation occurred. The PR contains 54 changed files relative to main because it includes #46; this package adds/modifies 26 files relative to #46. Android and both already-applied migration source files are unchanged.
+[New branch Preview](https://axia-legal-git-feat-axia-d1c7df-ramyelhawary73-coders-projects.vercel.app/platform). Vercel reported initial source Ready on deployment `3r4VXRqPuBqNKnnRXX1tFUB7Pkpg`; exact-head deployment status is on #48. It remains protected and the new controls default off; the database migration is now installed but no new branch Config activation occurred. Initial implementation contained 54 PR files/26 D3 files; later documentation records activation. Android and all three approved migration source files are unchanged.
 
 ## Next activation and first-client scope
 
-1. Review the exact source CI, new migration/hash and current hosted schema/function ACL prerequisites, including Storage trigger ownership. Obtain separate approval for this **one new** shared-project transaction; do not replay either earlier source migration or alter old history.
-2. After approved application, compare existing business data/security and migration history, verify new RLS/grants/guarded functions, and keep office controls unseeded. Test actual Storage preflight/finalization and quota failures with authorized synthetic files before setting a paying office limit.
+1. **Completed 2026-10-20:** exact-source CI/hash/prerequisites reviewed, explicit approval received, and the one shared-project transaction applied once as `20261020054338`. Do not repeat it or alter old history.
+2. **Database comparison completed:** all existing public rows/security/history, memberships and selected Auth/Storage metadata preserved; new RLS/grants/guards checked and controls remain empty. Actual Storage preflight/finalization/quota testing with authorized synthetic files remains open before setting a paying office limit.
 3. Configure only a reviewed branch Preview origin and switches with separate scope; reuse the developer's already enrolled private authenticator. Verify current root `aal2`, normal office login, suspension/reactivation/expiry, support isolation, save conflicts, and a real encrypted export plus isolated service restore. No automatic Production promotion.
 4. Choose an owner-controlled test employee mailbox and fictitious office data. Review Supabase Auth signup/confirmation/redirect/rate-limit/email configuration read-only. Then separately authorize account creation and actual transactional mail. Prove invitation → signup → confirmation → acceptance → tasks/case access, including expired/reissued/cancelled invites, before enabling first-client staff registration. No blanket SMTP change or real mail is included here.
 5. Keep the current sole office owner membership. A separate verified replacement owner and office workflow must exist before any removal. Manual subscription administration is implemented; payment collection/provider integration and recurring backups are future packages.

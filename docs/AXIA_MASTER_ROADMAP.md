@@ -6,12 +6,12 @@
 >
 > **Rule:** every implementation PR must update this file before it is considered complete.
 >
-> **Last verified:** 2026-10-19
+> **Last verified:** 2026-10-20
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
 > **Verified application main SHA:** `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`
 > **Current handoff branch:** `feat/axia-control-center-client-readiness`
-> **Current implementation PR:** Draft #48, isolated D3 control center based on PR #46 (`c8c14c0`); no D3 hosted application or Merge. PR #45/#47 documentation incorporated.
+> **Current implementation PR:** Draft #48, D3 database migration verified live from `d26e2da`; Preview activation and hosted workflows pending. PR #45/#47 documentation incorporated. No Merge.
 
 ---
 
@@ -84,7 +84,7 @@ Statements under **Current State** should be treated as verified only when a liv
 
 # 3. Current State
 
-GitHub/main and shared hosted state rechecked 2026-10-19. One active intended Platform Owner, one verified own TOTP and matching valid server `aal2` with actual protected user registry/audit reads are now verified; new-tab continuity and live revoke/restore remain open. [D3 acceptance](AXIA_CONTROL_CENTER_D3_ACCEPTANCE_2026-10-19.md) records current isolated control-center/draft/backup source and remaining gates. The D3 migration is not live: hosted history remains 23/latest `20261019080134`, two offices/two memberships and zero Storage files. [D2-B](AXIA_DEVELOPER_CONTROL_D2B_BOOTSTRAP_2026-10-19.md) preserves the earlier bootstrap evidence; its zero-factor observations were superseded by the user's later private enrollment. Historical sections do not override newer evidence or prove hosted D3 acceptance.
+GitHub/main and shared hosted state rechecked 2026-10-20. [D3 hosted activation](AXIA_CONTROL_CENTER_D3_ACTIVATION_2026-10-20.md) records the owner's approved one-time application from `d26e2da`, stored as `20261020054338`; history is now 24. All 1,674 existing public rows, two memberships, old history/security definitions and selected Auth/MFA/Storage metadata match before/after. Six new tables are empty. The intended Platform Owner and verified TOTP remain unchanged; successful actual root MFA/registry reads were established on 2026-10-19, not repeated as a new browser acceptance today. Preview flags and D3 hosted business/Storage/recovery workflows remain unverified. Historical source-preparation reports do not override this applied state or authorize replay.
 
 ## GitHub and deployment
 
@@ -152,12 +152,12 @@ The following bootstrap bullets retain their earlier timestamp. Later at 11:21:5
 - This D1 follow-up incorporates all five documentation files from current PR #47 at `2c9b811`, while retaining D1 runtime/Android work. Continue through PR #46 after exact-head CI; PR #45/#47 are incorporated documentation, not separate runtime merges. No application MFA enrollment, new account, mail, Merge or Production deployment is part of source preparation.
 - The owner already authorized Preview/MFA work; the remaining blocker is access, not another approval request. Vercel returns a team-scope denial, Browser context is unavailable, and the Preview redirects anonymous requests to Vercel login. No CLI/token/OIDC credentials exist locally. The report gives two exact non-secret Config values scoped only to Preview + `feat/axia-developer-control-foundation`, then a Preview redeploy and private user TOTP flow. Do not disable protection, fetch bypass secrets, broaden environments or ask for the QR/code.
 
-## Control Center D3 — isolated implementation, hosted activation BLOCKED
+## Control Center D3 — database migration VERIFIED; Preview/workflow activation pending
 
 - The owner approved office-wide developer administration, monitoring and per-office backups. Branch `feat/axia-control-center-client-readiness` contains current PR #46 plus the new control center, manual subscription/status/limits, protected per-office member management, timed support and immutable audit.
 - Durable tenant/case-bound legal drafts now have conflict-safe saves, immutable revisions, archive and explicit legacy imports. Encrypted backup includes 17 fixed tenant datasets and all office file bytes. A fresh disposable database recovery verifies typed rows/FKs/history and exact staged binary hashes; hosted Storage service restore and real customer recovery are still unverified.
-- New migration source `20261019142538_axia_control_center_office_operations.sql` is **not applied**. No old migration edit/replay, membership removal, Auth account creation, mail, Secrets/SMTP change, Merge or Production deployment. `AXIA_CONTROL_CENTER_ENABLED` is default-off; a new branch does not inherit #46's branch-only origin/configuration.
-- [D3 acceptance and activation gates](AXIA_CONTROL_CENTER_D3_ACCEPTANCE_2026-10-19.md) records implementation, exact limits and evidence. Local Typecheck/Lint, 164 application tests, 27 isolated SQL checks, Build/17 routes and 145 UI checks passed. Initial-source [CI 39290697289](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/39290697289) also passed, including 31 D3 native checks. Final exact-head CI/Preview is tracked on [Draft PR #48](https://github.com/ramyelhawary73-coder/axia-legal/pull/48); new-branch [Preview](https://axia-legal-git-feat-axia-d1c7df-ramyelhawary73-coders-projects.vercel.app/platform). Hosted history remains 23, two offices/two memberships; new controls/drafts are absent.
+- Owner-approved source `20261019142538_axia_control_center_office_operations.sql` from `d26e2da` was applied **once** on 2026-10-20 as `20261020054338_axia_control_center_office_operations`; stored/source SHA256 `c8a05cb238e27730a774a6b8962e9e34b20ebe2a6648f73e6943001843e9fbbf` matches. No old history edit/replay, membership removal, Auth account creation, mail, Secrets/SMTP change, Merge or Production application deployment. Never replay or rename this source. `AXIA_CONTROL_CENTER_ENABLED` is default-off; no Preview Config was changed.
+- [Source acceptance](AXIA_CONTROL_CENTER_D3_ACCEPTANCE_2026-10-19.md) retains implementation limits. [Applied result/evidence](AXIA_CONTROL_CENTER_D3_ACTIVATION_2026-10-20.md) verifies all existing data, old history/policies/triggers/ACLs and selected identity/Storage metadata are preserved. Six new RLS tables, eighteen new policies and seventeen enabled triggers match scope; 24 public tables have RLS. Read-only no-identity checks deny root/private access. New controls/drafts/leases/events are empty. [Source CI 39291506517](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/39291506517) passed 164 app tests, 27 D3 PGlite + 31 native checks, all existing suites, Build/17 routes and 145 UI + nine compiled HTTP checks. [Draft PR #48](https://github.com/ramyelhawary73-coder/axia-legal/pull/48) and [branch Preview](https://axia-legal-git-feat-axia-d1c7df-ramyelhawary73-coders-projects.vercel.app/platform) remain unmerged; app flag configuration is not verified by deployment build success.
 - No blanket first-client readiness claim: real employee onboarding/mail, new-branch MFA/session acceptance, actual Storage quota/finalization and service recovery need their own controlled acceptance. Preserve the existing sole office owner membership.
 
 ## Supabase invitation audit and activation — historical 2026-10-16 evidence
@@ -3322,18 +3322,18 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: D3 CONTROL CENTER / DURABLE DRAFTS / ENCRYPTED BACKUP — ISOLATED VERIFICATION**
+**Current mode: D3 DATABASE VERIFIED — PREVIEW ACTIVATION / HOSTED ACCEPTANCE NEXT**
 
-Verified application main: `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`; PRs #42/#43/#44 are merged. D3 branch `feat/axia-control-center-client-readiness` starts from current PR #46 head `c8c14c0` and preserves its complete work. The user's private MFA enrollment and successful protected reads are verified, superseding earlier zero-factor notes. D3's new migration/control workflows are not live.
+Verified application main: `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`; PRs #42/#43/#44 are merged. Draft #48 retains PR #46/Android. D3 SQL source `d26e2da` was explicitly approved and applied once as `20261020054338` on 2026-10-20. [Verified result](AXIA_CONTROL_CENTER_D3_ACTIVATION_2026-10-20.md) separates database verification from still-pending hosted UI/Storage/employee acceptance.
 
-1. **Immediate:** finish the complete D3 quality/browser gates and Draft PR, inspect exact-head native PostgreSQL CI and actual Preview status. Review [D3 acceptance](AXIA_CONTROL_CENTER_D3_ACCEPTANCE_2026-10-19.md), the new SQL and affected files. A protected/default-disabled Preview is not hosted D3 acceptance.
-2. Present the exact one-migration/hash and current shared-project preflight for separate live SQL approval. It adds tenant gates and affects both Production and Preview. Confirm current schema/ACL/Storage trigger prerequisites, apply only the reviewed new transaction if approved, compare existing data/security/history and validate actual Storage HTTP quota behavior. No old-history repair or migration replay.
-3. After SQL verification and separately scoped Preview activation, use the reviewed new branch origin, reuse existing private TOTP and prove normal office access plus root AAL2/control/support, save conflicts and an encrypted real-office export/isolated service restore. Current #46 branch-only flags do not activate D3. Vercel connector access remains limited. No Production promotion or blanket flag change.
+1. **Immediate:** prepare separately scoped Preview activation on `feat/axia-control-center-client-readiness`: the two D1 Config values plus `AXIA_CONTROL_CENTER_ENABLED=1`, using the exact new branch origin in the activation report. No SQL replay. Vercel connector returns 403 and no CLI credentials/browser context are available; use the owner's signed-in Dashboard if that remains blocked. Preserve Production/all other branches and Secrets.
+2. Redeploy only the authorized Preview, reuse the existing private TOTP, and verify real normal-office/root AAL2 access, control/support isolation and durable draft saves/conflicts. Current #46 branch-only flags do not activate #48. Do not request QR/seed/code or remove the existing sole owner membership. Database read-only denial checks are not real browser acceptance.
+3. With separately authorized synthetic data/files, verify actual Storage HTTP quota/preflight/finalization, reasoned encrypted export and isolated service recovery before configuring a paying office limit. Neither CI fixtures nor metadata/hash comparisons close this gate. No Production promotion or blanket activation.
 4. Select an owner-controlled employee test mailbox with fictitious office data. Review Auth/redirect/email settings read-only; separately approve real account/mail operations. Prove invitation → signup → confirmation → membership → task/case access and expiry/reissue/cancellation. Keep registration off until this acceptance; `example.invalid` is only a synthetic fixture.
 5. Preserve the developer's existing sole office owner membership until a verified replacement exists. Manual subscriptions and bounded browser backups are implemented; payment provider, scheduled/chunked backups and real disaster recovery remain future packages. First-client readiness requires hosted business-flow, employee/email and recovery acceptance. Android device/backend work remains later scope.
-6. Never replay staff source `20261015081218_axia_staff_email_invitations.sql` (live as `20261016083929`) or platform source `20261018173401_axia_platform_owner_foundation.sql` (live as `20261019080134`), rename timestamps, use Service Role or expose private credentials/exports. No duplicate source-PR merges, Merge or Production application deployment without separate approval. Re-read current main before each package.
+6. Never replay staff source `20261015081218_axia_staff_email_invitations.sql` (live as `20261016083929`), platform source `20261018173401_axia_platform_owner_foundation.sql` (live as `20261019080134`) or control source `20261019142538_axia_control_center_office_operations.sql` (live as `20261020054338`); do not rename timestamps or repair old history. No Service Role or exposed private credentials/exports. No duplicate source-PR merges, Merge or Production application deployment without separate approval. Re-read current main before each package.
 
-Historical live rollback-test evidence remains dated 2026-10-16. D1 foundation/bootstrap live evidence is distinct from the later actual private MFA read acceptance and from D3 disposable tests. No D3 hosted SQL or business write was performed; local staged recovery does not establish hosted service recovery.
+Historical live rollback-test evidence remains dated 2026-10-16. D1 actual private MFA read acceptance, D3 disposable tests and the 2026-10-20 one-time hosted migration are distinct evidence. No real business/account/mail write or hosted service recovery was performed in the D3 activation package.
 
 ---
 
