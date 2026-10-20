@@ -23,6 +23,10 @@ Pending exact-head CI browser results. Local browser execution is blocked: the r
 
 The expanded browser suite uses synthetic API responses on loopback only, with external requests aborted. It checks light/dark layouts at 320, 390, 768, 1024, 1280, 1440 and 1920 px, short desktop height, explicit date/time direction and sizing, Cairo local-to-UTC conversion/reload, null expiry, reason gating, local search, theme switching and preserved member/support/encrypted-backup behavior. Native browser widget appearance can differ on Windows, Android and iOS; the owner's actual device check remains required after Preview deploys.
 
+## CI lifecycle correction
+
+Initial run 39412452118 passed all 164 application tests, PGlite suites and all native PostgreSQL security/concurrency checks (including 31 control checks), then raised 57P01 on an idle pool during forced database teardown. The disposable control/restore test already awaits pool shutdown; removing unnecessary DROP DATABASE FORCE allows normal backend exit and lets any real leaked connection fail visibly. This changes only the isolated test harness, never hosted SQL or migration history. Build/UI steps had been skipped by that initial teardown failure; follow-up CI is required.
+
 ## Preserved scope and next acceptance
 
 No changes to SQL/migrations/RLS, Auth configuration/credentials/MFA, server APIs, memberships, Android, SMTP, Secrets or dependencies. No real office subscription, block, support grant, audit event, account, file or mail was written by these local tests. The already-applied SQL is never replayed.

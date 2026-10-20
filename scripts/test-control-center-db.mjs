@@ -244,7 +244,7 @@ try {
       await assert.rejects(()=>restoreOfficeSnapshot(target,decoded,nonce),/EMPTY_DATABASE/);
       await target.exec("begin; set local role authenticated;");
       assert.equal(Number((await target.query('select count(*) n from public.clients')).rows[0].n),0);await target.exec('rollback');
-    }finally{if(native){await restorePool?.end();if(restoreName)await control.query(`drop database "${restoreName}" with (force)`);}else await target.close();}
+    }finally{if(native){await restorePool?.end();if(restoreName)await control.query(`drop database "${restoreName}"`);}else await target.close();}
   });
   if(native){
     await check('parallel subscription updates produce exactly one committed revision',async()=>{
@@ -281,6 +281,6 @@ try {
   console.error("Control SQL failure:", error.message, error.code ?? "", error.position ?? "");
   process.exitCode=1;
 } finally {
-  if(native){await pool?.end();if(ownedDatabase)await control.query(`drop database "${ownedDatabase}" with (force)`);await control?.end();}
+  if(native){await pool?.end();if(ownedDatabase)await control.query(`drop database "${ownedDatabase}"`);await control?.end();}
   else await db.close();
 }
