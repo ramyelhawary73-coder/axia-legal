@@ -6,12 +6,12 @@
 >
 > **Rule:** every implementation PR must update this file before it is considered complete.
 >
-> **Last verified:** 2026-10-20
+> **Last verified:** 2026-10-21
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
 > **Verified application main SHA:** `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`
 > **Current handoff branch:** `feat/axia-control-center-client-readiness`
-> **Current implementation PR:** Draft #48, D3 database verified from `d26e2da`; owner screenshots establish Preview deployment/console entry. UI/RTL refinement source verified by CI 39412941041 and visual evidence; owner device/business acceptance pending. PR #45/#47 documentation incorporated. No Merge.
+> **Current implementation PR:** Draft #48, D3 database verified from `d26e2da`; owner screenshots establish Preview deployment/console entry. UI source verified; R1 read-recovery implementation and ordered first-client acceptance gates are tracked in the 2026-10-21 delivery plan. PR #45/#47 documentation incorporated. No Merge.
 
 ---
 
@@ -85,6 +85,12 @@ Statements under **Current State** should be treated as verified only when a liv
 # 3. Current State
 
 GitHub/main and shared hosted state rechecked 2026-10-20. [D3 hosted activation](AXIA_CONTROL_CENTER_D3_ACTIVATION_2026-10-20.md) records the owner's approved one-time application from `d26e2da`, stored as `20261020054338`; history is now 24. All 1,674 existing public rows, two memberships, old history/security definitions and selected Auth/MFA/Storage metadata match before/after. Six new tables are empty. The intended Platform Owner and verified TOTP remain unchanged; successful actual root MFA/registry reads were established on 2026-10-19, not repeated as a new browser acceptance today. Owner screenshots subsequently show the three branch-scoped Configs, Ready Preview `24bc325`, and the authenticated D3 office list/overview. This is owner-provided evidence, not independent browser or API configuration verification. D3 hosted business/Storage/recovery workflows remain unverified. Historical source-preparation reports do not override this applied state or authorize replay.
+
+## Delivery Readiness R1 — fresh 2026-10-21 inspection
+
+[Current delivery plan and acceptance gates](AXIA_DELIVERY_READINESS_R1_2026-10-21.md) replaces the stale request to activate the already configured Preview. Fresh read-only metadata: 24 migrations/one D3 application, two users/offices/memberships, one active Platform Owner and verified factor, all public RLS enabled. Twelve immutable events confirm hosted control read actions through today; controls/blocks/support grants, invitations, durable drafts/history and Storage objects remain zero. This updates the historical empty-audit snapshot above, not its original timestamp or data-preservation claim. No account/mail/business write was performed by R1.
+
+R1 fixes client read failures, indefinite loading, stale paginated member/audit records, abandoned requests and manual retry, retaining server authority and all earlier D3/UI work. Current-source changes and exact-head CI/Preview are on PR #48. Vercel's 403 now explicitly identifies a missing team grant to the MCP connection; the originating browser is unavailable. These are access blockers to independent hosted browser acceptance, not reasons to replay SQL or request API keys.
 
 ## GitHub and deployment
 
@@ -3323,18 +3329,18 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: D3 DATABASE & UI SOURCE VERIFIED — OWNER DEVICE / HOSTED ACCEPTANCE NEXT**
+**Current mode: DELIVERY R1 — READ RECOVERY / ORDERED FIRST-CLIENT ACCEPTANCE**
 
-Verified application main: `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`; PRs #42/#43/#44 are merged. Draft #48 retains PR #46/Android. D3 SQL source `d26e2da` was explicitly approved and applied once as `20261020054338` on 2026-10-20. [Verified result](AXIA_CONTROL_CENTER_D3_ACTIVATION_2026-10-20.md) separates database verification from still-pending hosted UI/Storage/employee acceptance.
+Canonical next-package scope: [AXIA Delivery Readiness R1 and first-client gates](AXIA_DELIVERY_READINESS_R1_2026-10-21.md). Main remains `c0fd6a6`; Draft #48 retains PR #46, Android, verified D3 SQL and the configured owner Preview. Preview activation is already owner-observed; do not ask to repeat its three Config values or reapply any SQL.
 
-1. **Immediate:** prepare separately scoped Preview activation on `feat/axia-control-center-client-readiness`: the two D1 Config values plus `AXIA_CONTROL_CENTER_ENABLED=1`, using the exact new branch origin in the activation report. No SQL replay. Vercel connector returns 403 and no CLI credentials/browser context are available; use the owner's signed-in Dashboard if that remains blocked. Preserve Production/all other branches and Secrets.
-2. Redeploy only the authorized Preview, reuse the existing private TOTP, and verify real normal-office/root AAL2 access, control/support isolation and durable draft saves/conflicts. Current #46 branch-only flags do not activate #48. Do not request QR/seed/code or remove the existing sole owner membership. Database read-only denial checks are not real browser acceptance.
-3. With separately authorized synthetic data/files, verify actual Storage HTTP quota/preflight/finalization, reasoned encrypted export and isolated service recovery before configuring a paying office limit. Neither CI fixtures nor metadata/hash comparisons close this gate. No Production promotion or blanket activation.
-4. Select an owner-controlled employee test mailbox with fictitious office data. Review Auth/redirect/email settings read-only; separately approve real account/mail operations. Prove invitation → signup → confirmation → membership → task/case access and expiry/reissue/cancellation. Keep registration off until this acceptance; `example.invalid` is only a synthetic fixture.
-5. Preserve the developer's existing sole office owner membership until a verified replacement exists. Manual subscriptions and bounded browser backups are implemented; payment provider, scheduled/chunked backups and real disaster recovery remain future packages. First-client readiness requires hosted business-flow, employee/email and recovery acceptance. Android device/backend work remains later scope.
-6. Never replay staff source `20261015081218_axia_staff_email_invitations.sql` (live as `20261016083929`), platform source `20261018173401_axia_platform_owner_foundation.sql` (live as `20261019080134`) or control source `20261019142538_axia_control_center_office_operations.sql` (live as `20261020054338`); do not rename timestamps or repair old history. No Service Role or exposed private credentials/exports. No duplicate source-PR merges, Merge or Production application deployment without separate approval. Re-read current main before each package.
+1. Finish R1 source verification and review its refreshed branch Preview. Restore the Vercel MCP connection's explicit grant for team `ramyelhawary73-coders-projects` and the originating connected browser. Existing read-only/Preview authorization persists; do not request credentials, QR/seed/code or disable protection.
+2. H1: existing owner privately signs in with current MFA; verify root and normal-office reads, session refresh and Desktop/Android behavior. Twelve hosted read audit events are evidence, not a complete browser/session acceptance test.
+3. H2: prepare one concrete owner-approved fictitious-office/retained-data/file list, then test guarded configuration/status/expiry, task/case/draft conflicts, support isolation, actual Storage HTTP quota/finalization and encrypted recovery into a disposable isolated target. Shared Preview/Production database writes require their own scoped approval; synthetic CI does not close this gate.
+4. E1: select one actual owner-controlled employee mailbox and office/role. Review Auth/redirect and transactional sender settings read-only, present exact changes, then obtain scope for account/mail/provider/configuration activation. Prove the full invitation → signup → confirmation → original-link acceptance → authorized task/case flow and negative paths. No use of arbitrary staff, new mailbox assumptions or `example.invalid` for real mail.
+5. C1/P1: complete the first-client end-to-end business/recovery walkthrough; then request final Merge/Production approval and verify release. Preserve the developer's existing sole office ownership until a verified replacement exists. Defer extra modules, payment automation, broader RAJIH actions and Android integration until delivery is stable.
+6. Never replay staff source `20261015081218_axia_staff_email_invitations.sql` (hosted `20261016083929`), platform source `20261018173401_axia_platform_owner_foundation.sql` (hosted `20261019080134`) or control source `20261019142538_axia_control_center_office_operations.sql` (hosted `20261020054338`). Do not rename timestamps, repair old history, use Service Role or duplicate source-PR merges. Re-read current main before each package.
 
-Historical live rollback-test evidence remains dated 2026-10-16. D1 actual private MFA read acceptance, D3 disposable tests and the 2026-10-20 one-time hosted migration are distinct evidence. No real business/account/mail write or hosted service recovery was performed in the D3 activation package.
+The 2026-10-16 live rollback checks, 2026-10-19 private MFA evidence, 2026-10-20 D3 migration/UI checks and 2026-10-21 aggregate read audit remain distinct dated evidence. No live account/mail/business write or hosted service recovery is implied by this R1 package.
 
 ---
 

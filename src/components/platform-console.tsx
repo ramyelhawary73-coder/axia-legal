@@ -1,21 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useControlQuery, type ControlRequest } from "@/components/use-control-query";
 import { ControlCenter, controlRequest } from "@/components/control-center";
 import type { PlatformAudit, PlatformOffice, PlatformPage } from "@/lib/platform-control";
 
+const capabilitiesRequest: ControlRequest = (action, input, signal) => controlRequest(action, null, input, signal);
+
 export function PlatformConsole({ onMfaRequired }: { onMfaRequired: () => void }) {
-  const [mode, setMode] = useState<"loading" | "foundation" | "control" | "unavailable">("loading");
-  useEffect(() => {
-    const controller = new AbortController();
-    void controlRequest<{ version: number }>("capabilities", null, {}, controller.signal)
-      .then(data => { if (!controller.signal.aborted) setMode(data.version === 1 ? "control" : "unavailable"); })
-      .catch(error => { if (!controller.signal.aborted) { if (error.message === "MFA_REQUIRED") onMfaRequired(); else setMode(error.message === "CONTROL_DISABLED" ? "foundation" : "unavailable"); } });
-    return () => controller.abort();
-  }, [onMfaRequired]);
-  if (mode === "loading") return <p role="status">جارٍ تحميل أدوات إدارة المنصة…</p>;
-  if (mode === "control") return <ControlCenter onMfaRequired={onMfaRequired} />;
-  return <>{mode === "unavailable" ? <p role="alert" className="mb-4 text-sm">مركز التحكم غير متاح حاليًا. العمليات الجديدة متوقفة؛ دليل المنصة الأساسي متاح أدناه.</p> : null}<FoundationPlatformConsole onMfaRequired={onMfaRequired} /></>;
+  const read = useControlQuery<{ version: number }>(capabilitiesRequest, "capabilities");
+  useEffect(() => { if (read.error === "MFA_REQUIRED") onMfaRequired(); }, [read.error, onMfaRequired]);
+  if (read.loading) return <p role="status">جارٍ تحميل أدوات إدارة المنصة…</p>;
+  if (read.error === "MFA_REQUIRED") return <p role="status">جارٍ التحقق من صلاحية الوصول…</p>;
+  if (read.data?.version === 1) return <ControlCenter onMfaRequired={onMfaRequired} />;
+  return <>{read.error !== "CONTROL_DISABLED" ? <div role="alert" className="mb-4 space-y-3 text-sm"><p>مركز التحكم غير متاح حاليًا. العمليات الجديدة متوقفة؛ دليل المنصة الأساسي متاح أدناه.</p><button type="button" onClick={read.retry} className="rounded-xl border border-[var(--border)] px-4 py-2">إعادة تحميل أدوات الإدارة</button></div> : null}<FoundationPlatformConsole onMfaRequired={onMfaRequired} /></>;
 }
 
 function FoundationPlatformConsole({ onMfaRequired }: { onMfaRequired: () => void }) {

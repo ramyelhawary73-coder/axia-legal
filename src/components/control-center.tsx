@@ -4,15 +4,23 @@ import { Building2, Users, Scale, FileText, Settings2, ShieldCheck, LifeBuoy, Ar
 import styles from "@/components/platform-workspace.module.css";
 import { SubscriptionExpiry } from "@/components/subscription-expiry";
 import { formatControlDate } from "@/lib/control-presentation";
+import { useControlQuery, type ControlRequest } from "@/components/use-control-query";
+import { ControlQueryNotice } from "@/components/control-query-notice";
 import { OfficeBackupPanel } from "@/components/office-backup-panel";
 import { CONTROL_DATASETS, type ControlDataset, type ControlMember, type ControlOffice, type ControlPage, type OfficeOverview } from "@/lib/control-center";
 
 export async function controlRequest<T>(action: string, officeId: string | null, input: Record<string, unknown> = {}, signal?: AbortSignal): Promise<T> {
   const response = await fetch("/api/platform/control", { method: "POST", cache: "no-store", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, officeId, input }), signal });
-  const body = await response.json();
-  if (!response.ok) throw new Error(body.code === "PLATFORM_MFA_REQUIRED" ? "MFA_REQUIRED" : body.code === "CONTROL_DISABLED" ? "CONTROL_DISABLED" : body.error || "تعذر تنفيذ العملية.");
+  let body: { code?: string; error?: string; data?: T };
+  try { body = await response.json(); }
+  catch (error) { if (signal?.aborted) throw error; throw new Error("تعذر قراءة استجابة الخادم. أعد المحاولة عند استقرار الاتصال."); }
+  if (!body || typeof body !== "object") throw new Error("استجابة الخادم غير مكتملة. أعد المحاولة.");
+  if (!response.ok) throw new Error(body.code === "PLATFORM_MFA_REQUIRED" ? "MFA_REQUIRED" : body.code === "CONTROL_DISABLED" ? "CONTROL_DISABLED" : typeof body.error === "string" ? body.error : "تعذر تنفيذ العملية.");
+  if (!Object.hasOwn(body, "data")) throw new Error("استجابة الخادم غير مكتملة. أعد المحاولة.");
   return body.data as T;
 }
+const directoryRequest: ControlRequest = (action, input, signal) => controlRequest(action, null, input, signal);
+
 const field = styles.field;
 const button = styles.button;
 const roles = { owner: "مالك المكتب", admin: "مدير", lawyer: "محامٍ", staff: "موظف", trainee: "متدرب", viewer: "مشاهد" };
@@ -20,44 +28,37 @@ const datasetNames: Record<ControlDataset, string> = { clients: "العملاء"
 type Tab = "overview" | "members" | "support" | "backup" | "audit";
 
 export function ControlCenter({ onMfaRequired }: { onMfaRequired: () => void }) {
-  const [offices, setOffices] = useState<ControlPage<ControlOffice>>({ items: [], nextCursor: null });
   const [now] = useState(() => Date.now());
   const [cursor, setCursor] = useState<string | null>(null);
   const [selected, setSelected] = useState<ControlOffice | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
   const [reason, setReason] = useState("");
   const [revision, setRevision] = useState(0);
-  const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const directory = useControlQuery<ControlPage<ControlOffice>>(directoryRequest, "list", { after: cursor, revision });
+  const offices = directory.data ?? { items: [], nextCursor: null };
   const displayed = offices.items.filter(office => `${office.name} ${office.slug}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
   const currentOffice = offices.items.find(office => office.id === selected?.id) ?? selected;
-  useEffect(() => {
-    const controller = new AbortController();
-    void controlRequest<ControlPage<ControlOffice>>("list", null, { limit: 20, after: cursor }, controller.signal)
-      .then(data => { if (!controller.signal.aborted) { setOffices(data); setLoading(false); setError(""); } })
-      .catch(e => { if (!controller.signal.aborted) { if (e.message === "MFA_REQUIRED") onMfaRequired(); else { setLoading(false); setError(e.message); } } });
-    return () => controller.abort();
-  }, [cursor, revision, onMfaRequired]);
-  const request = useCallback(<T,>(action: string, input: Record<string, unknown> = {}) => controlRequest<T>(action, selected?.id ?? null, input).catch(e => { if (e.message === "MFA_REQUIRED") onMfaRequired(); throw e; }), [selected?.id, onMfaRequired]);
+  const request = useCallback(<T,>(action: string, input: Record<string, unknown> = {}, signal?: AbortSignal) => controlRequest<T>(action, selected?.id ?? null, input, signal).catch(e => { if (e.message === "MFA_REQUIRED") onMfaRequired(); throw e; }), [selected?.id, onMfaRequired]);
+  useEffect(() => { if (directory.error === "MFA_REQUIRED") onMfaRequired(); }, [directory.error, onMfaRequired]);
   return <section className="space-y-5" aria-label="AXIA Control Center">
     <div className={styles.intro}>
       <div><h2>إدارة المكاتب والاشتراكات</h2><p className={styles.muted}>إدارة الاشتراكات والفريق، ومتابعة العمل والنسخ المشفرة من مكان واحد.</p></div>
       <button type="button" aria-expanded={creating} onClick={() => setCreating(v => !v)} className={`${button} ${styles.primary}`}><Plus size={18} aria-hidden="true" />{creating ? "إغلاق إضافة المكتب" : "إضافة مكتب"}</button>
     </div>
     {creating ? <CreateOffice onCreated={() => { setCreating(false); setRevision(n => n + 1); }} /> : null}
-    {error ? <p role="alert" className={styles.notice}>{error}</p> : null}
     <div className={styles.workspace}>
-      <aside className={styles.sidebar} aria-label="اختيار المكتب" aria-busy={loading}>
+      <aside className={styles.sidebar} aria-label="اختيار المكتب" aria-busy={directory.loading}>
         <h3 className={styles.sidebarTitle}><Building2 size={18} aria-hidden="true" />المكاتب المشتركة</h3>
         <label className={styles.label}><span className="sr-only">البحث في المكاتب المعروضة</span><span className="relative block"><Search size={16} aria-hidden="true" className="pointer-events-none absolute end-3 top-4 text-[var(--text-muted)]" /><input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder="اسم المكتب أو معرّفه" className={`${field} pe-10`} /></span></label>
         <p className={styles.hint}>البحث داخل القائمة الحالية · {offices.items.length} مكتب</p>
         <div className={styles.officeList}>
           {displayed.map(office => <button type="button" key={office.id} aria-pressed={selected?.id === office.id} onClick={() => { setSelected(office); setReason(""); setTab("overview"); }} className={styles.office}><span className={styles.officeName}><bdi>{office.name}</bdi></span><span className={styles.officeMeta}><OfficeStatus office={office} now={now} /><span>{office.plan === "unconfigured" ? "بدون باقة مخصصة" : <bdi>{office.plan}</bdi>}</span></span></button>)}
         </div>
-        {loading ? <p role="status" className={styles.hint}>جارٍ تحميل المكاتب…</p> : !displayed.length ? <p className={styles.muted}>{search ? "لا توجد نتائج في القائمة الحالية." : "لا توجد مكاتب في هذه الصفحة."}</p> : null}
-        <div className="mt-4 flex flex-wrap gap-2">{cursor ? <button type="button" onClick={() => { setLoading(true); setCursor(null); }} className={button}>أول صفحة</button> : null}{offices.nextCursor ? <button type="button" onClick={() => { setLoading(true); setCursor(offices.nextCursor); }} className={button}>المزيد</button> : null}</div>
+        <ControlQueryNotice {...directory} label="المكاتب" />
+        {!directory.loading && !directory.error && !displayed.length ? <p className={styles.muted}>{search ? "لا توجد نتائج في القائمة الحالية." : "لا توجد مكاتب في هذه الصفحة."}</p> : null}
+        <div className="mt-4 flex flex-wrap gap-2">{cursor ? <button type="button" disabled={directory.loading} onClick={() => setCursor(null)} className={button}>أول صفحة</button> : null}{offices.nextCursor ? <button type="button" disabled={directory.loading} onClick={() => setCursor(offices.nextCursor)} className={button}>المزيد</button> : null}</div>
       </aside>
       <div className="min-w-0 space-y-4">
         {selected ? <>
@@ -85,11 +86,11 @@ function OfficeStatus({ office, now }: { office: ControlOffice; now: number }) {
   return <span className={styles.badge} data-tone={status === "نشط" ? "active" : "inactive"}>{status}</span>;
 }
 
-type RequestProps = { request: <T>(action: string, input?: Record<string, unknown>) => Promise<T>; reason: string };
+type RequestProps = { request: ControlRequest; reason: string };
 function OfficeSettings({ request, reason, onChanged }: RequestProps & { onChanged: () => void }) {
-  const [overview, setOverview] = useState<OfficeOverview | null>(null);
   const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false); const [revision, setRevision] = useState(0);
-  useEffect(() => { let current = true; void request<OfficeOverview>("overview").then(v => { if (current) setOverview(v); }).catch(e => { if (current) setMessage(e.message); }); return () => { current = false; }; }, [request, revision]);
+  const read = useControlQuery<OfficeOverview>(request, "overview", { revision });
+  const overview = read.data;
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (!overview) return;
     const form = new FormData(event.currentTarget);
@@ -99,7 +100,7 @@ function OfficeSettings({ request, reason, onChanged }: RequestProps & { onChang
     catch (error) { setMessage(error instanceof Error ? error.message : "تعذر الحفظ."); }
     finally { setBusy(false); }
   }
-  return <section className="space-y-4">{message ? <p role="status" className={styles.notice}>{message}</p> : null}{overview ? <>
+  return <section className="space-y-4" aria-busy={read.loading}><ControlQueryNotice {...read} label="بيانات المكتب" />{message ? <p role="status" className={styles.notice}>{message}</p> : null}{overview ? <>
     <dl className={styles.stats}>{([["الأعضاء", overview.members, Users], ["العملاء", overview.clients, Building2], ["القضايا", overview.matters, Scale], ["المسودات", overview.drafts, FileText]] as const).map(([label, count, Icon]) => <div key={label} className={styles.stat}><dt><Icon size={15} aria-hidden="true" />{label}</dt><dd>{new Intl.NumberFormat("ar-EG").format(count)}</dd></div>)}</dl>
     <form key={overview.control?.revision ?? 0} onSubmit={event => void save(event)} className={styles.surface}>
       <h3 className={styles.sectionHeading}><Settings2 size={20} aria-hidden="true" />الاشتراك وحدود الاستخدام</h3>
@@ -114,33 +115,36 @@ function OfficeSettings({ request, reason, onChanged }: RequestProps & { onChang
         <div className={styles.footer}><p className={styles.hint}>{reason.trim().length < 8 ? "أضف سبب الإجراء أعلى الصفحة لتفعيل الحفظ." : "تُسجّل التغييرات باسم حسابك."}</p><button disabled={reason.trim().length < 8} className={`${button} ${styles.primary}`}>حفظ إعدادات المكتب</button></div>
       </fieldset>
     </form>
-  </> : <p role="status">جارٍ تحميل بيانات المكتب…</p>}</section>;
+  </> : null}</section>;
 }
 
 function OfficeMembers({ request, reason }: RequestProps) {
-  const [page, setPage] = useState<ControlPage<ControlMember>>({ items: [], nextCursor: null }); const [after, setAfter] = useState<string | null>(null); const [revision, setRevision] = useState(0); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false);
-  useEffect(() => { let current = true; void request<ControlPage<ControlMember>>("members", { limit: 20, after }).then(v => { if (current) setPage(v); }).catch(e => { if (current) setMessage(e.message); }); return () => { current = false; }; }, [request, after, revision]);
+  const [after, setAfter] = useState<string | null>(null); const [revision, setRevision] = useState(0); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false);
+  const read = useControlQuery<ControlPage<ControlMember>>(request, "members", { after, revision });
+  const page = read.data ?? { items: [], nextCursor: null };
   async function save(event: FormEvent<HTMLFormElement>, member: ControlMember) {
     event.preventDefault(); const data = new FormData(event.currentTarget);
     if (!confirm(`تأكيد تغيير صلاحية أو وصول «${member.email}» داخل هذا المكتب؟`)) return;
     setBusy(true); try { await request("member", { userId: member.id, role: data.get("role"), blocked: data.get("blocked") === "on", reason }); setMessage("تم تحديث العضوية وتسجيل العملية."); setRevision(n => n + 1); } catch (error) { setMessage(error instanceof Error ? error.message : "تعذر التحديث."); } finally { setBusy(false); }
   }
-  return <section className="space-y-3"><p className="text-sm leading-7 text-[var(--text-muted)]">تعليق العضو يوقف وصوله لهذا المكتب. حساب المطوّر وآخر مالك صالح محميان؛ لا يتم حذف حسابات أو إرسال دعوات من هنا.</p>{message ? <p role="status">{message}</p> : null}{page.items.map(member => <form key={member.id + member.role + member.blocked} onSubmit={e => void save(e, member)} className="rounded-xl border border-[var(--border)] p-4"><fieldset disabled={busy || member.protected} className="flex flex-wrap items-center gap-3"><div className="min-w-0 flex-1"><p className="font-bold break-words">{member.name || "عضو المكتب"}</p><p dir="ltr" className="break-all text-right text-sm text-[var(--text-muted)]">{member.email}</p>{member.protected ? <p className="mt-2 text-xs text-[var(--axia-gold)]">حساب منصة محمي</p> : null}</div><label><span className="sr-only">دور {member.email}</span><select name="role" defaultValue={member.role} className={field}>{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="flex items-center gap-2 text-sm"><input name="blocked" type="checkbox" defaultChecked={member.blocked} />تعليق الوصول</label><button disabled={reason.trim().length < 8} className={button}>حفظ العضوية</button></fieldset></form>)}<div className="flex gap-2">{after ? <button type="button" onClick={() => setAfter(null)} className={button}>أول صفحة</button> : null}{page.nextCursor ? <button type="button" onClick={() => setAfter(page.nextCursor)} className={button}>المزيد</button> : null}</div></section>;
+  return <section className="space-y-3" aria-busy={read.loading}><ControlQueryNotice {...read} label="الأعضاء" /><p className="text-sm leading-7 text-[var(--text-muted)]">تعليق العضو يوقف وصوله لهذا المكتب. حساب المطوّر وآخر مالك صالح محميان؛ لا يتم حذف حسابات أو إرسال دعوات من هنا.</p>{message ? <p role="status">{message}</p> : null}{page.items.map(member => <form key={member.id + member.role + member.blocked} onSubmit={e => void save(e, member)} className="rounded-xl border border-[var(--border)] p-4"><fieldset disabled={busy || member.protected} className="flex flex-wrap items-center gap-3"><div className="min-w-0 flex-1"><p className="font-bold break-words">{member.name || "عضو المكتب"}</p><p dir="ltr" className="break-all text-right text-sm text-[var(--text-muted)]">{member.email}</p>{member.protected ? <p className="mt-2 text-xs text-[var(--axia-gold)]">حساب منصة محمي</p> : null}</div><label><span className="sr-only">دور {member.email}</span><select name="role" defaultValue={member.role} className={field}>{Object.entries(roles).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><label className="flex items-center gap-2 text-sm"><input name="blocked" type="checkbox" defaultChecked={member.blocked} />تعليق الوصول</label><button disabled={reason.trim().length < 8} className={button}>حفظ العضوية</button></fieldset></form>)}{!read.loading && !read.error && !page.items.length ? <p className={styles.muted}>لا توجد عضويات في هذه الصفحة.</p> : null}<div className="flex gap-2">{after ? <button type="button" disabled={read.loading || busy} onClick={() => setAfter(null)} className={button}>أول صفحة</button> : null}{page.nextCursor ? <button type="button" disabled={read.loading || busy} onClick={() => setAfter(page.nextCursor)} className={button}>المزيد</button> : null}</div></section>;
 }
 
 function OfficeSupport({ request, reason }: RequestProps) {
-  const [expires, setExpires] = useState(""); const [dataset, setDataset] = useState<ControlDataset>("clients"); const [page, setPage] = useState<ControlPage<Record<string, unknown>>>({ items: [], nextCursor: null }); const [after, setAfter] = useState<string | null>(null); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false);
-  useEffect(() => { if (!expires) return; const timer = setTimeout(() => { setExpires(""); setPage({ items: [], nextCursor: null }); setMessage("انتهت مدة المتابعة. ابدأ جلسة جديدة عند الحاجة."); }, Math.max(0, Date.parse(expires) - Date.now())); return () => clearTimeout(timer); }, [expires]);
-  useEffect(() => { if (!expires) return; let current = true; void request<ControlPage<Record<string, unknown>>>("records", { dataset, limit: 20, after }).then(v => { if (current) { setPage(v); setMessage(""); } }).catch(e => { if (current) { setPage({ items: [], nextCursor: null }); setMessage(e.message); } }); return () => { current = false; }; }, [request, dataset, after, expires]);
+  const [expires, setExpires] = useState(""); const [dataset, setDataset] = useState<ControlDataset>("clients"); const [after, setAfter] = useState<string | null>(null); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false);
+  useEffect(() => { if (!expires) return; const timer = setTimeout(() => { setExpires(""); setMessage("انتهت مدة المتابعة. ابدأ جلسة جديدة عند الحاجة."); }, Math.max(0, Date.parse(expires) - Date.now())); return () => clearTimeout(timer); }, [expires]);
+  const read = useControlQuery<ControlPage<Record<string, unknown>>>(request, "records", { after, dataset, revision: expires, enabled: Boolean(expires) });
+  const page = read.data ?? { items: [], nextCursor: null };
   async function begin() { setBusy(true); try { const grant = await request<{ expiresAt: string }>("support", { reason }); setExpires(grant.expiresAt); } catch (e) { setMessage(e instanceof Error ? e.message : "تعذر بدء المتابعة."); } finally { setBusy(false); } }
-  async function end() { setBusy(true); try { await request("end_support"); setExpires(""); setPage({ items: [], nextCursor: null }); setMessage("انتهى وصول الدعم لهذا المكتب."); } catch (e) { setMessage(e instanceof Error ? e.message : "تعذر الإنهاء."); } finally { setBusy(false); } }
-  return <section className={`${styles.surface} space-y-4`}><h3 className={styles.sectionHeading}><LifeBuoy size={20} aria-hidden="true" />متابعة بيانات المكتب</h3><p className="text-sm leading-7 text-[var(--text-muted)]">تبدأ جلسة متابعة لمدة 15 دقيقة، مرتبطة بحسابك وجلسة الدخول والمكتب المحدد. يتم تسجيل سبب المتابعة والأقسام التي قرأتها.</p>{!expires ? <button type="button" disabled={busy || reason.trim().length < 8} onClick={() => void begin()} className={button}>بدء متابعة المكتب</button> : <><div className="flex flex-wrap items-center gap-3"><span className="text-sm">تنتهي الجلسة: <bdi>{formatControlDate(expires)}</bdi></span><button type="button" disabled={busy} onClick={() => void end()} className={button}>إنهاء المتابعة</button></div><label className="block space-y-2"><span>قسم العمل</span><select value={dataset} onChange={e => { setDataset(e.target.value as ControlDataset); setAfter(null); setPage({ items: [], nextCursor: null }); }} className={field}>{CONTROL_DATASETS.map(d => <option key={d} value={d}>{datasetNames[d]}</option>)}</select></label><div className="space-y-3">{page.items.map(row => <details key={String(row.id)} className="min-w-0 rounded-xl border border-[var(--border)] p-4"><summary className="cursor-pointer font-bold break-words">{String(row.title || row.name || (row.payload as Record<string, unknown> | undefined)?.title || row.id)}</summary><pre dir="ltr" className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap break-all text-xs leading-6">{JSON.stringify(row, null, 2)}</pre></details>)}</div>{!page.items.length && !message ? <p className="text-sm text-[var(--text-muted)]">لا توجد سجلات في هذه الصفحة.</p> : null}<div className="flex gap-2">{after ? <button type="button" onClick={() => setAfter(null)} className={button}>أول صفحة</button> : null}{page.nextCursor ? <button type="button" onClick={() => setAfter(page.nextCursor)} className={button}>المزيد</button> : null}</div></>}{message ? <p role="status" className="text-sm leading-7">{message}</p> : null}</section>;
+  async function end() { setBusy(true); try { await request("end_support"); setExpires(""); setMessage("انتهى وصول الدعم لهذا المكتب."); } catch (e) { setMessage(e instanceof Error ? e.message : "تعذر الإنهاء."); } finally { setBusy(false); } }
+  return <section className={`${styles.surface} space-y-4`}><h3 className={styles.sectionHeading}><LifeBuoy size={20} aria-hidden="true" />متابعة بيانات المكتب</h3><p className="text-sm leading-7 text-[var(--text-muted)]">تبدأ جلسة متابعة لمدة 15 دقيقة، مرتبطة بحسابك وجلسة الدخول والمكتب المحدد. يتم تسجيل سبب المتابعة والأقسام التي قرأتها.</p>{!expires ? <button type="button" disabled={busy || reason.trim().length < 8} onClick={() => void begin()} className={button}>بدء متابعة المكتب</button> : <><div className="flex flex-wrap items-center gap-3"><span className="text-sm">تنتهي الجلسة: <bdi>{formatControlDate(expires)}</bdi></span><button type="button" disabled={busy} onClick={() => void end()} className={button}>إنهاء المتابعة</button></div><label className="block space-y-2"><span>قسم العمل</span><select value={dataset} onChange={e => { setDataset(e.target.value as ControlDataset); setAfter(null); }} className={field}>{CONTROL_DATASETS.map(d => <option key={d} value={d}>{datasetNames[d]}</option>)}</select></label><ControlQueryNotice {...read} label="سجلات المتابعة" /><div className="space-y-3">{page.items.map(row => <details key={String(row.id)} className="min-w-0 rounded-xl border border-[var(--border)] p-4"><summary className="cursor-pointer font-bold break-words">{String(row.title || row.name || (row.payload as Record<string, unknown> | undefined)?.title || row.id)}</summary><pre dir="ltr" className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap break-all text-xs leading-6">{JSON.stringify(row, null, 2)}</pre></details>)}</div>{!read.loading && !read.error && !page.items.length && !message ? <p className="text-sm text-[var(--text-muted)]">لا توجد سجلات في هذه الصفحة.</p> : null}<div className="flex gap-2">{after ? <button type="button" disabled={read.loading || busy} onClick={() => setAfter(null)} className={button}>أول صفحة</button> : null}{page.nextCursor ? <button type="button" disabled={read.loading || busy} onClick={() => setAfter(page.nextCursor)} className={button}>المزيد</button> : null}</div></>}{message ? <p role="status" className="text-sm leading-7">{message}</p> : null}</section>;
 }
 
 function ControlAudit({ request }: Pick<RequestProps, "request">) {
-  const [page, setPage] = useState<ControlPage<Record<string, unknown>>>({ items: [], nextCursor: null }); const [after, setAfter] = useState<string | null>(null); const [error, setError] = useState("");
-  useEffect(() => { let current = true; void request<ControlPage<Record<string, unknown>>>("audit", { limit: 20, after }).then(v => { if (current) setPage(v); }).catch(e => { if (current) setError(e.message); }); return () => { current = false; }; }, [request, after]);
-  return <section className="space-y-3"><h3 className={styles.sectionHeading}><History size={20} aria-hidden="true" />سجل إجراءات المكتب</h3><p className={styles.muted}>توقيتات السجل معروضة حسب توقيت جهازك. افتح الإجراء لعرض سببه وتفاصيله.</p>{error ? <p role="alert">{error}</p> : null}{page.items.map(row => <details key={String(row.id)} className={styles.auditItem}><summary className={styles.auditSummary}><bdi dir="ltr">{String(row.action)}</bdi><time dateTime={String(row.created_at)}><bdi>{formatControlDate(String(row.created_at))}</bdi></time></summary><p className="mt-3 text-sm leading-7">{String(row.reason)}</p><pre dir="ltr" className="mt-3 overflow-auto whitespace-pre-wrap break-all text-xs">{JSON.stringify(row.detail, null, 2)}</pre></details>)}<div className="flex gap-2">{after ? <button type="button" onClick={() => setAfter(null)} className={button}>أول صفحة</button> : null}{page.nextCursor ? <button type="button" onClick={() => setAfter(page.nextCursor)} className={button}>المزيد</button> : null}</div></section>;
+  const [after, setAfter] = useState<string | null>(null);
+  const read = useControlQuery<ControlPage<Record<string, unknown>>>(request, "audit", { after });
+  const page = read.data ?? { items: [], nextCursor: null };
+  return <section className="space-y-3"><h3 className={styles.sectionHeading}><History size={20} aria-hidden="true" />سجل إجراءات المكتب</h3><p className={styles.muted}>توقيتات السجل معروضة حسب توقيت جهازك. افتح الإجراء لعرض سببه وتفاصيله.</p><ControlQueryNotice {...read} label="سجل الإدارة" />{page.items.map(row => <details key={String(row.id)} className={styles.auditItem}><summary className={styles.auditSummary}><bdi dir="ltr">{String(row.action)}</bdi><time dateTime={String(row.created_at)}><bdi>{formatControlDate(String(row.created_at))}</bdi></time></summary><p className="mt-3 text-sm leading-7">{String(row.reason)}</p><pre dir="ltr" className="mt-3 overflow-auto whitespace-pre-wrap break-all text-xs">{JSON.stringify(row.detail, null, 2)}</pre></details>)}{!read.loading && !read.error && !page.items.length ? <p className={styles.muted}>لا توجد إجراءات في هذه الصفحة.</p> : null}<div className="flex gap-2">{after ? <button type="button" disabled={read.loading} onClick={() => setAfter(null)} className={button}>أول صفحة</button> : null}{page.nextCursor ? <button type="button" disabled={read.loading} onClick={() => setAfter(page.nextCursor)} className={button}>المزيد</button> : null}</div></section>;
 }
 
 function CreateOffice({ onCreated }: { onCreated: () => void }) {
