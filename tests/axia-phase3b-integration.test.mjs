@@ -30,7 +30,7 @@ const globalSearch = fs.readFileSync(
   "src/components/global-search-bar.tsx",
   "utf8",
 );
-const page = fs.readFileSync("src/app/page.tsx", "utf8");
+const page = fs.readFileSync("src/components/office-workspace.tsx", "utf8");
 
 test("Phase 3B storage bucket is private and limited to insert/select policies", () => {
   assert.match(migration, /'legal-documents'/);
