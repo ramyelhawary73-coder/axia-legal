@@ -18,7 +18,10 @@ const domain=vars=>load("src/lib/platform-control.ts",{},vars);
 function harness(options={}) {
   const calls=[],warnings=[]; let state=options.state??"ready";let userCalls=0;
   const user={id:uid,email_confirmed_at:"2026-01-01",is_anonymous:false,...options.user};
-  const client={auth:{getUser:async()=>{calls.push("getUser");userCalls++;return {data:{user:options.noUser?null:options.switchUser&&userCalls>1?{...user,id:fid}:user},error:options.userError??null};},mfa:{
+  const client={auth:{
+    updateUser:async args=>{calls.push(["updateUser",args]);if(options.passwordThrow)throw new Error("private-provider-detail");return {data:{user:{id:options.passwordUser??uid,private:"private-provider-detail"}},error:options.passwordError??null};},
+    reauthenticate:async()=>{calls.push(["reauthenticate"]);return {error:options.passwordError??null};},
+    getUser:async()=>{calls.push("getUser");userCalls++;return {data:{user:options.noUser?null:options.switchUser&&userCalls>1?{...user,id:fid}:user},error:options.userError??null};},mfa:{
     listFactors:async()=>{calls.push("listFactors");return {data:{all:options.factors??[]},error:options.factorError??null};},
     enroll:async args=>{calls.push(["enroll",args]);return {data:{id:fid,type:"totp",totp:{qr_code:"data:image/svg+xml;utf-8,<svg/>",secret:"synthetic-private-seed"}},error:options.enrollError??null};},
     challengeAndVerify:async args=>{calls.push(["verify",args]);state=options.afterVerify??"ready";return {data:{access_token:"synthetic-private-token"},error:options.verifyError??null};},
@@ -36,7 +39,8 @@ function harness(options={}) {
   const modules={"@/lib/api/platform":api,"@/lib/platform-control":helpers};
   const mfa=load("src/app/api/platform/mfa/route.ts",modules,env,warnings);
   const context=load("src/app/api/platform/context/route.ts",modules,env,warnings);
-  return {api,mfa,context,calls,warnings};
+  const password=load("src/app/api/platform/password/route.ts",modules,env,warnings);
+  return {api,mfa,context,password,calls,warnings};
 }
 const req=(body={action:"verify",factorId:fid,code:"123456"},options={})=>new Request(origin+"/api/platform/mfa",{method:"POST",headers:{Origin:options.origin??origin,"Content-Type":"application/json",...options.headers},body:options.raw??JSON.stringify(body)});
 const factors=[{id:fid,status:"verified",factor_type:"totp",phone:"must-not-return"}];
@@ -180,4 +184,34 @@ test("platform header exposes only a valid own-office link and explicit existing
     assert.equal(nodes.find(n=>n.type==="form").props.action,logout);
     assert.equal(nodes.find(n=>n.type==="PlatformEntry").props.initialState,"ready");
   }
+});
+
+const passwordBody={action:"update",password:"Synthetic-private-new-2026!",passwordConfirmation:"Synthetic-private-new-2026!"};
+const passwordCalls=h=>h.calls.filter(c=>Array.isArray(c)&&["updateUser","reauthenticate"].includes(c[0]));
+test("password mutation requires fresh same-identity root and AAL2",async()=>{
+  for(const [options,status] of [[{enabled:false},503],[{configured:false},503],[{noUser:true},401],[{user:{email_confirmed_at:null}},403],[{rpcUser:fid},403],[{state:"forbidden"},403],[{state:"mfa_required"},403],[{rpcError:{message:"private-provider-detail"}},503]]){
+    const h=harness(options),r=await h.password.POST(req(passwordBody));assert.equal(r.status,status);assert.deepEqual(passwordCalls(h),[]);assert.doesNotMatch(await r.text(),/private-provider-detail/);
+  }
+});
+test("password rejects cross-origin, malformed, oversized and target/role injection before Auth",async()=>{
+  const requests=[req(passwordBody,{origin:"https://foreign.example"}),req(passwordBody,{origin:""}),req(passwordBody,{raw:"{"}),req(passwordBody,{raw:" ".repeat(4097)}),req(passwordBody,{headers:{"Content-Type":"text/plain"}}),req({action:"reauthenticate",email:"other@example.invalid"}),req({...passwordBody,action:["update"]}),req({...passwordBody,email:"other@example.invalid"}),req({...passwordBody,userId:fid}),req({...passwordBody,role:"platform_owner"}),req({...passwordBody,passwordConfirmation:"different"}),req({...passwordBody,password:"short",passwordConfirmation:"short"}),req({...passwordBody,password:" ".repeat(12),passwordConfirmation:" ".repeat(12)}),req({...passwordBody,password:"a".repeat(129),passwordConfirmation:"a".repeat(129)}),req({...passwordBody,currentPassword:""}),req({...passwordBody,nonce:"bad code"})];
+  for(const request of requests){const h=harness();assert.ok([400,403].includes((await h.password.POST(request)).status));assert.equal(h.calls.length,0);}
+});
+test("password updates only the current ordinary session with an allowlisted payload",async()=>{
+  const h=harness(),r=await h.password.POST(req({...passwordBody,currentPassword:"Synthetic-old-2026!",nonce:"123456"}));assert.equal(r.status,200);assert.deepEqual(await r.json(),{status:"password_updated"});
+  assert.deepEqual(JSON.parse(JSON.stringify(passwordCalls(h))),[["updateUser",{password:passwordBody.password,current_password:"Synthetic-old-2026!",nonce:"123456"}]]);
+  assert.doesNotMatch(JSON.stringify(h.warnings),/Synthetic|123456|private-provider-detail/);
+});
+test("reauthentication sends a code only on an explicit own-session request",async()=>{
+  const h=harness({passwordError:{code:"reauthentication_needed",message:"private-provider-detail"}});const r=await h.password.POST(req(passwordBody));assert.equal(r.status,409);assert.equal((await r.json()).code,"PASSWORD_REAUTH_REQUIRED");assert.deepEqual(passwordCalls(h).map(x=>x[0]),["updateUser"]);
+  const explicit=harness(),response=await explicit.password.POST(req({action:"reauthenticate"}));assert.deepEqual(await response.json(),{status:"code_requested"});assert.deepEqual(JSON.parse(JSON.stringify(passwordCalls(explicit))),[["reauthenticate"]]);
+});
+test("password provider refusals are sanitized and never retried or bypassed",async()=>{
+  for(const [error,status,code] of [[{code:"reauth_nonce_missing"},409,"PASSWORD_REAUTH_REQUIRED"],[{code:"reauthentication_not_valid"},409,"PASSWORD_REAUTH_REQUIRED"],[{code:"current_password_required"},409,"PASSWORD_CURRENT_REQUIRED"],[{code:"current_password_invalid"},409,"PASSWORD_CURRENT_REQUIRED"],[{code:"same_password"},400,"PASSWORD_UNCHANGED"],[{code:"weak_password"},400,"PASSWORD_WEAK"],[{status:429},429,"RATE_LIMIT"],[{message:"private-provider-detail"},503,"PASSWORD_UNAVAILABLE"]]){
+    const h=harness({passwordError:error}),r=await h.password.POST(req(passwordBody));assert.equal(r.status,status);assert.equal((await r.json()).code,code);assert.equal(passwordCalls(h).length,1);assert.doesNotMatch(JSON.stringify(h.warnings),/Synthetic|private-provider-detail/);
+  }
+  for(const options of [{passwordThrow:true},{passwordUser:fid}]){const h=harness(options),r=await h.password.POST(req(passwordBody));assert.equal(r.status,503);assert.doesNotMatch(await r.text(),/Synthetic|private-provider-detail/);assert.equal(passwordCalls(h).length,1);}
+});
+test("password responses are private and cannot be indexed or embedded",async()=>{
+  for(const options of [{},{enabled:false},{state:"mfa_required"}]){const r=await harness(options).password.POST(req(passwordBody));assert.equal(r.headers.get("cache-control"),"private, no-store");assert.equal(r.headers.get("referrer-policy"),"no-referrer");assert.equal(r.headers.get("x-robots-tag"),"noindex, nofollow");assert.equal(r.headers.get("x-frame-options"),"DENY");assert.equal(r.headers.get("vary"),"Cookie");}
 });

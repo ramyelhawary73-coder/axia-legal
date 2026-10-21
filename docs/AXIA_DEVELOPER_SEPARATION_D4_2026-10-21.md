@@ -2,6 +2,10 @@
 
 Date: 2026-10-21. Baseline: PR #48 `31147d2c3699a33044484e041bdb63590eeb51ff`. Same independent branch `feat/axia-control-center-client-readiness`; main remains `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`.
 
+## Superseding owner decision — R2, 2026-10-21
+
+The owner confirmed the existing second account's mailbox and selected its existing office B for testing. [Account Security and Existing Demo R2](AXIA_ACCOUNT_SECURITY_AND_DEMO_R2_2026-10-21.md) supersedes the new-mailbox/transfer-A/suspend-B/reset/seed proposal below. B's existing office/client/case display names were prepared in one guarded audited operator transaction; no duplicate account or records were created, and A's sole ownership remains. The private password form is source preparation; the owner must submit the actual new password privately. No live Auth/password/email/settings/membership changes occurred. Earlier read-only statements and counts below remain dated D4 evidence.
+
 ## Owner objective and recommendation
 
 Keep the existing verified developer identity as Platform Owner only, separate from office ownership; use one controlled test owner and one active synthetic office. Preserve protected support/export access and audit. Finish cloud SaaS delivery first; local installation and full offline synchronization are subsequent architecture packages, not current capabilities.

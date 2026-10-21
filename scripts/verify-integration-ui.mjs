@@ -33,7 +33,8 @@ async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=
   const registrationRequests=[];
   const events={accepted:0};
   let platformState=platformMode;
-  const platformRequests=[];
+  const platformRequests=[],passwordRequests=[];
+  const passwordControls={requireCode:true,failNext:null};
   const controlRequests=[],draftRequests=[];
   const readControls={failNext:null,holdNext:null,held:null,paginated:false};
   let config=null,lease=null;
@@ -106,6 +107,14 @@ async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=
         data={data:result};
       }
     }
+    if(url.pathname==="/api/platform/password") {
+      const body=request.postDataJSON();passwordRequests.push(body);
+      if(passwordControls.failNext==="mfa"){passwordControls.failNext=null;status=403;data={code:"PLATFORM_MFA_REQUIRED"};}
+      else if(passwordControls.failNext==="malformed"){passwordControls.failNext=null;return route.fulfill({status:502,contentType:"text/html",body:"<html>synthetic unavailable</html>"});}
+      else if(body.action==="reauthenticate")data={status:"code_requested"};
+      else if(passwordControls.requireCode&&body.nonce!=="123456"){status=409;data={code:"PASSWORD_REAUTH_REQUIRED",error:"يلزم رمز تأكيد من بريدك."};}
+      else data={status:"password_updated"};
+    }
     if(url.pathname==="/api/platform/mfa") {
       if(request.method()==="GET") data={factors:[]};
       else {
@@ -144,7 +153,7 @@ async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=
     }
     await route.fulfill({status,contentType:"application/json",body:JSON.stringify(data)});
   });
-  return {context,mutations,registrationRequests,events,platformRequests,controlRequests,draftRequests,savedDrafts,readControls};
+  return {context,mutations,registrationRequests,events,platformRequests,controlRequests,draftRequests,savedDrafts,readControls,passwordRequests,passwordControls};
 }
 async function waitForHeld(controls,action) {
   for(let attempt=0;attempt<100;attempt++) {
@@ -182,6 +191,8 @@ try {
   }
   const disabledMfa=await fetch(base+"/api/platform/mfa",{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({action:"enroll"})});
   assert.equal(disabledMfa.status,503);assert.equal((await disabledMfa.json()).code,"PLATFORM_DISABLED");
+  const disabledPassword=await fetch(base+"/api/platform/password",{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({action:"reauthenticate"})});
+  assert.equal(disabledPassword.status,503);assert.equal((await disabledPassword.json()).code,"PLATFORM_DISABLED");
   const disabledControl=await fetch(base+"/api/platform/control",{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({action:"capabilities"})});
   assert.equal(disabledControl.status,503);assert.equal((await disabledControl.json()).code,"CONTROL_DISABLED");
   const disabledDrafts=await fetch(base+"/api/drafts");assert.equal(disabledDrafts.status,503);assert.equal((await disabledDrafts.json()).enabled,false);
@@ -310,6 +321,35 @@ try {
     const stored=await mfaPage.evaluate(()=>JSON.stringify([Object.entries(localStorage),Object.entries(sessionStorage)]));
     assert.ok(!stored.includes("data:image")&&!stored.includes(inviteId),"MFA seed/factor data must not persist");
     await fits(mfaPage,`platform-verified-${width}-${theme}`);await mfa.context.close();
+  }
+  for(const [width,theme] of [[1440,"light"],[390,"dark"],[320,"light"]]) {
+    console.log(`UI private password ${width}px ${theme}`);
+    const {context,passwordRequests,passwordControls}=await fixtureContext({width,height:900},theme,{platformMode:"ready"});
+    const page=await context.newPage(),errors=[];page.on("pageerror",error=>errors.push(error.message));
+    await page.goto(base+"/platform");await page.getByRole("button",{name:"أمان الحساب",exact:true}).click();
+    await page.getByRole("heading",{name:"أمان حساب المطوّر",exact:true}).waitFor();
+    assert.equal(passwordRequests.length,0);
+    await fits(page,`password-empty-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`password-empty-${width}-${theme}.png`),fullPage:true});
+    const password="Synthetic-fixture-only-2026!";
+    const fill=async confirmation=>{await page.getByLabel("كلمة المرور الجديدة",{exact:true}).fill(password);await page.getByLabel("تأكيد كلمة المرور الجديدة",{exact:true}).fill(confirmation??password);};
+    const submit=()=>page.getByRole("button",{name:"حفظ كلمة المرور الجديدة",exact:true}).click();
+    await fill("Synthetic-mismatch-2026!");await submit();await page.getByRole("alert").filter({hasText:"غير متطابقتين"}).waitFor();assert.equal(passwordRequests.length,0);
+    await fill();await submit();await page.getByRole("alert").filter({hasText:"يلزم رمز"}).waitFor();
+    assert.equal(passwordRequests.length,1);assert.equal(await page.getByLabel("كلمة المرور الجديدة",{exact:true}).inputValue(),"");
+    await page.getByRole("button",{name:"إرسال رمز تأكيد إلى بريدي",exact:true}).click();
+    await page.getByRole("status").filter({hasText:"تم طلب إرسال"}).waitFor();assert.deepEqual(passwordRequests.map(x=>x.action),["update","reauthenticate"]);
+    await fill();await page.getByLabel("رمز التأكيد من البريد",{exact:true}).fill("123456");await submit();
+    await page.getByRole("status").filter({hasText:"تم تغيير كلمة المرور"}).waitFor();assert.equal(passwordRequests.length,3);
+    assert.equal(await page.getByLabel("كلمة المرور الجديدة",{exact:true}).inputValue(),"");
+    assert.equal(await page.evaluate(secret=>JSON.stringify({...localStorage,...sessionStorage}).includes(secret),password),false);
+    await fits(page,`password-success-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`password-success-${width}-${theme}.png`),fullPage:true});
+    passwordControls.requireCode=false;passwordControls.failNext="malformed";
+    await fill();await submit();await page.getByRole("alert").filter({hasText:"تعذر قراءة"}).waitFor();assert.equal(passwordRequests.length,4);
+    passwordControls.failNext="mfa";await fill();await submit();
+    await page.getByRole("heading",{name:"حماية حساب المطوّر",exact:true}).waitFor();assert.equal(passwordRequests.length,5);
+    assert.deepEqual(errors,[]);await context.close();
   }
   for(const platformMode of [null,"forbidden","missing"]) {
     const {context}=await fixtureContext({width:320,height:900},"light",{platformMode});
@@ -500,6 +540,6 @@ try {
     assert.equal(draftRequests.length,1);assert.equal(await page.getByRole("button",{name:"تنزيل التعديلات غير المحفوظة",exact:true}).count(),1);
     await fits(page,"persistent-conflict-390-light");await context.close();
   }
-  await fs.writeFile(path.join(output,"report.json"),JSON.stringify({mode:"loopback UI contracts with synthetic API responses; not real Auth, MFA or email",compiledHttpSafetyChecks:9,checks:records},null,2));
+  await fs.writeFile(path.join(output,"report.json"),JSON.stringify({mode:"loopback UI contracts with synthetic API responses; not real Auth, MFA or email",compiledHttpSafetyChecks:10,checks:records},null,2));
   console.log(JSON.stringify({checks:records.length,output,records}));
 } finally {await browser.close();}

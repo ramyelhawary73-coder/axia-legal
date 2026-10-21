@@ -19,6 +19,7 @@ const required = [
   "/api/platform/offices/route",
   "/api/platform/audit/route",
   "/api/platform/mfa/route",
+  "/api/platform/password/route",
   "/api/platform/control/route",
   "/api/drafts/route",
 ];

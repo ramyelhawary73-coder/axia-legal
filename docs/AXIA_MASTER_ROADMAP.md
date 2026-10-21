@@ -11,7 +11,7 @@
 > **Default branch:** `main`  
 > **Verified application main SHA:** `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`
 > **Current handoff branch:** `feat/axia-control-center-client-readiness`
-> **Current implementation PR:** Draft #48, D3 database verified from `d26e2da`; owner screenshots establish Preview deployment/console entry. UI source verified; R1 read-recovery implementation and ordered first-client acceptance gates are tracked in the 2026-10-21 delivery plan. PR #45/#47 documentation incorporated. No Merge.
+> **Current implementation PR:** Draft #48, D3 database verified from `d26e2da`; owner screenshots establish Preview deployment/console entry. UI source verified; R2 adds private same-session account security and prepares the existing demo office under explicit owner authorization, preserving R1/D4 and first-client gates. PR #45/#47 documentation incorporated. No Merge.
 
 ---
 
@@ -94,9 +94,15 @@ R1 fixes client read failures, indefinite loading, stale paginated member/audit 
 
 ## Developer Separation D4 — 2026-10-21
 
-[Current separation and trial-reset plan](AXIA_DEVELOPER_SEPARATION_D4_2026-10-21.md) records the latest owner direction: developer identity remains Platform Owner only; one controlled test owner uses one active synthetic office. Fresh read-only inspection confirms the developer is already enabled/confirmed with verified MFA but still the sole owner of demo A. Both demo organizations have immutable control-event references. Do not remove the sole owner, delete organization identities, remove Auth accounts or truncate audit as cleanup. First obtain the owner-controlled test mailbox, verify access, then prepare an exact audited handoff/reset with an explicit row manifest. The proposed reset preserves legal corpus and audit; no live reset or identity change occurred.
+[Current separation and trial-reset plan](AXIA_DEVELOPER_SEPARATION_D4_2026-10-21.md) records the latest owner direction: developer identity remains Platform Owner only; one controlled test owner uses one active synthetic office. Fresh read-only inspection confirms the developer is already enabled/confirmed with verified MFA but still the sole owner of demo A. Both demo organizations have immutable control-event references. Do not remove the sole owner, delete organization identities, remove Auth accounts or truncate audit as cleanup. R2 subsequently confirms the existing second mailbox and reuses office B; its current decision supersedes the earlier new-mailbox/transfer/reset proposal. Any later ownership handoff still requires a concrete reviewed manifest. The proposed reset preserves legal corpus and audit; no live reset or identity change occurred.
 
 D4 source routes a verified Platform Owner from `/` to `/platform`; `/?workspace=1` retains only the current user's ordinary workspace authorization. The whole existing client workspace is preserved in `src/components/office-workspace.tsx`. Platform's office link requires an actual valid own workspace; missing/suspended/provider-error workspace does not block platform rendering, and explicit existing logout remains available. No new authority or tenant bypass is added. Local 168 app tests, Typecheck/Lint and Build/17 routes pass; final CI/Preview is tracked on PR #48. Cloud SaaS remains first-delivery scope; supported local installation/full offline sync is not implemented and is deferred.
+
+## Account Security and Existing Demo R2 — 2026-10-21
+
+[Current account/demo report](AXIA_ACCOUNT_SECURITY_AND_DEMO_R2_2026-10-21.md) records the confirmed existing demo-account decision and its completed 14:17 UTC display-name preparation: one existing office B, one client and one linked case. Two users/offices/memberships, 24 migrations, developer MFA/Platform Owner, A and all memberships remain. Three correctly operator-attributed audit entries were appended; nothing was deleted. No new account, mail, Auth/password/settings/Secret/SMTP or migration operation occurred.
+
+Source adds `/platform` → **أمان الحساب** and a bounded same-session password endpoint requiring exact Origin, fresh confirmed Platform Owner and AAL2. Only the owner privately submitting the form can change the actual password; no password was changed by the assistant. Code requests require a separate explicit owner click. Local Typecheck/Lint, 174 app tests and clean-cache Build/18 routes pass; exact-head CI and synthetic Desktop/mobile acceptance are tracked on Draft #48. Existing Android and all earlier work remain intact.
 
 ## GitHub and deployment
 
@@ -3335,19 +3341,19 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: DEVELOPER SEPARATION D4 — SOURCE ENTRY / CONTROLLED IDENTITY AND RESET PREFLIGHT**
+**Current mode: ACCOUNT SECURITY / EXISTING DEMO R2 — PRIVATE OWNER ACCEPTANCE**
 
 Canonical next-package scope: [AXIA Delivery Readiness R1 and first-client gates](AXIA_DELIVERY_READINESS_R1_2026-10-21.md). Main remains `c0fd6a6`; Draft #48 retains PR #46, Android, verified D3 SQL and the configured owner Preview. Preview activation is already owner-observed; do not ask to repeat its three Config values or reapply any SQL.
 
-0. Follow [D4 separation/reset preflight](AXIA_DEVELOPER_SEPARATION_D4_2026-10-21.md). Source entry preparation does not remove office membership. Obtain one actual owner-controlled test mailbox; verify the new identity and current developer private Preview access, then review exact transfer/reset/configuration actions. Preserve all audit/legal corpus and refuse unlisted records; never blanket-delete all public tables. Finish cloud SaaS before local/offline expansion.
-1. R1 CI/Preview is verified on `31147d2`; finish D4 exact-head verification and review the refreshed branch Preview. Restore the Vercel MCP connection's explicit grant for team `ramyelhawary73-coders-projects` and the originating connected browser. Existing read-only/Preview authorization persists; do not request credentials, QR/seed/code or disable protection.
+0. Follow [Account Security and Existing Demo R2](AXIA_ACCOUNT_SECURITY_AND_DEMO_R2_2026-10-21.md). Mailbox selection is resolved: the owner controls the existing second account; its B office/client/case now have explicit fictional names. Do not create a third account, duplicate the demo, transfer A, suspend B or replay the earlier reset proposal. Preserve sole office ownership, audit and legal corpus.
+1. Finish exact-head R2 CI/Preview review, then the developer privately changes the password through `/platform` → **أمان الحساب**, retains the current session and verifies password+MFA in a separate window. Actual password/provider-policy/mail-delivery acceptance is owner-operated and still pending. Do not ask for passwords, codes or recovery links, disable security, change Secrets/SMTP or reapply SQL. Restore the Vercel MCP connection's explicit team grant/originating browser only if independent hosted inspection is needed; the three existing Preview Configs are already owner-observed.
 2. H1: existing owner privately signs in with current MFA; verify root and normal-office reads, session refresh and Desktop/Android behavior. Twelve hosted read audit events are evidence, not a complete browser/session acceptance test.
 3. H2: prepare one concrete owner-approved fictitious-office/retained-data/file list, then test guarded configuration/status/expiry, task/case/draft conflicts, support isolation, actual Storage HTTP quota/finalization and encrypted recovery into a disposable isolated target. Shared Preview/Production database writes require their own scoped approval; synthetic CI does not close this gate.
 4. E1: select one actual owner-controlled employee mailbox and office/role. Review Auth/redirect and transactional sender settings read-only, present exact changes, then obtain scope for account/mail/provider/configuration activation. Prove the full invitation → signup → confirmation → original-link acceptance → authorized task/case flow and negative paths. No use of arbitrary staff, new mailbox assumptions or `example.invalid` for real mail.
 5. C1/P1: complete the first-client end-to-end business/recovery walkthrough; then request final Merge/Production approval and verify release. Preserve the developer's existing sole office ownership until a verified replacement exists. Defer extra modules, payment automation, broader RAJIH actions and Android integration until delivery is stable.
 6. Never replay staff source `20261015081218_axia_staff_email_invitations.sql` (hosted `20261016083929`), platform source `20261018173401_axia_platform_owner_foundation.sql` (hosted `20261019080134`) or control source `20261019142538_axia_control_center_office_operations.sql` (hosted `20261020054338`). Do not rename timestamps, repair old history, use Service Role or duplicate source-PR merges. Re-read current main before each package.
 
-The 2026-10-16 live rollback checks, 2026-10-19 private MFA evidence, 2026-10-20 D3 migration/UI checks and 2026-10-21 aggregate read audit remain distinct dated evidence. No live account/mail/business write or hosted service recovery is implied by this R1 package.
+The 2026-10-16 live rollback checks, 2026-10-19 private MFA evidence, 2026-10-20 D3 migration/UI checks and 2026-10-21 aggregate read audit remain distinct dated evidence. R1 implied no live writes. R2 later performed only the explicitly authorized three demo display-name updates and appended audit; it did not change Auth/password/mail/settings or establish hosted recovery acceptance.
 
 ---
 
