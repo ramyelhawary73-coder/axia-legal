@@ -285,6 +285,8 @@ try {
     await page.waitForURL(base+"/platform");
     assert.equal(new URL(page.url()).pathname,"/platform");
     await page.getByRole("heading",{name:"مكتب تجربة وهمي",exact:true}).waitFor();
+    assert.equal(await page.getByRole("link",{name:"مساحة المكتب",exact:true}).count(),0);
+    await page.getByRole("button",{name:"تسجيل الخروج",exact:true}).waitFor();
     await fits(page,`platform-offices-${width}-${theme}`);
     await page.screenshot({path:path.join(output,`platform-offices-${width}-${theme}.png`),fullPage:true});
     await page.getByRole("button",{name:"سجل إدارة المنصة",exact:true}).click();

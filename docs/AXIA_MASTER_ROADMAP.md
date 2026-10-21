@@ -92,6 +92,12 @@ GitHub/main and shared hosted state rechecked 2026-10-20. [D3 hosted activation]
 
 R1 fixes client read failures, indefinite loading, stale paginated member/audit records, abandoned requests and manual retry, retaining server authority and all earlier D3/UI work. Current-source changes and exact-head CI/Preview are on PR #48. Vercel's 403 now explicitly identifies a missing team grant to the MCP connection; the originating browser is unavailable. These are access blockers to independent hosted browser acceptance, not reasons to replay SQL or request API keys.
 
+## Developer Separation D4 — 2026-10-21
+
+[Current separation and trial-reset plan](AXIA_DEVELOPER_SEPARATION_D4_2026-10-21.md) records the latest owner direction: developer identity remains Platform Owner only; one controlled test owner uses one active synthetic office. Fresh read-only inspection confirms the developer is already enabled/confirmed with verified MFA but still the sole owner of demo A. Both demo organizations have immutable control-event references. Do not remove the sole owner, delete organization identities, remove Auth accounts or truncate audit as cleanup. First obtain the owner-controlled test mailbox, verify access, then prepare an exact audited handoff/reset with an explicit row manifest. The proposed reset preserves legal corpus and audit; no live reset or identity change occurred.
+
+D4 source routes a verified Platform Owner from `/` to `/platform`; `/?workspace=1` retains only the current user's ordinary workspace authorization. The whole existing client workspace is preserved in `src/components/office-workspace.tsx`. Platform's office link requires an actual valid own workspace; missing/suspended/provider-error workspace does not block platform rendering, and explicit existing logout remains available. No new authority or tenant bypass is added. Local 168 app tests, Typecheck/Lint and Build/17 routes pass; final CI/Preview is tracked on PR #48. Cloud SaaS remains first-delivery scope; supported local installation/full offline sync is not implemented and is deferred.
+
 ## GitHub and deployment
 
 - Repository: `ramyelhawary73-coder/axia-legal`; default branch `main`.
@@ -3329,11 +3335,12 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: DELIVERY R1 — READ RECOVERY / ORDERED FIRST-CLIENT ACCEPTANCE**
+**Current mode: DEVELOPER SEPARATION D4 — SOURCE ENTRY / CONTROLLED IDENTITY AND RESET PREFLIGHT**
 
 Canonical next-package scope: [AXIA Delivery Readiness R1 and first-client gates](AXIA_DELIVERY_READINESS_R1_2026-10-21.md). Main remains `c0fd6a6`; Draft #48 retains PR #46, Android, verified D3 SQL and the configured owner Preview. Preview activation is already owner-observed; do not ask to repeat its three Config values or reapply any SQL.
 
-1. Finish R1 source verification and review its refreshed branch Preview. Restore the Vercel MCP connection's explicit grant for team `ramyelhawary73-coders-projects` and the originating connected browser. Existing read-only/Preview authorization persists; do not request credentials, QR/seed/code or disable protection.
+0. Follow [D4 separation/reset preflight](AXIA_DEVELOPER_SEPARATION_D4_2026-10-21.md). Source entry preparation does not remove office membership. Obtain one actual owner-controlled test mailbox; verify the new identity and current developer private Preview access, then review exact transfer/reset/configuration actions. Preserve all audit/legal corpus and refuse unlisted records; never blanket-delete all public tables. Finish cloud SaaS before local/offline expansion.
+1. R1 CI/Preview is verified on `31147d2`; finish D4 exact-head verification and review the refreshed branch Preview. Restore the Vercel MCP connection's explicit grant for team `ramyelhawary73-coders-projects` and the originating connected browser. Existing read-only/Preview authorization persists; do not request credentials, QR/seed/code or disable protection.
 2. H1: existing owner privately signs in with current MFA; verify root and normal-office reads, session refresh and Desktop/Android behavior. Twelve hosted read audit events are evidence, not a complete browser/session acceptance test.
 3. H2: prepare one concrete owner-approved fictitious-office/retained-data/file list, then test guarded configuration/status/expiry, task/case/draft conflicts, support isolation, actual Storage HTTP quota/finalization and encrypted recovery into a disposable isolated target. Shared Preview/Production database writes require their own scoped approval; synthetic CI does not close this gate.
 4. E1: select one actual owner-controlled employee mailbox and office/role. Review Auth/redirect and transactional sender settings read-only, present exact changes, then obtain scope for account/mail/provider/configuration activation. Prove the full invitation → signup → confirmation → original-link acceptance → authorized task/case flow and negative paths. No use of arbitrary staff, new mailbox assumptions or `example.invalid` for real mail.

@@ -9,7 +9,7 @@ const origin="https://axia.example";
 const env={AXIA_PLATFORM_CONTROL_ENABLED:"1",AXIA_PLATFORM_CONTROL_ORIGIN:origin};
 function load(path,modules={},vars={},warnings=[]) {
   const exports={};
-  vm.runInNewContext(ts.transpileModule(fs.readFileSync(path,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{
+  vm.runInNewContext(ts.transpileModule(fs.readFileSync(path,"utf8"),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText,{
     exports,URL,Response,TextDecoder,process:{env:vars},console:{warn:(...a)=>warnings.push(a)},require(name){if(name in modules)return modules[name];if(name==="next/server") return {NextResponse:{json:(body,init)=>Response.json(body,init)}};throw new Error(`Unexpected module ${name}`);},
   });
   return exports;
@@ -123,4 +123,61 @@ test("proxy preserves JSON platform API handling without opening the platform pa
   assert.equal((await proxy.updateSession(request("/api/platform/context"))).status,200);
   for(const path of ["/platform","/platform/extra","/api/platform-lookalike"])
     assert.equal(new URL((await proxy.updateSession(request(path))).headers.get("Location")).pathname,"/login");
+});
+
+const jsxRuntime={jsx:(type,props)=>({type,props}),jsxs:(type,props)=>({type,props})};
+function homeEntry(h) {
+  return load("src/app/page.tsx",{
+    "react/jsx-runtime":jsxRuntime,
+    "next/navigation":{redirect:path=>{throw new Error(`REDIRECT:${path}`);}},
+    "@/components/office-workspace":{default:"OwnOfficeWorkspace"},
+    "@/lib/api/platform":h.api,
+  }).default;
+}
+test("home sends a verified Platform Owner directly to platform before loading any office",async()=>{
+  for(const state of ["ready","mfa_required"]){
+    const h=harness({state});
+    await assert.rejects(homeEntry(h)({searchParams:Promise.resolve({})}),/REDIRECT:\/platform/);
+    assert.equal(h.calls.filter(c=>c==="getUser").length,1);
+    assert.equal(h.calls.filter(c=>Array.isArray(c)&&c[0]==="axia_platform_context").length,1);
+  }
+});
+test("home never derives platform navigation from email, claims, disabled config or provider failure",async()=>{
+  for(const options of [{state:"forbidden",user:{email:"developer@example.invalid"}},{enabled:false},{noUser:true},{rpcError:{message:"provider-private"}},{rpcUser:fid},{user:{email_confirmed_at:null}}]){
+    const h=harness(options),result=await homeEntry(h)({searchParams:Promise.resolve({})});
+    assert.equal(result.type,"OwnOfficeWorkspace");
+  }
+});
+test("explicit office navigation is a local display choice without office IDs or a role grant",async()=>{
+  const h=harness();
+  const result=await homeEntry(h)({searchParams:Promise.resolve({workspace:"1",organizationId:fid,next:"https://attacker.example"})});
+  assert.equal(result.type,"OwnOfficeWorkspace");assert.equal(h.calls.length,0);
+  assert.deepEqual(Object.keys(result.props),[]);
+  for(const workspace of ["0","true",["1","1"]]){
+    await assert.rejects(homeEntry(h)({searchParams:Promise.resolve({workspace})}),/REDIRECT:\/platform/);
+  }
+});
+function elementList(node) {
+  if(!node||typeof node!=="object") return [];
+  if(Array.isArray(node)) return node.flatMap(elementList);
+  return [node,...elementList(node.props?.children)];
+}
+test("platform header exposes only a valid own-office link and explicit existing logout action",async()=>{
+  for(const access of [{ok:true},{ok:false,code:"WORKSPACE_MISSING"},{ok:false,code:"WORKSPACE_SUSPENDED"},"unavailable"]){
+    const h=harness();let workspaceCalls=0;const logout=()=>{throw new Error("logout must not run during render");};
+    const page=load("src/app/platform/page.tsx",{
+      "react/jsx-runtime":jsxRuntime,"next/link":{default:"Link"},
+      "lucide-react":{ShieldCheck:"Shield",ArrowUpRight:"Arrow",LogOut:"LogoutIcon"},
+      "@/components/platform-theme-toggle":{PlatformThemeToggle:"Theme"},
+      "@/components/platform-workspace.module.css":{default:{}},
+      "@/lib/api/platform":h.api,"@/components/platform-entry":{PlatformEntry:"PlatformEntry"},
+      "@/lib/api/workspace":{resolveWorkspace:async()=>{workspaceCalls++;if(access==="unavailable")throw new Error("private provider error");return access;}},
+      "@/app/login/actions":{logout},
+    }).default;
+    const nodes=elementList(await page());const links=nodes.filter(n=>n.type==="Link");
+    assert.equal(workspaceCalls,1);assert.equal(links.length,access.ok?1:0);
+    if(access.ok)assert.equal(links[0].props.href,"/?workspace=1");
+    assert.equal(nodes.find(n=>n.type==="form").props.action,logout);
+    assert.equal(nodes.find(n=>n.type==="PlatformEntry").props.initialState,"ready");
+  }
 });
