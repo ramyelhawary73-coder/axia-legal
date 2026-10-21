@@ -17,6 +17,7 @@ The original overview can stay on its loading message after a failed read. Membe
 - A shared read-only query hook keys state by request/action/cursor/revision/dataset, removes stale rows immediately, aborts abandoned reads, ignores late results and reports a 15-second timeout.
 - Explicit manual retry and separate loading/error/empty states for capabilities, office directory/overview, members, timed-support records and office audit.
 - Malformed/non-JSON and missing-data responses have Arabic errors. Network failures have an actionable Arabic message.
+- The support dataset selector is explicitly labelled by its visible caption, so its accessible name does not include every option.
 - Read recovery never automatically retries configure/member/create/support/export actions. Permission/MFA denial still returns to the existing protected MFA entry; no enrollment is automatically performed.
 - The existing authorization, reasons, confirmation, revision checking, support duration, encrypted backup limits, case/tenant enforcement and Android are preserved.
 
