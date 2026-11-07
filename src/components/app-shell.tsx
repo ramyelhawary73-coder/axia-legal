@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useTheme } from "next-themes";
 import { 
   Scale, 
@@ -74,20 +74,85 @@ interface AppShellProps {
   isFocusMode?: boolean;
 }
 
-const navItems: { id: NavigationTab; labelAr: string; labelEn: string; icon: LucideIcon; badge?: string }[] = [
-  { id: "overview", labelAr: "نظرة عامة", labelEn: "Overview", icon: Scale },
-  { id: "matters", labelAr: "القضايا والملفات", labelEn: "Matters & Dossiers", icon: Briefcase, badge: "٥" },
-  { id: "hearings", labelAr: "الجلسات والتقويم", labelEn: "Hearings & Roll", icon: Gavel, badge: "اليوم" },
-  { id: "clients", labelAr: "الموكلين والتوكيلات", labelEn: "Clients & POA", icon: Users, badge: "٥" },
-  { id: "tasks", labelAr: "قلم المحضرين والمهام", labelEn: "Bailiff & Deadlines", icon: CheckSquare, badge: "٣" },
-  { id: "documents", labelAr: "العقود والمستندات", labelEn: "Contracts & Docs", icon: FileText },
-  { id: "finance", labelAr: "المالية والأتعاب", labelEn: "Legal Finance", icon: DollarSign },
-  { id: "library", labelAr: "المكتبة وأحكام النقض", labelEn: "Precedents & Laws", icon: BookOpen },
-  { id: "rajih", labelAr: "راجح الذكاء الاصطناعي", labelEn: "RAJIH AI Copilot", icon: Sparkles, badge: "AI" },
-  { id: "team", labelAr: "فريق العمل والمتدربون", labelEn: "Legal Team", icon: Users },
-  { id: "reports", labelAr: "التقارير والإحصائيات", labelEn: "Analytics & KPIs", icon: BarChart3 },
-  { id: "administration", labelAr: "إدارة المكتب والترخيص", labelEn: "Administration", icon: Settings },
+type OfficeNavItem = { id: NavigationTab; labelAr: string; labelEn: string; icon: LucideIcon };
+
+const navSections: { title: string; items: OfficeNavItem[] }[] = [
+  {
+    title: "العمل اليومي",
+    items: [
+      { id: "overview", labelAr: "نظرة عامة", labelEn: "Overview", icon: Scale },
+      { id: "matters", labelAr: "القضايا والملفات", labelEn: "Matters & Dossiers", icon: Briefcase },
+      { id: "hearings", labelAr: "الجلسات والتقويم", labelEn: "Hearings & Roll", icon: Gavel },
+      { id: "clients", labelAr: "الموكلين والتوكيلات", labelEn: "Clients & POA", icon: Users },
+      { id: "tasks", labelAr: "قلم المحضرين والمهام", labelEn: "Bailiff & Deadlines", icon: CheckSquare },
+      { id: "documents", labelAr: "العقود والمستندات", labelEn: "Contracts & Docs", icon: FileText },
+      { id: "finance", labelAr: "المالية والأتعاب", labelEn: "Legal Finance", icon: DollarSign },
+    ],
+  },
+  {
+    title: "المعرفة والمساعدة",
+    items: [
+      { id: "library", labelAr: "المكتبة وأحكام النقض", labelEn: "Precedents & Laws", icon: BookOpen },
+      { id: "rajih", labelAr: "راجح الذكاء الاصطناعي", labelEn: "RAJIH AI Copilot", icon: Sparkles },
+    ],
+  },
+  {
+    title: "إدارة المكتب",
+    items: [
+      { id: "team", labelAr: "فريق العمل والمتدربون", labelEn: "Legal Team", icon: Users },
+      { id: "reports", labelAr: "التقارير والإحصائيات", labelEn: "Analytics & KPIs", icon: BarChart3 },
+      { id: "administration", labelAr: "إدارة المكتب والترخيص", labelEn: "Administration", icon: Settings },
+    ],
+  },
 ];
+const navItems = navSections.flatMap(({ items }) => items);
+
+function OfficeNavigation({
+  id, activeTab, onNavigate, upcomingTasksCount, collapsed = false,
+}: {
+  id?: string;
+  activeTab: NavigationTab;
+  onNavigate: (tab: NavigationTab) => void;
+  upcomingTasksCount: number;
+  collapsed?: boolean;
+}) {
+  return (
+    <nav id={id} aria-label="أقسام المكتب" className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-2 py-3">
+      {navSections.map(({ title, items }, index) => (
+        <div key={title} role="group" aria-label={title} className={index ? "border-t border-[var(--border)] pt-2" : undefined}>
+          {!collapsed && <p className="px-3 pb-1 text-xs font-semibold leading-6 text-[var(--text-muted)]">{title}</p>}
+          <ul className="space-y-1">
+            {items.map(({ id, labelAr, labelEn, icon: Icon }) => {
+              const isActive = activeTab === id;
+              const badge = id === "rajih" ? "AI" : id === "tasks" && upcomingTasksCount > 0 ? String(upcomingTasksCount) : null;
+              return (
+                <li key={id}>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate(id)}
+                    aria-label={labelAr}
+                    aria-current={isActive ? "page" : undefined}
+                    title={collapsed ? `${labelAr} — ${labelEn}` : undefined}
+                    className={`relative flex min-h-11 w-full items-center gap-2.5 rounded-lg border-s-2 py-2 text-start motion-safe:transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--axia-gold)] ${collapsed ? "justify-center px-0" : "px-2.5"} ${isActive ? "border-[var(--axia-gold)] bg-[var(--axia-gold-dim)]" : "border-transparent hover:bg-[var(--accent)]"}`}
+                  >
+                    <Icon aria-hidden="true" className={`size-[18px] shrink-0 ${isActive || id === "rajih" ? "text-[var(--axia-gold)]" : "text-[var(--text-muted)]"}`} />
+                    {!collapsed && <span className={`min-w-0 flex-1 text-sm leading-5 text-[var(--text)] ${isActive ? "font-bold" : "font-medium"}`}>{labelAr}</span>}
+                    {badge && (
+                      <span
+                        aria-hidden="true"
+                        className={`${collapsed ? "absolute end-1.5 top-1.5 size-1.5 rounded-full bg-[var(--axia-gold)]" : `shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold leading-4 tabular-nums text-[var(--text)] ${id === "rajih" ? "bg-[var(--axia-gold-dim)]" : "bg-[var(--accent-hover)]"}`}`}
+                      >{!collapsed && badge}</span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
+}
 
 export function AppShell({ 
   activeTab, 
@@ -111,6 +176,7 @@ export function AppShell({
 }: AppShellProps) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mobileMenu = useRef<HTMLDialogElement>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
@@ -118,6 +184,22 @@ export function AppShell({
   const [taskCreatedToast, setTaskCreatedToast] = useState<{ id: string; title: string } | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [activeWorkspace, setActiveWorkspace] = useState<"cairo" | "alexandria" | "corp">("cairo");
+
+  useEffect(() => {
+    const dialog = mobileMenu.current;
+    if (!dialog) return;
+    if (!mobileMenuOpen) {
+      if (dialog.open) dialog.close();
+      return;
+    }
+    if (!dialog.open) dialog.showModal();
+    const desktop = window.matchMedia("(min-width: 64rem)");
+    const closeOnDesktop = (event: MediaQueryListEvent) => {
+      if (event.matches) setMobileMenuOpen(false);
+    };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, [mobileMenuOpen]);
 
   // Click outside to close profile dropdown
   useEffect(() => {
@@ -213,12 +295,15 @@ export function AppShell({
           {/* Brand & Mobile Hamburger */}
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
               aria-label="فتح قائمة التنقل"
               aria-expanded={mobileMenuOpen}
-              className="grid size-8 place-items-center rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--accent)] lg:hidden"
+              aria-controls="office-mobile-menu"
+              aria-haspopup="dialog"
+              className="grid size-10 place-items-center rounded-lg border border-[var(--border)] text-[var(--text)] hover:bg-[var(--accent)] lg:hidden"
             >
-              {mobileMenuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+              <Menu aria-hidden="true" className="size-5" />
             </button>
 
             <div 
@@ -528,150 +613,58 @@ export function AppShell({
 
       {/* Main Container */}
       <div className="flex flex-1 overflow-hidden w-full bg-[var(--bg)]">
-        {/* Sidebar Navigation (Desktop) - Premium Glass Sidebar */}
-        <aside 
-          className={`hidden shrink-0 border-l border-[var(--border)] bg-[var(--panel-glass)] backdrop-blur-xl transition-all duration-300 ease-in-out ${isFocusMode ? "lg:hidden" : "lg:flex"} flex-col z-30 ${
-            isSidebarCollapsed ? "w-16" : "w-64"
-          }`}
+        {/* Desktop navigation */}
+        <aside
+          className={`hidden shrink-0 flex-col border-e border-[var(--border)] bg-[var(--panel)] motion-safe:transition-[width] motion-safe:duration-200 ${isFocusMode ? "" : "lg:flex"} ${isSidebarCollapsed ? "w-16" : "w-[17rem] xl:w-72"}`}
         >
-          {/* Header & Toggle */}
-          <div className="flex items-center justify-between p-3 border-b border-[var(--border)] h-12">
+          <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-3">
             {!isSidebarCollapsed && (
-              <div className="flex items-center gap-2 text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
-                <Shield className="size-3 shrink-0" />
-                <span className="truncate">النسخة الاحترافية</span>
+              <div className="flex min-w-0 items-center gap-2 text-sm font-semibold text-[var(--text)]">
+                <Shield aria-hidden="true" className="size-4 shrink-0 text-[var(--axia-gold)]" />
+                <span>مساحة المكتب</span>
               </div>
             )}
             <button
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className={`p-1 rounded-md text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--accent)] transition-colors ${isSidebarCollapsed ? 'mx-auto' : ''}`}
+              type="button"
+              onClick={() => setIsSidebarCollapsed(value => !value)}
+              aria-label={isSidebarCollapsed ? "توسيع الشريط الجانبي" : "طي الشريط الجانبي"}
+              aria-expanded={!isSidebarCollapsed}
+              aria-controls="office-desktop-nav"
+              className={`grid size-9 shrink-0 place-items-center rounded-lg border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] ${isSidebarCollapsed ? "mx-auto" : ""}`}
             >
-              {isSidebarCollapsed ? <PanelRightOpen className="size-4" /> : <PanelRightClose className="size-4" />}
+              {isSidebarCollapsed ? <PanelRightOpen aria-hidden="true" className="size-[18px]" /> : <PanelRightClose aria-hidden="true" className="size-[18px]" />}
             </button>
           </div>
-
-          <nav className="flex-1 overflow-y-auto space-y-0.5 p-2 custom-scrollbar">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              const isRajih = item.id === "rajih";
-              const currentBadge = item.id === "tasks" 
-                ? (upcomingTasksCount > 0 ? String(upcomingTasksCount) : undefined) 
-                : item.badge;
-
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onNavigate(item.id)}
-                  title={isSidebarCollapsed ? `${item.labelAr} - ${item.labelEn}` : undefined}
-                  className={`w-full flex items-center rounded-lg transition-all relative group ${
-                    isSidebarCollapsed ? "justify-center p-2.5" : "justify-between px-2.5 py-2"
-                  } ${
-                    isActive
-                      ? "bg-[var(--accent-hover)] text-[var(--text)] shadow-sm border border-[var(--border)]"
-                      : isRajih
-                      ? "text-[var(--axia-gold)] hover:bg-[var(--axia-gold-dim)]"
-                      : "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]"
-                  }`}
-                >
-                  <div className={`flex items-center ${isSidebarCollapsed ? "justify-center" : "gap-2.5"}`}>
-                    <Icon className={`size-4 shrink-0 transition-colors ${
-                      isActive 
-                        ? (isRajih ? "text-[var(--axia-gold-light)]" : "text-[var(--text)]") 
-                        : "group-hover:text-[var(--text)]"
-                    }`} />
-                    {!isSidebarCollapsed && (
-                      <div className="text-right">
-                        <span className={`block text-[11px] ${isActive ? 'font-semibold' : 'font-medium'}`}>{item.labelAr}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {!isSidebarCollapsed && currentBadge && (
-                    <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${
-                      currentBadge === "اليوم" || (item.id === "tasks" && upcomingTasksCount > 0)
-                        ? "bg-red-500/10 text-red-500 border border-red-500/20"
-                        : currentBadge === "AI"
-                        ? "bg-[var(--axia-gold)]/10 text-[var(--axia-gold)] border border-[var(--axia-gold)]/20"
-                        : isActive
-                        ? "bg-[var(--text)]/10 text-[var(--text)]"
-                        : "bg-[var(--accent)] text-[var(--text-muted)]"
-                    }`}>
-                      {currentBadge}
-                    </span>
-                  )}
-                  
-                  {isSidebarCollapsed && currentBadge && (
-                     <div className="absolute right-1 top-1 w-1.5 h-1.5 rounded-full bg-red-500"></div>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
+          <OfficeNavigation id="office-desktop-nav" activeTab={activeTab} onNavigate={onNavigate} upcomingTasksCount={upcomingTasksCount} collapsed={isSidebarCollapsed} />
         </aside>
 
-        {/* Mobile Navigation Drawer */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-50 flex lg:hidden">
-            <div 
-              onClick={() => setMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
-            />
-            <div className="relative w-72 bg-[var(--panel)] border-l border-[var(--border)] p-4 shadow-2xl h-full flex flex-col">
-              <div className="flex items-center justify-between border-b border-[var(--border)] pb-3 mb-3">
-                <div className="flex items-center gap-2">
-                  <AxiaSymbolSvg className="size-5" idPrefix="axia-shell-mobile" />
-                  <span className="font-bold text-[var(--text)] text-sm">AXIA Legal</span>
-                </div>
-                <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  aria-label="إغلاق قائمة التنقل"
-                  className="grid size-7 place-items-center rounded-lg bg-[var(--accent)] text-[var(--text-muted)] hover:text-[var(--text)]"
-                >
-                  <X className="size-4" />
-                </button>
+        {/* A native modal keeps keyboard focus inside the mobile menu. */}
+        <dialog
+          ref={mobileMenu}
+          id="office-mobile-menu"
+          aria-labelledby="office-mobile-menu-title"
+          onClose={() => setMobileMenuOpen(false)}
+          onClick={(event) => { if (event.target === event.currentTarget) setMobileMenuOpen(false); }}
+          className="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none overflow-hidden bg-transparent p-0 text-[var(--text)] backdrop:bg-black/60"
+        >
+          <div className="flex h-full w-76 max-w-[calc(100%_-_1rem)] flex-col border-e border-[var(--border)] bg-[var(--panel)] shadow-2xl">
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-2">
+              <div className="flex items-center gap-2">
+                <AxiaSymbolSvg className="size-6" idPrefix="axia-shell-mobile" />
+                <span id="office-mobile-menu-title" className="text-base font-bold">أقسام المكتب</span>
               </div>
-
-              <nav className="flex-1 overflow-y-auto space-y-1">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
-                  const currentBadge = item.id === "tasks" 
-                    ? (upcomingTasksCount > 0 ? String(upcomingTasksCount) : undefined) 
-                    : item.badge;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        onNavigate(item.id);
-                        setMobileMenuOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between rounded-lg px-3 py-2.5 text-right transition-colors ${
-                        isActive
-                          ? "bg-[var(--accent-hover)] text-[var(--text)] font-semibold border border-[var(--border)]"
-                          : "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Icon className={`size-4 ${isActive ? 'text-[var(--text)]' : ''}`} />
-                        <span className="text-xs">{item.labelAr}</span>
-                      </div>
-                      {currentBadge && (
-                        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${
-                          currentBadge === "اليوم" || (item.id === "tasks" && upcomingTasksCount > 0)
-                            ? "bg-red-500/15 text-red-500"
-                            : "bg-[var(--accent)] text-[var(--text-muted)]"
-                        }`}>
-                          {currentBadge}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </nav>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="إغلاق قائمة التنقل"
+                className="grid size-11 shrink-0 place-items-center rounded-lg bg-[var(--accent)] text-[var(--text)] hover:bg-[var(--accent-hover)]"
+              >
+                <X aria-hidden="true" className="size-5" />
+              </button>
             </div>
+            <OfficeNavigation activeTab={activeTab} onNavigate={(tab) => { onNavigate(tab); setMobileMenuOpen(false); }} upcomingTasksCount={upcomingTasksCount} />
           </div>
-        )}
+        </dialog>
 
         {/* Main Content Area - Apple-like canvas */}
         <main className="flex-1 min-w-0 flex flex-col overflow-y-auto relative z-0 scroll-smooth bg-[var(--bg)] custom-scrollbar">
