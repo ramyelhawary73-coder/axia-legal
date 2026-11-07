@@ -3,6 +3,7 @@ export type NavigationTab =
   | "matters"
   | "hearings"
   | "clients"
+  | "client-requests"
   | "tasks"
   | "documents"
   | "finance"

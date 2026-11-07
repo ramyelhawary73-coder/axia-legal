@@ -19,6 +19,7 @@ import { FinanceView } from "@/components/views/finance-view";
 import { LibraryView } from "@/components/views/library-view";
 import { RajihAiView } from "@/components/views/rajih-ai-view";
 import { TeamView } from "@/components/views/team-view";
+import { ClientRequestsView } from "@/components/views/client-requests-view";
 import { ReportsView } from "@/components/views/reports-view";
 import { AdministrationView } from "@/components/views/administration-view";
 import {
@@ -405,6 +406,7 @@ export default function HomePage() {
             onCloseDocModal={() => setSelectedDocumentId(null)}
           />
         )}
+        {activeTab === "client-requests" && <ClientRequestsView clients={clients} matters={matters} />}
         {activeTab === "finance" && <FinanceView />}
         {activeTab === "library" && <LibraryView />}
         {activeTab === "rajih" && <RajihAiView />}

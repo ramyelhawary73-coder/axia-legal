@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import { randomUUID } from "node:crypto";
-import { completeOfficeSnapshot, encryptOfficeSnapshot, decryptOfficeSnapshot, sha256 } from "../src/lib/office-backup.ts";
+import { completeOfficeSnapshot, encryptOfficeSnapshot, decryptOfficeSnapshot, sha256, validateOfficeSnapshot } from "../src/lib/office-backup.ts";
 import { restoreOfficeSnapshot } from "./lib/restore-office-snapshot.mjs";
 
 // No URL/env credential is accepted. PGlite is in-process; native creates its OWN
@@ -31,6 +31,9 @@ if (native) {
 }
 const uuid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const office=uuid(301),other=uuid(302),client=uuid(401),matter=uuid(501);
+const requestsMigration='supabase/migrations/20261107173102_axia_client_requests_v1.sql';
+const requestsActivation='supabase/review/axia_client_requests_v1_activate.sql';
+let requestId;
 let checks=0;
 const check=async(name,fn)=>{await fn();checks++;console.log(`PASS ${name}`);};
 async function user(n,fn,extra={}) {return db.transaction(async tx=>{
@@ -209,6 +212,116 @@ try {
     assert.equal((await db.query('select status from private.office_controls where organization_id=$1',[office])).rows[0].status,'active');
     await db.exec('drop trigger reject_test on private.control_events');
   });
+  const activationSQL=await fs.readFile(requestsActivation,'utf8');
+  const tryActivation=async()=>{
+    const session=native?await pool.connect():db;
+    try {
+      await (native?session.query(activationSQL):session.exec(activationSQL));
+    }catch(error){
+      if(native) await session.query('rollback');else await session.exec('rollback');
+      throw error;
+    }finally{if(native)session.release();}
+  };
+  await check('activation refuses a missing foundation',async()=>{
+    await assert.rejects(tryActivation,/CLIENT_REQUESTS_FOUNDATION_NOT_READY/);
+  });
+  const readLegacyAudit=()=>user(1,tx=>tx.query('select id,action from public.audit_logs where id=$1',[uuid(730)]));
+  await db.query("insert into public.audit_logs(id,organization_id,user_id,action,resource_type) values($1,$2,$3,'fixture.legacy','matter')",[uuid(730),office,uuid(1)]);
+  const legacyAudit=(await readLegacyAudit()).rows;
+  assert.equal(legacyAudit.length,1);
+  const controlHash=async()=>(await db.query("select md5(prosrc) hash from pg_proc where oid=to_regprocedure('private.axia_control(text,uuid,jsonb)')")).rows[0].hash;
+  const oldHash=await controlHash();
+  // Exercise a project with automatic grants to public API roles.
+  await db.exec('alter default privileges in schema public grant all on tables to public,anon,authenticated,service_role');
+  await db.exec(await fs.readFile(requestsMigration,'utf8'));
+  await db.exec('alter default privileges in schema public revoke all on tables from public,anon,authenticated,service_role');
+  const writeBeforeActivation=n=>user(n,tx=>tx.query(
+    "insert into public.client_requests(organization_id,client_id,matter_id,title) values($1,$2,$3,'Locked request')",
+    n===1?[office,client,matter]:[other,uuid(402),uuid(502)]));
+  const assertLocked=async()=>{
+    for(const n of [1,2]) await assert.rejects(()=>writeBeforeActivation(n),{code:'42501'});
+    await assert.rejects(()=>user(1,tx=>tx.query('select id from public.client_requests')),{code:'42501'});
+    await assert.rejects(()=>user(1,tx=>tx.query("update public.client_requests set title='Locked'")),{code:'42501'});
+    for(const role of ['anon','authenticated','service_role']){
+      const {rows:[acl]}=await db.query("select has_table_privilege($1,'public.client_requests','SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') as table_access,has_any_column_privilege($1,'public.client_requests','SELECT,INSERT,UPDATE,REFERENCES') as column_access",[role]);
+      assert.deepEqual(acl,{table_access:false,column_access:false});
+    }
+    assert.equal(Number((await db.query('select count(*) n from public.client_requests')).rows[0].n),0);
+    assert.deepEqual((await readLegacyAudit()).rows,legacyAudit);
+    assert.equal(await controlHash(),oldHash);
+  };
+  const assertV1Export=async()=>{
+    const snapshot=await call(1,'export',office,{reason});
+    assert.equal(snapshot.version,1);assert.equal('client_requests' in snapshot.tables,false);
+    assert.ok(snapshot.tables.audit_logs.some(row=>row.id===uuid(730)));
+    validateOfficeSnapshot(snapshot);
+  };
+  await check('locked foundation revokes automatic API grants and preserves the existing audit and V1 export',async()=>{
+    await assertLocked();
+    await assertV1Export();
+  });
+  await check('activation rejects an unexpected column grant without changing export or opening writes',async()=>{
+    await db.exec('grant select(title) on public.client_requests to anon');
+    try{await assert.rejects(tryActivation,/CLIENT_REQUESTS_FOUNDATION_NOT_CLEAN/);}
+    finally{await db.exec('revoke select(title) on public.client_requests from anon');}
+    await assertLocked();
+  });
+  await tryActivation();
+  await check('after activation, existing audit remains readable and offices without requests still export V1',async()=>{
+    assert.notEqual(await controlHash(),oldHash);
+    assert.deepEqual((await readLegacyAudit()).rows,legacyAudit);
+    await assertV1Export();
+  });
+  const createRequest=(n,org=office,person=client,linked=matter,assignee=uuid(3))=>user(n,async tx=>(await tx.query(
+    "insert into public.client_requests(organization_id,client_id,matter_id,assigned_to,title,summary,follow_up_on) values($1,$2,$3,$4,'Synthetic request','Synthetic confidential note','2026-12-12') returning *",
+    [org,person,linked,assignee])).rows[0]);
+  const readRequests=n=>user(n,async tx=>(await tx.query("select * from public.client_requests order by id")).rows);
+  const audit=async(n,id)=>user(n,async tx=>(await tx.query("select action,user_id,metadata from public.audit_logs where resource_type='client_request' and resource_id=$1 order by created_at,id",[id])).rows);
+  const change=(n,revision,archived)=>user(n,async tx=>(await tx.query("update public.client_requests set archived=$1 where id=$2 and revision=$3 returning revision,archived",[archived,requestId,revision])).rows);
+  await check('two offices cannot read or write each other’s requests, clients, matters, assignments or history',async()=>{
+    const a=await createRequest(1), b=await createRequest(2,other,uuid(402),uuid(502),uuid(6));requestId=a.id;
+    assert.equal(a.created_by,uuid(1));assert.equal(a.revision,1);
+    assert.deepEqual((await readRequests(1)).map(r=>r.id),[a.id]);assert.deepEqual((await readRequests(2)).map(r=>r.id),[b.id]);
+    assert.deepEqual(await change(2,1,true),[]);assert.deepEqual(await audit(2,a.id),[]);
+    await assert.rejects(()=>createRequest(2,office,client,matter,uuid(3)));
+    await assert.rejects(()=>createRequest(1,office,uuid(402),null,uuid(3)));
+    await assert.rejects(()=>createRequest(1,office,client,uuid(502),uuid(3)));
+    await assert.rejects(()=>createRequest(1,office,client,matter,uuid(6)));
+    await db.query("insert into public.clients(id,organization_id,name,type,created_by) values($1,$2,'Other synthetic client','individual',$3)",[uuid(403),office,uuid(1)]);
+    await assert.rejects(()=>createRequest(1,office,uuid(403),matter,uuid(3)),/foreign key/);
+    const beforeCase=await createRequest(1,office,uuid(403),null,null);
+    assert.equal(beforeCase.matter_id,null);
+  });
+  await check('staff need assignment and case access, viewers cannot read, and no client can forge or delete history',async()=>{
+    assert.deepEqual((await readRequests(3)).map(r=>r.id),[requestId]);assert.equal((await audit(3,requestId)).length,1);
+    assert.deepEqual(await readRequests(4),[]);
+    await db.query("delete from public.matter_members where matter_id=$1 and user_id=$2",[matter,uuid(3)]);
+    assert.deepEqual(await readRequests(3),[]);assert.deepEqual(await audit(3,requestId),[]);
+    await db.query("insert into public.matter_members(matter_id,user_id,access_level) values($1,$2,'write')",[matter,uuid(3)]);
+    assert.deepEqual(await change(3,1,true),[]);await assert.rejects(()=>createRequest(3));
+    await assert.rejects(()=>user(1,tx=>tx.query("delete from public.client_requests where id=$1",[requestId])),/permission denied/);
+    await assert.rejects(()=>user(1,tx=>tx.query("update public.client_requests set revision=99 where id=$1",[requestId])),/permission denied/);
+    await assert.rejects(()=>user(1,tx=>tx.query("update public.client_requests set organization_id=$1 where id=$2",[other,requestId])),/permission denied/);
+    await assert.rejects(()=>user(1,tx=>tx.query("insert into public.audit_logs(organization_id,user_id,action,resource_type,resource_id) values($1,$2,'client_request.created','client_request',$3)",[office,uuid(1),requestId])));
+    assert.equal((await user(1,tx=>tx.query("update public.audit_logs set metadata='{}' where resource_id=$1 returning id",[requestId]))).rows.length,0);
+    await assert.rejects(()=>db.transaction(async tx=>{await tx.exec("set local role anon");return tx.query("select * from public.client_requests");}),/permission denied/);
+    await user(3,async tx=>assert.deepEqual((await tx.query("select id from public.client_requests")).rows,[]),{is_anonymous:true});
+  });
+  await check('status edits, archive and restore preserve the request, reject stale edits and record only changed fields',async()=>{
+    const edited=await user(5,tx=>tx.query("update public.client_requests set status='in_progress' where id=$1 and revision=1 returning revision",[requestId]));
+    assert.equal(edited.rows[0].revision,2);assert.deepEqual(await change(1,1,true),[]);
+    assert.deepEqual(await change(1,2,true),[{revision:3,archived:true}]);
+    assert.deepEqual(await change(1,3,false),[{revision:4,archived:false}]);
+    const events=await audit(1,requestId);
+    assert.deepEqual(events.map(r=>r.action),['client_request.created','client_request.updated','client_request.archived','client_request.restored']);
+    assert.deepEqual(events[1].metadata.changed_fields,['status']);
+    assert.deepEqual(events.map(r=>r.metadata.revision),[1,2,3,4]);
+    assert.equal(events[1].user_id,uuid(5));assert.doesNotMatch(JSON.stringify(events),/Synthetic confidential note/);
+    await db.exec("create function private.reject_request_test() returns trigger language plpgsql as $$ begin if new.resource_type='client_request' then raise exception 'REQUEST_AUDIT_FAILURE'; end if; return new; end $$; create trigger request_test_fail before insert on public.audit_logs for each row execute function private.reject_request_test();");
+    await assert.rejects(()=>change(1,4,true),/REQUEST_AUDIT_FAILURE/);
+    assert.equal((await readRequests(1)).find(r=>r.id===requestId).revision,4);
+    await db.exec("drop trigger request_test_fail on public.audit_logs");
+  });
   await check('encrypted office backup restores typed rows, foreign keys, history and exact file bytes in a fresh isolated database',async()=>{
     const path=office+'/general/synthetic.txt';
     const hash=await sha256(new TextEncoder().encode('synthetic'));
@@ -220,6 +333,13 @@ try {
     await db.query("insert into public.client_powers_of_attorney(id,organization_id,client_id,document_id,poa_number,created_by) values($1,$2,$3,$4,'SYNTHETIC-001',$5)",[uuid(805),office,client,uuid(701),uuid(1)]);
     await db.query("insert into public.rajih_action_requests(id,organization_id,requested_by,matter_id,action_type) values($1,$2,$3,$4,'create_task')",[uuid(806),office,uuid(1),matter]);
     const snapshot=await call(1,'export',office,{reason});
+    assert.equal(snapshot.version,2);
+    assert.equal(snapshot.tables.client_requests.length,2);
+    assert.equal(snapshot.tables.client_requests.find(r=>r.id===requestId).revision,4);
+    const invalid=structuredClone(snapshot);invalid.tables.client_requests[0].organization_id=other;
+    assert.throws(()=>validateOfficeSnapshot(invalid));
+    const invalidLink=structuredClone(snapshot);invalidLink.tables.client_requests.find(r=>r.id===requestId).client_id=uuid(403);
+    assert.throws(()=>validateOfficeSnapshot(invalidLink));
     const complete=await completeOfficeSnapshot(snapshot,async()=>new TextEncoder().encode('synthetic'));
     const encoded=await encryptOfficeSnapshot(complete,'Synthetic recovery password only');
     const decoded=await decryptOfficeSnapshot(encoded,'Synthetic recovery password only');
@@ -233,10 +353,15 @@ try {
       }};
     }else target=new db.constructor();
     try{
-      for(const file of ['tests/sql/control-center-fixture.sql','supabase/migrations/20261015081218_axia_staff_email_invitations.sql','supabase/migrations/20261018173401_axia_platform_owner_foundation.sql','supabase/migrations/20261019142538_axia_control_center_office_operations.sql'])await target.exec(await fs.readFile(file,'utf8'));
+      for(const file of ['tests/sql/control-center-fixture.sql','supabase/migrations/20261015081218_axia_staff_email_invitations.sql','supabase/migrations/20261018173401_axia_platform_owner_foundation.sql','supabase/migrations/20261019142538_axia_control_center_office_operations.sql',requestsMigration,requestsActivation])await target.exec(await fs.readFile(file,'utf8'));
       const nonce=randomUUID();await target.exec('create table private.axia_restore_disposable(nonce uuid not null)');await target.query('insert into private.axia_restore_disposable values($1)',[nonce]);
       const report=await restoreOfficeSnapshot(target,decoded,nonce);
-      assert.equal(report.counts.clients,1);assert.equal(report.counts.matters,1);assert.equal(report.counts.tasks,1);assert.equal(report.counts.hearings,1);assert.equal(report.counts.financial_records,1);assert.equal(report.counts.client_powers_of_attorney,1);assert.equal(report.counts.legal_draft_versions,4);
+      assert.equal(report.counts.clients,2);assert.equal(report.counts.matters,1);assert.equal(report.counts.tasks,1);
+      assert.equal(report.counts.client_requests,2);
+      assert.equal(report.counts.audit_logs,snapshot.tables.audit_logs.length);
+      const restored=(await target.query("select title,summary,status,revision,client_id,matter_id,assigned_to from public.client_requests where id=$1",[requestId])).rows[0];
+      assert.deepEqual(restored,{title:'Synthetic request',summary:'Synthetic confidential note',status:'in_progress',revision:4,client_id:client,matter_id:matter,assigned_to:uuid(3)});
+      assert.equal((await target.query("select tgenabled from pg_trigger where tgrelid='public.client_requests'::regclass and tgname='client_request_audit'")).rows[0].tgenabled,'O');assert.equal(report.counts.hearings,1);assert.equal(report.counts.financial_records,1);assert.equal(report.counts.client_powers_of_attorney,1);assert.equal(report.counts.legal_draft_versions,4);
       assert.equal(report.quarantinedInvitations,1);assert.equal(report.quarantinedActions,1);
       const file=(await target.query('select bytes,sha256 from private.restored_file_bytes')).rows[0];
       assert.equal(new TextDecoder().decode(file.bytes),'synthetic');assert.equal(file.sha256,hash);
