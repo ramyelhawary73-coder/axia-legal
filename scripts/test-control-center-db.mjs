@@ -32,6 +32,7 @@ if (native) {
 const uuid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 const office=uuid(301),other=uuid(302),client=uuid(401),matter=uuid(501);
 const requestsMigration='supabase/migrations/20261107173102_axia_client_requests_v1.sql';
+const requestsActivation='supabase/review/axia_client_requests_v1_activate.sql';
 let requestId;
 let checks=0;
 const check=async(name,fn)=>{await fn();checks++;console.log(`PASS ${name}`);};
@@ -211,11 +212,65 @@ try {
     assert.equal((await db.query('select status from private.office_controls where organization_id=$1',[office])).rows[0].status,'active');
     await db.exec('drop trigger reject_test on private.control_events');
   });
+  const activationSQL=await fs.readFile(requestsActivation,'utf8');
+  const tryActivation=async()=>{
+    const session=native?await pool.connect():db;
+    try {
+      await (native?session.query(activationSQL):session.exec(activationSQL));
+    }catch(error){
+      if(native) await session.query('rollback');else await session.exec('rollback');
+      throw error;
+    }finally{if(native)session.release();}
+  };
+  await check('activation refuses a missing foundation',async()=>{
+    await assert.rejects(tryActivation,/CLIENT_REQUESTS_FOUNDATION_NOT_READY/);
+  });
+  const readLegacyAudit=()=>user(1,tx=>tx.query('select id,action from public.audit_logs where id=$1',[uuid(730)]));
+  await db.query("insert into public.audit_logs(id,organization_id,user_id,action,resource_type) values($1,$2,$3,'fixture.legacy','matter')",[uuid(730),office,uuid(1)]);
+  const legacyAudit=(await readLegacyAudit()).rows;
+  assert.equal(legacyAudit.length,1);
+  const controlHash=async()=>(await db.query("select md5(prosrc) hash from pg_proc where oid=to_regprocedure('private.axia_control(text,uuid,jsonb)')")).rows[0].hash;
+  const oldHash=await controlHash();
+  // Exercise a project with automatic grants to public API roles.
+  await db.exec('alter default privileges in schema public grant all on tables to public,anon,authenticated,service_role');
   await db.exec(await fs.readFile(requestsMigration,'utf8'));
-  await check('offices with no requests retain the existing v1 snapshot format',async()=>{
+  await db.exec('alter default privileges in schema public revoke all on tables from public,anon,authenticated,service_role');
+  const writeBeforeActivation=n=>user(n,tx=>tx.query(
+    "insert into public.client_requests(organization_id,client_id,matter_id,title) values($1,$2,$3,'Locked request')",
+    n===1?[office,client,matter]:[other,uuid(402),uuid(502)]));
+  const assertLocked=async()=>{
+    for(const n of [1,2]) await assert.rejects(()=>writeBeforeActivation(n),{code:'42501'});
+    await assert.rejects(()=>user(1,tx=>tx.query('select id from public.client_requests')),{code:'42501'});
+    await assert.rejects(()=>user(1,tx=>tx.query("update public.client_requests set title='Locked'")),{code:'42501'});
+    for(const role of ['anon','authenticated','service_role']){
+      const {rows:[acl]}=await db.query("select has_table_privilege($1,'public.client_requests','SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') as table_access,has_any_column_privilege($1,'public.client_requests','SELECT,INSERT,UPDATE,REFERENCES') as column_access",[role]);
+      assert.deepEqual(acl,{table_access:false,column_access:false});
+    }
+    assert.equal(Number((await db.query('select count(*) n from public.client_requests')).rows[0].n),0);
+    assert.deepEqual((await readLegacyAudit()).rows,legacyAudit);
+    assert.equal(await controlHash(),oldHash);
+  };
+  const assertV1Export=async()=>{
     const snapshot=await call(1,'export',office,{reason});
     assert.equal(snapshot.version,1);assert.equal('client_requests' in snapshot.tables,false);
+    assert.ok(snapshot.tables.audit_logs.some(row=>row.id===uuid(730)));
     validateOfficeSnapshot(snapshot);
+  };
+  await check('locked foundation revokes automatic API grants and preserves the existing audit and V1 export',async()=>{
+    await assertLocked();
+    await assertV1Export();
+  });
+  await check('activation rejects an unexpected column grant without changing export or opening writes',async()=>{
+    await db.exec('grant select(title) on public.client_requests to anon');
+    try{await assert.rejects(tryActivation,/CLIENT_REQUESTS_FOUNDATION_NOT_CLEAN/);}
+    finally{await db.exec('revoke select(title) on public.client_requests from anon');}
+    await assertLocked();
+  });
+  await tryActivation();
+  await check('after activation, existing audit remains readable and offices without requests still export V1',async()=>{
+    assert.notEqual(await controlHash(),oldHash);
+    assert.deepEqual((await readLegacyAudit()).rows,legacyAudit);
+    await assertV1Export();
   });
   const createRequest=(n,org=office,person=client,linked=matter,assignee=uuid(3))=>user(n,async tx=>(await tx.query(
     "insert into public.client_requests(organization_id,client_id,matter_id,assigned_to,title,summary,follow_up_on) values($1,$2,$3,$4,'Synthetic request','Synthetic confidential note','2026-12-12') returning *",
@@ -298,7 +353,7 @@ try {
       }};
     }else target=new db.constructor();
     try{
-      for(const file of ['tests/sql/control-center-fixture.sql','supabase/migrations/20261015081218_axia_staff_email_invitations.sql','supabase/migrations/20261018173401_axia_platform_owner_foundation.sql','supabase/migrations/20261019142538_axia_control_center_office_operations.sql',requestsMigration])await target.exec(await fs.readFile(file,'utf8'));
+      for(const file of ['tests/sql/control-center-fixture.sql','supabase/migrations/20261015081218_axia_staff_email_invitations.sql','supabase/migrations/20261018173401_axia_platform_owner_foundation.sql','supabase/migrations/20261019142538_axia_control_center_office_operations.sql',requestsMigration,requestsActivation])await target.exec(await fs.readFile(file,'utf8'));
       const nonce=randomUUID();await target.exec('create table private.axia_restore_disposable(nonce uuid not null)');await target.query('insert into private.axia_restore_disposable values($1)',[nonce]);
       const report=await restoreOfficeSnapshot(target,decoded,nonce);
       assert.equal(report.counts.clients,2);assert.equal(report.counts.matters,1);assert.equal(report.counts.tasks,1);
