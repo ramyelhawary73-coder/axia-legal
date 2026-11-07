@@ -1,8 +1,9 @@
 // Browser + isolated Node verifier. No credentials, network, environment or persistent storage.
 export const OFFICE_TABLES = ["organizations", "organization_members", "profiles", "clients", "matters", "matter_members", "tasks", "hearings", "financial_records", "documents", "matter_parties", "client_powers_of_attorney", "audit_logs", "staff_invitations", "rajih_action_requests", "legal_drafts", "legal_draft_versions"] as const;
-export type OfficeTable = typeof OFFICE_TABLES[number];
+export const OFFICE_TABLES_V2 = [...OFFICE_TABLES, "client_requests"] as const;
+export type OfficeTable = typeof OFFICE_TABLES_V2[number];
 export type BackupRow = Record<string, unknown>;
-export type OfficeSnapshot = { format: "axia-office-snapshot"; version: 1; organizationId: string; capturedAt: string; tables: Record<OfficeTable, BackupRow[]>; storage: { path: string; size: string; expectedHash: string | null }[]; files?: { path: string; size: number; sha256: string; base64: string }[] };
+export type OfficeSnapshot = { format: "axia-office-snapshot"; version: 1 | 2; organizationId: string; capturedAt: string; tables: Record<typeof OFFICE_TABLES[number], BackupRow[]> & { client_requests?: BackupRow[] }; storage: { path: string; size: string; expectedHash: string | null }[]; files?: { path: string; size: number; sha256: string; base64: string }[] };
 export const MAX_BACKUP_BYTES = 64 * 1024 * 1024;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const roles = new Set(["owner", "admin", "lawyer", "staff", "trainee", "viewer"]);
@@ -11,13 +12,15 @@ const idSet = (rows: BackupRow[], key = "id") => new Set(rows.map(row => String(
 export function validateOfficeSnapshot(value: unknown): asserts value is OfficeSnapshot {
   if (!value || typeof value !== "object" || Array.isArray(value)) invalid();
   const s = value as OfficeSnapshot;
-  if (s.format !== "axia-office-snapshot" || s.version !== 1 || !uuid.test(s.organizationId) || !Number.isFinite(Date.parse(s.capturedAt)) || !s.tables || !Array.isArray(s.storage) || s.storage.length > 200 || Object.keys(s.tables).length !== OFFICE_TABLES.length || Object.keys(s.tables).some(t => !OFFICE_TABLES.includes(t as OfficeTable))) invalid();
+  const tables: readonly OfficeTable[] = s.version === 2 ? OFFICE_TABLES_V2 : OFFICE_TABLES;
+  if (s.format !== "axia-office-snapshot" || ![1, 2].includes(s.version) || !uuid.test(s.organizationId) || !Number.isFinite(Date.parse(s.capturedAt)) || !s.tables || !Array.isArray(s.storage) || s.storage.length > 200 || Object.keys(s.tables).length !== tables.length || Object.keys(s.tables).some(t => !tables.includes(t as OfficeTable))) invalid();
   let rows = 0;
-  for (const table of OFFICE_TABLES) {
-    if (!Array.isArray(s.tables[table])) invalid();
-    rows += s.tables[table].length;
+  for (const table of tables) {
+    const items = s.tables[table];
+    if (!Array.isArray(items)) invalid();
+    rows += items.length;
     const seen = new Set<string>();
-    for (const row of s.tables[table]) {
+    for (const row of items) {
       if (!row || typeof row !== "object" || Array.isArray(row)) invalid();
       if (!["profiles", "organizations", "matter_members"].includes(table) && row.organization_id !== s.organizationId) invalid();
       const key = table === "organization_members" ? String(row.user_id) : table === "matter_members" ? `${row.matter_id}:${row.user_id}` : String(row.id);
@@ -39,6 +42,18 @@ export function validateOfficeSnapshot(value: unknown): asserts value is OfficeS
     }
   for (const row of s.tables.client_powers_of_attorney) if (!clients.has(String(row.client_id)) || (row.document_id != null && !docs.has(String(row.document_id)))) invalid();
   for (const row of s.tables.legal_draft_versions) if (!drafts.has(String(row.draft_id))) invalid();
+  const matterClients = new Map(s.tables.matters.map(row => [row.id, row.client_id]));
+  for (const row of s.tables.client_requests ?? []) {
+    if (typeof row.id !== "string" || !uuid.test(row.id)
+      || !clients.has(String(row.client_id))
+      || (row.matter_id != null && matterClients.get(row.matter_id) !== row.client_id)
+      || (row.assigned_to != null && !members.has(String(row.assigned_to)))
+      || typeof row.created_by !== "string" || !uuid.test(row.created_by)
+      || typeof row.title !== "string" || row.title.trim().length < 2 || [...row.title].length > 140
+      || typeof row.summary !== "string" || [...row.summary].length > 600
+      || !["new", "in_progress", "waiting", "closed"].includes(String(row.status))
+      || typeof row.archived !== "boolean" || !Number.isInteger(row.revision) || Number(row.revision) < 1) invalid();
+  }
   let size = 0; const paths = new Set<string>();
   for (const file of s.storage) {
     if (!file || typeof file.path !== "string" || !file.path.startsWith(s.organizationId + "/") || file.path.split("/").length !== 3 || file.path.includes("..") || paths.has(file.path) || !/^[0-9]{1,12}$/.test(file.size)) invalid();
