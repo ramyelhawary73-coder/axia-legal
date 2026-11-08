@@ -13,7 +13,10 @@ export type WorkspaceErrorCode =
   | "WORKSPACE_UNAVAILABLE"
   | "WORKSPACE_MISSING"
   | "WORKSPACE_AMBIGUOUS"
-  | "WORKSPACE_FORBIDDEN";
+  | "WORKSPACE_FORBIDDEN"
+  | "WORKSPACE_SUSPENDED"
+  | "WORKSPACE_EXPIRED"
+  | "MEMBER_SUSPENDED";
 
 export type WorkspaceContext =
   | {
@@ -36,6 +39,17 @@ export async function resolveWorkspace(request?: Request): Promise<WorkspaceCont
 
   if (claimsError || typeof userId !== "string") {
     return { ok: false, code: "SESSION_EXPIRED" };
+  }
+
+  const stagedControls = typeof process !== "undefined" && process.env.AXIA_CONTROL_CENTER_ENABLED === "1";
+  if (stagedControls) {
+    const fresh = await supabase.auth.getUser();
+    if (fresh.error || fresh.data.user?.id !== userId) return { ok: false, code: "SESSION_EXPIRED" };
+    const access = await supabase.rpc("axia_workspace_access");
+    if (access.error || !Array.isArray(access.data)) return { ok: false, code: "WORKSPACE_UNAVAILABLE" };
+    const requested = request?.headers.get("x-axia-organization-id")?.trim();
+    const own = requested ? access.data.find((m: { organization_id: string }) => m.organization_id === requested) : access.data.length === 1 ? access.data[0] : null;
+    if (own && ["WORKSPACE_SUSPENDED", "WORKSPACE_EXPIRED", "MEMBER_SUSPENDED"].includes(own.access)) return { ok: false, code: own.access as WorkspaceErrorCode };
   }
 
   const { data: memberships, error: membershipError } = await supabase

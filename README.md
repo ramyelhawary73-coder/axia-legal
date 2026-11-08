@@ -40,6 +40,14 @@ Native Android implementation of **AXIA Legal**, the premier Egyptian Legal Prac
 
 Use Node.js 22 as in CI, then install with `npm ci` and run `npm run dev`. Configure local public environment values privately using `.env.example`; never commit credentials or use Service Role for application flows.
 
-Run `npm run check` for Typecheck, Lint, application tests and the production build. The build also checks ten required compiled web routes, so an empty `/404`-only build cannot be reported as a valid release. CI adds isolated SQL/concurrency and browser checks. These do not establish a real employee Auth session or successful email delivery.
+Run `npm run check` for Typecheck, Lint, application tests and the production build. The build also checks fifteen required compiled web routes, so an empty `/404`-only build cannot be reported as a valid release. CI adds isolated SQL/concurrency and browser checks. These do not establish a real employee Auth/MFA session or successful email delivery.
+
+### Developer Control D1 — isolated foundation
+
+`/platform` prepares a separate Platform Owner identity, app MFA, a bounded office registry and immutable platform audit. Existing office membership/case permissions remain authoritative for legal records. The additive migration source seeds no real account or role and must not be applied to hosted Supabase without separate approval.
+
+`AXIA_PLATFORM_CONTROL_ENABLED` defaults to `0`/absent; `AXIA_PLATFORM_CONTROL_ORIGIN` must be the exact reviewed HTTPS origin before MFA POST requests are possible. No hosted flag was changed. Preview therefore shows the disabled state until approved activation. MFA uses the existing SSR cookie client through authenticated API handlers, not the legacy browser client's separate localStorage session. No automatic enrollment or factor deletion is implemented.
+
+See [D1 acceptance and activation limits](docs/AXIA_DEVELOPER_CONTROL_D1_ACCEPTANCE_2026-10-18.md) and the [permission contract](docs/AXIA_DEVELOPER_CONTROL_REVIEW_2026-10-18.md). Native SQL tests create/drop only their own named database inside an explicitly disposable loopback PostgreSQL service; they never accept a hosted database URL. Keep the current developer office membership until a verified ownership handoff is implemented and approved.
 
 Work on a dedicated branch, verify CI and Preview, and obtain owner approval before merge or Production deployment. Native Android packaging/integration is separate follow-up scope and must not delay the first web-client delivery.

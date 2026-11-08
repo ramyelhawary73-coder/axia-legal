@@ -52,11 +52,17 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/axia-staff-db" --no-audit --no-fund --ignore-scripts @electric-sql/pglite@0.3.14
           AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-db/node_modules/@electric-sql/pglite/dist/index.js" node scripts/test-staff-db.mjs
+          AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-db/node_modules/@electric-sql/pglite/dist/index.js" node scripts/test-platform-db.mjs
+          AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-db/node_modules/@electric-sql/pglite/dist/index.js" node scripts/test-platform-operator.mjs
+          AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-db/node_modules/@electric-sql/pglite/dist/index.js" node scripts/test-control-center-db.mjs
 
       - name: Multi-session invitation concurrency (disposable PostgreSQL 17)
         run: |
           npm install --prefix "$RUNNER_TEMP/axia-staff-pg" --no-audit --no-fund --ignore-scripts pg@8.16.3
           AXIA_SQL_BACKEND=postgres AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-staff-db.mjs
+          AXIA_SQL_BACKEND=postgres AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-platform-db.mjs
+          AXIA_SQL_BACKEND=postgres AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-platform-operator.mjs
+          AXIA_SQL_BACKEND=postgres AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-control-center-db.mjs
 
       - name: Production build
         run: npm run build

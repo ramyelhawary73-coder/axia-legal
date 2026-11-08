@@ -1,0 +1,62 @@
+{
+  "project": "qshgczulivsxztgrbqew",
+  "mode": "read-only",
+  "state": {
+    "at": "2026-10-21T07:20:25.575563+00:00",
+    "drafts": 0,
+    "offices": 2,
+    "auth_users": 2,
+    "migrations": 24,
+    "invitations": 0,
+    "memberships": 2,
+    "member_blocks": 0,
+    "control_events": 12,
+    "draft_versions": 0,
+    "support_grants": 0,
+    "d3_applications": 1,
+    "office_controls": 0,
+    "storage_objects": 0,
+    "latest_migration": "20261020054338",
+    "verified_factors": 1,
+    "active_platform_owners": 1,
+    "public_tables_without_rls": 0
+  },
+  "actions": [
+    {
+      "action": "control.audit",
+      "events": 1,
+      "first_at": "2026-10-20 10:51:38.715205+00",
+      "last_at": "2026-10-20 10:51:38.715205+00"
+    },
+    {
+      "action": "control.capabilities",
+      "events": 3,
+      "first_at": "2026-10-20 10:46:58.592095+00",
+      "last_at": "2026-10-21 07:14:05.215618+00"
+    },
+    {
+      "action": "control.list",
+      "events": 3,
+      "first_at": "2026-10-20 10:47:07.353685+00",
+      "last_at": "2026-10-21 07:14:06.578193+00"
+    },
+    {
+      "action": "control.members",
+      "events": 1,
+      "first_at": "2026-10-20 10:51:38.128305+00",
+      "last_at": "2026-10-20 10:51:38.128305+00"
+    },
+    {
+      "action": "control.overview",
+      "events": 4,
+      "first_at": "2026-10-20 10:47:14.410719+00",
+      "last_at": "2026-10-20 10:51:43.034099+00"
+    }
+  ],
+  "limits": [
+    "aggregate metadata only",
+    "not a customer-data backup",
+    "not signed-in browser acceptance",
+    "no live business writes by this package"
+  ]
+}
