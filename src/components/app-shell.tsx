@@ -37,6 +37,7 @@ import { useRouter } from "next/navigation";
 import { NavigationTab, LegalTask, Matter, Client, LegalDocument } from "@/types/legal";
 import { logout } from "@/app/login/actions";
 import { AxiaSymbolSvg } from "@/components/axia-brand-logo";
+import { PlatformAccessLink } from "@/components/platform-access-link";
 import { NotificationsPopover } from "@/components/notifications-popover";
 import { getUpcomingDeadlineTasks, getHighPriorityTasksDueWithinHour } from "@/lib/task-utils";
 import { 
@@ -370,6 +371,7 @@ export function AppShell({
                       <p className="text-[10px] text-[var(--axia-gold-light)] font-semibold leading-relaxed">
                         الحساب الحالي
                       </p>
+                      <PlatformAccessLink />
                     </div>
                   </div>
 

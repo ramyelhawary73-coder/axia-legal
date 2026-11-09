@@ -1,0 +1,73 @@
+{
+  "captured_at": "2026-10-21T08:00:50.402581+00:00",
+  "project_ref": "qshgczulivsxztgrbqew",
+  "shared_preview_production": true,
+  "read_only": true,
+  "migration_count": 24,
+  "latest_migration": "20261020054338",
+  "developer": {
+    "matches": 1,
+    "confirmed": true,
+    "memberships": 1,
+    "platform_owner": true,
+    "verified_factors": 1
+  },
+  "users": 2,
+  "unassigned_confirmed_users": 0,
+  "offices": [
+    {
+      "name": "RAJIH Demo Firm A",
+      "slug": "rajih-demo-firm-a",
+      "tasks": 1,
+      "drafts": 0,
+      "owners": 1,
+      "clients": 1,
+      "matters": 1,
+      "members": 1,
+      "hearings": 0,
+      "documents": 0,
+      "audit_logs": 3,
+      "draft_versions": 0,
+      "matter_parties": 0,
+      "storage_objects": 0,
+      "financial_records": 0,
+      "staff_invitations": 0,
+      "developer_is_owner": true,
+      "powers_of_attorney": 0
+    },
+    {
+      "name": "RAJIH Demo Firm B",
+      "slug": "rajih-demo-firm-b",
+      "tasks": 0,
+      "drafts": 0,
+      "owners": 1,
+      "clients": 1,
+      "matters": 1,
+      "members": 1,
+      "hearings": 0,
+      "documents": 0,
+      "audit_logs": 0,
+      "draft_versions": 0,
+      "matter_parties": 0,
+      "storage_objects": 0,
+      "financial_records": 0,
+      "staff_invitations": 0,
+      "developer_is_owner": false,
+      "powers_of_attorney": 0
+    }
+  ],
+  "control_events": 20,
+  "storage_objects": 0,
+  "public_tables_without_rls": 0,
+  "not_executed": [
+    "identity_creation",
+    "password_change",
+    "membership_removal",
+    "office_control_change",
+    "row_deletion",
+    "email_delivery",
+    "migration",
+    "merge",
+    "production_deployment"
+  ]
+}

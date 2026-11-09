@@ -37,6 +37,8 @@ import {
 import { LegalDraft, DocumentVersion, LegalDraftDocType } from "@/types/legal-editor";
 import { Client, Matter, LegalDocument } from "@/types/legal";
 import { initialMockLegalDrafts } from "@/lib/mock-legal-drafts";
+import { safeLegalHtml } from "@/lib/legal-draft-persistence";
+import { PersistentLegalEditor, type DraftBootstrap } from "@/components/persistent-legal-editor";
 
 interface LegalRichTextEditorProps {
   clients: Client[];
@@ -48,7 +50,27 @@ interface LegalRichTextEditorProps {
 
 const STORAGE_KEY = "axia_legal_drafts_v1";
 
-export function LegalRichTextEditor({
+export function LegalRichTextEditor(props: LegalRichTextEditorProps) {
+  const [state, setState] = useState<DraftBootstrap | "loading" | "legacy" | "error">("loading");
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch("/api/drafts", { cache: "no-store", signal: controller.signal }).then(async response => {
+      const data = await response.json();
+      if (controller.signal.aborted) return;
+      if (data.enabled === false) setState("legacy");
+      else if (response.ok && data.enabled === true && Array.isArray(data.drafts)) setState(data);
+      else setState("error");
+    }).catch(() => { if (!controller.signal.aborted) setState("error"); });
+    return () => controller.abort();
+  }, []);
+  if (state === "loading") return <p role="status">جارٍ تحميل حالة حفظ المسودات…</p>;
+  if (state === "legacy") return <LegacyLegalRichTextEditor {...props} />;
+  if (state === "error") return <p role="alert">تعذر تحميل مسودات المكتب. لم يتم استبدال أو تعديل المسودات المحلية. راجع الاتصال والصلاحية قبل الكتابة.</p>;
+  return <PersistentLegalEditor bootstrap={state} clients={props.clients} matters={props.matters ?? []} onClose={props.onCloseEditor}
+    renderEditor={workspace => <LegalDraftWorkspace key={workspace.draft.id + ":" + workspace.editorEpoch} {...workspace} />} />;
+}
+
+function LegacyLegalRichTextEditor({
   clients,
   initialDraftId,
   onSaveToArchive,
@@ -338,6 +360,8 @@ interface LegalDraftWorkspaceProps {
   onRestoreVersion: (version: DocumentVersion, currentHtml: string, currentWords: number, currentChars: number) => void;
   onCommitToArchive: (title: string, docType: LegalDraftDocType, caseNum: string, client: string, words: number) => void;
   showToast: (msg: string) => void;
+  persistenceState?: string;
+  authorLabel?: string;
 }
 
 function LegalDraftWorkspace({
@@ -347,6 +371,8 @@ function LegalDraftWorkspace({
   onRestoreVersion,
   onCommitToArchive,
   showToast,
+  persistenceState,
+  authorLabel,
 }: LegalDraftWorkspaceProps) {
   const [editorHtml, setEditorHtml] = useState<string>(draft.contentHtml || "");
   const [draftTitle, setDraftTitle] = useState<string>(draft.title || "");
@@ -367,7 +393,7 @@ function LegalDraftWorkspace({
   const [compareVersion, setCompareVersion] = useState<DocumentVersion | null>(null);
   const [isNewVersionModalOpen, setIsNewVersionModalOpen] = useState(false);
   const [newVersionNote, setNewVersionNote] = useState("");
-  const [newVersionAuthor, setNewVersionAuthor] = useState("د. رامي الهواري (محام بالنقض)");
+  const [newVersionAuthor, setNewVersionAuthor] = useState(authorLabel ?? "المحرر الحالي");
   const [isMilestoneCheck, setIsMilestoneCheck] = useState(false);
 
   // Editor UI state
@@ -377,11 +403,12 @@ function LegalDraftWorkspace({
 
   const editorRef = useRef<HTMLDivElement>(null);
   const isInitialMountRef = useRef(true);
+  const persistent = !!persistenceState;
 
   // Synchronize HTML to editable div on first mount
   useEffect(() => {
     if (editorRef.current && editorRef.current.innerHTML !== draft.contentHtml) {
-      editorRef.current.innerHTML = draft.contentHtml || "";
+      editorRef.current.innerHTML = safeLegalHtml(draft.contentHtml || "");
     }
   }, [draft.contentHtml]);
 
@@ -389,7 +416,7 @@ function LegalDraftWorkspace({
   const { wordCount, characterCount, estimatedReadingTime } = useMemo(() => {
     if (typeof window === "undefined") return { wordCount: 0, characterCount: 0, estimatedReadingTime: 1 };
     const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = editorHtml;
+    tempDiv.innerHTML = safeLegalHtml(editorHtml);
     const text = tempDiv.textContent || tempDiv.innerText || "";
     const cleanText = text.trim();
     const words = cleanText ? cleanText.split(/\s+/).filter(Boolean).length : 0;
@@ -417,10 +444,11 @@ function LegalDraftWorkspace({
 
     setSaveStatus("saved");
     setLastSavedTime(timeStr);
-    showToast("تم الحفظ الفوري للمسودة بنجاح");
-  }, [draftTitle, editorHtml, docType, clientName, caseNumber, status, onUpdateDraft, showToast]);
+    showToast(persistenceState ? "تم تجهيز التعديلات للحفظ في المكتب؛ راجع حالة تأكيد الحفظ." : "تم حفظ المسودة محليًا في هذا المتصفح.");
+  }, [draftTitle, editorHtml, docType, clientName, caseNumber, status, onUpdateDraft, showToast, persistenceState]);
 
-  // Debounced auto-save effect
+  // Durable mode marks edits immediately; the parent serializes server saves.
+  // Legacy mode retains its existing local debounce.
   useEffect(() => {
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
@@ -428,6 +456,10 @@ function LegalDraftWorkspace({
     }
 
     setSaveStatus("unsaved");
+    if (persistent) {
+      onUpdateDraft({ title: draftTitle, contentHtml: editorHtml, docType, clientName, caseNumber, status, updatedAt: new Date().toISOString() });
+      return;
+    }
     const timer = setTimeout(() => {
       setSaveStatus("saving");
       const now = new Date();
@@ -449,7 +481,7 @@ function LegalDraftWorkspace({
     }, 1200);
 
     return () => clearTimeout(timer);
-  }, [editorHtml, draftTitle, docType, clientName, caseNumber, status, onUpdateDraft]);
+  }, [editorHtml, draftTitle, docType, clientName, caseNumber, status, onUpdateDraft, persistent]);
 
   // Keyboard shortcut for manual save (Ctrl+S / Cmd+S)
   useEffect(() => {
@@ -558,7 +590,7 @@ function LegalDraftWorkspace({
     onRestoreVersion(ver, editorHtml, wordCount, characterCount);
     setEditorHtml(ver.contentHtml);
     if (editorRef.current) {
-      editorRef.current.innerHTML = ver.contentHtml;
+      editorRef.current.innerHTML = safeLegalHtml(ver.contentHtml);
     }
     setPreviewVersion(null);
     setCompareVersion(null);
@@ -623,7 +655,7 @@ function LegalDraftWorkspace({
           <div className="flex flex-wrap items-center gap-2">
             {/* Auto-Save Live Status Indicator */}
             <div className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg)] px-3 py-1 text-[11px] text-[var(--text-muted)]">
-              {saveStatus === "saving" ? (
+              {persistenceState ? <span>{persistenceState}</span> : saveStatus === "saving" ? (
                 <>
                   <div className="size-2 rounded-full bg-blue-500 animate-ping" />
                   <span className="text-blue-500 font-medium">جارِ الحفظ التلقائي...</span>
@@ -1219,7 +1251,7 @@ function LegalDraftWorkspace({
 
             <div className="flex-1 overflow-y-auto p-6 rounded-2xl border border-[var(--border)] bg-[var(--bg)]/50 text-xs leading-relaxed font-sans custom-scrollbar" style={{ direction: "rtl" }}>
               <div
-                dangerouslySetInnerHTML={{ __html: previewVersion.contentHtml }}
+                dangerouslySetInnerHTML={{ __html: safeLegalHtml(previewVersion.contentHtml) }}
                 className="prose prose-invert max-w-none"
               />
             </div>
@@ -1282,7 +1314,7 @@ function LegalDraftWorkspace({
                 <div
                   className="flex-1 overflow-y-auto p-4 rounded-xl bg-[var(--panel)] border border-[var(--border)] text-xs leading-relaxed custom-scrollbar"
                   style={{ direction: "rtl" }}
-                  dangerouslySetInnerHTML={{ __html: compareVersion.contentHtml }}
+                  dangerouslySetInnerHTML={{ __html: safeLegalHtml(compareVersion.contentHtml) }}
                 />
               </div>
 
@@ -1296,7 +1328,7 @@ function LegalDraftWorkspace({
                 <div
                   className="flex-1 overflow-y-auto p-4 rounded-xl bg-[var(--panel)] border border-[var(--border)] text-xs leading-relaxed custom-scrollbar"
                   style={{ direction: "rtl" }}
-                  dangerouslySetInnerHTML={{ __html: editorHtml }}
+                  dangerouslySetInnerHTML={{ __html: safeLegalHtml(editorHtml) }}
                 />
               </div>
             </div>
