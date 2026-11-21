@@ -31,7 +31,7 @@ const pdfReport = fs.readFileSync(
   "src/components/legal-pdf-report-modal.tsx",
   "utf8",
 );
-const page = fs.readFileSync("src/app/page.tsx", "utf8");
+const page = fs.readFileSync("src/components/office-workspace.tsx", "utf8");
 
 test("Phase 3C profile policy adds same-organization SELECT only", () => {
   assert.match(migration, /profiles_select_same_org/);
