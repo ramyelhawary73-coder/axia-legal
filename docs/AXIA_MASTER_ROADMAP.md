@@ -11,7 +11,7 @@
 > **Default branch:** `main`  
 > **Verified application main SHA:** `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`
 > **Current handoff branch:** `review/axia-release-candidate-20261121`
-> **Current package:** owner-authorized review candidate combining the pinned source of #48, #49 and #51. Status `IN_PROGRESS`; check the candidate PR for its current head/CI/Preview. Main and Production remain `c0fd6a6`. No merge, Production release, database write, activation or PDF feature implementation is authorized. [Candidate scope and verification](AXIA_RELEASE_CANDIDATE_REVIEW_2026-11-21.md).
+> **Current package:** [Draft PR #52](https://github.com/ramyelhawary73-coder/axia-legal/pull/52), owner-authorized review candidate combining the pinned source of #48, #49 and #51. Status `PREVIEW_READY`; owner review and live acceptance remain open. Check the PR's current head/CI/Preview. Main and Production remain `c0fd6a6`. No merge, Production release, database write, activation or PDF feature implementation is authorized. [Candidate scope and verification](AXIA_RELEASE_CANDIDATE_REVIEW_2026-11-21.md).
 
 ---
 
@@ -84,14 +84,15 @@ Statements under **Current State** should be treated as verified only when a liv
 
 # 3. Current State
 
-## 2026-11-21 integrated review candidate — IN_PROGRESS
+## 2026-11-21 integrated review candidate — PREVIEW_READY
 
 The owner explicitly authorized preparing the existing package for review and testing, **without merging main, deploying Production or changing the database**. This is source integration and isolated verification, not commercial acceptance or permission activation.
 
 - Fresh main: `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`. Its CI 39057754119 is completed/success. Direct Vercel access now works: Production `dpl_XKM5LcgRsNous9FxheHTZ8w18C5u` is READY with that same SHA. The older 403 descriptions below are historical.
 - Source #48: `649d57e3d2d2891c20438a77b921b95a459df34e`; retain its platform/security/draft/backup/read-recovery work and incorporated Android/history. #49 `1878c6acf2d399dc22544fc4c1afdd44db719170` adds only `app-shell.tsx` relative to #48. #51 `bd8b8ae134cc2e0360c850a7a8e8150f71494ea8` adds only the Ubuntu 24.04 CI runner pin relative to #48. The source relationships and exact diffs were checked before integration.
 - Candidate branch was started from that main. Preserve the #49 sidebar, the complete #48 runtime and #51 workflow fix. No runtime redesign, production dependency/lockfile change or new PDF business feature is included. #50 is excluded; do not merge a source PR separately as duplicate runtime work.
-- Combined local verification passed: Typecheck, strict Lint, 174 safety tests, Build/all 18 required routes, 19 staff + 21 platform + 19 operator + 27 control PGlite checks, and 191 synthetic browser layout/flow records plus 10 compiled HTTP safety requests. Four focused desktop/mobile sidebar scenarios and screenshots cover grouping, target/text size, active/collapsed state, scroll, keyboard focus, Escape and viewport switching. Candidate CI/native SQL and Preview must still be verified on the published exact head; these local checks do not close hosted acceptance.
+- Combined local verification passed: Typecheck, strict Lint, 174 safety tests, Build/all 18 required routes, 19 staff + 21 platform + 19 operator + 27 control PGlite checks, and 191 synthetic browser layout/flow records plus 10 compiled HTTP safety requests. Four focused desktop/mobile sidebar scenarios and screenshots cover grouping, target/text size, active/collapsed state, scroll, keyboard focus, Escape and viewport switching. The published-source CI/Preview evidence follows; none of these isolated checks closes hosted acceptance.
+- Integrated source `67c51fd422471a39b42dbe64b470beff13a5ac37`, tree `340a7e31dda7691fb1781061aeb1f1b7c33295a7`, passed [CI 44938601064](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/44938601064) including native PostgreSQL/concurrency and the compiled browser suite. Its Vercel deployment `dpl_2sbq2vvXgHNBuvZgx3WX55BsT6Cf` is READY. [Review Preview](https://axia-legal-git-review-axi-d3e774-ramyelhawary73-coders-projects.vercel.app) remains protected by Vercel sign-in; a no-session GET to /login redirected to Vercel SSO. No share/bypass link was created. The following result-documentation update changes only Markdown; inspect the current #52 Checks again before any later merge decision.
 - Fresh hosted history has **25** migrations, latest `20261108072737_axia_client_requests_v1`, rather than the 24 in the dated R1/D3 snapshots. Earlier read-only catalog checks found the client_requests table with RLS but API table privileges closed; no source/policy/flag activation is implied. Never replay old migrations to reconcile this count. No database write was performed by this package.
 - The source migration files already present in #48 remain unchanged. Their hosted versions are `20261019080134` and `20261020054338`; they are historical source, not instructions to apply again. The staff migration and the already-present Client Requests foundation must not be replayed either.
 - [PDF review](AXIA_FEATURES_REVIEW_2026-11-21.md): all seven pages were read; 136 review items, including the 18 individual permissions, are mapped to priorities/phases. These are **proposed requirements**, not approval to implement them, change pricing/licensing, replace Supabase with Drive or add offline sync. Candidate preparation authorization does not change this boundary.
@@ -3322,6 +3323,8 @@ Scope should include:
 
 # 21. Delivery Workflow
 
+Owner handoff preference confirmed 2026-11-21: after completing each authorized package, state the actual result and provide **one copy-ready next-step instruction** for the owner to send. Continue the current approved package without redundant permission requests; do not execute a new package from merely presenting its suggested command. Never treat review-preparation approval as merge, Production, live-write or feature-implementation approval.
+
 Every implementation phase follows:
 
 `READ → UNDERSTAND → EXPLAIN → APPROVAL → BRANCH → IMPLEMENT → TEST → PREVIEW → OWNER TEST → MERGE APPROVAL → MERGE → VERIFY`
@@ -3381,9 +3384,9 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: INTEGRATED REVIEW CANDIDATE — IN_PROGRESS — NO RELEASE AUTHORIZATION**
+**Current mode: INTEGRATED REVIEW CANDIDATE — PREVIEW_READY — NO RELEASE AUTHORIZATION**
 
-1. Finish the owner-approved combined #48/#49/#51 candidate on `review/axia-release-candidate-20261121`, retaining the exact source relationships recorded above. Run the necessary Typecheck/Lint/174 safety tests/build/isolated SQL/browser checks on the combined source. Publish a Draft PR against main and inspect the exact-head CI and Vercel Preview. Record results in [candidate acceptance](AXIA_RELEASE_CANDIDATE_REVIEW_2026-11-21.md).
+1. Review [Draft #52](https://github.com/ramyelhawary73-coder/axia-legal/pull/52), its current-head Checks and [branch Preview](https://axia-legal-git-review-axi-d3e774-ramyelhawary73-coders-projects.vercel.app). Combined source `67c51fd` passed CI 44938601064 and reached READY Preview; the subsequent result-doc update preserves all runtime/tests/workflow bytes and receives its own current-head checks. [Candidate acceptance](AXIA_RELEASE_CANDIDATE_REVIEW_2026-11-21.md) records source, local/CI evidence and the remaining hosted gates. Do not repeat source integration or start PDF features.
 2. Present the candidate and sidebar to the owner for review. Do not merge main or deploy Production, replay migrations, enable the new branch's feature flags, copy Secrets or change database/Auth/SMTP/memberships. #50 and every new PDF feature are excluded.
 3. H1 may repeat authorized read-only existing-session acceptance. Private password/MFA entry remains owner-operated. This task does not authorize actual password changes, emails or creating another account. Do not remove the existing sole office owner.
 4. H2 needs a concrete approved fictitious-office/retained-data/file manifest before any shared-database writes/files/support/export test. Prove recovery only in an isolated disposable target. E1 separately needs an owner-controlled employee mailbox, office/role and scoped account/mail/configuration approval. Finish C1 before the final release decision.

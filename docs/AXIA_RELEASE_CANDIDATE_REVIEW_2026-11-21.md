@@ -1,6 +1,6 @@
 # AXIA integrated review candidate - 2026-11-21
 
-Status: **IN_PROGRESS**. This records source preparation and isolated checks, not a Production release or first-client acceptance.
+Status: **PREVIEW_READY**, owner review pending. [Draft PR #52](https://github.com/ramyelhawary73-coder/axia-legal/pull/52). This records source preparation and isolated checks, not a Production release or first-client acceptance.
 
 ## Authorization and source
 
@@ -35,9 +35,11 @@ No historical migration source, Android file, dependency declaration or lockfile
 | Safety tests | PASS locally, 174/174. |
 | Production build and required routes | PASS locally; all 18 required routes present. |
 | Disposable PGlite SQL suites | PASS locally: 19 staff + 21 platform + 19 operator + 27 control checks, including isolated encrypted recovery. |
-| Native PostgreSQL/concurrency | Run on the candidate CI; no live Supabase target. |
+| Native PostgreSQL/concurrency | PASS on integrated-source CI 44938601064: 22 staff + 23 platform + 19 operator + 31 control checks on disposable PostgreSQL 17; no live Supabase target. |
 | Compiled browser UI and HTTP safety | PASS locally: 191 layout/flow records and 10 compiled HTTP safety requests. |
-| GitHub CI / Preview on current head | Pending publication; inspect the candidate PR Checks. |
+| GitHub CI / Preview | Source head `67c51fd422471a39b42dbe64b470beff13a5ac37`: CI 44938601064 completed/success, deployment `dpl_2sbq2vvXgHNBuvZgx3WX55BsT6Cf` READY. Current result-documentation head must also pass its PR Checks. |
+
+[Verified integrated-source CI](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/44938601064) and [stable branch Preview](https://axia-legal-git-review-axi-d3e774-ramyelhawary73-coders-projects.vercel.app). The source tree `340a7e31dda7691fb1781061aeb1f1b7c33295a7` matched the locally tested tree exactly. This subsequent result update changes only this Markdown and the roadmap; runtime, browser tests, workflow, dependencies and migrations stay byte-identical. Inspect the PR's actual current head and Checks rather than treating the prior SHA as the final merge candidate.
 
 The browser runner starts a compiled loopback server with empty Supabase URL/key, activation flags disabled and synthetic browser responses. External browser hosts are blocked. SQL fixtures use an in-memory disposable PGlite target or CI's disposable local PostgreSQL 17. The runner never points to hosted Supabase or sends real mail.
 
@@ -48,6 +50,8 @@ Four new combined navigation scenarios cover 1440x900 dark, 1024x620 light, 390x
 ## Preview and live-operation boundary
 
 Only an automatic Git Preview is in scope. Do not promote it, manually deploy Production or copy environment settings. New branch Previews do not automatically inherit activation/origin settings scoped to the earlier #48 branch. A READY build with a disabled feature is not a failed authorization and not evidence of a completed live feature. Keep deployment protection intact.
+
+An unauthenticated read-only /login probe returned HTTP 302 to `vercel.com/sso-api`, confirming the protected access boundary. No share link/bypass token was created and no live signed-in workflow was attempted. The owner opens the Preview using their normal Vercel access. Browser/SQL acceptance above is isolated; H1 is not closed by a deployment status or a redirect.
 
 H1 read-only owner/session acceptance remains distinct. H2 shared-data writes/files/support/recovery require a concrete separately approved fictitious-data manifest; E1 real mailbox/account/confirmation delivery also needs separate scope. The existing demo office and sole owner membership remain unchanged. No passwords, API/Service Role keys or MFA secrets are requested or included.
 
