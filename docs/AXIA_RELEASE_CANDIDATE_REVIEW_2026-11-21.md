@@ -58,3 +58,7 @@ H1 read-only owner/session acceptance remains distinct. H2 shared-data writes/fi
 ## Owner review and next gate
 
 Present one Draft PR and its same-head Preview/checks. The owner reviews the preserved sidebar and current package; no source PR is merged separately. H1/H2/E1/C1 and a separate explicit release decision remain before any main/Production delivery. PDF features, vendor prices, Drive/offline/licensing decisions are not implemented by preparing this candidate. [Complete proposed feature matrix](AXIA_FEATURES_REVIEW_2026-11-21.md).
+
+## 2026-11-24 hosted H1 update
+
+[Real desktop session report](AXIA_H1_HOSTED_ACCEPTANCE_2026-11-24.md) supersedes the earlier no-session access observation for this run only. Tested `fe8aacf` has successful CI 44939309029 and matching READY deployment `dpl_B1cV5ZPxSSJ8W82Jo7BPdn1MZQ7P`. Private login, all 12 office destinations, desktop sidebar, reload/new-tab continuity and logout passed. Platform remained disabled; MFA/control, mobile and full H1 remain open. The existing daily snapshot automatically requested a local download after login; it was not clicked, inspected or used as recovery evidence. Display/capability/accessibility/source-link findings are recorded in the report for bounded follow-up. No runtime or activation change accompanies this documentation update, and the browser-tested SHA remains `fe8aacf`. Main/release and H2/E1/C1 boundaries remain.
