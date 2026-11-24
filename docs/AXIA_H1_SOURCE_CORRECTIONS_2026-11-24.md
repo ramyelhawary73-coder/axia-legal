@@ -1,6 +1,6 @@
 # AXIA H1 source corrections — 2026-11-24
 
-Status: **IN_PROGRESS**: source corrections and local checks complete; branch publication, CI and Preview pending. Owner authorized these source corrections, tests and a review Preview on a separate branch. This does not close hosted H1 or authorize a release.
+Status: **PREVIEW_READY** for owner review. Runtime `2675fb443bf7aeb2c32bfd5f288f2aa086480d28` passed complete CI and has a matching READY Preview. A subsequent documentation-only head receives its own checks; do not substitute it for the tested runtime evidence. Owner authorized these source corrections, tests and a review Preview on a separate branch. This does not close hosted H1 or authorize a release.
 
 ## Branch and behavior
 
@@ -38,3 +38,14 @@ The owner explicitly approved publishing `fix/axia-h1-review-20261124` to `ramye
 Initial source `b966d55` passed Typecheck/Lint, 177 tests, all disposable SQL/concurrency checks and Build on CI 45447029231, but the new profile-menu check caught an off-viewport header control at 320px. Desktop/1024px/390px H1 scenarios passed before that failure. The profile menu now uses viewport-inset positioning and bounded vertical scrolling below 640px, retaining its existing desktop anchor. The assertion and viewport matrix are unchanged; rerun exact-head CI before acceptance.
 
 Source `69c1154` then passed complete CI 45447891421: 177 tests, isolated SQL/concurrency, Build and the compiled responsive browser suite. All four profile screenshots were produced, including 320px. Visual review also found overly wrapped snapshot-tab labels at 320px; they now use non-shrinking, single-line, 44px targets in a horizontally scrolling row, with shorter preview/history wording. The browser checks now explicitly assert readable tab whitespace and target height. Repeat current-head CI for this final visual adjustment.
+
+## Final source verification and handoff
+
+- Review package: [Draft PR #53](https://github.com/ramyelhawary73-coder/axia-legal/pull/53), against main. It includes the full #52 candidate plus these bounded corrections; do not merge both packages independently.
+- Tested runtime head: `2675fb443bf7aeb2c32bfd5f288f2aa086480d28`, tree `fca0592b4794f1e86516c2f609cd5b08af76bfe4`. [CI 45449134465](https://github.com/ramyelhawary73-coder/axia-legal/actions/runs/45449134465): completed/success, including Typecheck, strict Lint, 177 safety tests, disposable PGlite and PostgreSQL/concurrency, Build/all 18 routes, 199 synthetic browser layout/flow records and 10 compiled HTTP safety checks.
+- Matching Vercel deployment: `dpl_FE5rvXSaNZ1WwXSwg47Yt85HEFiL`, READY, same branch/SHA, Preview target. [Review Preview](https://axia-legal-git-fix-axia-h-cc8805-ramyelhawary73-coders-projects.vercel.app). No activation/configuration was copied to the new branch.
+- Passing UI evidence: Actions artifact `14946693057`. The final report contains 199 records, with profile/snapshot screenshots at 1440×900, 1024×620, 390×844 and 320×568. The corrected 320/390 snapshot screenshots were visually reviewed, alongside the preceding profile images. Mobile tab text remains on one line in its own horizontal scroller, with 44px targets.
+- The connected local Chrome reached the earlier candidate login page, then reported an open extension UI blocking further automation. No hosted credentials were inspected or submitted during this source-correction package. This is not a fresh hosted signed-in/mobile/MFA acceptance run.
+- Final follow-up changes only this report and the canonical roadmap. Runtime, tests, workflow, migrations, dependencies and lockfile remain byte-identical to tested `2675fb4`; inspect current #53 Checks separately before any later merge decision. No new code tests are required for unchanged runtime; documentation diff checks pass.
+
+Owner next step: review #53 and the new Preview with the existing private session, then continue bounded read-only H1. Real mobile/token-expiry and privileged platform/MFA gates remain open; platform activation needs its own exact non-secret branch/origin review. No main merge, Production release or live business/configuration write accompanies this handoff.
