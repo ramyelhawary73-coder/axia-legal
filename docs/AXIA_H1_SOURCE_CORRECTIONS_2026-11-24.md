@@ -36,3 +36,5 @@ The owner explicitly approved publishing `fix/axia-h1-review-20261124` to `ramye
 ## Responsive regression correction
 
 Initial source `b966d55` passed Typecheck/Lint, 177 tests, all disposable SQL/concurrency checks and Build on CI 45447029231, but the new profile-menu check caught an off-viewport header control at 320px. Desktop/1024px/390px H1 scenarios passed before that failure. The profile menu now uses viewport-inset positioning and bounded vertical scrolling below 640px, retaining its existing desktop anchor. The assertion and viewport matrix are unchanged; rerun exact-head CI before acceptance.
+
+Source `69c1154` then passed complete CI 45447891421: 177 tests, isolated SQL/concurrency, Build and the compiled responsive browser suite. All four profile screenshots were produced, including 320px. Visual review also found overly wrapped snapshot-tab labels at 320px; they now use non-shrinking, single-line, 44px targets in a horizontally scrolling row, with shorter preview/history wording. The browser checks now explicitly assert readable tab whitespace and target height. Repeat current-head CI for this final visual adjustment.

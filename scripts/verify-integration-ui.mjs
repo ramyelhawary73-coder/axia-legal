@@ -289,6 +289,10 @@ try {
     await profile.getByRole("button",{name:"اللقطة اليومية المحلية",exact:true}).click();
     const manager=page.getByRole("dialog",{name:"إدارة اللقطة اليومية",exact:true});
     await manager.getByRole("button",{name:"إعدادات التنزيل المحلي",exact:true}).click();
+    for (const tab of await manager.getByTestId("snapshot-tabs").getByRole("button").all()) {
+      assert.equal(await tab.evaluate(el=>getComputedStyle(el).whiteSpace),"nowrap","snapshot tab labels must stay on one readable line");
+      assert.ok((await tab.boundingBox()).height>=44,"snapshot tabs retain usable touch targets");
+    }
     assert.equal(await manager.getByLabel("تفعيل التصدير التلقائي للّقطة اليومية",{exact:true}).isChecked(),false);
     assert.equal(await manager.getByLabel(/أوافق على تنزيل اللقطة تلقائيًا/).isChecked(),false);
     await manager.getByRole("button",{name:"تصدير لقطة اليوم فوراً",exact:true}).waitFor({state:"visible"});

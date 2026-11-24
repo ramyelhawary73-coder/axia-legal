@@ -178,17 +178,17 @@ export function DailySnapshotManager({
 
         {/* Navigation Tabs */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--border)] bg-[var(--panel)] px-4 py-2 shrink-0">
-          <div className="flex min-w-0 items-center gap-1 overflow-x-auto">
+          <div data-testid="snapshot-tabs" className="flex min-w-0 items-center gap-1 overflow-x-auto">
             <button
               onClick={() => setActiveTab("preview")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-2 rounded-lg text-sm font-semibold transition ${
                 activeTab === "preview"
                   ? "bg-[var(--text)] text-[var(--bg)] shadow-sm"
                   : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--accent)]"
               }`}
             >
               <FileText className="size-3.5" />
-              <span>معاينة اللقطة الحية (Live Preview)</span>
+              <span>معاينة اللقطة</span>
               {liveSnapshot && (
                 <span className="rounded-full bg-[var(--axia-gold)] text-black text-[10px] px-1.5 font-bold">
                   {liveSnapshot.metrics.totalActiveMatters + liveSnapshot.metrics.totalPendingTasks}
@@ -198,7 +198,7 @@ export function DailySnapshotManager({
 
             <button
               onClick={() => setActiveTab("config")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-2 rounded-lg text-sm font-semibold transition ${
                 activeTab === "config"
                   ? "bg-[var(--text)] text-[var(--bg)] shadow-sm"
                   : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--accent)]"
@@ -213,14 +213,14 @@ export function DailySnapshotManager({
 
             <button
               onClick={() => setActiveTab("history")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-2 rounded-lg text-sm font-semibold transition ${
                 activeTab === "history"
                   ? "bg-[var(--text)] text-[var(--bg)] shadow-sm"
                   : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--accent)]"
               }`}
             >
               <History className="size-3.5" />
-              <span>سجل التصدير والأرشيف ({history.length})</span>
+              <span>سجل التصدير ({history.length})</span>
             </button>
           </div>
 
