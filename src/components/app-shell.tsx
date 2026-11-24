@@ -457,7 +457,7 @@ export function AppShell({
               {isProfileOpen && (
                 <div 
                   id="profile-dropdown-menu"
-                  className="absolute left-0 mt-2 w-[min(24rem,calc(100vw-2rem))] origin-top-left rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150"
+                  className="fixed inset-x-4 top-28 max-h-[calc(100dvh-8rem)] overflow-y-auto sm:absolute sm:inset-x-auto sm:left-0 sm:top-auto sm:mt-2 sm:max-h-[calc(100dvh-5rem)] sm:w-[min(24rem,calc(100vw-2rem))] origin-top-left rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150"
                   dir="rtl"
                 >
                   {/* Header: User Profile Card */}

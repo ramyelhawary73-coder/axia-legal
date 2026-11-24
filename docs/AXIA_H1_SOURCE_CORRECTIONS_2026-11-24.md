@@ -32,3 +32,7 @@ Real owner review of the changed candidate, hosted mobile/expiry checks, and pla
 ## Publication authorization
 
 The owner explicitly approved publishing `fix/axia-h1-review-20261124` to `ramyelhawary73-coder/axia-legal`, opening a review PR and preparing its Vercel Preview on 2026-11-24 after automatic review requested a destination-specific instruction. That approval resolves the earlier publication gate. Merge and Production release remain outside this package. The CLI cannot obtain a GitHub username in this executor; use the existing connected GitHub account to publish the same verified source tree, without adding credentials to the checkout.
+
+## Responsive regression correction
+
+Initial source `b966d55` passed Typecheck/Lint, 177 tests, all disposable SQL/concurrency checks and Build on CI 45447029231, but the new profile-menu check caught an off-viewport header control at 320px. Desktop/1024px/390px H1 scenarios passed before that failure. The profile menu now uses viewport-inset positioning and bounded vertical scrolling below 640px, retaining its existing desktop anchor. The assertion and viewport matrix are unchanged; rerun exact-head CI before acceptance.
