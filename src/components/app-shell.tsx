@@ -27,16 +27,14 @@ import {
   CheckCircle2, 
   LogOut,
   Building2,
-  Server,
-  MapPin,
-  CreditCard,
-  Check,
+  Download,
   type LucideIcon 
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { NavigationTab, LegalTask, Matter, Client, LegalDocument } from "@/types/legal";
 import { logout } from "@/app/login/actions";
 import { AxiaSymbolSvg } from "@/components/axia-brand-logo";
+import { loadAdministrationWorkspace, type AdministrationWorkspace } from "@/lib/administration-client";
 import { PlatformAccessLink } from "@/components/platform-access-link";
 import { NotificationsPopover } from "@/components/notifications-popover";
 import { getUpcomingDeadlineTasks, getHighPriorityTasksDueWithinHour } from "@/lib/task-utils";
@@ -72,6 +70,7 @@ interface AppShellProps {
   onSelectClient?: (clientId: string) => void;
   onSelectDocument?: (docId: string) => void;
   isFocusMode?: boolean;
+  onOpenSnapshotManager?: () => void;
 }
 
 type OfficeNavItem = { id: NavigationTab; labelAr: string; labelEn: string; icon: LucideIcon };
@@ -173,6 +172,7 @@ export function AppShell({
   onSelectClient,
   onSelectDocument,
   isFocusMode = false,
+  onOpenSnapshotManager,
 }: AppShellProps) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -183,7 +183,27 @@ export function AppShell({
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [taskCreatedToast, setTaskCreatedToast] = useState<{ id: string; title: string } | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [activeWorkspace, setActiveWorkspace] = useState<"cairo" | "alexandria" | "corp">("cairo");
+  const [officeIdentity, setOfficeIdentity] = useState<AdministrationWorkspace | null>(null);
+  const [identityError, setIdentityError] = useState(false);
+  const [identityRevision, setIdentityRevision] = useState(0);
+  const officeName = officeIdentity?.organization.name?.trim() || "مساحة المكتب الحالية";
+  const accountLabel = officeIdentity?.currentUser.label?.trim() || taskAssigneeLabel;
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadAdministrationWorkspace().then((workspace) => {
+      if (typeof workspace?.organization?.name !== "string" || typeof workspace?.currentUser?.label !== "string"
+        || typeof workspace?.currentUser?.roleLabel !== "string") throw new Error("INVALID_OFFICE_IDENTITY");
+      if (cancelled) return;
+      setOfficeIdentity(workspace);
+      setIdentityError(false);
+    }).catch(() => {
+      if (cancelled) return;
+      setOfficeIdentity(null);
+      setIdentityError(true);
+    });
+    return () => { cancelled = true; };
+  }, [identityRevision]);
 
   useEffect(() => {
     const dialog = mobileMenu.current;
@@ -422,16 +442,12 @@ export function AppShell({
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                   </span>
                 </div>
-                <div className="text-right hidden sm:block max-w-[125px]">
-                  <span className="block text-[11px] font-bold text-[var(--text)] truncate leading-none">
-                    {activeWorkspace === "cairo" 
-                      ? "مكتب القاهرة (الرئيسي)" 
-                      : activeWorkspace === "alexandria" 
-                      ? "مكتب الإسكندرية" 
-                      : "شؤون الشركات والاستثمار"}
+                <div className="text-right hidden sm:block max-w-[160px]">
+                  <span title={officeName} className="block text-sm font-bold text-[var(--text)] truncate leading-tight">
+                    {officeName}
                   </span>
-                  <span className="block text-[9px] text-[var(--text-muted)] mt-0.5 truncate leading-none">
-                    {taskAssigneeLabel}
+                  <span className="block text-xs text-[var(--text-muted)] mt-0.5 truncate leading-tight">
+                    {accountLabel}
                   </span>
                 </div>
                 <ChevronLeft className={`hidden size-3 text-[var(--text-muted)] transition-transform duration-200 sm:block ${isProfileOpen ? "-rotate-90" : ""}`} />
@@ -451,138 +467,39 @@ export function AppShell({
                     </div>
                     <div className="flex-1 space-y-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <h4 className="text-sm font-bold text-[var(--text)] truncate">{taskAssigneeLabel}</h4>
+                        <h4 className="text-sm font-bold text-[var(--text)] truncate">{accountLabel}</h4>
                       </div>
                       <p className="text-[10px] text-[var(--axia-gold-light)] font-semibold leading-relaxed">
-                        الحساب الحالي
+                        {officeIdentity?.currentUser.roleLabel || "الحساب الحالي"}
                       </p>
                       <PlatformAccessLink />
                     </div>
                   </div>
 
-                  {/* Body: Active Workspace Indicator & Info */}
-                  <div className="py-3 border-b border-[var(--border)] space-y-2">
-                    <span className="block text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase">
-                      مساحة العمل والترخيص النشط
-                    </span>
-                    
-                    <div className="rounded-xl border border-[var(--axia-gold)]/20 bg-[var(--axia-gold)]/[0.03] p-3 space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <Building2 className="size-4 text-[var(--axia-gold)] shrink-0" />
-                          <span className="text-xs font-bold text-[var(--text)] truncate">
-                            {activeWorkspace === "cairo" 
-                              ? "مجموعة د. رامي الهواري للمحاماة والاستشارات" 
-                              : activeWorkspace === "alexandria" 
-                              ? "مكتب د. رامي الهواري - فرع الإسكندرية" 
-                              : "إدارة الشؤون القانونية للشركات والكيانات الكبرى"}
-                          </span>
-                        </div>
-                        <span className="rounded bg-[var(--axia-gold)]/10 border border-[var(--axia-gold)]/20 px-1.5 py-0.5 text-[9px] font-bold text-[var(--axia-gold)] shrink-0">
-                          النسخة الكاملة
-                        </span>
+                  <div className="py-3 border-b border-[var(--border)] space-y-3">
+                    <p className="text-sm font-semibold text-[var(--text-muted)]">المكتب الحالي</p>
+                    <div className="flex items-start gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg)] p-3">
+                      <Building2 aria-hidden="true" className="size-4 shrink-0 text-[var(--axia-gold)]" />
+                      <span className="min-w-0 break-words text-sm font-semibold text-[var(--text)]">{officeName}</span>
+                    </div>
+                    {identityError && (
+                      <div role="status" className="text-sm text-[var(--text-muted)]">
+                        <p>تعذر تحميل بيانات الحساب والمكتب.</p>
+                        <button type="button" className="mt-1 min-h-11 underline" onClick={() => {
+                          setIdentityError(false);
+                          setIdentityRevision((revision) => revision + 1);
+                        }}>إعادة تحميل بيانات المكتب</button>
                       </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-[11px] text-[var(--text-muted)] pt-1 border-t border-[var(--border)]/60">
-                        <div className="flex items-center gap-1 min-w-0">
-                          <MapPin className="size-3 text-[var(--axia-gold-light)] shrink-0" />
-                          <span className="truncate">
-                            {activeWorkspace === "cairo" ? "الزمالك، القاهرة" : activeWorkspace === "alexandria" ? "سموحة، الإسكندرية" : "مصر الجديدة، القاهرة"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 min-w-0">
-                          <CreditCard className="size-3 text-[var(--axia-gold-light)] shrink-0" />
-                          <span className="truncate">قيد النقابة: ١٠٠٤٩٢/ن</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Interactive: Switch Workspace (Slack/Google Style) */}
-                  <div className="py-3 border-b border-[var(--border)] space-y-2">
-                    <span className="block text-[10px] font-bold text-[var(--text-muted)] tracking-wider uppercase">
-                      التبديل بين مساحات العمل للمكتب
-                    </span>
-
-                    <div className="space-y-1">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveWorkspace("cairo");
-                        }}
-                        className={`w-full flex items-center justify-between rounded-lg p-2 text-right transition ${
-                          activeWorkspace === "cairo" 
-                            ? "bg-[var(--accent)] text-[var(--text)] font-semibold border border-[var(--border)]" 
-                            : "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="size-5 rounded bg-amber-500/10 text-amber-500 text-[10px] font-bold grid place-items-center shrink-0">ق</div>
-                          <div className="text-right min-w-0">
-                            <span className="block text-xs truncate">مكتب القاهرة (الرئيسي)</span>
-                            <span className="block text-[9px] text-[var(--text-muted)] leading-none truncate">مساحة العمل والملفات النشطة</span>
-                          </div>
-                        </div>
-                        {activeWorkspace === "cairo" && <Check className="size-3 text-[var(--axia-gold)] shrink-0" />}
+                    )}
+                    {onOpenSnapshotManager && (
+                      <button type="button" onClick={() => {
+                        setIsProfileOpen(false);
+                        onOpenSnapshotManager();
+                      }} className="flex min-h-11 w-full items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-sm hover:bg-[var(--accent)]">
+                        <Download aria-hidden="true" className="size-4 shrink-0" />
+                        اللقطة اليومية المحلية
                       </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveWorkspace("alexandria");
-                        }}
-                        className={`w-full flex items-center justify-between rounded-lg p-2 text-right transition ${
-                          activeWorkspace === "alexandria" 
-                            ? "bg-[var(--accent)] text-[var(--text)] font-semibold border border-[var(--border)]" 
-                            : "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="size-5 rounded bg-sky-500/10 text-sky-500 text-[10px] font-bold grid place-items-center shrink-0">س</div>
-                          <div className="text-right min-w-0">
-                            <span className="block text-xs truncate">مكتب الإسكندرية (سموحة)</span>
-                            <span className="block text-[9px] text-[var(--text-muted)] leading-none truncate">ملفات قضايا وجهات بحري</span>
-                          </div>
-                        </div>
-                        {activeWorkspace === "alexandria" && <Check className="size-3 text-[var(--axia-gold)] shrink-0" />}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveWorkspace("corp");
-                        }}
-                        className={`w-full flex items-center justify-between rounded-lg p-2 text-right transition ${
-                          activeWorkspace === "corp" 
-                            ? "bg-[var(--accent)] text-[var(--text)] font-semibold border border-[var(--border)]" 
-                            : "text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)]"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="size-5 rounded bg-emerald-500/10 text-emerald-500 text-[10px] font-bold grid place-items-center shrink-0">ش</div>
-                          <div className="text-right min-w-0">
-                            <span className="block text-xs truncate">إدارة شؤون الشركات والاستثمار</span>
-                            <span className="block text-[9px] text-[var(--text-muted)] leading-none truncate">العقود وتأسيس الشركات الأجنبية</span>
-                          </div>
-                        </div>
-                        {activeWorkspace === "corp" && <Check className="size-3 text-[var(--axia-gold)] shrink-0" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Metadata and Stats */}
-                  <div className="py-2.5 flex items-center justify-between text-[10px] text-[var(--text-muted)] border-b border-[var(--border)]">
-                    <div className="flex items-center gap-1.5">
-                      <Server className="size-3 text-emerald-500 animate-pulse" />
-                      <span>قاعدة البيانات: مؤمنة ومتصلة</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span>٥ قضايا</span>
-                      <span>·</span>
-                      <span>٥ عملاء</span>
-                      <span>·</span>
-                      <span>١١ مستنداً</span>
-                    </div>
+                    )}
                   </div>
 
                   {/* Actions: Sign out */}

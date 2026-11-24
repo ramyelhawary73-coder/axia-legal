@@ -220,9 +220,8 @@ export function AdministrationView() {
                     دعوة أعضاء جدد
                   </div>
                   <div className="mt-1 text-[var(--text-muted)]">
-                    {workspace.security.invitationFlowEnabled
-                      ? "مفعلة"
-                      : "غير مفعلة بعد — تحتاج Invitation/Auth Phase"}
+                    تُدار روابط الدعوة من شاشة فريق العمل وفق صلاحيات الحساب وتفعيل الخدمة.
+                    إرسال الدعوات بالبريد تلقائيًا غير مفعّل حاليًا.
                   </div>
                 </div>
               </div>

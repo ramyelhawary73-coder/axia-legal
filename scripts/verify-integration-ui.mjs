@@ -21,12 +21,13 @@ const records=[];
 const officeA="00000000-0000-4000-8000-000000000301",officeB="00000000-0000-4000-8000-000000000302";
 const storedDraftId="00000000-0000-4000-8000-000000000601";
 const syntheticDraft={id:storedDraftId,title:"مسودة اختبار محفوظة",docType:"مذكرة دفاع",clientName:"بدون ربط",contentHtml:'<p>نص آمن</p><img src=x onerror="window.axiaXss=true"><svg onload="window.axiaXss=true"></svg><a href="javascript:window.axiaXss=true">نص رابط</a>',versions:[],status:"مسودة قيد التحرير",createdAt:"2026-10-19T12:00:00Z",updatedAt:"2026-10-19T12:00:00Z",currentVersionNumber:"v1.0"};
-async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=false,registrationEnabled=registrationFlow,platformMode=null,platformNoOffice=false,controlMode=false,draftMode=false,draftConflict=false}={}) {
+async function fixtureContext(viewport,theme,{autoExport=false,snapshotMode="legacy",registrationFlow=false,registrationEnabled=registrationFlow,platformMode=null,platformNoOffice=false,controlMode=false,draftMode=false,draftConflict=false}={}) {
   const context=await browser.newContext({viewport,colorScheme:theme,locale:"ar-EG",acceptDownloads:true,...(controlMode?{timezoneId:"Africa/Cairo"}:{})});
-  await context.addInitScript(({theme,autoExport})=>{
+  await context.addInitScript(({theme,autoExport,snapshotMode})=>{
     localStorage.setItem("theme",theme);
-    localStorage.setItem("axia_daily_snapshot_config",JSON.stringify({enabled:autoExport,autoDownloadOnAppOpen:autoExport,format:"json",destination:"download_folder"}));
-  },{theme,autoExport});
+    if(snapshotMode==="legacy" && !localStorage.getItem("axia_daily_snapshot_config")) localStorage.setItem("axia_daily_snapshot_config",JSON.stringify({enabled:autoExport,autoDownloadOnAppOpen:autoExport,format:"json",destination:"download_folder"}));
+  },{theme,autoExport,snapshotMode});
+  const identityControls={failed:false,name:"مكتب الاختبار المصرح به — اسم طويل للتحقق من عرض الحساب",label:"صاحب الحساب التجريبي"};
   let invitations=[];
   let assignedTo=owner;
   const mutations=[];
@@ -49,6 +50,10 @@ async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=
     }
     if(!url.pathname.startsWith("/api/")) return route.continue();
     let data={},status=200;
+    if(url.pathname==="/api/administration") {
+      if(identityControls.failed){status=503;data={error:"تعذر تحميل بيانات الإدارة."};}
+      else data={organization:{name:identityControls.name,slug:"synthetic-office",createdAt:"2026-01-01"},currentUser:{label:identityControls.label,role:"owner",roleLabel:"مالك المؤسسة"},membersCount:1,roleCounts:{owner:1,admin:0,lawyer:0,staff:0,trainee:0,viewer:0},security:{enforcedBy:"Supabase RLS",editableFromThisScreen:false,invitationFlowEnabled:false}};
+    }
     if(url.pathname==="/api/clients") data={clients:[]};
     if(url.pathname==="/api/matters") data={matters:[],clients:[]};
     if(url.pathname==="/api/hearings") data={hearings:[]};
@@ -153,7 +158,7 @@ async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=
     }
     await route.fulfill({status,contentType:"application/json",body:JSON.stringify(data)});
   });
-  return {context,mutations,registrationRequests,events,platformRequests,controlRequests,draftRequests,savedDrafts,readControls,passwordRequests,passwordControls};
+  return {context,identityControls,mutations,registrationRequests,events,platformRequests,controlRequests,draftRequests,savedDrafts,readControls,passwordRequests,passwordControls};
 }
 async function waitForHeld(controls,action) {
   for(let attempt=0;attempt<100;attempt++) {
@@ -265,6 +270,71 @@ try {
     const page=await context.newPage();
     await page.goto(base+"/");
     await verifyOfficeNavigation(page,{width,height,theme});
+    await context.close();
+  }
+  for(const {width,height,theme} of [{width:1440,height:900,theme:"dark"},{width:1024,height:620,theme:"light"},{width:390,height:844,theme:"dark"},{width:320,height:568,theme:"light"}]) {
+    console.log(`UI H1 corrections ${width}x${height} ${theme}`);
+    const {context,identityControls}=await fixtureContext({width,height},theme,{snapshotMode:"fresh"});
+    const page=await context.newPage(),downloads=[],errors=[];
+    page.on("download",d=>downloads.push(d));page.on("pageerror",e=>errors.push(e.message));
+    await page.goto(base+"/");
+    await page.getByRole("button",{name:"قائمة الحساب والمكتب",exact:true}).click();
+    const profile=page.locator("#profile-dropdown-menu");
+    await profile.getByText(identityControls.name,{exact:true}).waitFor();
+    assert.equal(await profile.getByText(identityControls.label,{exact:true}).count(),1);
+    assert.equal(await profile.getByText("مالك المؤسسة",{exact:true}).count(),1);
+    assert.doesNotMatch(await profile.innerText(),/القاهرة|الإسكندرية|النسخة الكاملة|١٠٠٤٩٢|٥ قضايا|١١ مستند/);
+    await fits(page,`h1-profile-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`h1-profile-${width}-${theme}.png`),fullPage:true});
+    await profile.getByRole("button",{name:"اللقطة اليومية المحلية",exact:true}).click();
+    const manager=page.getByRole("dialog",{name:"إدارة اللقطة اليومية",exact:true});
+    await manager.getByRole("button",{name:"إعدادات التنزيل المحلي",exact:true}).click();
+    assert.equal(await manager.getByLabel("تفعيل التصدير التلقائي للّقطة اليومية",{exact:true}).isChecked(),false);
+    assert.equal(await manager.getByLabel(/أوافق على تنزيل اللقطة تلقائيًا/).isChecked(),false);
+    await manager.getByRole("button",{name:"تصدير لقطة اليوم فوراً",exact:true}).waitFor({state:"visible"});
+    await page.waitForTimeout(1800);assert.equal(downloads.length,0,"fresh login must not request an automatic file");
+    await fits(page,`h1-snapshot-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`h1-snapshot-${width}-${theme}.png`),fullPage:true});
+    const manual=page.waitForEvent("download");
+    await manager.getByRole("button",{name:"تصدير لقطة اليوم فوراً",exact:true}).click();
+    assert.match((await manual).suggestedFilename(),/^AXIA-Daily-Snapshot-.*\.json$/);
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem("axia_daily_snapshot_config")).autoDownloadOnAppOpen),false);
+    await manager.getByRole("button",{name:"إغلاق إدارة اللقطة",exact:true}).click();
+    await nav(page,"إدارة المكتب والترخيص");
+    await page.getByText(/تُدار روابط الدعوة من شاشة فريق العمل/).waitFor();
+    assert.doesNotMatch(await page.locator("main").innerText(),/Invitation\/Auth Phase/);
+    await nav(page,"راجح الذكاء الاصطناعي");
+    await page.getByRole("heading",{name:"راجح RAJIH",exact:true}).waitFor();
+    assert.equal(await page.getByRole("main").count(),1,"RAJIH must not nest main landmarks");
+    assert.deepEqual(errors,[]);
+    await context.close();
+  }
+  {
+    console.log("UI H1 legacy preference, explicit choice, account fallback and retry");
+    const {context,identityControls}=await fixtureContext({width:390,height:844},"light",{autoExport:true});
+    identityControls.failed=true;
+    const page=await context.newPage(),downloads=[];
+    page.on("download",d=>downloads.push(d));
+    await page.goto(base+"/");
+    await page.getByRole("button",{name:"قائمة الحساب والمكتب",exact:true}).click();
+    await page.getByText("تعذر تحميل بيانات الحساب والمكتب.",{exact:true}).waitFor();
+    assert.equal(await page.locator("#profile-dropdown-menu").getByText("مساحة المكتب الحالية",{exact:true}).count(),1);
+    identityControls.failed=false;identityControls.name="اسم المكتب بعد إعادة المحاولة";
+    await page.getByRole("button",{name:"إعادة تحميل بيانات المكتب",exact:true}).click();
+    await page.locator("#profile-dropdown-menu").getByText(identityControls.name,{exact:true}).waitFor();
+    await page.waitForTimeout(1800);assert.equal(downloads.length,0,"legacy true preferences are not consent");
+    await page.getByRole("button",{name:"اللقطة اليومية المحلية",exact:true}).click();
+    const manager=page.getByRole("dialog",{name:"إدارة اللقطة اليومية",exact:true});
+    await manager.getByRole("button",{name:"إعدادات التنزيل المحلي",exact:true}).click();
+    const consent=manager.getByLabel(/أوافق على تنزيل اللقطة تلقائيًا/);
+    assert.equal(await consent.isChecked(),false);
+    await consent.check();
+    await manager.getByRole("button",{name:"حفظ إعدادات اللقطة",exact:true}).click();
+    assert.equal(downloads.length,0,"saving preferences must not itself export");
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem("axia_daily_snapshot_config")).autoDownloadConsent),`v1:office-test:${owner}`);
+    const automatic=page.waitForEvent("download");await page.reload();await automatic;
+    assert.equal(downloads.length,1);
+    await page.reload();await page.waitForTimeout(1800);assert.equal(downloads.length,1,"only one automatic request per day");
     await context.close();
   }
   for(const width of [1440,390,320]) for(const theme of ["light","dark"]) {

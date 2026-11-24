@@ -10,8 +10,8 @@
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
 > **Verified application main SHA:** `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`
-> **Current handoff branch:** `review/axia-release-candidate-20261121`
-> **Current package:** [Draft PR #52](https://github.com/ramyelhawary73-coder/axia-legal/pull/52), owner-authorized review candidate combining the pinned source of #48, #49 and #51. Status `PREVIEW_READY`; desktop office-session checks now passed, while full H1 and owner acceptance remain open. [H1 hosted results](AXIA_H1_HOSTED_ACCEPTANCE_2026-11-24.md). Check the PR's current head/CI/Preview. Main and Production remain `c0fd6a6`. No merge, Production release, database write, activation or PDF feature implementation is authorized. [Candidate scope and verification](AXIA_RELEASE_CANDIDATE_REVIEW_2026-11-21.md).
+> **Current handoff branch:** `fix/axia-h1-review-20261124`
+> **Current package:** H1 source corrections on `fix/axia-h1-review-20261124`, based on [Draft #52](https://github.com/ramyelhawary73-coder/axia-legal/pull/52) at `aaed2fe`. Status `IN_PROGRESS`: local checks passed; branch publication, CI and Preview remain pending. [Source corrections](AXIA_H1_SOURCE_CORRECTIONS_2026-11-24.md) and [hosted H1 evidence](AXIA_H1_HOSTED_ACCEPTANCE_2026-11-24.md). No main merge, Production release, database/configuration change or feature activation is authorized.
 
 ---
 
@@ -83,6 +83,12 @@ Statements under **Current State** should be treated as verified only when a liv
 ---
 
 # 3. Current State
+
+## 2026-11-24 H1 source corrections — IN_PROGRESS
+
+The owner explicitly authorized correcting H1 findings, testing them and preparing a Preview on a separate branch. `fix/axia-h1-review-20261124` starts from candidate #52 `aaed2fe` and preserves that complete source. [Bounded source report](AXIA_H1_SOURCE_CORRECTIONS_2026-11-24.md) records the delta: existing authorized administration reads supply account/office/role labels with neutral failure/retry; simulated workspace/license/identity/count claims are removed; invitation copy reflects team links and no automatic mail; daily snapshots need explicit office/account-specific local consent, with defaults and legacy settings unable to auto-download, while manual export stays available; RAJIH retains one main landmark.
+
+Local Typecheck, strict Lint, 177 tests, Build/18 routes and diff checks passed. Local Chromium launch was denied by the executor before browser assertions; full compiled browser/SQL CI and exact-head Preview are pending. Do not describe this as hosted H1 completion. No API handler, workflow, dependency, database/security/configuration or Production change is included. The library source link and platform activation remain separate scopes. The follow-up review target will include #52's inherited package; never merge both as duplicate source packages.
 
 ## 2026-11-24 real desktop H1 acceptance — IN_PROGRESS
 
@@ -3392,11 +3398,11 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: DESKTOP H1 OBSERVED — H1 IN_PROGRESS — NO RELEASE AUTHORIZATION**
+**Current mode: H1 SOURCE CORRECTIONS IN_PROGRESS — NO RELEASE AUTHORIZATION**
 
-1. Review [Draft #52](https://github.com/ramyelhawary73-coder/axia-legal/pull/52), its current-head Checks and [branch Preview](https://axia-legal-git-review-axi-d3e774-ramyelhawary73-coders-projects.vercel.app). Combined source `67c51fd` passed CI 44938601064 and reached READY Preview; the subsequent result-doc update preserves all runtime/tests/workflow bytes and receives its own current-head checks. [Candidate acceptance](AXIA_RELEASE_CANDIDATE_REVIEW_2026-11-21.md) records source, local/CI evidence and the remaining hosted gates. Do not repeat source integration or start PDF features.
+1. Complete the authorized H1 source-correction review on `fix/axia-h1-review-20261124`. The integrated baseline is Draft #52 `aaed2fe`; do not repeat its source integration. Local checks pass. The owner explicitly approved publishing this branch to `ramyelhawary73-coder/axia-legal`, opening a review PR and preparing Vercel Preview on 2026-11-24, resolving the earlier automatic-review gate. Verify exact-head CI/Preview and present the resulting review candidate; this is not merge/Production authorization. [Bounded source report](AXIA_H1_SOURCE_CORRECTIONS_2026-11-24.md).
 2. Present the candidate and sidebar to the owner for review. Do not merge main or deploy Production, replay migrations, enable the new branch's feature flags, copy Secrets or change database/Auth/SMTP/memberships. #50 and every new PDF feature are excluded.
-3. Desktop office-session H1 checks on `fe8aacf` passed on 2026-11-24: 12 destinations, sidebar, reload/new-tab continuity and logout. [Observed report and findings](AXIA_H1_HOSTED_ACCEPTANCE_2026-11-24.md). Full H1 remains IN_PROGRESS: platform is disabled on this Preview, real MFA/control and mobile/expiry acceptance remain open. Next proposed source package: reconcile office/profile display and invitation copy, review explicit choice for daily snapshot downloads and remove RAJIH's nested main. Do not activate the platform or repair a legal source URL without its separately scoped review. Private password/MFA entry stays owner-operated; no new account, password change or email is authorized. Preserve the sole office owner.
+3. Desktop office-session H1 checks on `fe8aacf` passed on 2026-11-24: 12 destinations, sidebar, reload/new-tab continuity and logout. [Observed report and findings](AXIA_H1_HOSTED_ACCEPTANCE_2026-11-24.md). Full H1 remains IN_PROGRESS: platform is disabled on this Preview, real MFA/control and mobile/expiry acceptance remain open. The owner has now authorized that bounded source package on `fix/axia-h1-review-20261124`: display/capability copy, explicit office/account-specific snapshot consent and RAJIH landmark are implemented; exact-head CI/Preview and owner review remain before acceptance. See the source-corrections report. Do not activate the platform or repair a legal source URL without its separately scoped review. Private password/MFA entry stays owner-operated; no new account, password change or email is authorized. Preserve the sole office owner.
 4. H2 needs a concrete approved fictitious-office/retained-data/file manifest before any shared-database writes/files/support/export test. Prove recovery only in an isolated disposable target. E1 separately needs an owner-controlled employee mailbox, office/role and scoped account/mail/configuration approval. Finish C1 before the final release decision.
 5. Preserve the existing R2 demo and audit/legal corpus. Never replay staff source `20261015081218` (hosted `20261016083929`), platform source `20261018173401` (hosted `20261019080134`), control source `20261019142538` (hosted `20261020054338`) or the already-recorded Client Requests foundation `20261108072737`. Do not rename/repair old history.
 6. After the owner's candidate feedback and acceptance gates, request a separate exact-head merge/Production decision. PDF items remain prioritized proposals; no automatic expansion follows a green CI or review approval.
@@ -3407,7 +3413,7 @@ October DB/MFA/demo evidence below remains dated. The H1 run intentionally made 
 
 # 24. NEW CHAT HANDOFF
 
-Current handoff: read the 2026-11-24 H1 report, then inspect the current head/CI/Preview of `review/axia-release-candidate-20261121` and its candidate report. Desktop office-session checks passed at `fe8aacf`; full H1 remains open with platform disabled and mobile untested. The next proposed source corrections are recorded, not implemented by this documentation update. It combines existing #48/#49/#51, preserves the sidebar and records the PDF intake. Owner authorized review preparation only; no main merge, Production deployment, DB write or new Feature execution. Do not repeat source-PR integration or apply historical migrations.
+Current handoff: read the 2026-11-24 H1 source-corrections report on `fix/axia-h1-review-20261124` and verify its current PR/CI/Preview. The owner authorized these bounded source fixes and a review Preview. Preserve main and hosted configuration. For the inherited baseline, read the H1 session report and inspect the current head/CI/Preview of `review/axia-release-candidate-20261121` and its candidate report. Desktop office-session checks passed at `fe8aacf`; full H1 remains open with platform disabled and mobile untested. Source corrections are implemented locally; their publication and Preview remain pending. It combines existing #48/#49/#51, preserves the sidebar and records the PDF intake. Owner authorized review preparation only; no main merge, Production deployment, DB write or new Feature execution. Do not repeat source-PR integration or apply historical migrations.
 
 When opening a new ChatGPT conversation for AXIA, use this instruction:
 

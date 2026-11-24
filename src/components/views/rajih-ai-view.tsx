@@ -131,7 +131,7 @@ export function RajihAiView() {
   };
 
   return (
-    <main className="min-h-full space-y-5 p-3 sm:space-y-7 sm:p-6 lg:p-10" dir="rtl">
+    <section aria-label="مساعد راجح القانوني" className="min-h-full space-y-5 p-3 sm:space-y-7 sm:p-6 lg:p-10" dir="rtl">
       <section className="relative overflow-hidden rounded-[2rem] border border-[var(--axia-gold)]/30 bg-[radial-gradient(circle_at_top_right,rgba(191,151,45,0.18),transparent_42%),linear-gradient(135deg,var(--panel),var(--bg))] p-5 shadow-2xl shadow-black/20 sm:p-8">
         <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
@@ -237,6 +237,6 @@ export function RajihAiView() {
           </div>
         </div>
       </section>
-    </main>
+    </section>
   );
 }

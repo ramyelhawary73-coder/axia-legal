@@ -59,7 +59,8 @@ export default function HomePage() {
   } | null>(null);
 
   const snapshotDataReady = !coreLoading && !tasksLoading && !coreSyncError && !taskSyncError && taskWorkspace !== null;
-  const { toastNotification, dismissToast } = useDailySnapshotAutoExport(matters, tasks, snapshotDataReady);
+  const autoExportScope = taskWorkspace ? `${taskWorkspace.organizationId}:${taskWorkspace.userId}` : undefined;
+  const { toastNotification, dismissToast } = useDailySnapshotAutoExport(matters, tasks, snapshotDataReady, autoExportScope);
 
   useEffect(() => {
     let cancelled = false;
@@ -310,6 +311,7 @@ export default function HomePage() {
         onSelectClient={handleSelectClient}
         onSelectDocument={handleSelectDocument}
         isFocusMode={isFocusMode}
+        onOpenSnapshotManager={() => setIsSnapshotManagerOpen(true)}
       >
         {activeTab === "overview" && (
           <>
@@ -429,6 +431,8 @@ export default function HomePage() {
 
       {/* Local daily snapshot manager */}
       <DailySnapshotManager
+        key={autoExportScope ?? "loading"}
+        autoExportScope={autoExportScope}
         isDataReady={snapshotDataReady}
         isOpen={isSnapshotManagerOpen}
         onClose={() => setIsSnapshotManagerOpen(false)}

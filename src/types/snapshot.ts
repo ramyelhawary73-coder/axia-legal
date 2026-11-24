@@ -64,6 +64,7 @@ export interface SnapshotConfig {
   format: SnapshotFormat;
   autoExportTime: string; // HH:MM, e.g. "17:00"
   autoDownloadOnAppOpen: boolean;
+  autoDownloadConsent?: string; // v1:<organizationId>:<userId>; explicit local opt-in only
   cloudSyncUrl: string;
   cloudSyncStatus: "idle" | "synced" | "syncing" | "error";
   cloudSyncLastMessage?: string;
