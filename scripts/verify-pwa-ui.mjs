@@ -66,18 +66,22 @@ export async function verifyPwa({browser,base,output,records,fits}) {
   {
     // Actual compiled assets + browser Service Worker. No mocked legal/Auth response or external host.
     const context=await browser.newContext({viewport:{width:390,height:844}});
-    const page=await context.newPage();await page.goto(base+'/install');
+    let page=await context.newPage();await page.goto(base+'/install');
     await page.getByText('شاشة انقطاع الاتصال جاهزة على هذا المتصفح.',{exact:true}).waitFor({timeout:20000});
     await page.reload();
     await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
     const cached=await page.evaluate(async()=>{const names=(await caches.keys()).filter(n=>n.startsWith('axia-pwa-public-'));return Promise.all(names.map(async name=>({name,urls:(await (await caches.open(name)).keys()).map(r=>new URL(r.url).pathname)})));});
     assert.equal(cached.length,1);assert.equal(cached[0].urls.length,5);
     assert.ok(cached[0].urls.every(url=>url==='/offline.html'||url.startsWith('/pwa/')));
-    await context.setOffline(true);await page.goto(base+'/platform');
+    assert.match(await page.evaluate(async()=>{const name=(await caches.keys()).find(n=>n.startsWith('axia-pwa-public-'));return (await (await caches.open(name)).match('/offline.html')).text();}),/الاتصال غير متاح حاليًا/);
+    await context.setOffline(true);
+    // Cold launch from a fresh page exercises document navigation, independent of the active Next router.
+    const onlinePage=page;page=await context.newPage();
+    const offlineResponse=await page.goto(base+'/platform');
     try { await page.getByRole('heading',{name:'الاتصال غير متاح حاليًا',exact:true}).waitFor({timeout:10000}); }
     catch(error) {
       await page.screenshot({path:path.join(output,'pwa-offline-failure.png'),fullPage:true});
-      console.error('PWA offline diagnostic',JSON.stringify({url:page.url(),body:await page.locator('body').innerText(),workers:await page.evaluate(async()=>({online:navigator.onLine,controller:navigator.serviceWorker.controller?.scriptURL,registrations:(await navigator.serviceWorker.getRegistrations()).map(r=>({scope:r.scope,state:r.active?.state}))}))}));
+      console.error('PWA offline diagnostic',JSON.stringify({url:page.url(),status:offlineResponse?.status(),fromServiceWorker:offlineResponse?.fromServiceWorker(),response:(await offlineResponse?.text())?.slice(0,2500),body:await page.locator('body').innerText(),workers:await onlinePage.evaluate(async()=>({online:navigator.onLine,controller:navigator.serviceWorker.controller?.scriptURL,registrations:(await navigator.serviceWorker.getRegistrations()).map(r=>({scope:r.scope,state:r.active?.state}))}))}));
       throw error;
     }
     assert.equal(await page.getByRole('textbox').count(),0);
