@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { OFFICE_TABLES, decryptOfficeSnapshot } from "../src/lib/office-backup.ts";
+import { verifyPwa } from "./verify-pwa-ui.mjs";
 
 // UI contracts use synthetic responses on loopback only. They are not real Auth/SMTP acceptance.
 const modulePath=process.env.AXIA_BROWSER_MODULE;
@@ -264,6 +265,7 @@ try {
   const disabledControl=await fetch(base+"/api/platform/control",{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({action:"capabilities"})});
   assert.equal(disabledControl.status,503);assert.equal((await disabledControl.json()).code,"CONTROL_DISABLED");
   const disabledDrafts=await fetch(base+"/api/drafts");assert.equal(disabledDrafts.status,503);assert.equal((await disabledDrafts.json()).enabled,false);
+  await verifyPwa({browser,base,output,records,fits});
   for(const {width,height,theme} of [{width:1440,height:900,theme:"dark"},{width:1024,height:620,theme:"light"},{width:390,height:844,theme:"dark"},{width:320,height:568,theme:"light"}]) {
     console.log(`UI combined office navigation ${width}x${height} ${theme}`);
     const {context}=await fixtureContext({width,height},theme);

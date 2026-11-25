@@ -5,6 +5,8 @@ import fs from "node:fs/promises";
 // shadows src/app/. Verify the actual compiled web entry points before deploy.
 const required = [
   "/page",
+  "/install/page",
+  "/manifest.webmanifest/route",
   "/login/page",
   "/invitations/accept/page",
   "/auth/confirm/route",

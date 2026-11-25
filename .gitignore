@@ -31,3 +31,5 @@ fix_*.js
 update_*.js
 *.tsbuildinfo
 /supabase/.temp/
+# Generated per build from the tracked public-only worker template.
+/public/axia-sw.js

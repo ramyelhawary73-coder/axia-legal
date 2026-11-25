@@ -3,6 +3,7 @@
 import React, { Suspense, useMemo, useRef, useState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -1686,6 +1687,7 @@ function LoginPortalContent() {
       <footer className="relative z-10 border-t border-[var(--border)] bg-[var(--panel)] py-10">
         <div className={`${styles.pageFrame} mx-auto flex flex-col items-center justify-between gap-4 sm:flex-row`}>
           <AxiaBrandLogo mode="lockup" size="sm" />
+          <Link href="/install" prefetch={false} className="inline-flex min-h-11 items-center rounded-xl border border-[var(--border)] px-4 py-2 text-sm font-semibold">تثبيت AXIA على جهازك</Link>
 
           <div className="text-center sm:text-left text-[11px] text-[var(--text-muted)] space-y-1">
             <p className="font-semibold text-[var(--text)]">

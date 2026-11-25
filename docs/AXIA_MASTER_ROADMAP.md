@@ -10,8 +10,8 @@
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
 > **Verified application main SHA:** `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`
-> **Current handoff branch:** `fix/axia-h1-review-20261124`
-> **Current package:** [Draft PR #53](https://github.com/ramyelhawary73-coder/axia-legal/pull/53), H1 source corrections on `fix/axia-h1-review-20261124`, based on #52 `aaed2fe`. Status `PREVIEW_READY`; bounded connected hosted review passed at deployed `c126fd6` with exact-head CI 45450290168 successful and matching READY Preview. [Direct hosted results and limits](AXIA_H1_CORRECTIONS_HOSTED_REVIEW_2026-11-25.md), [source acceptance](AXIA_H1_SOURCE_CORRECTIONS_2026-11-24.md) and [earlier session evidence](AXIA_H1_HOSTED_ACCEPTANCE_2026-11-24.md). Full H1 remains open: physical-mobile, expiry and privileged MFA/control. Later documentation-head checks must be inspected separately. No main merge, Production release, database/configuration change or feature activation is authorized.
+> **Current handoff branch:** `feat/axia-pwa-foundation-20261125`
+> **Current package:** PWA foundation review on `feat/axia-pwa-foundation-20261125`, based on PR #53 `ebfa30b`. The owner approved planning all three modes and implementing only the bounded PWA foundation now. [Three-mode architecture](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md) and [source/acceptance report](AXIA_PWA_FOUNDATION_2026-11-25.md). Check the new branch PR for exact-head CI/Preview; hosted #53 MFA/registry/audit acceptance is separately dated. Local server and offline legal-data sync remain design-only. No DB/Auth-provider change, main merge or Production release is authorized.
 
 ---
 
@@ -84,6 +84,14 @@ Statements under **Current State** should be treated as verified only when a liv
 
 # 3. Current State
 
+## 2026-11-25 three-mode product decision and PWA foundation
+
+The owner approved Cloud + Office Server + Offline Device with Synchronization as product modes. [The architecture contract](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md) defines one canonical cloud/local server per office, ordinary server-enforced permissions, bounded future offline grants, encrypted device vaults, idempotent operations/CAS conflicts and separate backup/recovery for all three modes. Offline writes, local provisioning and any new DB/Auth work must be separately reviewed before application.
+
+Implementation on `feat/axia-pwa-foundation-20261125` starts from #53 `ebfa30b`, preserving its complete candidate. [PWA foundation report](AXIA_PWA_FOUNDATION_2026-11-25.md): manifest/icons/Apple metadata, public install guide, account/login entry points, explicit browser install prompt, user-chosen update reload, versioned public-only worker and generic offline screen. No legal records, API responses, login/workspace HTML or Auth material are cached; no failed writes are queued. No dependencies, provider/session settings, DB/schema/role/Secret or branch flags are changed. Exact public PWA Proxy exclusions retain neighboring protected route matching. Local Typecheck/Lint, 187 tests and Build/20 required routes passed; final exact-head CI/Preview evidence belongs on the new review PR. Native device installation is not established by synthetic tests.
+
+Post-report #53 H1 result: source `ebfa30b`, successful CI 45500524735 and READY deployment `dpl_CcRbKjkbgg2QEyHxNDsd7LxmHfLM`. Two owner-approved platform Config entries apply only to #53's branch, with control center off. The owner completed existing MFA privately; protected directory/audit, new-tab and reload reads passed. No business/role write; normal read audit was appended. Read-only session settings: JWT 3600 seconds, time-box/inactivity 0/never, single-session off, replay detection on/reuse 10 seconds. No timed refresh or physical-mobile acceptance is claimed. These branch-specific flags are not copied to PWA. Older statements below that platform was disabled are historical.
+
 ## 2026-11-24 H1 source corrections — PREVIEW_READY
 
 The owner explicitly authorized correcting H1 findings, testing them and preparing a Preview on a separate branch. `fix/axia-h1-review-20261124` starts from candidate #52 `aaed2fe` and preserves that complete source. [Bounded source report](AXIA_H1_SOURCE_CORRECTIONS_2026-11-24.md) records the delta: existing authorized administration reads supply account/office/role labels with neutral failure/retry; simulated workspace/license/identity/count claims are removed; invitation copy reflects team links and no automatic mail; daily snapshots need explicit office/account-specific local consent, with defaults and legacy settings unable to auto-download, while manual export stays available; RAJIH retains one main landmark.
@@ -129,7 +137,7 @@ R1 fixes client read failures, indefinite loading, stale paginated member/audit 
 
 [Current separation and trial-reset plan](AXIA_DEVELOPER_SEPARATION_D4_2026-10-21.md) records the latest owner direction: developer identity remains Platform Owner only; one controlled test owner uses one active synthetic office. Fresh read-only inspection confirms the developer is already enabled/confirmed with verified MFA but still the sole owner of demo A. Both demo organizations have immutable control-event references. Do not remove the sole owner, delete organization identities, remove Auth accounts or truncate audit as cleanup. R2 subsequently confirms the existing second mailbox and reuses office B; its current decision supersedes the earlier new-mailbox/transfer/reset proposal. Any later ownership handoff still requires a concrete reviewed manifest. The proposed reset preserves legal corpus and audit; no live reset or identity change occurred.
 
-D4 source routes a verified Platform Owner from `/` to `/platform`; `/?workspace=1` retains only the current user's ordinary workspace authorization. The whole existing client workspace is preserved in `src/components/office-workspace.tsx`. Platform's office link requires an actual valid own workspace; missing/suspended/provider-error workspace does not block platform rendering, and explicit existing logout remains available. No new authority or tenant bypass is added. Local 168 app tests, Typecheck/Lint and Build/17 routes pass; final CI/Preview is tracked on PR #48. Cloud SaaS remains first-delivery scope; supported local installation/full offline sync is not implemented and is deferred.
+D4 source routes a verified Platform Owner from `/` to `/platform`; `/?workspace=1` retains only the current user's ordinary workspace authorization. The whole existing client workspace is preserved in `src/components/office-workspace.tsx`. Platform's office link requires an actual valid own workspace; missing/suspended/provider-error workspace does not block platform rendering, and explicit existing logout remains available. No new authority or tenant bypass is added. Local 168 app tests, Typecheck/Lint and Build/17 routes pass; final CI/Preview is tracked on PR #48. This historical cloud-first scope is superseded by the 2026-11-25 three-mode design decision. Local server/full offline sync remain unimplemented; the newly approved PWA foundation is tracked separately.
 
 ## Account Security and Existing Demo R2 — 2026-10-21
 
@@ -2128,7 +2136,9 @@ Exit criteria:
 
 ## Phase 6 — Installable AXIA PWA
 
-**Status:** `PLANNED`
+**Status:** `IN_REVIEW` — bounded foundation source implemented on `feat/axia-pwa-foundation-20261125`; exact-head CI/Preview and real installation acceptance remain required.
+
+Owner-approved follow-up phases: P2 local-server package, P3 isolated encrypted offline prototype, P4 separately approved sync service/migrations, P5 cross-device/conflict/restore acceptance. [Detailed boundaries](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md).
 
 Objective: make AXIA installable as a first-class app experience.
 
@@ -2847,7 +2857,7 @@ If Vercel auto-deploy is blocked by account quota, do not change code merely to 
 
 ## DR-008
 
-**Decision:** PWA installation is a product requirement, but authoritative legal data remains server-controlled.  
+**Decision:** PWA installation is a product requirement. Under the 2026-11-25 three-mode design, each office has one canonical cloud or local office server; a future offline device keeps bounded pending work and must revalidate permissions on sync. That offline path is not yet implemented.
 **Reason:** installability does not imply unsafe offline data ownership.
 
 ## DR-009
@@ -3398,22 +3408,20 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: H1 CORRECTIONS HOSTED REVIEW PASSED — FULL H1 IN PROGRESS — NO RELEASE AUTHORIZATION**
+**Current mode: PWA FOUNDATION REVIEW — THREE MODES DESIGNED — NO RELEASE AUTHORIZATION**
 
-1. Review [Draft #53](https://github.com/ramyelhawary73-coder/axia-legal/pull/53), its current head/Checks and [new branch Preview](https://axia-legal-git-fix-axia-h-cc8805-ramyelhawary73-coders-projects.vercel.app). Tested source `2675fb4` passed CI 45449134465 and matching READY Preview; the follow-up documentation head preserves all runtime/test/workflow bytes and receives separate checks. The owner explicitly approved branch/PR/Preview publication. #53 retains #52's package, so do not merge both independently or repeat source integration. [Source report and remaining acceptance](AXIA_H1_SOURCE_CORRECTIONS_2026-11-24.md).
-2. Present the candidate and sidebar to the owner for review. Do not merge main or deploy Production, replay migrations, enable the new branch's feature flags, copy Secrets or change database/Auth/SMTP/memberships. #50 and every new PDF feature are excluded.
-3. [Connected hosted correction review](AXIA_H1_CORRECTIONS_HOSTED_REVIEW_2026-11-25.md) passed at deployed `c126fd6` on 2026-11-25 Cairo: office/admin labels and invitation copy, snapshot automation/consent off, zero visible export history after reload, responsive 320/390px menu/dialog and RAJIH's single main. Earlier `fe8aacf` evidence separately covers 12 destinations, sidebar, new-tab continuity and logout. Full H1 remains IN_PROGRESS: physical-mobile and token-expiry acceptance are unverified; `/platform` is still disabled, so real privileged MFA/control acceptance is open. Do not activate the platform or repair a legal source URL without its separately scoped review. Private password/MFA entry stays owner-operated; no new account, password change or email is authorized. Preserve the sole office owner.
-4. H2 needs a concrete approved fictitious-office/retained-data/file manifest before any shared-database writes/files/support/export test. Prove recovery only in an isolated disposable target. E1 separately needs an owner-controlled employee mailbox, office/role and scoped account/mail/configuration approval. Finish C1 before the final release decision.
-5. Preserve the existing R2 demo and audit/legal corpus. Never replay staff source `20261015081218` (hosted `20261016083929`), platform source `20261018173401` (hosted `20261019080134`), control source `20261019142538` (hosted `20261020054338`) or the already-recorded Client Requests foundation `20261108072737`. Do not rename/repair old history.
-6. After the owner's candidate feedback and acceptance gates, request a separate exact-head merge/Production decision. PDF items remain prioritized proposals; no automatic expansion follows a green CI or review approval.
-
-October DB/MFA/demo evidence below remains dated. The H1 run intentionally made no business writes; it did create/end an Auth session and observed the existing automatic local snapshot request. No first-client readiness claim is made. Latest main is still `c0fd6a6`; canonical state remains this roadmap rather than a conversation summary or a source PR's stale description.
+1. Review `feat/axia-pwa-foundation-20261125`, its exact-head Checks/Preview and [PWA report](AXIA_PWA_FOUNDATION_2026-11-25.md). It inherits #53/#52; do not merge inherited source twice or modify those branches to publish this delta. Preserve main and existing hosted records/configuration.
+2. Test real desktop/laptop, Android and iPhone/iPad installation and standalone/update behavior. Keep H1's remaining physical-mobile and token-refresh gates explicit; a 65-minute wait cannot prove absolute session termination with the currently observed unlimited time-box/inactivity settings.
+3. Review [the three-mode architecture](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md), then prepare the P2 local-server packaging/hardware/HTTPS/recovery manifest. Only isolated fictional-data work follows; show any DB/Auth change before application. Do not enable hosted offline writes, device grants or bidirectional cloud/local masters as part of PWA installation.
+4. H2 still requires an approved fictional office/file/retained-data manifest and isolated restore proof; E1 needs a controlled employee/mail scope; C1 needs the complete sold workflow. The installed shell does not close any of them.
+5. Preserve the sole office owner, audit/legal corpus and current R2 demo. Never replay historical applied migrations. No new Secrets, Auth setting changes, feature flags, hosted SQL, memberships, real mail, main merge or Production release are authorized by this package.
+6. After owner feedback and acceptance, request the exact next bounded implementation or merge/release decision. Always end a completed step with the next execution command in plain Arabic.
 
 ---
 
 # 24. NEW CHAT HANDOFF
 
-Current handoff: read the 2026-11-25 connected hosted correction report and 2026-11-24 source report on `fix/axia-h1-review-20261124`, then verify current #53 Checks/Preview. Direct hosted correction review passed at deployed `c126fd6` with CI 45450290168 successful and matching READY Preview, including desktop Chrome viewport overrides at 320/390px. No live export/settings save was exercised. Physical-mobile, token expiry and privileged MFA/control remain open; `/platform` is disabled. Preserve main and hosted configuration. Earlier `fe8aacf` session evidence remains separately dated. #53 combines existing #48/#49/#51 and the bounded corrections; never merge its inherited source twice. No main merge, Production deployment, DB write, activation or new Feature execution is authorized. Do not replay historical migrations.
+Current handoff: PWA foundation branch `feat/axia-pwa-foundation-20261125` is based on PR #53 `ebfa30b`. Read the PWA report and three-mode architecture, then inspect the branch PR's exact-head CI/Preview. Cloud web exists; the PWA foundation is in source review; a local office server and encrypted offline business-data synchronization are designed only. The owner authorized this planning/source/Preview work, not DB/Auth changes, main merge or Production. #53's separately approved platform Config applies only to its original branch; MFA/basic protected reads and session continuity passed there. Physical-mobile/timed refresh, H2/E1/C1 and later local/offline acceptance stay open. Do not copy flags/Secrets, replay migrations, claim data-cache/offline CRUD from the generic offline screen, or repeat integration of inherited PRs.
 
 When opening a new ChatGPT conversation for AXIA, use this instruction:
 

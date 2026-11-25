@@ -31,6 +31,7 @@ import {
   type LucideIcon 
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { NavigationTab, LegalTask, Matter, Client, LegalDocument } from "@/types/legal";
 import { logout } from "@/app/login/actions";
 import { AxiaSymbolSvg } from "@/components/axia-brand-logo";
@@ -500,6 +501,10 @@ export function AppShell({
                         اللقطة اليومية المحلية
                       </button>
                     )}
+                    <Link href="/install" prefetch={false} onClick={() => setIsProfileOpen(false)} className="flex min-h-11 w-full items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-sm hover:bg-[var(--accent)]">
+                      <Download aria-hidden="true" className="size-4 shrink-0" />
+                      تثبيت AXIA على جهازك
+                    </Link>
                   </div>
 
                   {/* Actions: Sign out */}

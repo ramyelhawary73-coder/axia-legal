@@ -40,7 +40,13 @@ Native Android implementation of **AXIA Legal**, the premier Egyptian Legal Prac
 
 Use Node.js 22 as in CI, then install with `npm ci` and run `npm run dev`. Configure local public environment values privately using `.env.example`; never commit credentials or use Service Role for application flows.
 
-Run `npm run check` for Typecheck, Lint, application tests and the production build. The build also checks fifteen required compiled web routes, so an empty `/404`-only build cannot be reported as a valid release. CI adds isolated SQL/concurrency and browser checks. These do not establish a real employee Auth/MFA session or successful email delivery.
+Run `npm run check` for Typecheck, Lint, application tests and the production build. The build also checks twenty required compiled web routes, so an empty `/404`-only build cannot be reported as a valid release. CI adds isolated SQL/concurrency and browser checks. These do not establish a real employee Auth/MFA session or successful email delivery.
+
+### Installable app and three operating modes
+
+`/install` provides desktop/laptop, Android and iPhone/iPad installation guidance. The manifest and existing-brand icons support standalone launch. Build/dev preparation generates a versioned public-only service worker; the worker caches only a generic offline error screen and brand icons. Business pages and APIs remain online and authenticated. Updates wait for an explicit save-work/reload choice. This foundation does not implement offline legal-data editing or synchronization.
+
+The owner-approved target includes cloud, an office-owned local server and offline devices with synchronization. Each office will have one authoritative cloud/local server. Local packaging, encrypted device vaults and scoped conflict-safe sync remain separate planned work, with DB/Auth changes presented before application. See [the mode architecture](docs/AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md) and [PWA review/limits](docs/AXIA_PWA_FOUNDATION_2026-11-25.md).
 
 ### Developer Control D1 — isolated foundation
 
