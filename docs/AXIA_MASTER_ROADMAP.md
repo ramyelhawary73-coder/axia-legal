@@ -11,7 +11,7 @@
 > **Default branch:** `main`  
 > **Verified application main SHA:** `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`
 > **Current handoff branch:** `feat/axia-pwa-foundation-20261125`
-> **Current package:** PWA foundation review on `feat/axia-pwa-foundation-20261125`, based on PR #53 `ebfa30b`. The owner approved planning all three modes and implementing only the bounded PWA foundation now. [Three-mode architecture](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md) and [source/acceptance report](AXIA_PWA_FOUNDATION_2026-11-25.md). Check the new branch PR for exact-head CI/Preview; hosted #53 MFA/registry/audit acceptance is separately dated. Local server and offline legal-data sync remain design-only. No DB/Auth-provider change, main merge or Production release is authorized.
+> **Current package:** PR #54 PWA foundation: real-device acceptance has started; [device acceptance](AXIA_PWA_DEVICE_ACCEPTANCE_2026-11-25.md) separates direct Chrome update evidence from pending OS installation/mobile/offline results. [P2 local-server specification](AXIA_LOCAL_SERVER_P2_REVIEW_2026-11-25.md) is prepared for review only. [Three-mode architecture](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md) and [foundation report](AXIA_PWA_FOUNDATION_2026-11-25.md) retain the source/limits. Local server and offline legal-data sync remain unimplemented. No DB/Auth-provider/Secret/role change, main merge or Production release is authorized.
 
 ---
 
@@ -83,6 +83,14 @@ Statements under **Current State** should be treated as verified only when a liv
 ---
 
 # 3. Current State
+
+## 2026-11-25 real-device PWA acceptance started; P2 specification prepared
+
+Fresh read-only verification: Draft PR #54 is unmerged at `cd5d1189d7d3e2abed77b8423ec8a294735c742d`; main/base remains `c0fd6a6`. CI 45646966606 completed success (187 safety tests, 211 compiled-browser records, isolated SQL/concurrency, Build/20 routes), and matching Preview `dpl_GZX7fEHz2Er4Epf7n55q7TeLcvpV` is READY. This fixes the bounded engineering baseline; later documentation heads need their own Checks/Preview verification.
+
+The owner authorized real-device install/open/update/offline acceptance, with login/MFA owner-operated, and a P2 review specification. [Device acceptance](AXIA_PWA_DEVICE_ACCEPTANCE_2026-11-25.md): the connected physical Chrome install page offered a native prompt; actual pending update deferral, re-check, explicit activation/reload and shell readiness passed directly. This was a browser tab, not proof of installed-app update. OS installation, standalone launch/login, real network interruption and Android/iPhone results remain pending. No device model/version is required until a specific compatibility issue needs it; available mobile platforms were requested without assuming ownership of all three.
+
+[P2 review](AXIA_LOCAL_SERVER_P2_REVIEW_2026-11-25.md) defines isolated local authority, service/HTTPS/hardware proposals, build-time public endpoints, independent Auth and least privilege, storage/backup/restore/update boundaries, exact DB/Auth approval categories and acceptance. Source inspection found historical `memberships`/`membership_role` versus later `organization_members`/`app_role` dependencies and `test_only_*` files; prepare a reviewed clean local baseline before any SQL, never replay the folder into hosted or assume an empty local DB can already bootstrap. Missing Supabase configuration currently has a mock fallback; a future local operational package needs fail-closed preflight. No runnable local package, SQL/Auth change, account, mail, export, new Secret/flag, main merge or Production deployment is included. Control center stays off.
 
 ## 2026-11-25 three-mode product decision and PWA foundation
 
@@ -2136,7 +2144,7 @@ Exit criteria:
 
 ## Phase 6 — Installable AXIA PWA
 
-**Status:** `IN_PROGRESS` — bounded foundation source implemented on `feat/axia-pwa-foundation-20261125`; exact-head CI/Preview and real installation acceptance remain required.
+**Status:** `OWNER_TESTING` — bounded foundation `cd5d118` passed CI/Preview; direct Chrome-tab update acceptance passed. OS installation/standalone, installed-app update, actual offline device and Android/iPhone acceptance remain open. Later review-documentation heads need their own Checks/Preview verification.
 
 Owner-approved follow-up phases: P2 local-server package, P3 isolated encrypted offline prototype, P4 separately approved sync service/migrations, P5 cross-device/conflict/restore acceptance. [Detailed boundaries](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md).
 
@@ -3408,11 +3416,11 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PWA FOUNDATION REVIEW — THREE MODES DESIGNED — NO RELEASE AUTHORIZATION**
+**Current mode: PWA OWNER TESTING + P2 SPECIFICATION REVIEW — NO RELEASE AUTHORIZATION**
 
 1. Review `feat/axia-pwa-foundation-20261125`, its exact-head Checks/Preview and [PWA report](AXIA_PWA_FOUNDATION_2026-11-25.md). It inherits #53/#52; do not merge inherited source twice or modify those branches to publish this delta. Preserve main and existing hosted records/configuration.
-2. Test real desktop/laptop, Android and iPhone/iPad installation and standalone/update behavior. Keep H1's remaining physical-mobile and token-refresh gates explicit; a 65-minute wait cannot prove absolute session termination with the currently observed unlimited time-box/inactivity settings.
-3. Review [the three-mode architecture](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md), then prepare the P2 local-server packaging/hardware/HTTPS/recovery manifest. Only isolated fictional-data work follows; show any DB/Auth change before application. Do not enable hosted offline writes, device grants or bidirectional cloud/local masters as part of PWA installation.
+2. Continue [actual-device acceptance](AXIA_PWA_DEVICE_ACCEPTANCE_2026-11-25.md): owner installs/opens AXIA from its icon and privately enters login/MFA when needed; test the available desktop/laptop, Android and iPhone/iPad without claiming missing devices passed. A direct tab update has passed; installed-app update and real network interruption have not. Keep H1 refresh separate; a 65-minute wait cannot prove absolute logout with unlimited session settings.
+3. Review [P2 local-server specification](AXIA_LOCAL_SERVER_P2_REVIEW_2026-11-25.md) and the three-mode architecture. Collect host/resources, DNS/HTTPS trust, operator, backup and user/file-size scope; prepare the exact isolated P2-A artifact/SQL/Auth/fixture manifest for approval before application. No local runtime/DB/Auth is already provisioned. Do not enable hosted offline writes, device grants or bidirectional cloud/local masters as part of PWA installation.
 4. H2 still requires an approved fictional office/file/retained-data manifest and isolated restore proof; E1 needs a controlled employee/mail scope; C1 needs the complete sold workflow. The installed shell does not close any of them.
 5. Preserve the sole office owner, audit/legal corpus and current R2 demo. Never replay historical applied migrations. No new Secrets, Auth setting changes, feature flags, hosted SQL, memberships, real mail, main merge or Production release are authorized by this package.
 6. After owner feedback and acceptance, request the exact next bounded implementation or merge/release decision. Always end a completed step with the next execution command in plain Arabic.
@@ -3421,7 +3429,7 @@ Before marking a PR ready:
 
 # 24. NEW CHAT HANDOFF
 
-Current handoff: PWA foundation branch `feat/axia-pwa-foundation-20261125` is based on PR #53 `ebfa30b`. Read the PWA report and three-mode architecture, then inspect the branch PR's exact-head CI/Preview. Cloud web exists; the PWA foundation is in source review; a local office server and encrypted offline business-data synchronization are designed only. The owner authorized this planning/source/Preview work, not DB/Auth changes, main merge or Production. #53's separately approved platform Config applies only to its original branch; MFA/basic protected reads and session continuity passed there. Physical-mobile/timed refresh, H2/E1/C1 and later local/offline acceptance stay open. Do not copy flags/Secrets, replay migrations, claim data-cache/offline CRUD from the generic offline screen, or repeat integration of inherited PRs.
+Current handoff: Draft PR #54, `feat/axia-pwa-foundation-20261125`, inherits #53 `ebfa30b`. Runtime baseline `cd5d118` passed CI 45646966606 and matching READY Preview; inspect later documentation heads separately. Read device acceptance and P2 review spec. Real connected Chrome-tab update deferral/re-check/explicit reload passed; OS install, standalone login, installed-app update, real offline interruption and mobile results remain pending. The owner privately operates login/MFA and device steps. P2 is review-only: no local services/DB/Auth/Secrets have been provisioned. Never replay historical SQL; local bootstrap compatibility and mock-fallback preflight are explicit prerequisites. Cloud web/PWA source exists; local server and encrypted offline sync remain unimplemented. #53's activation applies only to its original branch; do not copy flags. Keep control center off, preserve all hosted data/authority, and do not merge main, deploy Production, claim offline CRUD from a generic shell or repeat integration of inherited PRs. Always give the next execution command.
 
 When opening a new ChatGPT conversation for AXIA, use this instruction:
 
