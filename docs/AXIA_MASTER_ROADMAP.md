@@ -2136,7 +2136,7 @@ Exit criteria:
 
 ## Phase 6 — Installable AXIA PWA
 
-**Status:** `IN_REVIEW` — bounded foundation source implemented on `feat/axia-pwa-foundation-20261125`; exact-head CI/Preview and real installation acceptance remain required.
+**Status:** `IN_PROGRESS` — bounded foundation source implemented on `feat/axia-pwa-foundation-20261125`; exact-head CI/Preview and real installation acceptance remain required.
 
 Owner-approved follow-up phases: P2 local-server package, P3 isolated encrypted offline prototype, P4 separately approved sync service/migrations, P5 cross-device/conflict/restore acceptance. [Detailed boundaries](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md).
 

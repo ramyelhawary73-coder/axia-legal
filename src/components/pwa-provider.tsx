@@ -40,12 +40,12 @@ export function PwaProvider({ children }: { children: ReactNode }) {
         if (!live) return;
         registration.current = reg;
         if (reg.active) setShell("ready");
-        if (reg.waiting) setWaiting(reg.waiting);
+        if (reg.waiting && reg.active) setWaiting(reg.waiting);
         const track = (worker: ServiceWorker) => {
           const onState = () => {
             if (!live) return;
-            if (worker.state === "activated") setShell("ready");
-            if (worker.state === "installed" && reg.waiting) setWaiting(reg.waiting);
+            if (worker.state === "activated") { setShell("ready"); setWaiting(current => current === worker ? null : current); }
+            if (worker.state === "installed" && reg.waiting && reg.active) setWaiting(reg.waiting);
             if (worker.state === "redundant" && !reg.active) setShell("unavailable");
           };
           worker.addEventListener("statechange", onState); cleaners.push(() => worker.removeEventListener("statechange", onState)); onState();
@@ -71,7 +71,7 @@ export function PwaProvider({ children }: { children: ReactNode }) {
   }
   async function checkUpdate() {
     if (!registration.current) { setMessage("تعذر فحص التحديث الآن. تأكد من الاتصال وأعد فتح الصفحة."); return; }
-    try { await registration.current.update(); if (registration.current.waiting) setWaiting(registration.current.waiting); setMessage("تم طلب فحص التحديث. لو توفرت نسخة جديدة سيظهر تنبيه قبل إعادة التحميل."); }
+    try { await registration.current.update(); if (registration.current.waiting && registration.current.active) setWaiting(registration.current.waiting); setMessage("تم طلب فحص التحديث. لو توفرت نسخة جديدة سيظهر تنبيه قبل إعادة التحميل."); }
     catch { setMessage("تعذر فحص التحديث الآن. حاول بعد عودة الاتصال."); }
   }
   return <PwaContext.Provider value={{ standalone, installed, canInstall, shell, online, install, checkUpdate, message }}>

@@ -1,5 +1,24 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import http from 'node:http';
+
+// Browser offline emulation does not reliably stop Service Worker-owned requests.
+// This loopback-only proxy forwards real compiled bytes, then drops TCP requests on demand.
+async function transportGate(base) {
+  assert.ok(['127.0.0.1','localhost'].includes(new URL(base).hostname));
+  let offline=false;
+  const server=http.createServer((request,response)=>{
+    if(offline) {request.socket.destroy();return;}
+    const upstream=http.request(new URL(request.url,base),{method:request.method,headers:{...request.headers,host:new URL(base).host}},result=>{
+      response.writeHead(result.statusCode,result.headers);result.pipe(response);
+    });
+    upstream.on('error',()=>response.destroy());request.pipe(upstream);
+  });
+  await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
+  return {base:`http://127.0.0.1:${server.address().port}`,
+    setOffline(value) {offline=value;if(value)server.closeAllConnections();},
+    async close() {server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}};
+}
 
 export async function verifyPwa({browser,base,output,records,fits}) {
   for(const [width,height,theme] of [[1440,900,'dark'],[390,844,'light'],[320,568,'dark']]) {
@@ -65,19 +84,22 @@ export async function verifyPwa({browser,base,output,records,fits}) {
   }
   {
     // Actual compiled assets + browser Service Worker. No mocked legal/Auth response or external host.
+    const gate=await transportGate(base),workerBase=gate.base;
     const context=await browser.newContext({viewport:{width:390,height:844}});
-    let page=await context.newPage();await page.goto(base+'/install');
+    try {
+    let page=await context.newPage();await page.goto(workerBase+'/install');
     await page.getByText('شاشة انقطاع الاتصال جاهزة على هذا المتصفح.',{exact:true}).waitFor({timeout:20000});
+    assert.equal(await page.getByRole('complementary',{name:'تحديث AXIA',exact:true}).count(),0,'first installation must not claim an update is waiting');
     await page.reload();
     await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
     const cached=await page.evaluate(async()=>{const names=(await caches.keys()).filter(n=>n.startsWith('axia-pwa-public-'));return Promise.all(names.map(async name=>({name,urls:(await (await caches.open(name)).keys()).map(r=>new URL(r.url).pathname)})));});
     assert.equal(cached.length,1);assert.equal(cached[0].urls.length,5);
     assert.ok(cached[0].urls.every(url=>url==='/offline.html'||url.startsWith('/pwa/')));
     assert.match(await page.evaluate(async()=>{const name=(await caches.keys()).find(n=>n.startsWith('axia-pwa-public-'));return (await (await caches.open(name)).match('/offline.html')).text();}),/الاتصال غير متاح حاليًا/);
-    await context.setOffline(true);
+    await context.setOffline(true);gate.setOffline(true);
     // Cold launch from a fresh page exercises document navigation, independent of the active Next router.
     const onlinePage=page;page=await context.newPage();
-    const offlineResponse=await page.goto(base+'/platform');
+    const offlineResponse=await page.goto(workerBase+'/platform');
     try { await page.getByRole('heading',{name:'الاتصال غير متاح حاليًا',exact:true}).waitFor({timeout:10000}); }
     catch(error) {
       await page.screenshot({path:path.join(output,'pwa-offline-failure.png'),fullPage:true});
@@ -87,9 +109,10 @@ export async function verifyPwa({browser,base,output,records,fits}) {
     assert.equal(await page.getByRole('textbox').count(),0);
     await fits(page,'pwa-offline-shell-390');
     await page.screenshot({path:path.join(output,'pwa-offline-shell-390.png'),fullPage:true});
-    await context.setOffline(false);await page.goto(base+'/install');
+    gate.setOffline(false);await context.setOffline(false);await page.goto(workerBase+'/install');
     await page.getByRole('heading',{name:/مكتبك القانوني/}).waitFor();
-    records.push({check:'PWA real worker: public-only cache, offline navigation, reconnect'});await context.close();
+    records.push({check:'PWA real worker: public-only cache, dropped TCP transport, offline cold launch, reconnect'});
+    } finally {await context.close();await gate.close();}
   }
   const manifestResponse=await fetch(base+'/manifest.webmanifest');assert.equal(manifestResponse.status,200);
   const manifest=await manifestResponse.json();assert.equal(manifest.display,'standalone');assert.equal(manifest.scope,'/');

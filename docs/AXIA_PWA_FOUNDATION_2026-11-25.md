@@ -18,6 +18,8 @@ Local Typecheck, strict ESLint, 187 safety tests (10 new behavioral PWA checks) 
 
 The local compiled-browser attempt could not launch because the runtime's Playwright Chromium headless executable was absent; no assertion ran in that attempt. The existing supported CI installs its pinned Chromium shell and runs the extended suite. Read the exact-head CI result rather than treating the local attempt or a source inspection as a browser pass.
 
+Review found and corrected protected-Preview public-asset fetching and a false first-install update banner. Early CI offline-emulation attempts failed: browser offline mode left Service Worker-owned requests online. The real-worker contract now uses a loopback-only transparent transport gate to forward actual compiled bytes, drop TCP connections for the offline cold launch, and restore transport for reconnect. No hosted traffic, business fixture or Auth response is substituted by that gate.
+
 Real desktop/Android/iPhone installed-app acceptance, service-worker upgrades across actual releases, private-session continuity in an installed iOS web app, long offline eviction and H1 token-expiry remain open. No new real legal-data export is part of verification. A public fallback screen cannot establish that a pending business save succeeded. Full local server, device encryption, offline edits and synchronization are designed only in [the three-mode contract](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md).
 
 ## Reconciled inherited H1 evidence
