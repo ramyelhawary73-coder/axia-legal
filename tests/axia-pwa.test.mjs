@@ -32,10 +32,10 @@ function worker({offline=false,badAsset=false,redirect=false}={}) {
   }
   return {listeners,store,requests,deleted,lifecycle,get,skips:()=>skips,claims:()=>claims};
 }
-test('PWA precaches only fixed public assets without credentials and waits for update consent',async()=>{
+test('PWA precaches only fixed same-origin public assets and waits for update consent',async()=>{
   const h=worker();await h.lifecycle('install');
   assert.deepEqual([...h.store.keys()].map(x=>new URL(x).pathname),['/offline.html','/pwa/icon-192.png','/pwa/icon-512.png','/pwa/maskable-512.png','/pwa/apple-touch-icon.png']);
-  assert.ok(h.requests.every(r=>r.credentials==='omit'&&r.redirect==='error'));
+  assert.ok(h.requests.every(r=>new URL(r.url).origin===origin&&r.credentials==='same-origin'&&r.redirect==='error'));
   assert.equal(h.skips(),0);
 });
 test('PWA rejects redirects and HTML masquerading as an icon instead of caching login content',async()=>{

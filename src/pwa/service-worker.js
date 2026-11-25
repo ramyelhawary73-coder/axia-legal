@@ -6,7 +6,8 @@ self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     for (const path of PUBLIC_ASSETS) {
-      const request = new Request(new URL(path, self.location.origin), { cache: "reload", credentials: "omit", redirect: "error" });
+      // Preserve same-origin deployment protection; only these public responses enter the cache.
+      const request = new Request(new URL(path, self.location.origin), { cache: "reload", credentials: "same-origin", redirect: "error" });
       const response = await fetch(request);
       const expected = path.endsWith(".html") ? "text/html" : "image/png";
       if (!response.ok || response.redirected || !response.headers.get("content-type")?.startsWith(expected)) throw new Error("Public shell unavailable");

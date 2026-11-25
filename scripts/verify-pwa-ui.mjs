@@ -74,7 +74,12 @@ export async function verifyPwa({browser,base,output,records,fits}) {
     assert.equal(cached.length,1);assert.equal(cached[0].urls.length,5);
     assert.ok(cached[0].urls.every(url=>url==='/offline.html'||url.startsWith('/pwa/')));
     await context.setOffline(true);await page.goto(base+'/platform');
-    await page.getByRole('heading',{name:'الاتصال غير متاح حاليًا',exact:true}).waitFor();
+    try { await page.getByRole('heading',{name:'الاتصال غير متاح حاليًا',exact:true}).waitFor({timeout:10000}); }
+    catch(error) {
+      await page.screenshot({path:path.join(output,'pwa-offline-failure.png'),fullPage:true});
+      console.error('PWA offline diagnostic',JSON.stringify({url:page.url(),body:await page.locator('body').innerText(),workers:await page.evaluate(async()=>({online:navigator.onLine,controller:navigator.serviceWorker.controller?.scriptURL,registrations:(await navigator.serviceWorker.getRegistrations()).map(r=>({scope:r.scope,state:r.active?.state}))}))}));
+      throw error;
+    }
     assert.equal(await page.getByRole('textbox').count(),0);
     await fits(page,'pwa-offline-shell-390');
     await page.screenshot({path:path.join(output,'pwa-offline-shell-390.png'),fullPage:true});
