@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 64 64" fill="none">
+  <!-- AXIA A/scales silhouette. Android uses alpha as a monochrome mask; no background tile. -->
+  <g stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 11V53M23 53H41M32 11L15 51M32 11L49 51M22 36H42"/>
+    <path d="M10 24H54M14 24L8 38H20L14 24ZM50 24L44 38H56L50 24Z"/>
+  </g>
+  <circle cx="32" cy="11" r="3" fill="white"/>
+</svg>

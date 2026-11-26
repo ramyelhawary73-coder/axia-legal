@@ -50,7 +50,7 @@ test('denial, insecure contexts and foreign worker never produce native notifica
 });
 test('mobile notifications use the real service-worker API with generic private payload and fixed safe destination',async()=>{
  const h=notifications({permission:'granted'});assert.equal(await h.api.sendPublicWorkspaceNotification(),true);assert.equal(h.sent.length,1);
- const [title,options]=h.sent[0];assert.match(title,/AXIA/);assert.equal(options.data.path,'/?workspace=1');assert.doesNotMatch(JSON.stringify(options),/SECRET|task-private|hearing-private/);assert.equal(options.icon,'/pwa/icon-192.png');
+ const [title,options]=h.sent[0];assert.match(title,/AXIA/);assert.equal(options.data.path,'/?workspace=1');assert.doesNotMatch(JSON.stringify(options),/SECRET|task-private|hearing-private/);assert.equal(options.icon,'/pwa/icon-192.png');assert.equal(options.badge,'/pwa/notification-badge-96.png');
  assert.equal(await h.api.sendPublicWorkspaceNotification({test:true}),true);assert.match(h.sent[1][1].body,/غير مفعّل/);
 });
 test('delivery revalidates consent and active scope after async registration, and reports rejected display honestly',async()=>{
@@ -94,4 +94,18 @@ test('hearing reminders also recheck the authorized record and current date/time
  for(const options of [{hearings:[]},{hearingStatus:403},{hearings:[{...row,isArchived:true}]},{hearings:[{...row,status:'cancelled'}]},{hearings:[{...row,hearingTime:'12:00'}]}]) {
   const denied=freshRead(options);assert.equal(await denied.api.revalidateWorkspaceReminder('office:actor',reminder),false);
  }
+});
+
+
+test('Android notification badge is a white AXIA alpha mask, never a filled app tile',async()=>{
+ const {default:sharp}=await import('sharp');
+ const {data,info}=await sharp('public/pwa/notification-badge-96.png').ensureAlpha().raw().toBuffer({resolveWithObject:true});
+ assert.equal(info.width,96);assert.equal(info.height,96);assert.equal(info.channels,4);
+ const alpha=(x,y)=>data[(y*96+x)*4+3];
+ for(let i=0;i<96;i++){assert.equal(alpha(i,0),0);assert.equal(alpha(i,95),0);assert.equal(alpha(0,i),0);assert.equal(alpha(95,i),0);}
+ let visible=0;
+ for(let i=0;i<data.length;i+=4)if(data[i+3]){visible++;assert.equal(data[i],255);assert.equal(data[i+1],255);assert.equal(data[i+2],255);}
+ assert.ok(visible>96*96*.1&&visible<96*96*.55,'the silhouette must contain real negative space');
+ assert.ok(alpha(48,38)>0,'AXIA central stem must remain visible');
+ const h=worker();await h.event('push');assert.equal(h.shown[0][1].badge,'/pwa/notification-badge-96.png');
 });

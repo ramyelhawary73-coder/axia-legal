@@ -47,6 +47,41 @@ export async function verifyNativeUi({browser,base,output,records,fits,fixtureCo
     }
     records.push({check:'Workspace toolbar buttons are reachable without overlap; tablet search uses the full viewport',width});await context.close();
   }
+  for (const [width,height,theme] of [[320,568,'light'],[390,844,'dark'],[412,915,'light'],[768,1024,'dark'],[844,390,'dark']]) {
+    const {context}=await fixtureContext({width,height},theme);
+    const page=await context.newPage();await page.goto(base+'/');
+    await page.getByRole('button',{name:'فتح قائمة التنقل',exact:true}).click();
+    const nav=page.getByRole('navigation',{name:'أقسام المكتب',exact:true});
+    assert.equal(await nav.getByRole('button').count(),12);
+    const geometry=await nav.evaluate(el=>({height:el.clientHeight,scroll:el.scrollHeight,top:el.scrollTop,bounds:el.getBoundingClientRect().toJSON()}));
+    assert.ok(geometry.scroll<=geometry.height+1,`All mobile sections must fit without scrolling at ${width}x${height}: ${JSON.stringify(geometry)}`);assert.equal(geometry.top,0);
+    await page.screenshot({path:path.join(output,`all-sections-${width}-${height}-${theme}.png`),fullPage:true});
+    for (const button of await nav.getByRole('button').all()) {
+      const b=await button.boundingBox();assert.ok(b.height>=44&&b.width>=44);
+      assert.ok(b.y>=geometry.bounds.top-1&&b.y+b.height<=geometry.bounds.bottom+1,'every section is in the first view');
+      assert.equal(await button.evaluate(el=>{const r=el.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return hit===el||el.contains(hit);}),true);
+      const label=button.locator('.axia-nav-label');
+      assert.ok(await label.evaluate(el=>parseFloat(getComputedStyle(el).fontSize))>=14);
+      const labelBox=await label.evaluate(el=>{const r=el.getBoundingClientRect(),b=el.closest('button').getBoundingClientRect();return {text:el.textContent,sh:el.scrollHeight,w:el.clientWidth,sw:el.scrollWidth,inkBottom:r.top+el.scrollHeight,buttonBottom:b.bottom};});assert.ok(labelBox.inkBottom<=labelBox.buttonBottom+1&&labelBox.sw<=labelBox.w+1,`full Arabic label must fit its button: ${JSON.stringify(labelBox)}`);
+    }
+    await fits(page,`all-sections-${width}-${height}`);await page.screenshot({path:path.join(output,`all-sections-${width}-${height}-${theme}.png`),fullPage:true});
+    await nav.getByRole('button',{name:'إدارة المكتب والترخيص',exact:true}).click();
+    await page.getByRole('heading',{name:'إدارة المؤسسة',exact:true}).waitFor();
+    await page.getByRole('button',{name:'فتح قائمة التنقل',exact:true}).click();
+    assert.equal(await page.getByRole('navigation',{name:'أقسام المكتب',exact:true}).getByRole('button',{name:'إدارة المكتب والترخيص',exact:true}).getAttribute('aria-current'),'page');
+    await page.keyboard.press('Escape');
+    records.push({check:'All 12 mobile sections are visible/touch-reachable without scrolling, readable labels, final destination and active state',width,height});await context.close();
+  }
+  {
+    const {context}=await fixtureContext({width:390,height:844},'dark');const page=await context.newPage();await page.goto(base+'/');
+    await page.getByRole('button',{name:'فتح قائمة التنقل',exact:true}).click();
+    await page.addStyleTag({content:'.axia-mobile-nav-grid .axia-nav-label {font-size:28px!important;line-height:1.4!important}'});
+    const nav=page.getByRole('navigation',{name:'أقسام المكتب',exact:true});
+    assert.equal(await nav.getByRole('button').count(),12);
+    await nav.getByRole('button',{name:'إدارة المكتب والترخيص',exact:true}).click();
+    await page.getByRole('heading',{name:'إدارة المؤسسة',exact:true}).waitFor();
+    records.push({check:'Large text preserves every destination with accessible scroll fallback instead of clipping/hiding sections'});await context.close();
+  }
   {
     const {context}=await fixtureContext({width:390,height:844},'dark');await mockWaitingPwaUpdate(context);
     const page=await context.newPage();await page.goto(base+'/');

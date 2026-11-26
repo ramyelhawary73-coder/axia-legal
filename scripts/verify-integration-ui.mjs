@@ -193,7 +193,7 @@ async function verifyOfficeNavigation(page,{width,height,theme}) {
   const navigation=page.getByRole("navigation",{name:"أقسام المكتب",exact:true});
   await navigation.waitFor();
   assert.equal(await navigation.getByRole("button").count(),labels.length,"all office destinations must remain available");
-  assert.equal(await navigation.getByRole("group").count(),3,"office sections remain grouped");
+  if(!mobile) assert.equal(await navigation.getByRole("group").count(),3,"desktop office sections remain grouped");
   for(const label of labels) {
     const button=navigation.getByRole("button",{name:label,exact:true});
     await button.scrollIntoViewIfNeeded();
