@@ -10,7 +10,7 @@
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
 > **Verified application main SHA:** `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`
-> **Current handoff branch:** `feat/axia-native-ui-notifications-20261126` (based on PR #54 head `c9e3467`)
+> **Current handoff branch:** `docs/axia-push-acceptance-review-20261126` (documentation only, from PR #55 head `ffb644d`; acceptance runtime remains PR #55)
 > **Current package:** Native-inspired UI, visible PWA installation and authorized foreground reminders; [source and background Push review](AXIA_NATIVE_UI_PUSH_REVIEW_2026-11-26.md). Background sending is not activated. PR #54 PWA foundation: real-device acceptance has started; [device acceptance](AXIA_PWA_DEVICE_ACCEPTANCE_2026-11-25.md) separates direct Chrome update evidence from pending OS installation/mobile/offline results. [P2 local-server specification](AXIA_LOCAL_SERVER_P2_REVIEW_2026-11-25.md) is prepared for review only. [Three-mode architecture](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md) and [foundation report](AXIA_PWA_FOUNDATION_2026-11-25.md) retain the source/limits. Local server and offline legal-data sync remain unimplemented. No DB/Auth-provider/Secret/role change, main merge or Production release is authorized.
 
 ---
@@ -3416,7 +3416,11 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-### Active UI / notifications follow-up — 2026-11-26
+### Active physical-device acceptance / Push review — 2026-11-26
+
+Docs-only follow-up branch: `docs/axia-push-acceptance-review-20261126`, from PR #55 exact head `ffb644d`. Fresh GitHub read: Draft/open/unmerged, CI `45860932720` success; Vercel `dpl_FXVfjshYs6iTE78TyiNANt2WkhYP` READY with the same source. Keep PR #55 and its stable origin unchanged during acceptance. [Mobile acceptance ledger](AXIA_PR55_MOBILE_ACCEPTANCE_2026-11-26.md): owner chose Android first and is opening /install in Chrome; no physical PASS yet, iPhone remains pending. [Push activation manifest proposal](AXIA_PUSH_PREVIEW_MANIFEST_REVIEW_2026-11-26.md) details schema/ACL/endpoints/Secrets/dispatcher/rollback without creating any of them. Preview hosting is not proof of isolated Supabase; prefer an explicitly approved disposable/independent project before any DDL. Session-row presence is not enough for session validity. Existing task deadlines are date-only; proposed personal notification times are separate Push preferences, never a rewrite of legal deadlines, and need review before implementation. No Auth/roles/data/Secrets/flags changed; control center stays off. Next action is one owner-operated Android step, then iPhone, then approval of a precise isolated implementation manifest before application.
+
+### Prior UI / notifications package — 2026-11-26
 
 Use `feat/axia-native-ui-notifications-20261126`, based on #54 `c9e3467`. Review the [UI and Push proposal](AXIA_NATIVE_UI_PUSH_REVIEW_2026-11-26.md), the matching new Preview and CI. Mobile/iOS and desktop/macOS-inspired shared surfaces, larger labels, install invitation and permission-controlled foreground reminders are implemented in source. Background Push needs a separately reviewed DB/RLS/operator/Secrets manifest; it is not enabled. User Android screenshots show old Production `axia-legal-psi.vercel.app` at main `c0fd6a6`, not new Preview acceptance. Windows offline/recovery was owner-reported with screenshots, not a pinned-source independent OS test. Physical Android/iPhone installation/permission/delivery and H1 session acceptance remain open. Preserve all hosted data/roles/Auth/Secrets, keep control center off, no main merge or Production release. After Preview review, prepare the exact Push manifest for approval without applying it. Avoid duplicate integration of inherited #52/#53/#54 packages.
 
