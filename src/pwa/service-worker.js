@@ -40,3 +40,25 @@ self.addEventListener("fetch", event => {
     })());
   }
 });
+
+// Persistent system notifications work on supported mobile browsers. Push enrollment/sending is not enabled here.
+self.addEventListener("push", event => {
+  // Ignore payload contents: legal records and attacker-supplied destinations never reach the lock screen.
+  event.waitUntil(self.registration.showNotification("AXIA Legal · تحديث من مساحة العمل", {
+    body: "لديك تحديث جديد. افتح مساحة العمل للاطلاع عليه.",
+    icon: "/pwa/icon-192.png", badge: "/pwa/icon-192.png", tag: "axia-workspace-reminder",
+    dir: "rtl", lang: "ar", data: { path: "/?workspace=1" },
+  }).catch(() => {}));
+});
+self.addEventListener("notificationclick", event => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const target = new URL("/?workspace=1", self.location.origin).href;
+    for (const client of await self.clients.matchAll({ type: "window", includeUncontrolled: true })) {
+      try {
+        if (new URL(client.url).origin === self.location.origin) { await client.focus(); return; }
+      } catch { /* Try another window; never navigate an unsaved editor. */ }
+    }
+    await self.clients.openWindow(target);
+  })());
+});

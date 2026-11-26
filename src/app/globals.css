@@ -2,14 +2,14 @@
 
 :root {
   /* Premium Light Mode */
-  --bg: #f9f9fb;
-  --bg-glass: rgba(249, 249, 251, 0.7);
+  --bg: #f3f4f8;
+  --bg-glass: rgba(246, 247, 251, 0.84);
   --panel: #ffffff;
-  --panel-glass: rgba(255, 255, 255, 0.7);
+  --panel-glass: rgba(255, 255, 255, 0.84);
   --border: rgba(0, 0, 0, 0.08);
   --border-strong: rgba(0, 0, 0, 0.15);
   --text: #111827;
-  --text-muted: #6b7280;
+  --text-muted: #5b6475;
   --accent: rgba(0, 0, 0, 0.04);
   --accent-hover: rgba(0, 0, 0, 0.08);
   --axia-gold: #b38719; /* Deeper gold for readability in light mode */
@@ -21,10 +21,10 @@
 
 .dark {
   /* Premium Dark Mode */
-  --bg: #09090b;
-  --bg-glass: rgba(9, 9, 11, 0.7);
-  --panel: #141415;
-  --panel-glass: rgba(20, 20, 21, 0.7);
+  --bg: #0d0e13;
+  --bg-glass: rgba(20, 21, 28, 0.88);
+  --panel: #191b23;
+  --panel-glass: rgba(25, 27, 35, 0.88);
   --border: rgba(255, 255, 255, 0.08);
   --border-strong: rgba(255, 255, 255, 0.15);
   --text: #ededed;
@@ -48,7 +48,7 @@ html {
 }
 
 body {
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   margin: 0;
   background: var(--bg);
@@ -81,3 +81,73 @@ select {
 }
 
 
+
+/* Shared AXIA interaction language: system typography, layered surfaces and quiet motion. */
+html { -webkit-text-size-adjust: 100%; }
+body { font-size: 1rem; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button, a { touch-action: manipulation; }
+button:not(:disabled), a { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--axia-gold-light); outline-offset: 3px; }
+.axia-workspace { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+.axia-toolbar { box-shadow: 0 1px 0 var(--border), 0 8px 28px #00000005; }
+.axia-toolbar-actions > button { min-width: 44px; min-height: 44px; }
+.axia-toolbar-actions svg { stroke-width: 1.8; }
+.axia-sidebar { background: var(--panel-glass); backdrop-filter: blur(24px); }
+.axia-office-navigation { scrollbar-gutter: stable; padding-block-end: max(1rem,env(safe-area-inset-bottom)); }
+.axia-office-navigation button { transition: background-color .18s, border-color .18s, box-shadow .18s; }
+.axia-office-navigation button[aria-current="page"] { box-shadow: 0 3px 12px #00000006; }
+.axia-nav-icon { padding: 5px; box-sizing: content-box; border-radius: 11px; stroke-width: 1.8; background: var(--accent); color: var(--text-muted); }
+.axia-nav-icon[data-nav-icon="overview"], .axia-nav-icon[data-nav-icon="matters"] { color: #a37a1c; background: #c59b2717; }
+.axia-nav-icon[data-nav-icon="hearings"], .axia-nav-icon[data-nav-icon="clients"] { color: #4c80d7; background: #5289de18; }
+.axia-nav-icon[data-nav-icon="tasks"], .axia-nav-icon[data-nav-icon="finance"] { color: #27866b; background: #2c9e7a18; }
+.axia-nav-icon[data-nav-icon="documents"], .axia-nav-icon[data-nav-icon="library"] { color: #8c66bb; background: #9b75cb18; }
+.axia-nav-icon[data-nav-icon="rajih"] { color: var(--axia-gold-light); background: var(--axia-gold-dim); }
+.dark .axia-nav-icon { filter: brightness(1.25); }
+.axia-mobile-sidebar { padding-top: env(safe-area-inset-top); background: var(--panel-glass); backdrop-filter: blur(24px); border-start-start-radius: 24px; border-end-start-radius: 24px; }
+.axia-canvas { overscroll-behavior: contain; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; }
+.axia-canvas > div > div[class*="rounded"], .axia-canvas section { box-shadow: var(--shadow-sm); }
+.axia-workspace .text-xs { font-size: .875rem; }
+.axia-workspace .text-sm { font-size: 1rem; }
+.axia-workspace input:not([type="checkbox"]):not([type="radio"]), .axia-workspace select, .axia-workspace textarea { font-size: 1rem; min-height: 44px; }
+.axia-install-shortcut { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel-glass); font-size: .875rem; font-weight: 650; white-space: nowrap; }
+.axia-install-promotion { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 20px; padding: 16px; border: 1px solid var(--border-strong); border-radius: 22px; background: var(--panel-glass); box-shadow: var(--shadow-sm); }
+.axia-install-promotion > div { flex-basis: 150px; }
+.axia-primary-action, .axia-text-action, .axia-icon-action { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border-radius: 14px; padding: 10px 16px; font-size: .875rem; font-weight: 650; line-height: 1.5; }
+.axia-primary-action { background: var(--axia-gold); color: #111216; }
+.axia-text-action { border: 1px solid var(--border); background: var(--accent); color: var(--text); }
+.axia-icon-action { width: 44px; padding: 10px; flex-shrink: 0; border: 1px solid var(--border); background: var(--panel-glass); color: var(--text); }
+.axia-notification-count { position: absolute; top: -5px; inset-inline-end: -5px; background: #c93d52; color: white; min-width: 20px; padding: 2px 4px; border-radius: 10px; font-size: 11px; line-height: 16px; font-weight: 700; }
+.axia-notifications-dialog { position: fixed; margin: 0; top: 80px; inset-inline-start: 20px; width: min(440px,calc(100% - 40px)); max-width: none; max-height: calc(100dvh - 100px); padding: 0; overflow: hidden; color: var(--text); background: var(--panel); border: 1px solid var(--border-strong); border-radius: 26px; box-shadow: 0 24px 90px #00000030; }
+.axia-notifications-dialog::backdrop { background: #00000030; backdrop-filter: blur(5px); }
+.axia-notifications-body { overflow-y: auto; overscroll-behavior: contain; padding: 20px; max-height: calc(100dvh - 230px); }
+.axia-segmented-control { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px; padding: 4px; background: var(--accent-hover); border-radius: 16px; }
+.axia-segmented-control button { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 44px; border-radius: 12px; font-size: .875rem; }
+.axia-segmented-control button[aria-pressed="true"] { background: var(--panel); box-shadow: 0 2px 6px #00000010; font-weight: 700; }
+.axia-reminder-row { display: flex; align-items: center; gap: 10px; padding: 14px; background: var(--accent); border-radius: 16px; border: 1px solid var(--border); }
+.axia-reminder-row > div { flex: 1; }
+.axia-notification-empty { padding: 28px 16px; color: var(--text-muted); text-align: center; line-height: 1.9; background: var(--accent); border-radius: 16px; }
+.axia-notification-settings { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 12px; }
+@media (max-width: 639px) {
+  .axia-install-shortcut { margin-inline-start: auto; }
+  .axia-install-shortcut span { font-size: .8125rem; }
+  .axia-install-promotion { gap: 10px; padding: 14px; }
+  .axia-install-promotion .axia-primary-action { flex: 1; }
+  .axia-notifications-dialog { inset: auto 12px max(12px,env(safe-area-inset-bottom)); width: calc(100% - 24px); max-height: 85dvh; }
+  .axia-notifications-body { max-height: calc(85dvh - 110px); padding: 16px; }
+  .axia-reminder-row { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+@media (max-width: 1023px) { .axia-toolbar .axia-install-shortcut span { display: none; } .axia-toolbar .axia-install-shortcut { width: 44px; padding: 10px; } }
+
+.axia-workspace { height: 100vh; height: 100dvh; }
+.axia-preview-label { display: inline-flex; padding: 2px 8px; margin-inline-start: 6px; border: 1px solid var(--border-strong); border-radius: 8px; font-size: 12px; color: var(--text-muted); font-weight: 500; }
+.axia-primary-action, .axia-text-action, .axia-icon-action { transition: background-color .18s, box-shadow .18s, transform .18s; }
+.axia-primary-action:active, .axia-text-action:active, .axia-icon-action:active { transform: scale(.98); }
+@supports not (backdrop-filter: blur(1px)) { .axia-sidebar, .axia-mobile-sidebar, .axia-toolbar { background: var(--panel); } }
+@media (prefers-reduced-transparency: reduce) { .axia-sidebar, .axia-mobile-sidebar, .axia-toolbar { background: var(--panel); backdrop-filter: none; } }
+@media (prefers-reduced-motion: reduce) { .axia-primary-action:active, .axia-text-action:active, .axia-icon-action:active { transform: none; } }

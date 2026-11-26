@@ -17,7 +17,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html dir="rtl" lang="ar" suppressHydrationWarning>
       <body className="antialiased selection:bg-[var(--gold)] selection:text-white">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <PwaProvider>{children}</PwaProvider>
+          <PwaProvider preview={process.env.VERCEL_ENV === "preview"}>{children}</PwaProvider>
         </ThemeProvider>
       </body>
     </html>

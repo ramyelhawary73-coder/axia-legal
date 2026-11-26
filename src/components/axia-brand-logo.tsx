@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 
 export interface AxiaBrandLogoProps {
   /**
@@ -60,7 +60,7 @@ const SIZE_MAP = {
  */
 export function AxiaSymbolSvg({
   className = "size-6",
-  animated = false,
+  animated: requestedAnimation = false,
   monochrome = false,
   idPrefix = "axia-symbol",
 }: {
@@ -69,6 +69,8 @@ export function AxiaSymbolSvg({
   monochrome?: boolean;
   idPrefix?: string;
 }) {
+  const reducedMotion = useReducedMotion();
+  const animated = requestedAnimation && !reducedMotion;
   const goldGradId = `${idPrefix}-gold-grad`;
   const beamGradId = `${idPrefix}-beam-grad`;
   const glowId = `${idPrefix}-glow`;
@@ -172,9 +174,11 @@ export function AxiaBrandLogo({
   variant = "default",
   size = "md",
   showSubtitle = true,
-  animated = false,
+  animated: requestedAnimation = false,
   className = "",
 }: AxiaBrandLogoProps) {
+  const reducedMotion = useReducedMotion();
+  const animated = requestedAnimation && !reducedMotion;
   const s = SIZE_MAP[size];
   const isMono = variant === "monochrome";
 
@@ -195,11 +199,11 @@ export function AxiaBrandLogo({
 
   if (mode === "hero") {
     return (
-      <div className={`relative inline-flex flex-col items-center select-none ${className}`}>
+      <div data-axia-brand="hero" className={`relative inline-flex min-w-0 flex-col items-center select-none ${className}`}>
         {/* Ambient sovereign radial aura */}
         <div className="pointer-events-none absolute -inset-6 rounded-full bg-gradient-to-tr from-[var(--axia-gold)]/25 via-amber-500/10 to-transparent blur-2xl" style={{ opacity: "var(--axia-logo-aura-opacity, 1)" }} />
 
-        <div className="relative flex items-center gap-4">
+        <div className="relative flex min-w-0 items-center gap-4">
           <motion.div
             initial={animated ? { scale: 0.92, opacity: 0 } : false}
             animate={animated ? { scale: 1, opacity: 1 } : undefined}
@@ -217,12 +221,12 @@ export function AxiaBrandLogo({
             />
           </motion.div>
 
-          <div className="text-right">
+          <div className="min-w-0 text-right">
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-black tracking-tight text-[var(--text)]">
+              <span data-brand-wordmark className="whitespace-nowrap text-2xl font-black tracking-tight text-[var(--text)]">
                 AXIA <span className="text-[var(--axia-gold-light)]">LEGAL</span>
               </span>
-              <span className="rounded-full border border-[var(--axia-gold)]/35 bg-[var(--axia-gold)]/15 px-2 py-0.5 font-mono text-[10px] font-bold tracking-wider text-[var(--axia-gold-light)]">
+              <span data-brand-badge className="rounded-full border border-[var(--axia-gold)]/35 bg-[var(--axia-gold)]/15 px-2 py-0.5 font-mono text-[10px] font-bold tracking-wider text-[var(--axia-gold-light)]">
                 OS v2.5
               </span>
             </div>
@@ -236,7 +240,7 @@ export function AxiaBrandLogo({
   }
 
   return (
-    <div className={`inline-flex items-center gap-3 select-none ${className}`}>
+    <div data-axia-brand="lockup" className={`inline-flex min-w-0 items-center gap-3 select-none ${className}`}>
       <div
         className={`relative grid shrink-0 place-items-center border border-[var(--axia-gold)]/35 bg-gradient-to-br from-[var(--axia-gold)]/20 via-[var(--axia-gold)]/5 to-transparent shadow-sm transition-transform duration-300 group-hover:scale-[1.03] ${s.box}`}
       >
@@ -248,12 +252,12 @@ export function AxiaBrandLogo({
         />
       </div>
 
-      <div className="text-right leading-tight">
+      <div className="min-w-0 text-right leading-tight">
         <div className="flex items-center gap-1.5">
-          <span className={`font-extrabold tracking-tight text-[var(--text)] ${s.title}`}>
+          <span data-brand-wordmark className={`whitespace-nowrap font-extrabold tracking-tight text-[var(--text)] ${s.title}`}>
             AXIA <span className="text-[var(--axia-gold-light)]">Legal</span>
           </span>
-          <span
+          <span data-brand-badge
             className={`rounded-md border border-[var(--axia-gold)]/30 bg-[var(--axia-gold)]/12 font-mono font-bold text-[var(--axia-gold-light)] ${s.badge}`}
           >
             OS

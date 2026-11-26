@@ -266,3 +266,32 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+/* Compact responsive toolbar; brand and actions never squeeze each other. */
+.portalHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: max(12px,env(safe-area-inset-top)); }
+.portalBrand { flex-shrink: 0; min-height: 44px; }
+.portalActions { flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+.licenseShortcut { min-height: 44px; white-space: nowrap; }
+.authCard { border-radius: 28px; }
+.authCard label { font-size: 14px; }
+.authCard input:not([type="hidden"]), .authCard select { min-height: 48px; font-size: 16px; }
+.authCard button[role="tab"] { min-height: 48px; font-size: 14px; }
+.intro p { font-size: 16px; line-height: 1.9; }
+.portal { scroll-padding-top: 100px; -webkit-overflow-scrolling: touch; }
+@media (max-width: 639px) {
+  .pageFrame { padding-inline: 16px; }
+  .portalHeader { column-gap: 8px; }
+  .portalBrand { flex: 1; }
+  .portalBrand [data-brand-badge] { display: none; }
+  .portalBrand [data-axia-brand="lockup"] { gap: 8px; }
+  .portalActions { gap: 6px; }
+  .portalActions .licenseShortcut { display: none; }
+  .portalActions :global(.axia-install-shortcut) { padding-inline: 10px; }
+  .portalActions :global(.axia-install-shortcut) span { display: none; }
+  .authBrand [data-brand-wordmark] { font-size: clamp(18px,5.5vw,26px); }
+  .authBrand [data-brand-badge] { display: none; }
+  .intro h1 { font-size: clamp(24px,6.6vw,30px); line-height: 1.65; }
+  .intro p { font-size: 14px; line-height: 1.95; }
+}
+
+.portal { height: 100vh; height: 100dvh; }

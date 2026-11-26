@@ -6,12 +6,12 @@
 >
 > **Rule:** every implementation PR must update this file before it is considered complete.
 >
-> **Last verified:** 2026-11-25 Cairo (direct hosted correction review and responsive Chrome viewports; no new hosted migration inspection)
+> **Last verified:** 2026-11-26 Cairo (native UI/notifications source review; old Production origin distinguished from Preview; no DB/Auth/Secrets changes)
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
 > **Verified application main SHA:** `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`
-> **Current handoff branch:** `feat/axia-pwa-foundation-20261125`
-> **Current package:** PR #54 PWA foundation: real-device acceptance has started; [device acceptance](AXIA_PWA_DEVICE_ACCEPTANCE_2026-11-25.md) separates direct Chrome update evidence from pending OS installation/mobile/offline results. [P2 local-server specification](AXIA_LOCAL_SERVER_P2_REVIEW_2026-11-25.md) is prepared for review only. [Three-mode architecture](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md) and [foundation report](AXIA_PWA_FOUNDATION_2026-11-25.md) retain the source/limits. Local server and offline legal-data sync remain unimplemented. No DB/Auth-provider/Secret/role change, main merge or Production release is authorized.
+> **Current handoff branch:** `feat/axia-native-ui-notifications-20261126` (based on PR #54 head `c9e3467`)
+> **Current package:** Native-inspired UI, visible PWA installation and authorized foreground reminders; [source and background Push review](AXIA_NATIVE_UI_PUSH_REVIEW_2026-11-26.md). Background sending is not activated. PR #54 PWA foundation: real-device acceptance has started; [device acceptance](AXIA_PWA_DEVICE_ACCEPTANCE_2026-11-25.md) separates direct Chrome update evidence from pending OS installation/mobile/offline results. [P2 local-server specification](AXIA_LOCAL_SERVER_P2_REVIEW_2026-11-25.md) is prepared for review only. [Three-mode architecture](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md) and [foundation report](AXIA_PWA_FOUNDATION_2026-11-25.md) retain the source/limits. Local server and offline legal-data sync remain unimplemented. No DB/Auth-provider/Secret/role change, main merge or Production release is authorized.
 
 ---
 
@@ -3416,10 +3416,16 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-**Current mode: PWA OWNER TESTING + P2 SPECIFICATION REVIEW — NO RELEASE AUTHORIZATION**
+### Active UI / notifications follow-up — 2026-11-26
 
-1. Review `feat/axia-pwa-foundation-20261125`, its exact-head Checks/Preview and [PWA report](AXIA_PWA_FOUNDATION_2026-11-25.md). It inherits #53/#52; do not merge inherited source twice or modify those branches to publish this delta. Preserve main and existing hosted records/configuration.
-2. Continue [actual-device acceptance](AXIA_PWA_DEVICE_ACCEPTANCE_2026-11-25.md): owner installs/opens AXIA from its icon and privately enters login/MFA when needed; test the available desktop/laptop, Android and iPhone/iPad without claiming missing devices passed. A direct tab update has passed; installed-app update and real network interruption have not. Keep H1 refresh separate; a 65-minute wait cannot prove absolute logout with unlimited session settings.
+Use `feat/axia-native-ui-notifications-20261126`, based on #54 `c9e3467`. Review the [UI and Push proposal](AXIA_NATIVE_UI_PUSH_REVIEW_2026-11-26.md), the matching new Preview and CI. Mobile/iOS and desktop/macOS-inspired shared surfaces, larger labels, install invitation and permission-controlled foreground reminders are implemented in source. Background Push needs a separately reviewed DB/RLS/operator/Secrets manifest; it is not enabled. User Android screenshots show old Production `axia-legal-psi.vercel.app` at main `c0fd6a6`, not new Preview acceptance. Windows offline/recovery was owner-reported with screenshots, not a pinned-source independent OS test. Physical Android/iPhone installation/permission/delivery and H1 session acceptance remain open. Preserve all hosted data/roles/Auth/Secrets, keep control center off, no main merge or Production release. After Preview review, prepare the exact Push manifest for approval without applying it. Avoid duplicate integration of inherited #52/#53/#54 packages.
+
+
+
+**Current mode: NATIVE UI / FOREGROUND REMINDERS PREVIEW + PWA DEVICE ACCEPTANCE — NO RELEASE AUTHORIZATION**
+
+1. Review `feat/axia-native-ui-notifications-20261126`, its exact-head Checks/Preview and [PWA report](AXIA_PWA_FOUNDATION_2026-11-25.md). It inherits #53/#52; do not merge inherited source twice or modify those branches to publish this delta. Preserve main and existing hosted records/configuration.
+2. Continue [actual-device acceptance](AXIA_PWA_DEVICE_ACCEPTANCE_2026-11-25.md): owner installs/opens AXIA from its icon and privately enters login/MFA when needed; test the available desktop/laptop, Android and iPhone/iPad without claiming missing devices passed. Direct connected Chrome update checks passed. Windows install/open, offline shell and reconnect/retry were reported by the owner with screenshots; their exact release pin is not independently verified. Android and iPhone acceptance on the new Preview remains pending. Keep H1 refresh separate; a 65-minute wait cannot prove absolute logout with unlimited session settings.
 3. Review [P2 local-server specification](AXIA_LOCAL_SERVER_P2_REVIEW_2026-11-25.md) and the three-mode architecture. Collect host/resources, DNS/HTTPS trust, operator, backup and user/file-size scope; prepare the exact isolated P2-A artifact/SQL/Auth/fixture manifest for approval before application. No local runtime/DB/Auth is already provisioned. Do not enable hosted offline writes, device grants or bidirectional cloud/local masters as part of PWA installation.
 4. H2 still requires an approved fictional office/file/retained-data manifest and isolated restore proof; E1 needs a controlled employee/mail scope; C1 needs the complete sold workflow. The installed shell does not close any of them.
 5. Preserve the sole office owner, audit/legal corpus and current R2 demo. Never replay historical applied migrations. No new Secrets, Auth setting changes, feature flags, hosted SQL, memberships, real mail, main merge or Production release are authorized by this package.
@@ -3429,7 +3435,7 @@ Before marking a PR ready:
 
 # 24. NEW CHAT HANDOFF
 
-Current handoff: Draft PR #54, `feat/axia-pwa-foundation-20261125`, inherits #53 `ebfa30b`. Runtime baseline `cd5d118` passed CI 45646966606 and matching READY Preview; inspect later documentation heads separately. Read device acceptance and P2 review spec. Real connected Chrome-tab update deferral/re-check/explicit reload passed; OS install, standalone login, installed-app update, real offline interruption and mobile results remain pending. The owner privately operates login/MFA and device steps. P2 is review-only: no local services/DB/Auth/Secrets have been provisioned. Never replay historical SQL; local bootstrap compatibility and mock-fallback preflight are explicit prerequisites. Cloud web/PWA source exists; local server and encrypted offline sync remain unimplemented. #53's activation applies only to its original branch; do not copy flags. Keep control center off, preserve all hosted data/authority, and do not merge main, deploy Production, claim offline CRUD from a generic shell or repeat integration of inherited PRs. Always give the next execution command.
+Current handoff: `feat/axia-native-ui-notifications-20261126`, based on Draft PR #54 head `c9e3467`; review its exact-head CI and Preview rather than reusing old build receipts. Read the 2026-11-26 native UI/Push review and active NEXT ACTION. Foreground reminders and public install guidance are implemented; background sending is OFF pending reviewed DB/RLS/operator/Secrets manifest. Windows owner screenshots support offline/recovery only within the stated evidence limits; new Android/iPhone physical acceptance is pending. P2 and encrypted offline sync remain design-only. #53 activation applies only to its original branch. Keep control center off, preserve all hosted data/authority, and do not merge main, deploy Production or repeat integration of inherited PRs. Always give the next execution command.
 
 When opening a new ChatGPT conversation for AXIA, use this instruction:
 

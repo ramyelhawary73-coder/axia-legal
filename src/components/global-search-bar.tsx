@@ -539,7 +539,7 @@ export function GlobalSearchBar({
             setIsOpen(true);
             setTimeout(() => inputRef.current?.focus(), 80);
           }}
-          className="grid size-8 place-items-center rounded-lg border border-[var(--border)] bg-[var(--panel)]/50 text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors md:hidden"
+          className="grid size-11 place-items-center rounded-[14px] border border-[var(--border)] bg-[var(--panel)]/50 text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors lg:hidden"
           title="البحث الشامل في القضايا والموكلين والمستندات (Ctrl+K)"
         >
           <Search className="size-4" />

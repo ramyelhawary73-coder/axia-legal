@@ -299,6 +299,10 @@ export default function HomePage() {
           setSelectedDocumentId(null);
         }}
         tasks={tasks}
+        hearings={hearings}
+        notificationDataReady={snapshotDataReady}
+        notificationDataError={Boolean(coreSyncError || taskSyncError)}
+        notificationScope={autoExportScope}
         onToggleTaskStatus={handleToggleTaskStatus}
         onCreateTask={handleCreateTask}
         taskMatterOptions={taskWorkspace?.matters ?? []}

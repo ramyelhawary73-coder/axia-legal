@@ -2,47 +2,44 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useTheme } from "next-themes";
-import { 
-  Scale, 
-  Gavel, 
-  Users, 
-  Briefcase, 
-  CheckSquare, 
-  FileText, 
-  DollarSign, 
-  BookOpen, 
-  Sparkles, 
-  BarChart3, 
-  Settings, 
-  Menu, 
-  ChevronLeft, 
-  X, 
-  Shield, 
-  PanelRightClose, 
-  PanelRightOpen, 
-  Sun, 
-  Moon, 
-  Plus, 
-  Keyboard, 
-  CheckCircle2, 
+import {
+  Scale,
+  Gavel,
+  Users,
+  Briefcase,
+  CheckSquare,
+  FileText,
+  DollarSign,
+  BookOpen,
+  Sparkles,
+  BarChart3,
+  Settings,
+  Menu,
+  ChevronLeft,
+  X,
+  Shield,
+  PanelRightClose,
+  PanelRightOpen,
+  Sun,
+  Moon,
+  Plus,
+  Keyboard,
+  CheckCircle2,
   LogOut,
   Building2,
   Download,
-  type LucideIcon 
+  type LucideIcon
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { NavigationTab, LegalTask, Matter, Client, LegalDocument } from "@/types/legal";
+import { NavigationTab, LegalTask, Matter, Client, LegalDocument, Hearing } from "@/types/legal";
 import { logout } from "@/app/login/actions";
 import { AxiaSymbolSvg } from "@/components/axia-brand-logo";
 import { loadAdministrationWorkspace, type AdministrationWorkspace } from "@/lib/administration-client";
 import { PlatformAccessLink } from "@/components/platform-access-link";
 import { NotificationsPopover } from "@/components/notifications-popover";
 import { getUpcomingDeadlineTasks, getHighPriorityTasksDueWithinHour } from "@/lib/task-utils";
-import { 
-  sendTaskDeadlineBrowserNotification, 
-  getNotificationPermissionStatus 
-} from "@/lib/browser-notifications";
+import { PwaInstallLink, PwaInstallPromotion } from "@/components/pwa-install-promotion";
 import { UrgentDeadlineBanner } from "@/components/urgent-deadline-banner";
 import { VoiceControlTrigger } from "@/components/voice-control-trigger";
 import { useGlobalKeyboardShortcuts } from "@/hooks/use-global-keyboard-shortcuts";
@@ -59,6 +56,10 @@ interface AppShellProps {
   subContext?: string | null;
   onClearSubContext?: () => void;
   tasks?: LegalTask[];
+  hearings?: Hearing[];
+  notificationDataReady?: boolean;
+  notificationDataError?: boolean;
+  notificationScope?: string;
   onToggleTaskStatus?: (taskId: string) => void;
   onCreateTask?: (task: LegalTask) => boolean | void | Promise<boolean | void>;
   taskMatterOptions?: TaskMatterOption[];
@@ -117,10 +118,10 @@ function OfficeNavigation({
   collapsed?: boolean;
 }) {
   return (
-    <nav id={id} aria-label="أقسام المكتب" className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-2 py-3">
+    <nav id={id} aria-label="أقسام المكتب" className="axia-office-navigation min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-2 py-3">
       {navSections.map(({ title, items }, index) => (
         <div key={title} role="group" aria-label={title} className={index ? "border-t border-[var(--border)] pt-2" : undefined}>
-          {!collapsed && <p className="px-3 pb-1 text-xs font-semibold leading-6 text-[var(--text-muted)]">{title}</p>}
+          {!collapsed && <p className="px-3 pb-1 text-sm font-semibold leading-6 text-[var(--text-muted)]">{title}</p>}
           <ul className="space-y-1">
             {items.map(({ id, labelAr, labelEn, icon: Icon }) => {
               const isActive = activeTab === id;
@@ -133,10 +134,10 @@ function OfficeNavigation({
                     aria-label={labelAr}
                     aria-current={isActive ? "page" : undefined}
                     title={collapsed ? `${labelAr} — ${labelEn}` : undefined}
-                    className={`relative flex min-h-11 w-full items-center gap-2.5 rounded-lg border-s-2 py-2 text-start motion-safe:transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--axia-gold)] ${collapsed ? "justify-center px-0" : "px-2.5"} ${isActive ? "border-[var(--axia-gold)] bg-[var(--axia-gold-dim)]" : "border-transparent hover:bg-[var(--accent)]"}`}
+                    className={`relative flex min-h-[52px] w-full items-center gap-3 rounded-[16px] border-s-2 py-2.5 text-start motion-safe:transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--axia-gold)] ${collapsed ? "justify-center px-0" : "px-2.5"} ${isActive ? "border-[var(--axia-gold)] bg-[var(--axia-gold-dim)]" : "border-transparent hover:bg-[var(--accent)]"}`}
                   >
-                    <Icon aria-hidden="true" className={`size-[18px] shrink-0 ${isActive || id === "rajih" ? "text-[var(--axia-gold)]" : "text-[var(--text-muted)]"}`} />
-                    {!collapsed && <span className={`min-w-0 flex-1 text-sm leading-5 text-[var(--text)] ${isActive ? "font-bold" : "font-medium"}`}>{labelAr}</span>}
+                    <Icon aria-hidden="true" data-nav-icon={id} className={`axia-nav-icon size-6 shrink-0 ${isActive || id === "rajih" ? "text-[var(--axia-gold)]" : "text-[var(--text-muted)]"}`} />
+                    {!collapsed && <span className={`min-w-0 flex-1 text-base leading-6 text-[var(--text)] ${isActive ? "font-bold" : "font-medium"}`}>{labelAr}</span>}
                     {badge && (
                       <span
                         aria-hidden="true"
@@ -154,13 +155,17 @@ function OfficeNavigation({
   );
 }
 
-export function AppShell({ 
-  activeTab, 
-  onNavigate, 
-  children, 
-  subContext, 
+export function AppShell({
+  activeTab,
+  onNavigate,
+  children,
+  subContext,
   onClearSubContext,
   tasks,
+  hearings = [],
+  notificationDataReady = false,
+  notificationDataError = false,
+  notificationScope,
   onToggleTaskStatus,
   onCreateTask,
   taskMatterOptions = [],
@@ -268,37 +273,14 @@ export function AppShell({
     }, 4500);
     return true;
   };
-  
+
   const activeTasks = useMemo(() => tasks ?? [], [tasks]);
   const upcomingTasksCount = getUpcomingDeadlineTasks(activeTasks).length;
-  
+
   // High-priority legal tasks due within <= 1 hour
   const urgentTasksDueWithinHour = useMemo(() => {
     return getHighPriorityTasksDueWithinHour(activeTasks);
   }, [activeTasks]);
-
-  // Background monitor: alert user via Browser Notification API when a high-priority task is due within 1 hour
-  useEffect(() => {
-    const checkAndAlertUrgentDeadlines = () => {
-      const dueWithinHour = getHighPriorityTasksDueWithinHour(activeTasks);
-      if (dueWithinHour.length > 0 && getNotificationPermissionStatus() === "granted") {
-        dueWithinHour.forEach((item) => {
-          sendTaskDeadlineBrowserNotification({
-            task: item.task,
-            diffHours: item.diffHours,
-            onClick: () => onNavigate("tasks"),
-          });
-        });
-      }
-    };
-
-    // Check immediately on mount or active tasks change
-    checkAndAlertUrgentDeadlines();
-
-    // Check periodically every 30 seconds
-    const interval = setInterval(checkAndAlertUrgentDeadlines, 30000);
-    return () => clearInterval(interval);
-  }, [activeTasks, onNavigate]);
 
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -309,12 +291,12 @@ export function AppShell({
   }, []);
 
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden bg-[var(--bg)] text-[var(--text)] selection:bg-[var(--axia-gold-dim)] selection:text-[var(--text)]">
+    <div className="axia-workspace h-dvh w-full flex flex-col overflow-hidden bg-[var(--bg)] text-[var(--text)] selection:bg-[var(--axia-gold-dim)] selection:text-[var(--text)]">
       {/* Top Navbar - Premium Apple-like compact header */}
-      <header className="shrink-0 z-40 border-b border-[var(--border)] bg-[var(--bg-glass)] backdrop-blur-xl">
-        <div className="mx-auto flex min-h-14 w-full flex-wrap items-center justify-between gap-y-2 px-4 py-2 sm:h-14 sm:flex-nowrap sm:py-0 lg:px-6">
+      <header className="axia-toolbar shrink-0 z-40 border-b border-[var(--border)] bg-[var(--bg-glass)] backdrop-blur-xl">
+        <div className="mx-auto flex min-h-14 w-full flex-wrap items-center justify-between gap-y-2 px-4 py-2 sm:min-h-16 lg:flex-nowrap sm:py-0 lg:px-6">
           {/* Brand & Mobile Hamburger */}
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
@@ -322,31 +304,32 @@ export function AppShell({
               aria-expanded={mobileMenuOpen}
               aria-controls="office-mobile-menu"
               aria-haspopup="dialog"
-              className="grid size-10 place-items-center rounded-lg border border-[var(--border)] text-[var(--text)] hover:bg-[var(--accent)] lg:hidden"
+              className="grid size-11 shrink-0 place-items-center rounded-lg border border-[var(--border)] text-[var(--text)] hover:bg-[var(--accent)] lg:hidden"
             >
               <Menu aria-hidden="true" className="size-5" />
             </button>
 
-            <div 
+            <button type="button" aria-label="AXIA Legal — النظرة العامة"
               onClick={() => onNavigate("overview")}
-              className="flex cursor-pointer items-center gap-2.5 group"
+              className="flex min-h-11 shrink-0 cursor-pointer items-center gap-2.5 group"
             >
-              <div className="grid size-8 place-items-center rounded-lg border border-[var(--axia-gold-dim)] bg-gradient-to-br from-[var(--axia-gold)]/20 to-transparent text-[var(--axia-gold-light)] shadow-sm group-hover:shadow transition-all">
+              <div className="grid size-10 place-items-center rounded-[14px] border border-[var(--axia-gold-dim)] bg-gradient-to-br from-[var(--axia-gold)]/20 to-transparent text-[var(--axia-gold-light)] shadow-sm group-hover:shadow transition-all">
                 <AxiaSymbolSvg className="size-5" idPrefix="axia-shell-header" />
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold tracking-tight">AXIA Legal</span>
+                  <span className="whitespace-nowrap text-base font-bold tracking-tight">AXIA Legal</span>
                   <span className="rounded bg-[var(--axia-gold)]/10 border border-[var(--axia-gold)]/20 px-1 py-0.5 text-[9px] font-bold text-[var(--axia-gold)]">
                     ERP
                   </span>
                 </div>
               </div>
-            </div>
+            </button>
+            <PwaInstallLink />
           </div>
 
           {/* Global Omni-Search Bar (Matters, Clients, Documents) */}
-          <div className="hidden md:flex flex-1 max-w-xl mx-4 lg:mx-6">
+          <div className="hidden lg:flex min-w-0 flex-1 max-w-xl mx-4 xl:mx-6">
             <GlobalSearchBar
               matters={matters}
               clients={clients}
@@ -361,7 +344,7 @@ export function AppShell({
           </div>
 
           {/* User & Quick Status */}
-          <div className="flex w-full flex-wrap items-center justify-between gap-1 sm:w-auto sm:flex-nowrap sm:justify-start sm:gap-2">
+          <div className="axia-toolbar-actions flex w-full flex-wrap items-center justify-between gap-1 lg:w-auto lg:flex-nowrap lg:justify-start sm:gap-2">
             {/* Mobile Search Trigger Button */}
             <GlobalSearchBar
               isMobileTriggerOnly
@@ -380,8 +363,8 @@ export function AppShell({
             <button
               type="button"
               onClick={() => setIsTaskModalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--axia-gold)]/40 bg-[var(--axia-gold)]/10 px-2.5 py-1 text-xs font-bold text-[var(--axia-gold-light)] hover:bg-[var(--axia-gold)]/20 shadow-sm transition"
-              title="إسناد مهمة إجرائية جديدة (Ctrl+N أو Alt+N)"
+              className="inline-flex min-h-11 min-w-11 justify-center items-center gap-1.5 rounded-xl border border-[var(--axia-gold)]/40 bg-[var(--axia-gold)]/10 px-2.5 py-1 text-xs font-bold text-[var(--axia-gold-light)] hover:bg-[var(--axia-gold)]/20 shadow-sm transition"
+              aria-label="مهمة جديدة" title="إسناد مهمة إجرائية جديدة (Ctrl+N أو Alt+N)"
             >
               <Plus className="size-3.5 text-[var(--axia-gold)]" />
               <span className="hidden sm:inline">مهمة جديدة</span>
@@ -394,24 +377,24 @@ export function AppShell({
             <button
               type="button"
               onClick={() => setIsShortcutsModalOpen(true)}
-              className="grid size-8 place-items-center rounded-lg border border-[var(--border)] bg-[var(--panel)]/50 text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
+              className="hidden sm:grid size-11 place-items-center rounded-[14px] border border-[var(--border)] bg-[var(--panel)]/50 text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
               title="دليل اختصارات لوحة المفاتيح (Ctrl+/)"
             >
               <Keyboard className="size-4" />
             </button>
 
             {/* Voice Control (Web Speech API) */}
-            <VoiceControlTrigger 
-              onNavigate={onNavigate} 
-              onCreateTask={onCreateTask} 
+            <div className="hidden xl:block"><VoiceControlTrigger
+              onNavigate={onNavigate}
+              onCreateTask={onCreateTask}
               onOpenVoiceModal={() => setIsVoiceModalOpen(true)}
-            />
+            /></div>
 
             {/* Theme Toggle */}
             {mounted && (
               <button
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="grid size-8 place-items-center rounded-lg border border-[var(--border)] bg-[var(--panel)]/50 text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
+                className="grid size-11 place-items-center rounded-[14px] border border-[var(--border)] bg-[var(--panel)]/50 text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
                 title="تبديل المظهر"
               >
                 {theme === 'dark' ? <Sun className="size-4" /> : <Moon className="size-4" />}
@@ -420,7 +403,11 @@ export function AppShell({
 
             {/* Notifications Popover */}
             <NotificationsPopover
+              scope={notificationScope}
               tasks={activeTasks}
+              hearings={hearings}
+              dataReady={notificationDataReady}
+              dataError={notificationDataError}
               onToggleTaskStatus={onToggleTaskStatus}
               onNavigate={onNavigate}
             />
@@ -432,7 +419,7 @@ export function AppShell({
                 id="profile-dropdown-trigger"
                 aria-label="قائمة الحساب والمكتب"
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--panel)]/50 px-1.5 py-1.5 sm:px-2.5 cursor-pointer hover:bg-[var(--accent)] hover:border-[var(--axia-gold-light)]/40 transition duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[var(--axia-gold)]"
+                className="flex min-h-11 min-w-11 justify-center items-center gap-2 rounded-[14px] border border-[var(--border)] bg-[var(--panel)]/50 px-1.5 py-1.5 sm:px-2.5 cursor-pointer hover:bg-[var(--accent)] hover:border-[var(--axia-gold-light)]/40 transition duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[var(--axia-gold)]"
                 aria-expanded={isProfileOpen}
                 aria-haspopup="true"
               >
@@ -443,7 +430,7 @@ export function AppShell({
                     <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                   </span>
                 </div>
-                <div className="text-right hidden sm:block max-w-[160px]">
+                <div className="text-right hidden xl:block max-w-[160px]">
                   <span title={officeName} className="block text-sm font-bold text-[var(--text)] truncate leading-tight">
                     {officeName}
                   </span>
@@ -456,7 +443,7 @@ export function AppShell({
 
               {/* The dropdown panel - Premium UI matching Apple/Google accounts view */}
               {isProfileOpen && (
-                <div 
+                <div
                   id="profile-dropdown-menu"
                   className="fixed inset-x-4 top-28 max-h-[calc(100dvh-8rem)] overflow-y-auto sm:absolute sm:inset-x-auto sm:left-0 sm:top-auto sm:mt-2 sm:max-h-[calc(100dvh-5rem)] sm:w-[min(24rem,calc(100vw-2rem))] origin-top-left rounded-2xl border border-[var(--border)] bg-[var(--panel)] p-4 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150"
                   dir="rtl"
@@ -537,7 +524,7 @@ export function AppShell({
       <div className="flex flex-1 overflow-hidden w-full bg-[var(--bg)]">
         {/* Desktop navigation */}
         <aside
-          className={`hidden shrink-0 flex-col border-e border-[var(--border)] bg-[var(--panel)] motion-safe:transition-[width] motion-safe:duration-200 ${isFocusMode ? "" : "lg:flex"} ${isSidebarCollapsed ? "w-16" : "w-[17rem] xl:w-72"}`}
+          className={`axia-sidebar hidden shrink-0 flex-col border-e border-[var(--border)] bg-[var(--panel)] motion-safe:transition-[width] motion-safe:duration-200 ${isFocusMode ? "" : "lg:flex"} ${isSidebarCollapsed ? "w-16" : "w-[19rem] xl:w-80"}`}
         >
           <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-3">
             {!isSidebarCollapsed && (
@@ -569,7 +556,7 @@ export function AppShell({
           onClick={(event) => { if (event.target === event.currentTarget) setMobileMenuOpen(false); }}
           className="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none overflow-hidden bg-transparent p-0 text-[var(--text)] backdrop:bg-black/60"
         >
-          <div className="flex h-full w-76 max-w-[calc(100%_-_1rem)] flex-col border-e border-[var(--border)] bg-[var(--panel)] shadow-2xl">
+          <div className="axia-mobile-sidebar flex h-full w-84 max-w-[calc(100%_-_1rem)] flex-col border-e border-[var(--border)] bg-[var(--panel)] shadow-2xl">
             <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-2">
               <div className="flex items-center gap-2">
                 <AxiaSymbolSvg className="size-6" idPrefix="axia-shell-mobile" />
@@ -589,12 +576,12 @@ export function AppShell({
         </dialog>
 
         {/* Main Content Area - Apple-like canvas */}
-        <main className="flex-1 min-w-0 flex flex-col overflow-y-auto relative z-0 scroll-smooth bg-[var(--bg)] custom-scrollbar">
+        <main className="axia-canvas flex-1 min-w-0 flex flex-col overflow-y-auto relative z-0 scroll-smooth bg-[var(--bg)] custom-scrollbar">
 
           {/* Breadcrumb Navigation */}
           {!isFocusMode && (
             <div className="flex items-center gap-1.5 px-4 pt-4 lg:px-6 text-[11px] font-medium text-[var(--text-muted)] animate-in fade-in duration-300">
-              <span 
+              <span
                 className="cursor-pointer hover:text-[var(--text)] transition-colors"
                 onClick={() => {
                   if (activeTab !== "overview") onNavigate("overview");
@@ -606,7 +593,7 @@ export function AppShell({
               {activeTab !== "overview" && (
                 <>
                   <ChevronLeft className="size-3 opacity-50" />
-                  <span 
+                  <span
                     className={`${!subContext ? 'text-[var(--text)] font-semibold' : 'cursor-pointer hover:text-[var(--text)] transition-colors'}`}
                     onClick={() => {
                       if (subContext && onClearSubContext) onClearSubContext();
@@ -627,11 +614,12 @@ export function AppShell({
 
 
           <div className="w-full px-4 md:px-6 lg:px-8 xl:px-10 py-4 lg:py-6 animate-in fade-in duration-300">
+            <PwaInstallPromotion />
             {/* Urgent Deadline Banner for High-Priority Tasks due within 1 hour */}
-            <UrgentDeadlineBanner 
-              urgentTasks={urgentTasksDueWithinHour} 
-              onNavigate={onNavigate} 
-              onToggleTaskStatus={onToggleTaskStatus} 
+            <UrgentDeadlineBanner
+              urgentTasks={urgentTasksDueWithinHour}
+              onNavigate={onNavigate}
+              onToggleTaskStatus={onToggleTaskStatus}
             />
             {children}
           </div>

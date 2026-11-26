@@ -1,5 +1,6 @@
 "use client";
 
+import { PwaInstallLink, PwaInstallPromotion } from "@/components/pwa-install-promotion";
 import React, { Suspense, useMemo, useRef, useState, useEffect } from "react";
 import { useFormStatus } from "react-dom";
 import { useSearchParams } from "next/navigation";
@@ -427,11 +428,11 @@ function LoginPortalContent() {
 
       {/* Top Sticky Command Navbar */}
       <header className="sticky top-0 z-50 w-full border-b border-[var(--border)] bg-[var(--bg-glass)] backdrop-blur-2xl">
-        <div className={`${styles.pageFrame} mx-auto flex items-center justify-between py-3`}>
+        <div className={`${styles.pageFrame} ${styles.portalHeader} mx-auto py-3`}>
           <button
             type="button"
             onClick={() => scrollToSection("top")}
-            className="group flex items-center gap-3 text-right outline-none cursor-pointer"
+            aria-label="AXIA Legal — أعلى الصفحة" className={`${styles.portalBrand} group flex min-w-0 items-center gap-3 text-right outline-none cursor-pointer`}
           >
             <AxiaBrandLogo mode="lockup" size="md" showSubtitle={false} animated />
           </button>
@@ -469,7 +470,8 @@ function LoginPortalContent() {
           </nav>
 
           {/* Status, Theme Switcher & CTA */}
-          <div className="flex items-center gap-2.5">
+          <div className={`${styles.portalActions} flex items-center gap-2.5`}>
+            <PwaInstallLink />
             <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 font-mono text-[10px] font-bold text-[var(--login-success)]">
               <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
               عزل سيادي RLS نشط
@@ -479,7 +481,7 @@ function LoginPortalContent() {
               <button
                 type="button"
                 onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="grid size-9 place-items-center rounded-xl border border-[var(--border)] bg-[var(--panel)] text-[var(--text-muted)] transition-colors hover:border-[var(--axia-gold)]/40 hover:text-[var(--text)] cursor-pointer"
+                className="grid size-11 shrink-0 place-items-center rounded-[14px] border border-[var(--border)] bg-[var(--panel)] text-[var(--text-muted)] transition-colors hover:border-[var(--axia-gold)]/40 hover:text-[var(--text)] cursor-pointer"
                 title="تبديل المظهر (ليلي / نهاري)"
                 aria-label="تبديل المظهر"
               >
@@ -493,13 +495,15 @@ function LoginPortalContent() {
                 setAuthTab(authTab === "signin" ? "request_license" : "signin");
                 scrollToSection("top");
               }}
-              className="rounded-xl border border-[var(--axia-gold)]/35 bg-[var(--axia-gold)]/12 px-3.5 py-2 text-xs font-bold text-[var(--axia-gold-light)] transition-all hover:bg-[var(--axia-gold)] hover:text-black cursor-pointer"
+              className={`${styles.licenseShortcut} rounded-[14px] border border-[var(--axia-gold)]/35 bg-[var(--axia-gold)]/12 px-3.5 py-2 text-sm font-bold text-[var(--axia-gold-light)] transition-all hover:bg-[var(--axia-gold)] hover:text-black cursor-pointer`}
             >
               {authTab === "signin" ? "طلب ترخيص مكتب" : "دخول الأعضاء"}
             </button>
           </div>
         </div>
       </header>
+
+      <div className={`${styles.pageFrame} relative z-10 mx-auto pt-4`}><PwaInstallPromotion /></div>
 
       {/* HERO SECTION: SPLIT-SCREEN ENTERPRISE LOGIN + INTERACTIVE SYSTEM SHOWCASE */}
       <main className={`${styles.pageFrame} relative z-10 mx-auto pt-6 pb-16 lg:pt-8`}>

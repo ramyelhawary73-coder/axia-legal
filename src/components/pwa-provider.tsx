@@ -3,7 +3,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 
 type InstallEvent = Event & { prompt(): Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
 type PwaContextValue = {
-  standalone: boolean; installed: boolean; canInstall: boolean;
+  standalone: boolean; installed: boolean; canInstall: boolean; preview: boolean;
   shell: "preparing" | "ready" | "unavailable"; online: boolean | null; message: string;
   install: () => Promise<void>; checkUpdate: () => Promise<void>;
 };
@@ -13,7 +13,7 @@ export function usePwa() {
   if (!value) throw new Error("PWA provider unavailable");
   return value;
 }
-export function PwaProvider({ children }: { children: ReactNode }) {
+export function PwaProvider({ children, preview = false }: { children: ReactNode; preview?: boolean }) {
   const [standalone, setStandalone] = useState(false), [installed, setInstalled] = useState(false);
   const [canInstall, setCanInstall] = useState(false), [message, setMessage] = useState("");
   const [shell, setShell] = useState<PwaContextValue["shell"]>("preparing");
@@ -74,7 +74,7 @@ export function PwaProvider({ children }: { children: ReactNode }) {
     try { await registration.current.update(); if (registration.current.waiting && registration.current.active) setWaiting(registration.current.waiting); setMessage("تم طلب فحص التحديث. لو توفرت نسخة جديدة سيظهر تنبيه قبل إعادة التحميل."); }
     catch { setMessage("تعذر فحص التحديث الآن. حاول بعد عودة الاتصال."); }
   }
-  return <PwaContext.Provider value={{ standalone, installed, canInstall, shell, online, install, checkUpdate, message }}>
+  return <PwaContext.Provider value={{ standalone, installed, canInstall, preview, shell, online, install, checkUpdate, message }}>
     {children}
     {waiting ? <aside aria-label="تحديث AXIA" className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-xl rounded-2xl border border-[var(--axia-gold)] bg-[var(--panel)] p-5 text-[var(--text)] shadow-2xl">
       <p className="text-base font-bold">تحديث جديد جاهز</p>
