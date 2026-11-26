@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import {mockWaitingPwaUpdate} from './verify-pwa-ui.mjs';
 
 export async function verifyNativeUi({browser,base,output,records,fits,fixtureContext}) {
   async function toolbarReachable(page) {
@@ -45,6 +46,17 @@ export async function verifyNativeUi({browser,base,output,records,fits,fixtureCo
       await search.getByRole('button',{name:'إلغاء',exact:true}).click();await search.waitFor({state:'hidden'});
     }
     records.push({check:'Workspace toolbar buttons are reachable without overlap; tablet search uses the full viewport',width});await context.close();
+  }
+  {
+    const {context}=await fixtureContext({width:390,height:844},'dark');await mockWaitingPwaUpdate(context);
+    const page=await context.newPage();await page.goto(base+'/');
+    const update=page.getByRole('complementary',{name:'تحديث AXIA',exact:true});await update.waitFor();
+    await toolbarReachable(page);
+    assert.ok(await page.locator('.axia-workspace').evaluate(el=>el.getBoundingClientRect().bottom<=document.querySelector('.axia-update-banner').getBoundingClientRect().top+1));
+    await page.getByRole('button',{name:'فتح قائمة التنقل',exact:true}).click();
+    const nav=page.getByRole('navigation',{name:'أقسام المكتب',exact:true});await nav.getByRole('button',{name:/القضايا والملفات/}).click();
+    await page.getByRole('heading',{name:'سجل القضايا والمنازعات',exact:true}).waitFor();await update.waitFor();
+    await fits(page,'pwa-update-workspace-390');records.push({check:'Waiting PWA update resizes workspace and preserves mobile read-only navigation'});await context.close();
   }
   {
     const {context}=await fixtureContext({width:390,height:844},'dark');

@@ -294,5 +294,5 @@
   .intro p { font-size: 14px; line-height: 1.95; }
 }
 
-.portal { height: 100vh; height: 100dvh; }
+.portal { height: 100%; }
 .portalHeader nav button { min-height: 44px; }

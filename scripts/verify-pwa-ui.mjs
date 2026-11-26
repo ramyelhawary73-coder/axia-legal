@@ -20,6 +20,17 @@ async function transportGate(base) {
     async close() {server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}};
 }
 
+export async function mockWaitingPwaUpdate(context) {
+  await context.addInitScript(()=>{
+    window.axiaUpdateMessages=0;
+    const service=new EventTarget(),registration=new EventTarget();
+    registration.active={state:'activated'};registration.installing=null;
+    registration.waiting={postMessage:message=>{if(message.type==='AXIA_ACTIVATE_UPDATE')window.axiaUpdateMessages++;}};
+    registration.update=async()=>{};service.register=async()=>registration;
+    Object.defineProperty(navigator,'serviceWorker',{value:service,configurable:true});
+  });
+}
+
 export async function verifyPwa({browser,base,output,records,fits}) {
   for(const [width,height,theme] of [[1440,900,'dark'],[390,844,'light'],[320,568,'dark']]) {
     const context=await browser.newContext({viewport:{width,height},colorScheme:theme,locale:'ar-EG'});
@@ -64,14 +75,7 @@ export async function verifyPwa({browser,base,output,records,fits}) {
   }
   {
     const context=await browser.newContext();
-    await context.addInitScript(()=>{
-      window.axiaUpdateMessages=0;
-      const service=new EventTarget(),registration=new EventTarget();
-      registration.active={state:'activated'};registration.installing=null;
-      registration.waiting={postMessage:message=>{if(message.type==='AXIA_ACTIVATE_UPDATE')window.axiaUpdateMessages++;}};
-      registration.update=async()=>{};service.register=async()=>registration;
-      Object.defineProperty(navigator,'serviceWorker',{value:service,configurable:true});
-    });
+    await mockWaitingPwaUpdate(context);
     const page=await context.newPage();await page.goto(base+'/install');
     const update=page.getByRole('complementary',{name:'تحديث AXIA'});await update.waitFor();
     assert.equal(await page.evaluate(()=>window.axiaUpdateMessages),0);
@@ -81,6 +85,35 @@ export async function verifyPwa({browser,base,output,records,fits}) {
     await update.getByRole('button',{name:'حفظت عملي، أعد التحميل',exact:true}).click();
     assert.equal(await page.evaluate(()=>window.axiaUpdateMessages),1);
     records.push({check:'PWA update deferral/reopen/explicit message (synthetic registration)'});await context.close();
+  }
+  for(const [width,height] of [[320,568],[390,844],[390,400]]) {
+    const context=await browser.newContext({viewport:{width,height},isMobile:true,hasTouch:true,reducedMotion:'reduce'});
+    await context.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
+    await mockWaitingPwaUpdate(context);
+    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+    await page.goto(base+'/login');
+    const update=page.getByRole('complementary',{name:'تحديث AXIA',exact:true});await update.waitFor();
+    await page.getByRole('tab',{name:'طلب ترخيص مكتب',exact:true}).tap();
+    assert.equal(await page.getByRole('tab',{name:'طلب ترخيص مكتب',exact:true}).getAttribute('aria-selected'),'true');
+    await page.getByRole('tab',{name:'دخول الأعضاء',exact:true}).tap();
+    await page.getByRole('button',{name:'إظهار كلمة المرور',exact:true}).tap();
+    await page.getByRole('button',{name:'إخفاء كلمة المرور',exact:true}).waitFor();
+    const submit=page.getByRole('button',{name:'الدخول الآمن إلى مساحة العمل',exact:true});
+    await submit.scrollIntoViewIfNeeded();
+    const geometry=await submit.evaluate(el=>{
+      const r=el.getBoundingClientRect(),content=document.querySelector('.axia-app-content').getBoundingClientRect(),banner=document.querySelector('.axia-update-banner').getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);
+      return {bottom:r.bottom,contentBottom:content.bottom,bannerTop:banner.top,reachable:hit===el||el.contains(hit)};
+    });
+    assert.ok(geometry.bottom<=geometry.contentBottom+1,JSON.stringify(geometry));
+    assert.ok(geometry.contentBottom<=geometry.bannerTop+1,JSON.stringify(geometry));assert.equal(geometry.reachable,true,JSON.stringify(geometry));
+    // Native required-field validation; never submit real credentials or contact an Auth provider.
+    await submit.tap();assert.equal(await page.getByRole('textbox',{name:'البريد الإلكتروني المهني',exact:true}).evaluate(el=>el.validity.valueMissing),true);
+    assert.equal(await page.evaluate(()=>window.axiaUpdateMessages),0,'login interaction must never apply an update');
+    await fits(page,`pwa-update-login-${width}-${height}`);
+    await page.screenshot({path:path.join(output,`pwa-update-login-${width}-${height}.png`),fullPage:true});
+    await update.getByRole('button',{name:'لاحقًا',exact:true}).tap();await update.waitFor({state:'hidden'});
+    assert.equal(await page.evaluate(()=>window.axiaUpdateMessages),0);assert.deepEqual(errors,[]);
+    records.push({check:'Waiting PWA update reserves space; mobile login tabs, password toggle and submit remain touch-reachable without applying it',width,height});await context.close();
   }
   {
     // Actual compiled assets + browser Service Worker. No mocked legal/Auth response or external host.

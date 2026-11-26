@@ -75,14 +75,18 @@ export function PwaProvider({ children, preview = false }: { children: ReactNode
     catch { setMessage("تعذر فحص التحديث الآن. حاول بعد عودة الاتصال."); }
   }
   return <PwaContext.Provider value={{ standalone, installed, canInstall, preview, shell, online, install, checkUpdate, message }}>
-    {children}
-    {waiting ? <aside aria-label="تحديث AXIA" className="fixed inset-x-4 bottom-4 z-[100] mx-auto max-w-xl rounded-2xl border border-[var(--axia-gold)] bg-[var(--panel)] p-5 text-[var(--text)] shadow-2xl">
-      <p className="text-base font-bold">تحديث جديد جاهز</p>
-      <p className="mt-2 text-sm leading-7 text-[var(--text-muted)]">احفظ عملك في كل النوافذ أولًا. التحديث يعيد تحميل هذه النافذة عند اختيارك، وقد تحتاج النوافذ الأخرى إلى إعادة فتح لاحقًا.</p>
-      <div className="mt-4 flex flex-wrap gap-3">
+    <div className="axia-app-frame">
+    <div className="axia-app-content">{children}</div>
+    {waiting ? <aside aria-label="تحديث AXIA" className="axia-update-banner">
+      <div className="axia-update-inner">
+      <div className="min-w-0 flex-1"><p className="text-base font-bold">تحديث جديد جاهز</p>
+      <p className="mt-1 text-sm leading-6 text-[var(--text-muted)]">احفظ عملك في كل النوافذ قبل إعادة تحميل هذه النافذة. قد تحتاج النوافذ الأخرى إلى إعادة فتح لاحقًا.</p></div>
+      <div className="flex flex-wrap gap-2">
         <button type="button" disabled={updating} onClick={() => { reloadRequested.current = true; setUpdating(true); waiting.postMessage({ type: "AXIA_ACTIVATE_UPDATE" }); }} className="min-h-11 rounded-xl bg-[var(--axia-gold)] px-5 py-2 text-sm font-bold text-slate-950 disabled:opacity-60">{updating ? "جارٍ تجهيز التحديث…" : "حفظت عملي، أعد التحميل"}</button>
         <button type="button" disabled={updating} onClick={() => setWaiting(null)} className="min-h-11 rounded-xl border border-[var(--border)] px-5 py-2 text-sm">لاحقًا</button>
       </div>
+      </div>
     </aside> : null}
+    </div>
   </PwaContext.Provider>;
 }
