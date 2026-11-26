@@ -80,7 +80,7 @@ export function NotificationsPopover({tasks,hearings,onNavigate,onToggleTaskStat
           <p className="mt-2 text-sm leading-7"><strong>الإرسال بعد إغلاق التطبيق: غير مفعّل بعد.</strong> يحتاج خدمة Push وإعدادات خادم معتمدة.</p>
           <p className="mt-2 flex items-start gap-2 text-sm leading-7 text-[var(--text-muted)]"><ShieldCheck size={18} className="mt-1 shrink-0" aria-hidden="true"/>الإشعار الخارجي عام؛ لا يعرض أسماء موكلين أو أرقام قضايا.</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" className="axia-primary-action" disabled={busy||!dataReady||dataError||permission==="unsupported"||permission==="restricted"||permission==="denied"} onClick={()=>void toggleReminders()}>{enabled?"إيقاف التذكيرات لهذه الجلسة":"السماح بتذكيرات الجهاز"}</button>
+            <button type="button" className="axia-primary-action" disabled={busy||(!enabled&&(!dataReady||dataError||permission==="unsupported"||permission==="restricted"||permission==="denied"))} onClick={()=>void toggleReminders()}>{enabled?"إيقاف التذكيرات لهذه الجلسة":"السماح بتذكيرات الجهاز"}</button>
             <button type="button" className="axia-text-action" disabled={busy||permission!=="granted"} onClick={()=>void testNotification()}>إرسال إشعار تجريبي</button>
             <Link href="/install" prefetch={false} className="axia-text-action">دليل تثبيت التطبيق</Link>
           </div>

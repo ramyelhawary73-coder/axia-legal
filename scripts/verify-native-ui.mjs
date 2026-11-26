@@ -2,6 +2,15 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 
 export async function verifyNativeUi({browser,base,output,records,fits,fixtureContext}) {
+  async function toolbarReachable(page) {
+    for (const button of await page.locator('.axia-toolbar button').all()) {
+      if (!await button.isVisible()) continue;
+      assert.equal(await button.evaluate(el=>{
+        const r=el.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);
+        return hit===el||el.contains(hit);
+      }),true,`Workspace toolbar control must be reachable: ${await button.getAttribute('aria-label')||await button.getAttribute('title')}`);
+    }
+  }
   for(const [width,height,theme] of [[320,568,'dark'],[390,844,'light'],[768,1024,'dark'],[1440,900,'light']]) {
     const context=await browser.newContext({viewport:{width,height},colorScheme:theme,reducedMotion:'reduce'});
     await context.route('**/*',route=>new URL(route.request().url()).origin===base?route.continue():route.abort());
@@ -20,6 +29,21 @@ export async function verifyNativeUi({browser,base,output,records,fits,fixtureCo
     await page.screenshot({path:path.join(output,`native-login-${width}-${theme}.png`),fullPage:true});
     records.push({check:'Native-style login: toolbar, readable inputs, install promotion and reduced motion',width,theme});await context.close();
   }
+  for (const width of [320,768,1024,1440]) {
+    const {context}=await fixtureContext({width,height:900},'dark');
+    const page=await context.newPage();await page.goto(base+'/');
+    await page.locator('span[title="مكتب الاختبار المصرح به — اسم طويل للتحقق من عرض الحساب"]').waitFor({state:'attached'});
+    await toolbarReachable(page);await fits(page,`native-workspace-${width}`);
+    await page.screenshot({path:path.join(output,`native-workspace-${width}.png`),fullPage:true});
+    if(width===768) {
+      await page.getByRole('button',{name:'البحث الشامل في القضايا والموكلين والمستندات (Ctrl+K)',exact:true}).click();
+      const search=page.getByRole('dialog',{name:'البحث الشامل',exact:true});await search.waitFor();
+      assert.ok((await search.boundingBox()).height>=850,'tablet search must cover the viewport, not just the blurred toolbar');
+      await search.getByRole('textbox').fill('مهمة');
+      await search.getByRole('button',{name:'إلغاء',exact:true}).click();await search.waitFor({state:'hidden'});
+    }
+    records.push({check:'Workspace toolbar buttons are reachable without overlap; tablet search uses the full viewport',width});await context.close();
+  }
   {
     const {context}=await fixtureContext({width:390,height:844},'dark');
     let requests=0;const privateTitle='PRIVATE LEGAL TASK TITLE';
@@ -32,6 +56,9 @@ export async function verifyNativeUi({browser,base,output,records,fits,fixtureCo
       Object.defineProperty(navigator.serviceWorker,'getRegistration',{configurable:true,value:async()=>({active:{scriptURL:location.origin+'/axia-sw.js'},showNotification:async(title,options)=>window.axiaNativeMessages.push({title,options})})});
     });
     const page=await context.newPage();await page.goto(base+'/');
+    await page.getByRole('button',{name:'الإشعارات',exact:true}).waitFor();
+    await toolbarReachable(page);
+    await page.screenshot({path:path.join(output,'native-workspace-390.png'),fullPage:true});
     await page.getByRole('button',{name:'الإشعارات',exact:true}).click();
     const modal=page.getByRole('dialog',{name:'الإشعارات والتذكيرات',exact:true});await modal.waitFor();
     await modal.getByText(privateTitle,{exact:true}).waitFor();
@@ -49,6 +76,7 @@ export async function verifyNativeUi({browser,base,output,records,fits,fixtureCo
     await fits(page,'native-notifications-390');await page.screenshot({path:path.join(output,'native-notifications-390.png'),fullPage:true});
     assert.ok(await modal.evaluate(el=>el.contains(document.activeElement)));
     await page.keyboard.press('Escape');await modal.waitFor({state:'hidden'});
+    await toolbarReachable(page);
     await page.getByRole('button',{name:'فتح قائمة التنقل',exact:true}).click();
     const navigation=page.getByRole('navigation',{name:'أقسام المكتب',exact:true});
     for(const label of ['نظرة عامة','قلم المحضرين والمهام','إدارة المكتب والترخيص'])assert.ok(await navigation.getByText(label,{exact:true}).evaluate(el=>parseFloat(getComputedStyle(el).fontSize))>=16);

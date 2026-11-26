@@ -296,7 +296,7 @@ export function AppShell({
       <header className="axia-toolbar shrink-0 z-40 border-b border-[var(--border)] bg-[var(--bg-glass)] backdrop-blur-xl">
         <div className="mx-auto flex min-h-14 w-full flex-wrap items-center justify-between gap-y-2 px-4 py-2 sm:min-h-16 lg:flex-nowrap sm:py-0 lg:px-6">
           {/* Brand & Mobile Hamburger */}
-          <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div className="flex w-full min-w-0 items-center gap-3 lg:w-auto lg:flex-none">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
@@ -384,7 +384,7 @@ export function AppShell({
             </button>
 
             {/* Voice Control (Web Speech API) */}
-            <div className="hidden xl:block"><VoiceControlTrigger
+            <div className="hidden 2xl:block"><VoiceControlTrigger
               onNavigate={onNavigate}
               onCreateTask={onCreateTask}
               onOpenVoiceModal={() => setIsVoiceModalOpen(true)}

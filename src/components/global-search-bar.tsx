@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { 
   Search, 
   X, 
@@ -546,8 +547,8 @@ export function GlobalSearchBar({
         </button>
 
         {/* Mobile Fullscreen Modal */}
-        {isOpen && (
-          <div className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-md p-3 sm:p-4 md:hidden animate-in fade-in duration-150">
+        {isOpen && createPortal((
+          <div role="dialog" aria-label="البحث الشامل" aria-modal="true" className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-md p-3 sm:p-4 lg:hidden animate-in fade-in duration-150">
             <div 
               ref={containerRef}
               className="flex flex-col h-full max-h-[92vh] w-full rounded-2xl border border-[var(--border)] bg-[var(--panel)] shadow-2xl overflow-hidden"
@@ -696,7 +697,7 @@ export function GlobalSearchBar({
               </div>
             </div>
           </div>
-        )}
+        ),document.body)}
       </>
     );
   }
