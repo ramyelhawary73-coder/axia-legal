@@ -5,6 +5,8 @@ import fs from "node:fs/promises";
 // shadows src/app/. Verify the actual compiled web entry points before deploy.
 const required = [
   "/page",
+  "/install/page",
+  "/manifest.webmanifest/route",
   "/login/page",
   "/invitations/accept/page",
   "/auth/confirm/route",
@@ -14,6 +16,14 @@ const required = [
   "/api/tasks/route",
   "/api/tasks/assignment/route",
   "/api/library/route",
+  "/platform/page",
+  "/api/platform/context/route",
+  "/api/platform/offices/route",
+  "/api/platform/audit/route",
+  "/api/platform/mfa/route",
+  "/api/platform/password/route",
+  "/api/platform/control/route",
+  "/api/drafts/route",
 ];
 const manifest = JSON.parse(
   await fs.readFile(".next/server/app-paths-manifest.json", "utf8"),

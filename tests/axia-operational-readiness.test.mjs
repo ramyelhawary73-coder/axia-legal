@@ -46,6 +46,43 @@ test('cloud-only legacy preferences do not suppress a real local export and raw 
   assert.equal(h.data.get('axia_cloud_snapshot_vault'),'legacy payload');
 });
 
+test('fresh and legacy snapshot settings cannot start downloads without explicit consent', async () => {
+  const h = serviceHarness();
+  assert.equal(h.api.getSnapshotConfig().enabled, false);
+  assert.equal(h.api.getSnapshotConfig().autoDownloadOnAppOpen, false);
+  h.data.set('axia_daily_snapshot_config', JSON.stringify({enabled:true,autoDownloadOnAppOpen:true,format:'csv',lastExportDate:'2026-10-14'}));
+  const raw = h.data.get('axia_daily_snapshot_config');
+  assert.equal(h.api.getSnapshotConfig().autoDownloadOnAppOpen, false);
+  assert.equal(h.api.getSnapshotConfig().format, 'csv');
+  await h.api.checkAndRunDailyAutoExport([], [], 'office:user');
+  assert.equal(h.clicks(), 0);
+  assert.equal(h.data.get('axia_daily_snapshot_config'), raw, 'reading old settings must preserve the stored bytes');
+});
+
+test('explicit automatic download consent belongs to one office and account', async () => {
+  const h = serviceHarness();
+  h.api.saveSnapshotConfig({...h.api.DEFAULT_SNAPSHOT_CONFIG, enabled:true,autoDownloadOnAppOpen:true,autoDownloadConsent:'v1:office:user'});
+  for (const scope of [undefined,'other-office:user','office:other-user']) {
+    assert.equal((await h.api.checkAndRunDailyAutoExport([],[],scope)).ran, false);
+  }
+  assert.equal(h.clicks(),0);
+  assert.equal(h.api.getSnapshotConfigForScope('other-office:user').autoDownloadOnAppOpen,false);
+  assert.equal(h.api.getSnapshotConfigForScope('office:user').autoDownloadOnAppOpen,true);
+  assert.equal((await h.api.checkAndRunDailyAutoExport([],[],'office:user')).ran,true);
+  assert.equal((await h.api.checkAndRunDailyAutoExport([],[],'office:user')).ran,false);
+  assert.equal(h.clicks(),1,'one automatic download per day');
+});
+
+test('revoked automatic consent prevents downloads while manual export remains available', async () => {
+  const h = serviceHarness();
+  h.api.saveSnapshotConfig({...h.api.DEFAULT_SNAPSHOT_CONFIG,enabled:true,autoDownloadOnAppOpen:false,autoDownloadConsent:undefined});
+  assert.equal((await h.api.checkAndRunDailyAutoExport([],[],'office:user')).ran,false);
+  assert.equal(h.clicks(),0);
+  await h.api.performDailyExport([],[],{format:'json'});
+  assert.equal(h.clicks(),1);
+  assert.equal(h.api.getSnapshotConfig().autoDownloadConsent,undefined);
+});
+
 test('unimplemented cloud sync never claims success or writes a local vault', async () => {
   const h = serviceHarness();
   const result = await h.api.syncSnapshotToCloud(h.api.buildDailySnapshot([],[]),'https://example.invalid');
@@ -108,7 +145,8 @@ test('auto-export hook waits for readiness and executes only once after a succes
         useEffect: effect => effects.push(effect), useCallback: fn => fn,
       };
       return {
-        getSnapshotConfig: () => ({enabled:true,autoDownloadOnAppOpen:true}),
+        getSnapshotConfig: () => ({enabled:true,autoDownloadOnAppOpen:true,autoDownloadConsent:'v1:office:user'}),
+        canAutoDownloadSnapshot: (config,scope) => config.autoDownloadConsent === `v1:${scope}`,
         getTodayDateString: () => '2026-10-15',
         performDailyExport: async () => { exportsCount++; return {record:{mattersCount:0,tasksCount:0,filename:'test',destination:'download_folder'}}; },
       };
@@ -116,17 +154,17 @@ test('auto-export hook waits for readiness and executes only once after a succes
     window: {addEventListener() {},removeEventListener() {}},
     setTimeout: fn => {timers.push(fn); return 1;}, clearTimeout() {},
   });
-  api.useDailySnapshotAutoExport([],[],false);
+  api.useDailySnapshotAutoExport([],[],false,'office:user');
   effects.forEach(effect => effect());
   assert.equal(timers.length,0);
   assert.equal(ref.current,false);
   effects = [];
-  api.useDailySnapshotAutoExport([],[],true);
+  api.useDailySnapshotAutoExport([],[],true,'office:user');
   effects.forEach(effect => effect());
   await timers[0]();
   assert.equal(exportsCount,1);
   effects = []; timers = [];
-  api.useDailySnapshotAutoExport([],[],true);
+  api.useDailySnapshotAutoExport([],[],true,'office:user');
   effects.forEach(effect => effect());
   assert.equal(timers.length,0);
 });

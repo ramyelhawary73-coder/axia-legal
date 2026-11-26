@@ -13,11 +13,11 @@ const HISTORY_STORAGE_KEY = "axia_daily_snapshot_history";
 // Legacy local vault data is intentionally retained; it is not a cloud backup.
 
 export const DEFAULT_SNAPSHOT_CONFIG: SnapshotConfig = {
-  enabled: true,
+  enabled: false,
   destination: "download_folder",
   format: "json",
   autoExportTime: "17:00",
-  autoDownloadOnAppOpen: true,
+  autoDownloadOnAppOpen: false,
   cloudSyncUrl: "",
   cloudSyncStatus: "idle",
   retentionDays: 30,
@@ -96,10 +96,24 @@ export function normalizeSnapshotConfig(value: unknown): SnapshotConfig {
     lastExportDate: stored.destination === "cloud_sync" ? undefined : stored.lastExportDate,
     cloudSyncUrl: "",
     cloudSyncStatus: "idle",
-    enabled: typeof stored.enabled === "boolean" ? stored.enabled : true,
-    autoDownloadOnAppOpen: typeof stored.autoDownloadOnAppOpen === "boolean"
-      ? stored.autoDownloadOnAppOpen : true,
+    enabled: typeof stored.enabled === "boolean" ? stored.enabled : false,
+    // Legacy true defaults are not evidence of an explicit download choice.
+    autoDownloadConsent: typeof stored.autoDownloadConsent === "string"
+      && stored.autoDownloadConsent.startsWith("v1:") ? stored.autoDownloadConsent : undefined,
+    autoDownloadOnAppOpen: stored.autoDownloadOnAppOpen === true
+      && typeof stored.autoDownloadConsent === "string" && stored.autoDownloadConsent.startsWith("v1:"),
   };
+}
+
+export function getSnapshotConfigForScope(scope?: string): SnapshotConfig {
+  const saved = getSnapshotConfig();
+  return scope && saved.autoDownloadConsent === `v1:${scope}` ? saved
+    : { ...saved, autoDownloadOnAppOpen: false, autoDownloadConsent: undefined };
+}
+
+export function canAutoDownloadSnapshot(config: SnapshotConfig, scope?: string): boolean {
+  return config.enabled && config.autoDownloadOnAppOpen && !!scope
+    && config.autoDownloadConsent === `v1:${scope}`;
 }
 
 export function saveSnapshotConfig(config: SnapshotConfig): void {
@@ -431,7 +445,8 @@ export async function performDailyExport(
 // Background auto-export trigger: checks if today's snapshot needs to be exported
 export async function checkAndRunDailyAutoExport(
   matters: Matter[],
-  tasks: LegalTask[]
+  tasks: LegalTask[],
+  scope?: string,
 ): Promise<{
   ran: boolean;
   reason?: string;
@@ -442,6 +457,8 @@ export async function checkAndRunDailyAutoExport(
   if (!config.enabled) {
     return { ran: false, reason: "auto_export_disabled" };
   }
+
+  if (!canAutoDownloadSnapshot(config, scope)) return { ran: false, reason: "explicit_consent_required" };
 
   const today = getTodayDateString();
   if (config.lastExportDate === today) {

@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { 
   AlertTriangle, 
   Clock, 
   CheckCircle2, 
   Plus, 
   X,
-  Radio,
-  Send,
   BellRing,
   Download,
   Mic,
@@ -25,13 +23,6 @@ import {
 } from "lucide-react";
 import { NavigationTab, LegalTask, Matter } from "@/types/legal";
 import { analyzeTaskDeadline } from "@/lib/task-utils";
-import { 
-  getNotificationPermissionStatus, 
-  requestBrowserNotificationPermission, 
-  sendTestBrowserNotification, 
-  sendTaskDeadlineBrowserNotification, 
-  NotificationPermissionStatus 
-} from "@/lib/browser-notifications";
 import { LegalPdfReportModal } from "@/components/legal-pdf-report-modal";
 import { VoiceCommandModal } from "@/components/voice-command-modal";
 import { TaskCreationModal } from "@/components/task-creation-modal";
@@ -237,29 +228,6 @@ export function TasksView({
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
-  const [permissionStatus, setPermissionStatus] = useState<NotificationPermissionStatus>(() => {
-    return typeof window !== "undefined" ? getNotificationPermissionStatus() : "default";
-  });
-  const [testSent, setTestSent] = useState(false);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPermissionStatus(getNotificationPermissionStatus());
-  }, []);
-
-  const handleRequestPermission = async () => {
-    const res = await requestBrowserNotificationPermission();
-    setPermissionStatus(res);
-  };
-
-  const handleSendTest = () => {
-    const ok = sendTestBrowserNotification();
-    if (ok) {
-      setTestSent(true);
-      setTimeout(() => setTestSent(false), 3000);
-    }
-  };
-
   // Voice Command & Dictation State
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [voiceToastMessage, setVoiceToastMessage] = useState<string | null>(null);
@@ -513,67 +481,10 @@ export function TasksView({
         </div>
       )}
 
-      {/* Browser Notification API Status Banner */}
-      <div className="rounded-2xl border border-[var(--border-strong)] bg-[var(--panel-glass)] p-4 backdrop-blur-xl shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className={`grid size-9 place-items-center rounded-xl border ${
-              permissionStatus === "granted"
-                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-                : permissionStatus === "denied"
-                ? "border-red-500/30 bg-red-500/10 text-red-400"
-                : "border-[var(--axia-gold-dim)] bg-[var(--axia-gold)]/10 text-[var(--axia-gold)]"
-            }`}>
-              <Radio className="size-4.5 animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-xs text-[var(--text)]">
-                  نظام التنبيهات المكتبية الفورية (Browser Notification API)
-                </span>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                  permissionStatus === "granted"
-                    ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
-                    : permissionStatus === "denied"
-                    ? "bg-red-500/15 border border-red-500/30 text-red-400"
-                    : "bg-amber-500/15 border border-amber-500/30 text-amber-400"
-                }`}>
-                  {permissionStatus === "granted" ? "متصل ونشط" : permissionStatus === "denied" ? "محظور بالمتصفح" : "بانتظار الإذن"}
-                </span>
-              </div>
-              <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
-                تنبيه صوتي ومرئي منبثق من المتصفح عند بقاء أقل من ساعة على المهام القضائية العاجلة ومواعيد الطعن.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {permissionStatus === "granted" ? (
-              <button
-                type="button"
-                onClick={handleSendTest}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-3 py-1.5 text-xs font-semibold text-[var(--text)] hover:border-[var(--axia-gold)] hover:text-[var(--axia-gold)] transition shadow-sm"
-              >
-                <Send className="size-3" />
-                <span>{testSent ? "تم إرسال الإشعار بنجاح ✓" : "اختبار إشعار المتصفح"}</span>
-              </button>
-            ) : permissionStatus === "denied" ? (
-              <span className="text-xs text-red-400 font-medium">
-                يرجى السماح بالإشعارات من إعدادات المتصفح
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={handleRequestPermission}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[var(--axia-gold)] px-3.5 py-1.5 text-xs font-bold text-black shadow hover:brightness-110 transition"
-              >
-                <BellRing className="size-3.5" />
-                <span>تفعيل التنبيهات المكتبية</span>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--panel-glass)] p-4 flex flex-wrap items-center justify-between gap-3">
+        <div><h2 className="font-semibold text-base">تذكيرات العمل</h2><p className="mt-1 text-sm leading-7 text-[var(--text-muted)]">راجع مواعيدك المحفوظة وإعدادات إشعارات هذا الجهاز من مركز التذكيرات.</p></div>
+        <button type="button" className="axia-text-action" onClick={()=>window.dispatchEvent(new Event("axia:open-notifications"))}><BellRing size={18} aria-hidden="true"/>إعدادات الإشعارات</button>
+      </section>
 
       {/* Filter Tabs & View Mode Switcher */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-[var(--border)] pb-3">
@@ -1048,18 +959,12 @@ export function TasksView({
                         {isDueWithinOneHour && (
                           <button
                             type="button"
-                            onClick={() => {
-                              sendTaskDeadlineBrowserNotification({
-                                task,
-                                diffHours: deadlineInfo.diffHours,
-                                force: true,
-                              });
-                            }}
+                            onClick={() => window.dispatchEvent(new Event("axia:open-notifications"))}
                             className="inline-flex items-center gap-1 rounded-md border border-red-500/40 bg-red-600/10 px-2 py-0.5 text-[10px] font-bold text-red-400 hover:bg-red-600/20 transition"
-                            title="إرسال تنبيه مكتبي فوري لهذه المهمة"
+                            title="فتح مركز التذكيرات"
                           >
                             <BellRing className="size-3" />
-                            <span>إشعار مكتبي</span>
+                            <span>مركز التذكيرات</span>
                           </button>
                         )}
                         <button

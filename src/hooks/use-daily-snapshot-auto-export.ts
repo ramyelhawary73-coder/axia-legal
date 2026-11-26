@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Matter, LegalTask } from "@/types/legal";
 import { 
-  getSnapshotConfig, 
+  getSnapshotConfig,
+  canAutoDownloadSnapshot,
   getTodayDateString, 
   performDailyExport 
 } from "@/lib/daily-snapshot-service";
@@ -26,6 +27,7 @@ export function useDailySnapshotAutoExport(
   matters: Matter[],
   tasks: LegalTask[],
   isDataReady = false,
+  autoExportScope?: string,
 ): UseDailySnapshotReturn {
   const [isAutoExporting, setIsAutoExporting] = useState(false);
   const [toastNotification, setToastNotification] = useState<{
@@ -69,7 +71,7 @@ export function useDailySnapshotAutoExport(
     const timer = setTimeout(async () => {
       hasExecutedRef.current = true;
       const config = getSnapshotConfig();
-      if (!config.enabled || !config.autoDownloadOnAppOpen) return;
+      if (!canAutoDownloadSnapshot(config, autoExportScope)) return;
 
       const today = getTodayDateString();
       if (config.lastExportDate === today) return; // Already exported today
@@ -92,7 +94,7 @@ export function useDailySnapshotAutoExport(
     }, 1500);
 
     return () => clearTimeout(timer);
-  }, [matters, tasks, isDataReady]);
+  }, [matters, tasks, isDataReady, autoExportScope]);
 
   // Listen to external window events
   useEffect(() => {

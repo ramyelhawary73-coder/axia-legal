@@ -29,7 +29,7 @@ import {
   SnapshotFormat 
 } from "@/types/snapshot";
 import { 
-  getSnapshotConfig, 
+  getSnapshotConfigForScope,
   saveSnapshotConfig, 
   getSnapshotRecords, 
   buildDailySnapshot, 
@@ -45,6 +45,7 @@ interface DailySnapshotManagerProps {
   matters: Matter[];
   tasks: LegalTask[];
   isDataReady?: boolean;
+  autoExportScope?: string;
 }
 
 export function DailySnapshotManager({
@@ -53,9 +54,10 @@ export function DailySnapshotManager({
   matters,
   tasks,
   isDataReady = false,
+  autoExportScope,
 }: DailySnapshotManagerProps) {
   const [activeTab, setActiveTab] = useState<"preview" | "config" | "history">("preview");
-  const [config, setConfig] = useState<SnapshotConfig>(() => getSnapshotConfig());
+  const [config, setConfig] = useState<SnapshotConfig>(() => getSnapshotConfigForScope(autoExportScope));
   const [history, setHistory] = useState<SnapshotRecord[]>(() => getSnapshotRecords());
   const [isExporting, setIsExporting] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -82,7 +84,7 @@ export function DailySnapshotManager({
     try {
       const effectiveFormat = formatOverride || config.format;
       const result = await performDailyExport(matters, tasks, { format: effectiveFormat });
-      setConfig(getSnapshotConfig());
+      setConfig(getSnapshotConfigForScope(autoExportScope));
       setHistory(getSnapshotRecords());
       setSaveMessage(`تم تجهيز الملف وطلب تنزيله: ${result.record.filename}. تحقق من التنزيلات في المتصفح.`);
       setTimeout(() => setSaveMessage(null), 4000);
@@ -95,7 +97,7 @@ export function DailySnapshotManager({
 
   const handleSaveConfig = () => {
     saveSnapshotConfig(config);
-    setSaveMessage("تم حفظ إعدادات الأتمتة والتصدير اليومي بنجاح.");
+    setSaveMessage("تم حفظ الإعدادات. التنزيل التلقائي المختار يبدأ عند فتح الصفحة لاحقًا؛ لم يُطلب تنزيل الآن.");
     setTimeout(() => setSaveMessage(null), 3000);
   };
 
@@ -123,7 +125,7 @@ export function DailySnapshotManager({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
+    <div role="dialog" aria-modal="true" aria-label="إدارة اللقطة اليومية" className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in duration-200">
       <div className="relative flex flex-col h-[94vh] sm:h-auto sm:max-h-[90vh] w-full sm:max-w-4xl overflow-hidden rounded-t-[28px] sm:rounded-2xl border-t sm:border border-[var(--border)] bg-[var(--panel)] shadow-2xl animate-in zoom-in-95 duration-200">
         
         {/* Header */}
@@ -133,11 +135,11 @@ export function DailySnapshotManager({
               <FolderDown className="size-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <h2 className="text-lg font-bold text-[var(--text)]">
                   اللقطة اليومية المحلية للقضايا والمهام
                 </h2>
-                <span className="rounded bg-[var(--accent)] px-2 py-0.5 text-[10px] font-mono text-[var(--axia-gold-light)] border border-[var(--border)]">
+                <span className="hidden sm:inline rounded bg-[var(--accent)] px-2 py-0.5 text-[10px] font-mono text-[var(--axia-gold-light)] border border-[var(--border)]">
                   Daily Snapshot OS
                 </span>
               </div>
@@ -150,6 +152,7 @@ export function DailySnapshotManager({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
+              aria-label="إغلاق إدارة اللقطة"
               className="grid size-8 place-items-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors"
             >
               <X className="size-4" />
@@ -174,18 +177,18 @@ export function DailySnapshotManager({
         )}
 
         {/* Navigation Tabs */}
-        <div className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--panel)] px-6 py-2 shrink-0 overflow-x-auto">
-          <div className="flex items-center gap-1">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-[var(--border)] bg-[var(--panel)] px-4 py-2 shrink-0">
+          <div data-testid="snapshot-tabs" className="flex min-w-0 items-center gap-1 overflow-x-auto">
             <button
               onClick={() => setActiveTab("preview")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-2 rounded-lg text-sm font-semibold transition ${
                 activeTab === "preview"
                   ? "bg-[var(--text)] text-[var(--bg)] shadow-sm"
                   : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--accent)]"
               }`}
             >
               <FileText className="size-3.5" />
-              <span>معاينة اللقطة الحية (Live Preview)</span>
+              <span>معاينة اللقطة</span>
               {liveSnapshot && (
                 <span className="rounded-full bg-[var(--axia-gold)] text-black text-[10px] px-1.5 font-bold">
                   {liveSnapshot.metrics.totalActiveMatters + liveSnapshot.metrics.totalPendingTasks}
@@ -195,7 +198,7 @@ export function DailySnapshotManager({
 
             <button
               onClick={() => setActiveTab("config")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-2 rounded-lg text-sm font-semibold transition ${
                 activeTab === "config"
                   ? "bg-[var(--text)] text-[var(--bg)] shadow-sm"
                   : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--accent)]"
@@ -210,14 +213,14 @@ export function DailySnapshotManager({
 
             <button
               onClick={() => setActiveTab("history")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-2 rounded-lg text-sm font-semibold transition ${
                 activeTab === "history"
                   ? "bg-[var(--text)] text-[var(--bg)] shadow-sm"
                   : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--accent)]"
               }`}
             >
               <History className="size-3.5" />
-              <span>سجل التصدير والأرشيف ({history.length})</span>
+              <span>سجل التصدير ({history.length})</span>
             </button>
           </div>
 
@@ -470,6 +473,7 @@ export function DailySnapshotManager({
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
+                      aria-label="تفعيل التصدير التلقائي للّقطة اليومية"
                       checked={config.enabled}
                       onChange={(e) => setConfig({ ...config, enabled: e.target.checked })}
                       className="sr-only peer"
@@ -540,16 +544,24 @@ export function DailySnapshotManager({
                   </div>
                 </div>
 
-                {/* Auto trigger on app launch */}
+                <p className="text-sm text-[var(--text-muted)]">
+                  التنزيل التلقائي متوقف افتراضيًا. فعّل الخيارين واحفظهما إذا رغبت في تنزيل يومي عند فتح الصفحة لاحقًا.
+                  الملف المحلي غير مشفّر ويشمل بيانات القضايا النشطة والمهام المعلقة. يمكنك إيقاف الخيار في أي وقت.
+                </p>
+                {/* Explicit opt-in for this office and account */}
                 <div className="pt-2">
                   <label className="flex items-center gap-2 cursor-pointer text-[var(--text)]">
                     <input
                       type="checkbox"
                       checked={config.autoDownloadOnAppOpen}
-                      onChange={(e) => setConfig({ ...config, autoDownloadOnAppOpen: e.target.checked })}
+                      disabled={!isDataReady || !autoExportScope}
+                      onChange={(e) => setConfig({ ...config,
+                        autoDownloadOnAppOpen: e.target.checked,
+                        autoDownloadConsent: e.target.checked && autoExportScope ? `v1:${autoExportScope}` : undefined,
+                      })}
                       className="rounded border-[var(--border)] text-[var(--axia-gold)] focus:ring-[var(--axia-gold)]"
                     />
-                    <span>تصدير تلقائي فوري عند أول تشغيل للمنظومة يومياً (إذا لم يتم التصدير بعد)</span>
+                    <span>أوافق على تنزيل اللقطة تلقائيًا عند فتح الصفحة لهذا الحساب والمكتب على هذا المتصفح</span>
                   </label>
                 </div>
               </div>
@@ -561,7 +573,7 @@ export function DailySnapshotManager({
                   className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--text)] px-4 py-2 text-xs font-bold text-[var(--bg)] shadow-md hover:opacity-90 transition"
                 >
                   <Check className="size-4" />
-                  <span>حفظ وتفعيل إعدادات الأتمتة</span>
+                  <span>حفظ إعدادات اللقطة</span>
                 </button>
               </div>
             </div>

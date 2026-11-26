@@ -6,5 +6,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  // Exact public installation/help assets only; protected work routes remain matched.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|install$|install/$|manifest\\.webmanifest$|axia-sw\\.js$|offline\\.html$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
 };

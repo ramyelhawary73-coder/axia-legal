@@ -1,0 +1,997 @@
+{
+  "version": 1,
+  "date": "2026-10-20",
+  "projectRef": "qshgczulivsxztgrbqew",
+  "source": {
+    "commit": "d26e2da420b3034fa6be1a18415c5cadbe65d945",
+    "file": "supabase/migrations/20261019142538_axia_control_center_office_operations.sql",
+    "sha256": "c8a05cb238e27730a774a6b8962e9e34b20ebe2a6648f73e6943001843e9fbbf"
+  },
+  "application": {
+    "attempts": 1,
+    "name": "axia_control_center_office_operations",
+    "sha256": "c8a05cb238e27730a774a6b8962e9e34b20ebe2a6648f73e6943001843e9fbbf",
+    "version": "20261020054338",
+    "statement_count": 1
+  },
+  "before": {
+    "observedAt": "2026-10-20T05:43:20.79047+00:00",
+    "publicData": {
+      "tasks": {
+        "hash": "4617a4c4a8ee47d34a707885b7594ff6",
+        "rows": 1
+      },
+      "clients": {
+        "hash": "ac76fee45a69e91b999af8ef87dc7077",
+        "rows": 2
+      },
+      "matters": {
+        "hash": "af9ec70b7f65fd375203dcf677784a03",
+        "rows": 2
+      },
+      "hearings": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "profiles": {
+        "hash": "ad81ee8e374045af5a17285303fb4734",
+        "rows": 2
+      },
+      "documents": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "audit_logs": {
+        "hash": "2c10bffe7694d796d56cc72a7397112b",
+        "rows": 3
+      },
+      "legal_sources": {
+        "hash": "10f1f7aa0603c754ff1dd115fcef73e1",
+        "rows": 5
+      },
+      "organizations": {
+        "hash": "5ba48c80989181a567223432bab767c7",
+        "rows": 2
+      },
+      "matter_members": {
+        "hash": "f50114a3dfe6f98575e55c4277529c80",
+        "rows": 2
+      },
+      "matter_parties": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "financial_records": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "staff_invitations": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "legal_ingestion_jobs": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "organization_members": {
+        "hash": "4bd08781cfa737b0d9583f585f085b3f",
+        "rows": 2
+      },
+      "legal_ingestion_scope": {
+        "hash": "1955310716eec3179e48dcffb1cd2e8a",
+        "rows": 5
+      },
+      "rajih_action_requests": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "legal_document_reviews": {
+        "hash": "9041866232e5b063e4fcb179bc1048fe",
+        "rows": 1
+      },
+      "legal_knowledge_chunks": {
+        "hash": "53a08c4db831968b292015e8ff47c4e1",
+        "rows": 1644
+      },
+      "legal_source_snapshots": {
+        "hash": "ea620a2b883f30dda7b6bea4a7885264",
+        "rows": 1
+      },
+      "client_powers_of_attorney": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "legal_knowledge_documents": {
+        "hash": "d607de0d66dc08da729b6878c73fc752",
+        "rows": 2
+      }
+    },
+    "tableCount": 22,
+    "migrationRecords": {
+      "20260904125024": "ab9159bfd8d7c109be490959e158579a",
+      "20260904125158": "788bbe1ba4e5b92e86a4d5fb89c7c384",
+      "20260904125240": "6ca4c12859834e64667e75c5533e0139",
+      "20260904125526": "702aa1945aa082c9fab16c0de677997b",
+      "20260919084511": "31f4834b2f36a512287bd56f49376b9e",
+      "20260919084725": "60beb13613359052d2e017e4c4fd55d8",
+      "20260919133318": "fad2910ce19f1a8d63dae820ab606c4a",
+      "20260919152200": "740754c8141fbd09ffd39e635e0b2c56",
+      "20260919152234": "54296fa2e567db615663229ab6e2aa86",
+      "20260920114631": "8e7a15c7921e1ab878f07f8ff1403f19",
+      "20260920114940": "17407661e8dc566364e087d2bab10fa0",
+      "20260920153903": "0694614607f05303a6561eb0a182beee",
+      "20260920162356": "f20d3e3bff3469417961825f0da8b7ed",
+      "20260920162442": "35a32dcfacfed67f8c86767929276eda",
+      "20260920162616": "afdeaa74fd04f9a513c4fe3baf441161",
+      "20260920164317": "238ebe6df13466d661eeedc14da56a80",
+      "20260920180729": "98c0773836cb3177463c1edac8b03a2b",
+      "20260921025345": "d4afb45f91152e8601c464ec3bf02d20",
+      "20260921030155": "17e21bebb973cc47162d82335a666a00",
+      "20260921072601": "a15f3d0f2ab8b31a5f76645d94e5cc1c",
+      "20260921111252": "435fb2cdc196440af3e78404bb385172",
+      "20261016083929": "6192a3591b62b86bcca5460a7d7da023",
+      "20261019080134": "4d8429a28838f641942ed2e78c39c69c"
+    },
+    "authUsers": {
+      "hash": "defa7a212a98029fbdf4a89029d385f3",
+      "rows": 2
+    },
+    "authFactors": {
+      "hash": "c2a71bd4ddf70ba079725ded30036dce",
+      "rows": 1
+    },
+    "platformPrincipals": {
+      "hash": "0557988d6471b655a8f0317eb1cd80be",
+      "rows": 1
+    },
+    "platformAudit": {
+      "hash": "e2989827dd72029567cf550fcb508727",
+      "rows": 5
+    },
+    "storageBuckets": {
+      "hash": "f7ad6746e38ecd06c5bd7d5a9a8d803c",
+      "rows": 1
+    },
+    "storageObjects": {
+      "hash": "d41d8cd98f00b204e9800998ecf8427e",
+      "rows": 0
+    }
+  },
+  "after": {
+    "observedAt": "2026-10-20T05:44:07.920344+00:00",
+    "publicData": {
+      "tasks": {
+        "hash": "4617a4c4a8ee47d34a707885b7594ff6",
+        "rows": 1
+      },
+      "clients": {
+        "hash": "ac76fee45a69e91b999af8ef87dc7077",
+        "rows": 2
+      },
+      "matters": {
+        "hash": "af9ec70b7f65fd375203dcf677784a03",
+        "rows": 2
+      },
+      "hearings": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "profiles": {
+        "hash": "ad81ee8e374045af5a17285303fb4734",
+        "rows": 2
+      },
+      "documents": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "audit_logs": {
+        "hash": "2c10bffe7694d796d56cc72a7397112b",
+        "rows": 3
+      },
+      "legal_sources": {
+        "hash": "10f1f7aa0603c754ff1dd115fcef73e1",
+        "rows": 5
+      },
+      "organizations": {
+        "hash": "5ba48c80989181a567223432bab767c7",
+        "rows": 2
+      },
+      "matter_members": {
+        "hash": "f50114a3dfe6f98575e55c4277529c80",
+        "rows": 2
+      },
+      "matter_parties": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "financial_records": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "staff_invitations": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "legal_ingestion_jobs": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "organization_members": {
+        "hash": "4bd08781cfa737b0d9583f585f085b3f",
+        "rows": 2
+      },
+      "legal_ingestion_scope": {
+        "hash": "1955310716eec3179e48dcffb1cd2e8a",
+        "rows": 5
+      },
+      "rajih_action_requests": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "legal_document_reviews": {
+        "hash": "9041866232e5b063e4fcb179bc1048fe",
+        "rows": 1
+      },
+      "legal_knowledge_chunks": {
+        "hash": "53a08c4db831968b292015e8ff47c4e1",
+        "rows": 1644
+      },
+      "legal_source_snapshots": {
+        "hash": "ea620a2b883f30dda7b6bea4a7885264",
+        "rows": 1
+      },
+      "client_powers_of_attorney": {
+        "hash": "d41d8cd98f00b204e9800998ecf8427e",
+        "rows": 0
+      },
+      "legal_knowledge_documents": {
+        "hash": "d607de0d66dc08da729b6878c73fc752",
+        "rows": 2
+      }
+    },
+    "tableCount": 24,
+    "migrationRecords": {
+      "20260904125024": "ab9159bfd8d7c109be490959e158579a",
+      "20260904125158": "788bbe1ba4e5b92e86a4d5fb89c7c384",
+      "20260904125240": "6ca4c12859834e64667e75c5533e0139",
+      "20260904125526": "702aa1945aa082c9fab16c0de677997b",
+      "20260919084511": "31f4834b2f36a512287bd56f49376b9e",
+      "20260919084725": "60beb13613359052d2e017e4c4fd55d8",
+      "20260919133318": "fad2910ce19f1a8d63dae820ab606c4a",
+      "20260919152200": "740754c8141fbd09ffd39e635e0b2c56",
+      "20260919152234": "54296fa2e567db615663229ab6e2aa86",
+      "20260920114631": "8e7a15c7921e1ab878f07f8ff1403f19",
+      "20260920114940": "17407661e8dc566364e087d2bab10fa0",
+      "20260920153903": "0694614607f05303a6561eb0a182beee",
+      "20260920162356": "f20d3e3bff3469417961825f0da8b7ed",
+      "20260920162442": "35a32dcfacfed67f8c86767929276eda",
+      "20260920162616": "afdeaa74fd04f9a513c4fe3baf441161",
+      "20260920164317": "238ebe6df13466d661eeedc14da56a80",
+      "20260920180729": "98c0773836cb3177463c1edac8b03a2b",
+      "20260921025345": "d4afb45f91152e8601c464ec3bf02d20",
+      "20260921030155": "17e21bebb973cc47162d82335a666a00",
+      "20260921072601": "a15f3d0f2ab8b31a5f76645d94e5cc1c",
+      "20260921111252": "435fb2cdc196440af3e78404bb385172",
+      "20261016083929": "6192a3591b62b86bcca5460a7d7da023",
+      "20261019080134": "4d8429a28838f641942ed2e78c39c69c",
+      "20261020054338": "76c77f1ef11f5666f5f7d93febe7e6be"
+    },
+    "authUsers": {
+      "hash": "defa7a212a98029fbdf4a89029d385f3",
+      "rows": 2
+    },
+    "authFactors": {
+      "hash": "c2a71bd4ddf70ba079725ded30036dce",
+      "rows": 1
+    },
+    "platformPrincipals": {
+      "hash": "0557988d6471b655a8f0317eb1cd80be",
+      "rows": 1
+    },
+    "platformAudit": {
+      "hash": "e2989827dd72029567cf550fcb508727",
+      "rows": 5
+    },
+    "storageBuckets": {
+      "hash": "f7ad6746e38ecd06c5bd7d5a9a8d803c",
+      "rows": 1
+    },
+    "storageObjects": {
+      "hash": "d41d8cd98f00b204e9800998ecf8427e",
+      "rows": 0
+    }
+  },
+  "comparison": {
+    "before": "2026-10-20T05:43:20.79047+00:00",
+    "after": "2026-10-20T05:44:07.920344+00:00",
+    "publicDataChanged": [],
+    "oldTableSecurityChanged": [],
+    "oldPoliciesChanged": [],
+    "oldTriggersChanged": [],
+    "oldMigrationRecordsChanged": [],
+    "authUsersUnchanged": true,
+    "authFactorsUnchanged": true,
+    "platformPrincipalsUnchanged": true,
+    "platformAuditUnchanged": true,
+    "storageBucketsUnchanged": true,
+    "storageObjectsUnchanged": true,
+    "functionsChanged": [
+      {
+        "before": "private.is_organization_member(uuid)",
+        "after": "private.is_organization_member(uuid)",
+        "sameBody": false
+      },
+      {
+        "before": "private.has_organization_role(uuid,app_role[])",
+        "after": "private.has_organization_role(uuid,app_role[])",
+        "sameBody": false
+      },
+      {
+        "before": "private.can_access_matter(uuid)",
+        "after": "private.can_access_matter(uuid)",
+        "sameBody": false
+      },
+      {
+        "before": "private.axia_staff_manage(uuid,text,text,text,uuid)",
+        "after": "private.axia_staff_manage_before_control(uuid,text,text,text,uuid)",
+        "sameBody": true
+      },
+      {
+        "before": "private.axia_staff_accept(text)",
+        "after": "private.axia_staff_accept_before_control(text)",
+        "sameBody": true
+      }
+    ],
+    "newMigrations": [
+      "20261020054338"
+    ],
+    "newPublicTables": [
+      "legal_drafts",
+      "legal_draft_versions"
+    ]
+  },
+  "verification": {
+    "counts": {
+      "offices": 2,
+      "auth_users": 2,
+      "migrations": 24,
+      "memberships": 2,
+      "public_rls_missing": 0
+    },
+    "tables": [
+      {
+        "rls": true,
+        "force": true,
+        "owner": "postgres",
+        "table": "control_events",
+        "schema": "private",
+        "anon_access": false,
+        "authenticated_write": false,
+        "authenticated_select": false
+      },
+      {
+        "rls": true,
+        "force": true,
+        "owner": "postgres",
+        "table": "office_controls",
+        "schema": "private",
+        "anon_access": false,
+        "authenticated_write": false,
+        "authenticated_select": false
+      },
+      {
+        "rls": true,
+        "force": true,
+        "owner": "postgres",
+        "table": "office_member_access",
+        "schema": "private",
+        "anon_access": false,
+        "authenticated_write": false,
+        "authenticated_select": false
+      },
+      {
+        "rls": true,
+        "force": true,
+        "owner": "postgres",
+        "table": "office_support_grants",
+        "schema": "private",
+        "anon_access": false,
+        "authenticated_write": false,
+        "authenticated_select": false
+      },
+      {
+        "rls": true,
+        "force": false,
+        "owner": "postgres",
+        "table": "legal_draft_versions",
+        "schema": "public",
+        "anon_access": false,
+        "authenticated_write": false,
+        "authenticated_select": true
+      },
+      {
+        "rls": true,
+        "force": false,
+        "owner": "postgres",
+        "table": "legal_drafts",
+        "schema": "public",
+        "anon_access": false,
+        "authenticated_write": false,
+        "authenticated_select": true
+      }
+    ],
+    "functions": [
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": false,
+        "anonymous": false,
+        "signature": "axia_control(text,uuid,jsonb)",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": false,
+        "anonymous": false,
+        "signature": "axia_draft_save(uuid,uuid,integer,jsonb,boolean,text)",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": false,
+        "anonymous": false,
+        "signature": "axia_rajih_entitled(uuid)",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": false,
+        "anonymous": false,
+        "signature": "axia_staff_accept(text)",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": false,
+        "anonymous": false,
+        "signature": "axia_staff_manage(uuid,text,text,text,uuid)",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": false,
+        "anonymous": false,
+        "signature": "axia_workspace_access()",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_control_membership_guard()",
+        "authenticated": false
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_control_storage_access(text)",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_control_storage_guard()",
+        "authenticated": false
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_control_support_file(text)",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_control_tenant_write_guard()",
+        "authenticated": false
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_control(text,uuid,jsonb)",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_draft_save(uuid,uuid,integer,jsonb,boolean,text)",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_office_access(uuid)",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_rajih_entitled(uuid)",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_staff_accept_before_control(text)",
+        "authenticated": false
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_staff_accept(text)",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_staff_manage_before_control(uuid,text,text,text,uuid)",
+        "authenticated": false
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_staff_manage(uuid,text,text,text,uuid)",
+        "authenticated": true
+      },
+      {
+        "owner": "postgres",
+        "config": [
+          "search_path=\"\""
+        ],
+        "definer": true,
+        "anonymous": false,
+        "signature": "private.axia_workspace_access()",
+        "authenticated": true
+      }
+    ],
+    "policies": [
+      {
+        "cmd": "ALL",
+        "check": "private.axia_office_access(organization_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "audit_logs",
+        "using": "private.axia_office_access(organization_id)",
+        "policy": "control_office_gate",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "private.axia_office_access(organization_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "client_powers_of_attorney",
+        "using": "private.axia_office_access(organization_id)",
+        "policy": "control_office_gate",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "private.axia_office_access(organization_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "clients",
+        "using": "private.axia_office_access(organization_id)",
+        "policy": "control_office_gate",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "private.axia_office_access(organization_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "documents",
+        "using": "private.axia_office_access(organization_id)",
+        "policy": "control_office_gate",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "private.axia_office_access(organization_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "financial_records",
+        "using": "private.axia_office_access(organization_id)",
+        "policy": "control_office_gate",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "private.axia_office_access(organization_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "hearings",
+        "using": "private.axia_office_access(organization_id)",
+        "policy": "control_office_gate",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "SELECT",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "legal_draft_versions",
+        "using": "(EXISTS ( SELECT 1\n   FROM legal_drafts d\n  WHERE ((d.id = legal_draft_versions.draft_id) AND (d.organization_id = legal_draft_versions.organization_id))))",
+        "policy": "legal_draft_versions_read",
+        "schema": "public",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "cmd": "SELECT",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "legal_drafts",
+        "using": "(private.is_organization_member(organization_id) AND ((matter_id IS NULL) OR private.can_access_matter(matter_id)))",
+        "policy": "legal_drafts_read",
+        "schema": "public",
+        "permissive": "PERMISSIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "(EXISTS ( SELECT 1\n   FROM matters m\n  WHERE ((m.id = matter_members.matter_id) AND private.axia_office_access(m.organization_id))))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "matter_members",
+        "using": "(EXISTS ( SELECT 1\n   FROM matters m\n  WHERE ((m.id = matter_members.matter_id) AND private.axia_office_access(m.organization_id))))",
+        "policy": "control_matter_members_gate",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "private.axia_office_access(organization_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "matter_parties",
+        "using": "private.axia_office_access(organization_id)",
+        "policy": "control_office_gate",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "private.axia_office_access(organization_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "matters",
+        "using": "private.axia_office_access(organization_id)",
+        "policy": "control_office_gate",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "private.axia_office_access(organization_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "organization_members",
+        "using": "private.axia_office_access(organization_id)",
+        "policy": "control_office_gate",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "private.axia_office_access(organization_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "rajih_action_requests",
+        "using": "private.axia_office_access(organization_id)",
+        "policy": "control_office_gate",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "private.axia_rajih_entitled(organization_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "rajih_action_requests",
+        "using": "private.axia_rajih_entitled(organization_id)",
+        "policy": "control_rajih_entitlement",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "private.axia_office_access(organization_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "staff_invitations",
+        "using": "private.axia_office_access(organization_id)",
+        "policy": "control_office_gate",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "private.axia_office_access(organization_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "tasks",
+        "using": "private.axia_office_access(organization_id)",
+        "policy": "control_office_gate",
+        "schema": "public",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "ALL",
+        "check": "((bucket_id <> 'legal-documents'::text) OR private.axia_control_storage_access(name))",
+        "roles": [
+          "authenticated"
+        ],
+        "table": "objects",
+        "using": "((bucket_id <> 'legal-documents'::text) OR private.axia_control_storage_access(name) OR private.axia_control_support_file(name))",
+        "policy": "control_storage_gate",
+        "schema": "storage",
+        "permissive": "RESTRICTIVE"
+      },
+      {
+        "cmd": "SELECT",
+        "check": null,
+        "roles": [
+          "authenticated"
+        ],
+        "table": "objects",
+        "using": "((bucket_id = 'legal-documents'::text) AND private.axia_control_support_file(name))",
+        "policy": "control_support_storage_read",
+        "schema": "storage",
+        "permissive": "PERMISSIVE"
+      }
+    ],
+    "triggers": [
+      {
+        "name": "control_write_gate",
+        "table": "client_powers_of_attorney",
+        "enabled": "O",
+        "function": "private.axia_control_tenant_write_guard()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "control_write_gate",
+        "table": "clients",
+        "enabled": "O",
+        "function": "private.axia_control_tenant_write_guard()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "control_write_gate",
+        "table": "documents",
+        "enabled": "O",
+        "function": "private.axia_control_tenant_write_guard()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "control_write_gate",
+        "table": "financial_records",
+        "enabled": "O",
+        "function": "private.axia_control_tenant_write_guard()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "control_write_gate",
+        "table": "hearings",
+        "enabled": "O",
+        "function": "private.axia_control_tenant_write_guard()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "legal_draft_versions_immutable",
+        "table": "legal_draft_versions",
+        "enabled": "O",
+        "function": "private.axia_platform_audit_immutable()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "legal_draft_versions_no_truncate",
+        "table": "legal_draft_versions",
+        "enabled": "O",
+        "function": "private.axia_platform_audit_immutable()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "control_write_gate",
+        "table": "matter_parties",
+        "enabled": "O",
+        "function": "private.axia_control_tenant_write_guard()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "control_write_gate",
+        "table": "matters",
+        "enabled": "O",
+        "function": "private.axia_control_tenant_write_guard()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "control_membership_capacity",
+        "table": "organization_members",
+        "enabled": "O",
+        "function": "private.axia_control_membership_guard()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "control_events_immutable",
+        "table": "private.control_events",
+        "enabled": "O",
+        "function": "private.axia_platform_audit_immutable()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "control_events_no_truncate",
+        "table": "private.control_events",
+        "enabled": "O",
+        "function": "private.axia_platform_audit_immutable()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "control_write_gate",
+        "table": "rajih_action_requests",
+        "enabled": "O",
+        "function": "private.axia_control_tenant_write_guard()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "control_write_gate",
+        "table": "staff_invitations",
+        "enabled": "O",
+        "function": "private.axia_control_tenant_write_guard()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "control_storage_capacity",
+        "table": "storage.objects",
+        "enabled": "O",
+        "function": "private.axia_control_storage_guard()",
+        "deferrable": false,
+        "initially_deferred": false
+      },
+      {
+        "name": "control_storage_capacity_commit",
+        "table": "storage.objects",
+        "enabled": "O",
+        "function": "private.axia_control_storage_guard()",
+        "deferrable": true,
+        "initially_deferred": true
+      },
+      {
+        "name": "control_write_gate",
+        "table": "tasks",
+        "enabled": "O",
+        "function": "private.axia_control_tenant_write_guard()",
+        "deferrable": false,
+        "initially_deferred": false
+      }
+    ],
+    "emptyState": {
+      "drafts": 0,
+      "controls": 0,
+      "member_blocks": 0,
+      "control_events": 0,
+      "draft_versions": 0,
+      "support_leases": 0
+    },
+    "readOnlyNoIdentityGuardTest": "passed; workspace metadata empty, draft reads empty, root control denied with CONTROL_FORBIDDEN, direct private-table SELECT denied; transaction rolled back"
+  },
+  "limits": [
+    "Hashes/counts are comparison evidence, not a backup or restore proof.",
+    "Read-only database role/claims checks are not authenticated browser acceptance.",
+    "No real office configuration, lease, audit event, draft, account, mail, file upload, Vercel flag, Merge or Production application deployment created by this package.",
+    "Existing two security WARNs unchanged; four new private default-deny/RLS/no-policy INFOs are expected."
+  ]
+}

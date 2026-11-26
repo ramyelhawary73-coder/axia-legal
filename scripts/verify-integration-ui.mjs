@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { OFFICE_TABLES, decryptOfficeSnapshot } from "../src/lib/office-backup.ts";
+import { verifyNativeUi } from "./verify-native-ui.mjs";
+import { verifyPwa } from "./verify-pwa-ui.mjs";
 
 // UI contracts use synthetic responses on loopback only. They are not real Auth/SMTP acceptance.
 const modulePath=process.env.AXIA_BROWSER_MODULE;
@@ -17,17 +20,28 @@ const employee="00000000-0000-4000-8000-000000000002";
 const taskId="00000000-0000-4000-8000-000000000101";
 const inviteId="00000000-0000-4000-8000-000000000201";
 const records=[];
-async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=false,registrationEnabled=registrationFlow}={}) {
-  const context=await browser.newContext({viewport,colorScheme:theme,locale:"ar-EG",acceptDownloads:true});
-  await context.addInitScript(({theme,autoExport})=>{
+const officeA="00000000-0000-4000-8000-000000000301",officeB="00000000-0000-4000-8000-000000000302";
+const storedDraftId="00000000-0000-4000-8000-000000000601";
+const syntheticDraft={id:storedDraftId,title:"مسودة اختبار محفوظة",docType:"مذكرة دفاع",clientName:"بدون ربط",contentHtml:'<p>نص آمن</p><img src=x onerror="window.axiaXss=true"><svg onload="window.axiaXss=true"></svg><a href="javascript:window.axiaXss=true">نص رابط</a>',versions:[],status:"مسودة قيد التحرير",createdAt:"2026-10-19T12:00:00Z",updatedAt:"2026-10-19T12:00:00Z",currentVersionNumber:"v1.0"};
+async function fixtureContext(viewport,theme,{autoExport=false,snapshotMode="legacy",registrationFlow=false,registrationEnabled=registrationFlow,platformMode=null,platformNoOffice=false,controlMode=false,draftMode=false,draftConflict=false}={}) {
+  const context=await browser.newContext({viewport,colorScheme:theme,locale:"ar-EG",acceptDownloads:true,...(controlMode?{timezoneId:"Africa/Cairo"}:{})});
+  await context.addInitScript(({theme,autoExport,snapshotMode})=>{
     localStorage.setItem("theme",theme);
-    localStorage.setItem("axia_daily_snapshot_config",JSON.stringify({enabled:autoExport,autoDownloadOnAppOpen:autoExport,format:"json",destination:"download_folder"}));
-  },{theme,autoExport});
+    if(snapshotMode==="legacy" && !localStorage.getItem("axia_daily_snapshot_config")) localStorage.setItem("axia_daily_snapshot_config",JSON.stringify({enabled:autoExport,autoDownloadOnAppOpen:autoExport,format:"json",destination:"download_folder"}));
+  },{theme,autoExport,snapshotMode});
+  const identityControls={failed:false,name:"مكتب الاختبار المصرح به — اسم طويل للتحقق من عرض الحساب",label:"صاحب الحساب التجريبي"};
   let invitations=[];
   let assignedTo=owner;
   const mutations=[];
   const registrationRequests=[];
   const events={accepted:0};
+  let platformState=platformMode;
+  const platformRequests=[],passwordRequests=[];
+  const passwordControls={requireCode:true,failNext:null};
+  const controlRequests=[],draftRequests=[];
+  const readControls={failNext:null,holdNext:null,held:null,paginated:false};
+  let config=null,lease=null;
+  const savedDrafts=[{id:storedDraftId,payload:structuredClone(syntheticDraft),revision:1,archived:false,created_at:syntheticDraft.createdAt,updated_at:syntheticDraft.updatedAt}];
   let staffConfirmed=!registrationFlow;
   await context.route("**/*",async route=>{
     const request=route.request(),url=new URL(request.url());
@@ -38,14 +52,85 @@ async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=
     }
     if(!url.pathname.startsWith("/api/")) return route.continue();
     let data={},status=200;
+    if(url.pathname==="/api/administration") {
+      if(identityControls.failed){status=503;data={error:"تعذر تحميل بيانات الإدارة."};}
+      else data={organization:{name:identityControls.name,slug:"synthetic-office",createdAt:"2026-01-01"},currentUser:{label:identityControls.label,role:"owner",roleLabel:"مالك المؤسسة"},membersCount:1,roleCounts:{owner:1,admin:0,lawyer:0,staff:0,trainee:0,viewer:0},security:{enforcedBy:"Supabase RLS",editableFromThisScreen:false,invitationFlowEnabled:false}};
+    }
     if(url.pathname==="/api/clients") data={clients:[]};
     if(url.pathname==="/api/matters") data={matters:[],clients:[]};
     if(url.pathname==="/api/hearings") data={hearings:[]};
     if(url.pathname==="/api/documents") data={documents:[]};
+    if(url.pathname==="/api/drafts") {
+      if(!draftMode){status=503;data={enabled:false};}
+      else if(request.method()==="POST"){
+        const body=request.postDataJSON();draftRequests.push(body);assert.equal(body.officeId,officeA);
+        const old=savedDrafts.find(d=>d.id===body.id);
+        if(draftConflict||body.revision!==(old?.revision??0)){status=409;data={error:"تعارض الحفظ التجريبي؛ احتفظ بتعديلاتك."};}
+        else {const row={id:body.id,payload:body.draft,revision:body.revision+1,archived:body.archived,created_at:old?.created_at??body.draft.createdAt,updated_at:body.draft.updatedAt};if(old)savedDrafts.splice(savedDrafts.indexOf(old),1,row);else savedDrafts.push(row);data={draft:row};}
+      }else if(url.searchParams.has("history")){data={draftId:storedDraftId,versions:[{id:inviteId,revision:1,payload:syntheticDraft,actor_id:owner,created_at:syntheticDraft.createdAt}],nextBefore:null};}
+      else data={enabled:true,organizationId:officeA,userId:owner,userLabel:"محرر الاختبار",canWrite:true,drafts:savedDrafts.filter(d=>!d.archived)};
+    }
     if(url.pathname==="/api/team") data={members:[],capabilities:{inviteMember:false,changeRole:false,removeMember:false}};
     if(url.pathname==="/api/tasks") data={organizationId:"office-test",userId:owner,assigneeLabel:"مالك الاختبار",canReassign:true,
       matters:[],assignees:[{id:owner,name:"مالك الاختبار",matterIds:[]},{id:employee,name:"موظف الاختبار",matterIds:[]}],
       tasks:[{id:taskId,title:"مهمة اختبار",category:"قلم المحضرين",courtOrBailiffOffice:"مكتب اختبار",assignedToUserId:assignedTo,assignedTo:assignedTo===owner?"مالك الاختبار":"موظف الاختبار",deadline:"2030-10-20",priority:"عادية",status:"قيد التنفيذ"}]};
+    if(url.pathname==="/api/tasks" && platformNoOffice) {status=409;data={code:"WORKSPACE_MISSING",error:"لا توجد مؤسسة مرتبطة بهذا الحساب."};}
+    if(url.pathname==="/api/platform/context") {
+      status=platformState==="forbidden"?403:platformState==="missing"?503:platformState?200:503;
+      data=platformState==="ready"||platformState==="mfa_required"?{state:platformState}:{code:platformState==="forbidden"?"PLATFORM_FORBIDDEN":platformState==="missing"?"PLATFORM_UNAVAILABLE":"PLATFORM_DISABLED"};
+    }
+    if(url.pathname==="/api/platform/offices") data={items:[{id:owner,name:"مكتب تجربة وهمي",slug:"synthetic-office",createdAt:"2026-01-01"}],nextCursor:null};
+    if(url.pathname==="/api/platform/audit") data={items:[{id:inviteId,actorId:null,actorType:"operator",subjectId:owner,action:"platform.owner.bootstrap",createdAt:"2026-01-01"}],nextCursor:null};
+    if(url.pathname==="/api/platform/control"){
+      if(!controlMode){status=503;data={code:"CONTROL_DISABLED"};}
+      else {
+        const body=request.postDataJSON();controlRequests.push(body);const officeId=body.officeId;
+        if(readControls.holdNext===body.action){
+          readControls.holdNext=null;
+          let release,finished;const waiting=new Promise(resolve=>{release=resolve;});const done=new Promise(resolve=>{finished=resolve;});
+          readControls.held={release,done,body};await waiting;
+          try{await route.fulfill({status:200,contentType:"application/json",body:JSON.stringify({data:{items:[{id:inviteId,name:"سجل استجابة قديمة"}],nextCursor:null}})});}finally{finished();}
+          return;
+        }
+        if(readControls.failNext?.action===body.action){
+          const kind=readControls.failNext.kind;readControls.failNext=null;
+          if(kind==="network") return route.abort("connectionfailed");
+          return route.fulfill(kind==="malformed"?{status:502,contentType:"text/html",body:"<html>upstream unavailable</html>"}:{status:kind==="mfa"?403:503,contentType:"application/json",body:JSON.stringify({code:kind==="mfa"?"PLATFORM_MFA_REQUIRED":"CONTROL_UNAVAILABLE",error:"تعذر تحميل البيانات التجريبية."})});
+        }
+        const offices=[{id:officeA,name:"مكتب الاختبار الأول",slug:"synthetic-first",status:"active",plan:config?.plan??"unconfigured",revision:config?.revision??0},{id:officeB,name:"مكتب الاختبار الثاني",slug:"synthetic-second",status:"active",plan:"unconfigured",revision:0}];
+        let result={};
+        if(body.action==="capabilities")result={version:1};
+        if(body.action==="list")result={items:offices,nextCursor:null};
+        if(body.action==="overview")result={office:offices.find(o=>o.id===officeId),control:officeId===officeA?config:null,members:2,clients:officeId===officeA?1:2,matters:1,drafts:1,storageBytes:0};
+        if(body.action==="configure"){assert.equal(officeId,officeA);assert.equal(body.input.revision,config?.revision??0);config={...body.input,revision:(config?.revision??0)+1,seat_limit:body.input.seatLimit,storage_limit_mb:body.input.storageLimitMb,rajih_enabled:body.input.rajihEnabled,expires_at:body.input.expiresAt};result=config;}
+        if(body.action==="members")result={items:[{id:owner,name:"المطور التجريبي",email:"developer@example.invalid",role:"owner",blocked:false,protected:true},{id:employee,name:"موظف تجريبي",email:"employee@example.invalid",role:"staff",blocked:false,protected:false}],nextCursor:readControls.paginated&&!body.input.after?employee:null};
+        if(body.action==="members"&&readControls.paginated&&body.input.after)result={items:[{id:employee,name:"عضو الصفحة الثانية",email:"second@example.invalid",role:"viewer",blocked:false,protected:false}],nextCursor:null};
+        if(body.action==="support"){lease=officeId;result={expiresAt:new Date(Date.now()+900000).toISOString()};}
+        if(body.action==="end_support")lease=null;
+        if(body.action==="records"){assert.equal(lease,officeId);result={items:[{id:taskId,name:body.input.dataset==="tasks"?"مهمة حالية":officeId===officeA?"عميل المكتب الأول":"عميل المكتب الثاني"}],nextCursor:null};}
+        if(body.action==="audit")result={items:[{id:inviteId,action:"control.configure",reason:"سبب اختبار معزول",created_at:"2026-10-19T12:00:00Z",detail:{}}],nextCursor:readControls.paginated&&!body.input.after?employee:null};
+        if(body.action==="audit"&&readControls.paginated&&body.input.after)result={items:[{id:employee,action:"control.records",reason:"صفحة سجل ثانية",created_at:"2026-10-20T12:00:00Z",detail:{}}],nextCursor:null};
+        if(body.action==="export")result={format:"axia-office-snapshot",version:1,organizationId:officeId,capturedAt:new Date().toISOString(),tables:{...Object.fromEntries(OFFICE_TABLES.map(t=>[t,[]])),organizations:[{id:officeId,name:"مكتب النسخة التجريبي"}],organization_members:[{organization_id:officeId,user_id:owner,role:"owner"}],profiles:[{id:owner,full_name:"مستخدم تجريبي"}]},storage:[]};
+        data={data:result};
+      }
+    }
+    if(url.pathname==="/api/platform/password") {
+      const body=request.postDataJSON();passwordRequests.push(body);
+      if(passwordControls.failNext==="mfa"){passwordControls.failNext=null;status=403;data={code:"PLATFORM_MFA_REQUIRED"};}
+      else if(passwordControls.failNext==="malformed"){passwordControls.failNext=null;return route.fulfill({status:502,contentType:"text/html",body:"<html>synthetic unavailable</html>"});}
+      else if(body.action==="reauthenticate")data={status:"code_requested"};
+      else if(passwordControls.requireCode&&body.nonce!=="123456"){status=409;data={code:"PASSWORD_REAUTH_REQUIRED",error:"يلزم رمز تأكيد من بريدك."};}
+      else data={status:"password_updated"};
+    }
+    if(url.pathname==="/api/platform/mfa") {
+      if(request.method()==="GET") data={factors:[]};
+      else {
+        const body=request.postDataJSON();platformRequests.push(body);
+        if(body.action==="enroll") data={factorId:inviteId,qrCode:"data:image/svg+xml;utf-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192"><rect width="192" height="192" fill="white"/></svg>')};
+        else if(body.code==="123456") {platformState="ready";data={verified:true};}
+        else {status=503;data={code:"MFA_UNAVAILABLE"};}
+      }
+    }
     if(url.pathname==="/api/library") data={documents:[{id:"reviewed-test",title:"مصدر اختبار مراجَع",version:"١",court:"محكمة الاختبار",legalArea:"مدني",sourceUrl:"https://example.invalid/legal",publicationDate:"2026-01-01",reviewedAt:"2026-10-15T10:00:00Z"}],truncated:false};
     if(url.pathname==="/api/staff-invitations") {
       if(request.method()==="POST") {
@@ -75,7 +160,14 @@ async function fixtureContext(viewport,theme,{autoExport=false,registrationFlow=
     }
     await route.fulfill({status,contentType:"application/json",body:JSON.stringify(data)});
   });
-  return {context,mutations,registrationRequests,events};
+  return {context,identityControls,mutations,registrationRequests,events,platformRequests,controlRequests,draftRequests,savedDrafts,readControls,passwordRequests,passwordControls};
+}
+async function waitForHeld(controls,action) {
+  for(let attempt=0;attempt<100;attempt++) {
+    if(controls.held?.body.action===action) return controls.held;
+    await new Promise(resolve=>setTimeout(resolve,20));
+  }
+  throw new Error(`Held synthetic request did not start: ${action}`);
 }
 async function fits(page,label) {
   const metrics=await page.evaluate(()=>({viewport:innerWidth,document:document.documentElement.scrollWidth}));
@@ -92,6 +184,69 @@ async function nav(page,name) {
   if(await mobile.isVisible()) await mobile.click();
   await page.getByRole("button",{name:new RegExp(name)}).click();
 }
+async function verifyOfficeNavigation(page,{width,height,theme}) {
+  const labels=["نظرة عامة","القضايا والملفات","الجلسات والتقويم","الموكلين والتوكيلات","قلم المحضرين والمهام","العقود والمستندات","المالية والأتعاب","المكتبة وأحكام النقض","راجح الذكاء الاصطناعي","فريق العمل والمتدربون","التقارير والإحصائيات","إدارة المكتب والترخيص"];
+  const mobile=width<1024;
+  const opener=page.getByRole("button",{name:"فتح قائمة التنقل",exact:true});
+  const dialog=page.getByRole("dialog",{name:"أقسام المكتب",exact:true});
+  if(mobile) await opener.click();
+  const navigation=page.getByRole("navigation",{name:"أقسام المكتب",exact:true});
+  await navigation.waitFor();
+  assert.equal(await navigation.getByRole("button").count(),labels.length,"all office destinations must remain available");
+  assert.equal(await navigation.getByRole("group").count(),3,"office sections remain grouped");
+  for(const label of labels) {
+    const button=navigation.getByRole("button",{name:label,exact:true});
+    await button.scrollIntoViewIfNeeded();
+    assert.ok((await button.boundingBox())?.height>=44,`${label}: touch target below 44px`);
+    const text=navigation.getByText(label,{exact:true});
+    assert.ok(await text.evaluate(el=>parseFloat(getComputedStyle(el).fontSize))>=14,`${label}: Arabic label below 14px`);
+  }
+  assert.equal(await navigation.getByText("٥",{exact:true}).count(),0,"no fixed business count");
+  assert.equal(await navigation.getByText("اليوم",{exact:true}).count(),0,"no unverified today badge");
+  await navigation.getByRole("button",{name:"الموكلين والتوكيلات",exact:true}).click();
+  if(mobile) {
+    await dialog.waitFor({state:"hidden"});
+    await opener.click();
+  }
+  assert.equal(await navigation.getByRole("button",{name:"الموكلين والتوكيلات",exact:true}).getAttribute("aria-current"),"page");
+  if(mobile) {
+    assert.ok(await dialog.evaluate(el=>el.contains(document.activeElement)),"mobile menu owns keyboard focus");
+    for(let i=0;i<8;i++) {
+      await page.keyboard.press("Tab");
+      assert.ok(await dialog.evaluate(el=>el.contains(document.activeElement)),"Tab cannot escape the modal menu");
+    }
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({state:"hidden"});
+    await page.waitForFunction(()=>document.activeElement?.getAttribute("aria-label")==="فتح قائمة التنقل");
+    assert.equal(await opener.getAttribute("aria-expanded"),"false");
+    await opener.click();
+    await navigation.getByRole("button",{name:"نظرة عامة",exact:true}).scrollIntoViewIfNeeded();
+    await fits(page,`sidebar-open-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`sidebar-${width}-${theme}.png`),fullPage:true});
+    await page.setViewportSize({width:1440,height});
+    await dialog.waitFor({state:"hidden"});
+    await page.getByRole("button",{name:"طي الشريط الجانبي",exact:true}).waitFor();
+    assert.equal(await page.getByRole("navigation",{name:"أقسام المكتب",exact:true}).getByRole("button",{name:"الموكلين والتوكيلات",exact:true}).getAttribute("aria-current"),"page");
+    await page.setViewportSize({width,height});
+    assert.equal(await opener.getAttribute("aria-expanded"),"false","resizing must not reopen an abandoned modal");
+  } else {
+    const expandedWidth=(await navigation.boundingBox()).width;
+    await page.getByRole("button",{name:"طي الشريط الجانبي",exact:true}).click();
+    const expand=page.getByRole("button",{name:"توسيع الشريط الجانبي",exact:true});
+    assert.equal(await expand.getAttribute("aria-expanded"),"false");
+    await page.waitForFunction(expandedWidth=>document.querySelector('nav[aria-label="أقسام المكتب"]')?.getBoundingClientRect().width<expandedWidth,expandedWidth);
+    for(const label of labels) assert.equal(await navigation.getByRole("button",{name:label,exact:true}).count(),1,"collapsed destinations retain accessible names");
+    await navigation.getByRole("button",{name:"نظرة عامة",exact:true}).click();
+    assert.equal(await navigation.getByRole("button",{name:"نظرة عامة",exact:true}).getAttribute("aria-current"),"page");
+    await expand.click();
+    assert.equal(await page.getByRole("button",{name:"طي الشريط الجانبي",exact:true}).getAttribute("aria-expanded"),"true");
+    await page.waitForFunction(expandedWidth=>document.querySelector('nav[aria-label="أقسام المكتب"]')?.getBoundingClientRect().width>=expandedWidth-1,expandedWidth);
+    await navigation.getByRole("button",{name:"نظرة عامة",exact:true}).scrollIntoViewIfNeeded();
+    await fits(page,`sidebar-expanded-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`sidebar-${width}-${theme}.png`),fullPage:true});
+  }
+  await fits(page,`sidebar-return-${width}-${theme}`);
+}
 try {
   // Real compiled HTTP handlers, no response fixtures: activation is forced off by the runner.
   const disabledRegistration=await fetch(base+"/api/staff-registration",{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({email:"fixture@example.invalid",password:"Fixture-password-2026",passwordConfirmation:"Fixture-password-2026"})});
@@ -99,6 +254,97 @@ try {
   const disabledConfirmation=await fetch(base+"/auth/confirm?code=fixture-only",{redirect:"manual"});
   assert.equal(disabledConfirmation.status,303);
   assert.match(disabledConfirmation.headers.get("location"),/\/invitations\/accept\?confirmation=unavailable$/);
+  for(const endpoint of ["context","offices","audit","mfa"]) {
+    const response=await fetch(base+"/api/platform/"+endpoint);
+    assert.equal(response.status,503);assert.equal((await response.json()).code,"PLATFORM_DISABLED");
+    assert.match(response.headers.get("cache-control"),/no-store/);assert.equal(response.headers.get("x-frame-options"),"DENY");
+  }
+  const disabledMfa=await fetch(base+"/api/platform/mfa",{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({action:"enroll"})});
+  assert.equal(disabledMfa.status,503);assert.equal((await disabledMfa.json()).code,"PLATFORM_DISABLED");
+  const disabledPassword=await fetch(base+"/api/platform/password",{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({action:"reauthenticate"})});
+  assert.equal(disabledPassword.status,503);assert.equal((await disabledPassword.json()).code,"PLATFORM_DISABLED");
+  const disabledControl=await fetch(base+"/api/platform/control",{method:"POST",headers:{Origin:base,"Content-Type":"application/json"},body:JSON.stringify({action:"capabilities"})});
+  assert.equal(disabledControl.status,503);assert.equal((await disabledControl.json()).code,"CONTROL_DISABLED");
+  const disabledDrafts=await fetch(base+"/api/drafts");assert.equal(disabledDrafts.status,503);assert.equal((await disabledDrafts.json()).enabled,false);
+  await verifyPwa({browser,base,output,records,fits});
+  await verifyNativeUi({browser,base,output,records,fits,fixtureContext});
+  for(const {width,height,theme} of [{width:1440,height:900,theme:"dark"},{width:1024,height:620,theme:"light"},{width:390,height:844,theme:"dark"},{width:320,height:568,theme:"light"}]) {
+    console.log(`UI combined office navigation ${width}x${height} ${theme}`);
+    const {context}=await fixtureContext({width,height},theme);
+    const page=await context.newPage();
+    await page.goto(base+"/");
+    await verifyOfficeNavigation(page,{width,height,theme});
+    await context.close();
+  }
+  for(const {width,height,theme} of [{width:1440,height:900,theme:"dark"},{width:1024,height:620,theme:"light"},{width:390,height:844,theme:"dark"},{width:320,height:568,theme:"light"}]) {
+    console.log(`UI H1 corrections ${width}x${height} ${theme}`);
+    const {context,identityControls}=await fixtureContext({width,height},theme,{snapshotMode:"fresh"});
+    const page=await context.newPage(),downloads=[],errors=[];
+    page.on("download",d=>downloads.push(d));page.on("pageerror",e=>errors.push(e.message));
+    await page.goto(base+"/");
+    await page.getByRole("button",{name:"قائمة الحساب والمكتب",exact:true}).click();
+    const profile=page.locator("#profile-dropdown-menu");
+    await profile.getByText(identityControls.name,{exact:true}).waitFor();
+    assert.equal(await profile.getByText(identityControls.label,{exact:true}).count(),1);
+    assert.equal(await profile.getByText("مالك المؤسسة",{exact:true}).count(),1);
+    assert.doesNotMatch(await profile.innerText(),/القاهرة|الإسكندرية|النسخة الكاملة|١٠٠٤٩٢|٥ قضايا|١١ مستند/);
+    await fits(page,`h1-profile-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`h1-profile-${width}-${theme}.png`),fullPage:true});
+    await profile.getByRole("button",{name:"اللقطة اليومية المحلية",exact:true}).click();
+    const manager=page.getByRole("dialog",{name:"إدارة اللقطة اليومية",exact:true});
+    await manager.getByRole("button",{name:"إعدادات التنزيل المحلي",exact:true}).click();
+    for (const tab of await manager.getByTestId("snapshot-tabs").getByRole("button").all()) {
+      assert.equal(await tab.evaluate(el=>getComputedStyle(el).whiteSpace),"nowrap","snapshot tab labels must stay on one readable line");
+      assert.ok((await tab.boundingBox()).height>=44,"snapshot tabs retain usable touch targets");
+    }
+    assert.equal(await manager.getByLabel("تفعيل التصدير التلقائي للّقطة اليومية",{exact:true}).isChecked(),false);
+    assert.equal(await manager.getByLabel(/أوافق على تنزيل اللقطة تلقائيًا/).isChecked(),false);
+    await manager.getByRole("button",{name:"تصدير لقطة اليوم فوراً",exact:true}).waitFor({state:"visible"});
+    await page.waitForTimeout(1800);assert.equal(downloads.length,0,"fresh login must not request an automatic file");
+    await fits(page,`h1-snapshot-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`h1-snapshot-${width}-${theme}.png`),fullPage:true});
+    const manual=page.waitForEvent("download");
+    await manager.getByRole("button",{name:"تصدير لقطة اليوم فوراً",exact:true}).click();
+    assert.match((await manual).suggestedFilename(),/^AXIA-Daily-Snapshot-.*\.json$/);
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem("axia_daily_snapshot_config")).autoDownloadOnAppOpen),false);
+    await manager.getByRole("button",{name:"إغلاق إدارة اللقطة",exact:true}).click();
+    await nav(page,"إدارة المكتب والترخيص");
+    await page.getByText(/تُدار روابط الدعوة من شاشة فريق العمل/).waitFor();
+    assert.doesNotMatch(await page.locator("main").innerText(),/Invitation\/Auth Phase/);
+    await nav(page,"راجح الذكاء الاصطناعي");
+    await page.getByRole("heading",{name:"راجح RAJIH",exact:true}).waitFor();
+    assert.equal(await page.getByRole("main").count(),1,"RAJIH must not nest main landmarks");
+    assert.deepEqual(errors,[]);
+    await context.close();
+  }
+  {
+    console.log("UI H1 legacy preference, explicit choice, account fallback and retry");
+    const {context,identityControls}=await fixtureContext({width:390,height:844},"light",{autoExport:true});
+    identityControls.failed=true;
+    const page=await context.newPage(),downloads=[];
+    page.on("download",d=>downloads.push(d));
+    await page.goto(base+"/");
+    await page.getByRole("button",{name:"قائمة الحساب والمكتب",exact:true}).click();
+    await page.getByText("تعذر تحميل بيانات الحساب والمكتب.",{exact:true}).waitFor();
+    assert.equal(await page.locator("#profile-dropdown-menu").getByText("مساحة المكتب الحالية",{exact:true}).count(),1);
+    identityControls.failed=false;identityControls.name="اسم المكتب بعد إعادة المحاولة";
+    await page.getByRole("button",{name:"إعادة تحميل بيانات المكتب",exact:true}).click();
+    await page.locator("#profile-dropdown-menu").getByText(identityControls.name,{exact:true}).waitFor();
+    await page.waitForTimeout(1800);assert.equal(downloads.length,0,"legacy true preferences are not consent");
+    await page.getByRole("button",{name:"اللقطة اليومية المحلية",exact:true}).click();
+    const manager=page.getByRole("dialog",{name:"إدارة اللقطة اليومية",exact:true});
+    await manager.getByRole("button",{name:"إعدادات التنزيل المحلي",exact:true}).click();
+    const consent=manager.getByLabel(/أوافق على تنزيل اللقطة تلقائيًا/);
+    assert.equal(await consent.isChecked(),false);
+    await consent.check();
+    await manager.getByRole("button",{name:"حفظ إعدادات اللقطة",exact:true}).click();
+    assert.equal(downloads.length,0,"saving preferences must not itself export");
+    assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem("axia_daily_snapshot_config")).autoDownloadConsent),`v1:office-test:${owner}`);
+    const automatic=page.waitForEvent("download");await page.reload();await automatic;
+    assert.equal(downloads.length,1);
+    await page.reload();await page.waitForTimeout(1800);assert.equal(downloads.length,1,"only one automatic request per day");
+    await context.close();
+  }
   for(const width of [1440,390,320]) for(const theme of ["light","dark"]) {
     console.log(`UI login ${width}px ${theme}`);
     const {context}=await fixtureContext({width,height:900},theme);
@@ -189,6 +435,260 @@ try {
     assert.equal(registrationRequests.length,0);
     await fits(page,"registration-disabled-390-light");await context.close();
   }
-  await fs.writeFile(path.join(output,"report.json"),JSON.stringify({mode:"loopback UI contracts with synthetic API responses; not real Auth or email",checks:records},null,2));
+  for(const width of [1440,390,320]) for(const theme of ["light","dark"]) {
+    console.log(`UI platform ${width}px ${theme}`);
+    const {context}=await fixtureContext({width,height:900},theme,{platformMode:"ready",platformNoOffice:true});
+    const page=await context.newPage();const errors=[];page.on("pageerror",e=>errors.push(e.message));
+    await page.goto(base+"/");
+    await page.getByRole("button",{name:"قائمة الحساب والمكتب",exact:true}).click();
+    await page.getByRole("link",{name:"إدارة المنصة",exact:true}).click();
+    await page.waitForURL(base+"/platform");
+    assert.equal(new URL(page.url()).pathname,"/platform");
+    await page.getByRole("heading",{name:"مكتب تجربة وهمي",exact:true}).waitFor();
+    assert.equal(await page.getByRole("link",{name:"مساحة المكتب",exact:true}).count(),0);
+    await page.getByRole("button",{name:"تسجيل الخروج",exact:true}).waitFor();
+    await fits(page,`platform-offices-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`platform-offices-${width}-${theme}.png`),fullPage:true});
+    await page.getByRole("button",{name:"سجل إدارة المنصة",exact:true}).click();
+    await page.getByRole("heading",{name:"platform.owner.bootstrap",exact:true}).waitFor();
+    await fits(page,`platform-audit-${width}-${theme}`);assert.deepEqual(errors,[]);await context.close();
+
+    const mfa=await fixtureContext({width,height:900},theme,{platformMode:"mfa_required"});
+    const mfaPage=await mfa.context.newPage();await mfaPage.goto(base+"/platform");
+    await mfaPage.getByRole("button",{name:"ربط تطبيق المصادقة",exact:true}).waitFor();
+    await fits(mfaPage,`platform-mfa-${width}-${theme}`);
+    // Capture only the initial state. Never capture/log an enrollment QR or seed.
+    await mfaPage.screenshot({path:path.join(output,`platform-mfa-${width}-${theme}.png`),fullPage:true});
+    await mfaPage.getByRole("button",{name:"ربط تطبيق المصادقة",exact:true}).click();
+    await mfaPage.getByLabel("رمز تطبيق المصادقة",{exact:true}).fill("000000");
+    await mfaPage.getByRole("button",{name:"تأكيد الرمز",exact:true}).click();
+    await mfaPage.getByRole("alert").filter({hasText:"تعذر التحقق من الرمز"}).waitFor();
+    await mfaPage.getByLabel("رمز تطبيق المصادقة",{exact:true}).fill("123456");
+    await mfaPage.getByRole("button",{name:"تأكيد الرمز",exact:true}).click();
+    await mfaPage.getByRole("heading",{name:"مكتب تجربة وهمي",exact:true}).waitFor();
+    assert.deepEqual(mfa.platformRequests.map(x=>x.action),["enroll","verify","verify"]);
+    const stored=await mfaPage.evaluate(()=>JSON.stringify([Object.entries(localStorage),Object.entries(sessionStorage)]));
+    assert.ok(!stored.includes("data:image")&&!stored.includes(inviteId),"MFA seed/factor data must not persist");
+    await fits(mfaPage,`platform-verified-${width}-${theme}`);await mfa.context.close();
+  }
+  for(const [width,theme] of [[1440,"light"],[390,"dark"],[320,"light"]]) {
+    console.log(`UI private password ${width}px ${theme}`);
+    const {context,passwordRequests,passwordControls}=await fixtureContext({width,height:900},theme,{platformMode:"ready"});
+    const page=await context.newPage(),errors=[];page.on("pageerror",error=>errors.push(error.message));
+    await page.goto(base+"/platform");await page.getByRole("button",{name:"أمان الحساب",exact:true}).click();
+    await page.getByRole("heading",{name:"أمان حساب المطوّر",exact:true}).waitFor();
+    assert.equal(passwordRequests.length,0);
+    await fits(page,`password-empty-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`password-empty-${width}-${theme}.png`),fullPage:true});
+    const password="Synthetic-fixture-only-2026!";
+    const fill=async confirmation=>{await page.getByLabel("كلمة المرور الجديدة",{exact:true}).fill(password);await page.getByLabel("تأكيد كلمة المرور الجديدة",{exact:true}).fill(confirmation??password);};
+    const submit=()=>page.getByRole("button",{name:"حفظ كلمة المرور الجديدة",exact:true}).click();
+    await fill("Synthetic-mismatch-2026!");await submit();await page.getByRole("alert").filter({hasText:"غير متطابقتين"}).waitFor();assert.equal(passwordRequests.length,0);
+    await fill();await submit();await page.getByRole("alert").filter({hasText:"يلزم رمز"}).waitFor();
+    assert.equal(passwordRequests.length,1);assert.equal(await page.getByLabel("كلمة المرور الجديدة",{exact:true}).inputValue(),"");
+    await page.getByRole("button",{name:"إرسال رمز تأكيد إلى بريدي",exact:true}).click();
+    await page.getByRole("status").filter({hasText:"تم طلب إرسال"}).waitFor();assert.deepEqual(passwordRequests.map(x=>x.action),["update","reauthenticate"]);
+    await fill();await page.getByLabel("رمز التأكيد من البريد",{exact:true}).fill("123456");await submit();
+    await page.getByRole("status").filter({hasText:"تم تغيير كلمة المرور"}).waitFor();assert.equal(passwordRequests.length,3);
+    assert.equal(await page.getByLabel("كلمة المرور الجديدة",{exact:true}).inputValue(),"");
+    assert.equal(await page.evaluate(secret=>JSON.stringify({...localStorage,...sessionStorage}).includes(secret),password),false);
+    await fits(page,`password-success-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`password-success-${width}-${theme}.png`),fullPage:true});
+    passwordControls.requireCode=false;passwordControls.failNext="malformed";
+    await fill();await submit();await page.getByRole("alert").filter({hasText:"تعذر قراءة"}).waitFor();assert.equal(passwordRequests.length,4);
+    passwordControls.failNext="mfa";await fill();await submit();
+    await page.getByRole("heading",{name:"حماية حساب المطوّر",exact:true}).waitFor();assert.equal(passwordRequests.length,5);
+    assert.deepEqual(errors,[]);await context.close();
+  }
+  for(const platformMode of [null,"forbidden","missing"]) {
+    const {context}=await fixtureContext({width:320,height:900},"light",{platformMode});
+    const page=await context.newPage();await page.goto(base+"/platform");
+    await page.getByRole("heading",{name:platformMode?"الوصول إلى إدارة المنصة غير متاح":"إدارة المنصة غير مفعلة",exact:true}).waitFor();
+    assert.equal(await page.getByRole("button",{name:"ربط تطبيق المصادقة",exact:true}).count(),0);
+    await fits(page,`platform-unavailable-${platformMode??"disabled"}`);await context.close();
+  }
+  for(const width of [1920,1440,1280,1024,768,390,320]) for(const theme of ["light","dark"]) {
+    console.log(`UI control center ${width}px ${theme}`);
+    const {context,controlRequests}=await fixtureContext({width,height:width===1024?600:900},theme,{platformMode:"ready",controlMode:true});
+    const page=await context.newPage();const errors=[];page.on("pageerror",e=>errors.push(e.message));page.on("dialog",d=>d.accept());
+    await page.goto(base+"/platform");
+    await page.getByLabel("البحث في المكاتب المعروضة",{exact:true}).fill("الثاني");
+    assert.equal(await page.getByRole("button",{name:/مكتب الاختبار الأول/}).count(),0);
+    await page.getByRole("button",{name:/مكتب الاختبار الثاني/}).waitFor();
+    await page.getByLabel("البحث في المكاتب المعروضة",{exact:true}).fill("");
+    await page.getByRole("button",{name:/مكتب الاختبار الأول/}).click();
+    assert.equal(await page.getByRole("button",{name:"حفظ إعدادات المكتب",exact:true}).isDisabled(),true);
+    assert.equal(await page.getByLabel("تاريخ انتهاء الاشتراك",{exact:true}).isDisabled(),true);
+    await page.getByLabel("مدة مفتوحة بدون تاريخ انتهاء",{exact:true}).uncheck();
+    await page.getByLabel("تاريخ انتهاء الاشتراك",{exact:true}).fill("2030-02-14");
+    await page.getByLabel("وقت انتهاء الاشتراك",{exact:true}).fill("18:30");
+    for(const name of ["تاريخ انتهاء الاشتراك","وقت انتهاء الاشتراك"]){
+      const input=page.getByLabel(name,{exact:true});
+      assert.equal(await input.getAttribute("dir"),"ltr");
+      const metrics=await input.evaluate(el=>({width:el.clientWidth,scroll:el.scrollWidth}));
+      assert.ok(metrics.scroll<=metrics.width+1,`native date/time overflow ${width} ${name}`);
+    }
+    await page.getByLabel("سبب الإجراء أو المتابعة",{exact:false}).fill("اختبار قبول معزول للمكتب الأول");
+    await page.getByLabel("اسم الباقة اليدوية").fill("first-client-test");
+    await page.getByRole("button",{name:"حفظ إعدادات المكتب",exact:true}).click();
+    await page.getByText("تم حفظ الإعدادات وتسجيل العملية.",{exact:true}).waitFor();
+    assert.equal(controlRequests.filter(r=>r.action==="configure").length,1);
+    assert.equal(controlRequests.find(r=>r.action==="configure").input.expiresAt,"2030-02-14T16:30:00.000Z");
+    assert.equal(await page.getByLabel("تاريخ انتهاء الاشتراك",{exact:true}).inputValue(),"2030-02-14");
+    assert.equal(await page.getByLabel("وقت انتهاء الاشتراك",{exact:true}).inputValue(),"18:30");
+    const geometry=await page.locator("main").evaluate(el=>({client:el.clientHeight,scroll:el.scrollHeight,overflow:getComputedStyle(el).overflowY,content:el.firstElementChild.getBoundingClientRect().width,width:el.clientWidth,scrollWidth:el.scrollWidth}));
+    assert.equal(geometry.overflow,"auto");
+    assert.ok(geometry.scrollWidth<=geometry.width+1,"platform main horizontal overflow");
+    if(width>=1440) assert.ok(geometry.content>=width*.8,"platform workspace must use the desktop width");
+    await page.getByRole("button",{name:"حفظ إعدادات المكتب",exact:true}).scrollIntoViewIfNeeded();
+    assert.ok(await page.getByRole("button",{name:"حفظ إعدادات المكتب",exact:true}).isVisible());
+    await fits(page,`control-settings-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`control-settings-${width}-${theme}.png`),fullPage:true});
+    await page.getByLabel("مدة مفتوحة بدون تاريخ انتهاء",{exact:true}).check();
+    const openEndedResponse=page.waitForResponse(r=>r.url().endsWith("/api/platform/control")&&r.request().postDataJSON()?.action==="configure");
+    await page.getByRole("button",{name:"حفظ إعدادات المكتب",exact:true}).click();await openEndedResponse;
+    assert.equal(controlRequests.filter(r=>r.action==="configure").at(-1).input.expiresAt,null);
+    await page.getByRole("button",{name:"الأعضاء والصلاحيات",exact:true}).click();
+    await page.getByText("حساب منصة محمي",{exact:true}).waitFor();
+    assert.equal(await page.getByRole("combobox",{name:"دور developer@example.invalid",exact:true}).isDisabled(),true);
+    await fits(page,`control-members-${width}-${theme}`);
+    await page.getByRole("button",{name:"متابعة العمل",exact:true}).click();
+    await page.getByRole("button",{name:"بدء متابعة المكتب",exact:true}).click();
+    await page.getByText("عميل المكتب الأول",{exact:true}).waitFor();
+    await fits(page,`control-support-${width}-${theme}`);
+    await page.getByRole("button",{name:"إنهاء المتابعة",exact:true}).click();
+    await page.getByRole("button",{name:/مكتب الاختبار الثاني/}).click();
+    assert.equal(await page.getByLabel("سبب الإجراء أو المتابعة",{exact:false}).inputValue(),"");
+    assert.equal(await page.getByText("عميل المكتب الأول",{exact:false}).count(),0);
+    await page.getByLabel("سبب الإجراء أو المتابعة",{exact:false}).fill("اختبار النسخ المعزول للمكتب الثاني");
+    await page.getByRole("button",{name:"النسخ والتحقق",exact:true}).click();
+    await page.getByLabel("عبارة حماية النسخة",{exact:true}).fill("Synthetic browser backup password");
+    await page.getByLabel("تأكيد عبارة الحماية للتصدير",{exact:true}).fill("Synthetic browser backup password");
+    await fits(page,`control-backup-${width}-${theme}`);
+    if(width===390&&theme==="light"){
+      const download=page.waitForEvent("download");await page.getByRole("button",{name:"تصدير نسخة مشفرة للمكتب",exact:true}).click();
+      const file=await download;const target=path.join(output,"synthetic-office.axia-backup.json");await file.saveAs(target);
+      const decoded=await decryptOfficeSnapshot(await fs.readFile(target,"utf8"),"Synthetic browser backup password");assert.equal(decoded.organizationId,officeB);
+      await page.getByLabel("عبارة حماية النسخة",{exact:true}).fill("Synthetic browser backup password");
+      await page.getByLabel("فحص نسخة محفوظة",{exact:false}).setInputFiles(target);
+      await page.getByRole("button",{name:"فك النسخة والتحقق من اكتمالها",exact:true}).click();
+      await page.getByRole("status").filter({hasText:"تم التحقق من سلامة 3 سجل و0 ملف"}).waitFor();
+    }
+    await page.getByRole("button",{name:"سجل الإدارة",exact:true}).click();await page.getByText("control.configure",{exact:true}).waitFor();
+    const auditTime=page.locator("time").last();
+    assert.equal(await auditTime.getAttribute("dateTime"),"2026-10-19T12:00:00Z");
+    assert.ok((await auditTime.innerText()).includes("أكتوبر"));
+    await page.getByRole("button",{name:"تبديل المظهر",exact:true}).click();
+    assert.equal(await page.locator("html").evaluate(el=>el.classList.contains("dark")),theme!=="dark");
+    await page.getByRole("button",{name:"تبديل المظهر",exact:true}).click();
+    await fits(page,`control-audit-${width}-${theme}`);assert.deepEqual(errors,[]);await context.close();
+  }
+  for(const [width,theme] of [[1440,"light"],[390,"dark"]]) {
+    console.log(`UI control read recovery ${width}px ${theme}`);
+    const {context,controlRequests,readControls}=await fixtureContext({width,height:900},theme,{platformMode:"ready",controlMode:true});
+    const page=await context.newPage();const errors=[];page.on("pageerror",e=>errors.push(e.message));
+    readControls.failNext={action:"capabilities",kind:"http"};
+    await page.goto(base+"/platform");
+    await page.getByRole("button",{name:"إعادة تحميل أدوات الإدارة",exact:true}).waitFor();
+    readControls.failNext={action:"list",kind:"network"};
+    await page.getByRole("button",{name:"إعادة تحميل أدوات الإدارة",exact:true}).click();
+    await page.getByRole("button",{name:"إعادة تحميل المكاتب",exact:true}).click();
+    await page.getByRole("button",{name:/مكتب الاختبار الأول/}).waitFor();
+    readControls.failNext={action:"overview",kind:"http"};
+    await page.getByRole("button",{name:/مكتب الاختبار الأول/}).click();
+    await page.getByRole("button",{name:"إعادة تحميل بيانات المكتب",exact:true}).waitFor();
+    assert.equal(await page.getByRole("button",{name:"حفظ إعدادات المكتب",exact:true}).count(),0);
+    await fits(page,`control-overview-error-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`control-read-error-${width}-${theme}.png`),fullPage:true});
+    await page.getByRole("button",{name:"إعادة تحميل بيانات المكتب",exact:true}).click();
+    await page.getByLabel("اسم الباقة اليدوية",{exact:true}).waitFor();
+    await fits(page,`control-overview-recovered-${width}-${theme}`);
+    readControls.paginated=true;
+    await page.getByRole("button",{name:"الأعضاء والصلاحيات",exact:true}).click();
+    await page.getByRole("combobox",{name:"دور employee@example.invalid",exact:true}).waitFor();
+    readControls.failNext={action:"members",kind:"malformed"};
+    await page.getByRole("button",{name:"المزيد",exact:true}).click();
+    await page.getByRole("button",{name:"إعادة تحميل الأعضاء",exact:true}).waitFor();
+    assert.equal(await page.getByRole("combobox",{name:"دور employee@example.invalid",exact:true}).count(),0);
+    assert.equal(await page.getByRole("button",{name:"حفظ العضوية",exact:true}).count(),0);
+    await page.getByRole("button",{name:"إعادة تحميل الأعضاء",exact:true}).click();
+    await page.getByText("عضو الصفحة الثانية",{exact:true}).waitFor();
+    await fits(page,`control-members-recovered-${width}-${theme}`);
+    await page.getByRole("button",{name:"سجل الإدارة",exact:true}).click();
+    await page.getByText("control.configure",{exact:true}).waitFor();
+    readControls.failNext={action:"audit",kind:"http"};
+    await page.getByRole("button",{name:"المزيد",exact:true}).click();
+    await page.getByRole("button",{name:"إعادة تحميل سجل الإدارة",exact:true}).waitFor();
+    assert.equal(await page.getByText("control.configure",{exact:true}).count(),0);
+    await page.getByRole("button",{name:"إعادة تحميل سجل الإدارة",exact:true}).click();
+    await page.getByText("control.records",{exact:true}).waitFor();
+    await fits(page,`control-audit-recovered-${width}-${theme}`);
+    await page.clock.install();
+    readControls.held=null;readControls.holdNext="overview";
+    await page.getByRole("button",{name:"المكتب والاشتراك",exact:true}).click();
+    await page.getByRole("status").filter({hasText:"جارٍ تحميل بيانات المكتب"}).waitFor();
+    const held=await waitForHeld(readControls,"overview");
+    await page.clock.fastForward(15001);
+    await page.getByText("انتهت مهلة تحميل البيانات. يمكنك إعادة المحاولة.",{exact:true}).waitFor();
+    held.release();await held.done;
+    await page.getByRole("button",{name:"إعادة تحميل بيانات المكتب",exact:true}).click();
+    await page.getByLabel("اسم الباقة اليدوية",{exact:true}).waitFor();
+    assert.equal(await page.getByText("سجل استجابة قديمة",{exact:true}).count(),0);
+    await fits(page,`control-timeout-recovered-${width}-${theme}`);
+    await page.getByLabel("سبب الإجراء أو المتابعة",{exact:false}).fill("تحقق معزول من جلسة المتابعة");
+    await page.getByRole("button",{name:"متابعة العمل",exact:true}).click();
+    await page.getByRole("button",{name:"بدء متابعة المكتب",exact:true}).click();
+    await page.getByText("عميل المكتب الأول",{exact:true}).waitFor();
+    readControls.held=null;readControls.holdNext="records";
+    await page.getByLabel("قسم العمل",{exact:true}).selectOption("matters");
+    await page.getByRole("status").filter({hasText:"جارٍ تحميل سجلات المتابعة"}).waitFor();
+    const oldRecords=await waitForHeld(readControls,"records");
+    await page.getByLabel("قسم العمل",{exact:true}).selectOption("tasks");
+    await page.getByText("مهمة حالية",{exact:true}).waitFor();
+    oldRecords.release();await oldRecords.done;
+    assert.equal(await page.getByText("سجل استجابة قديمة",{exact:true}).count(),0);
+    assert.equal(await page.getByText("عميل المكتب الأول",{exact:true}).count(),0);
+    await page.getByRole("button",{name:"إنهاء المتابعة",exact:true}).click();
+    assert.equal(controlRequests.filter(r=>["configure","member","create","export"].includes(r.action)).length,0);
+    assert.equal(controlRequests.filter(r=>r.action==="support").length,1);
+    assert.equal(controlRequests.filter(r=>r.action==="end_support").length,1);
+    readControls.failNext={action:"overview",kind:"mfa"};
+    await page.getByRole("button",{name:/مكتب الاختبار الثاني/}).click();
+    await page.getByRole("button",{name:"ربط تطبيق المصادقة",exact:true}).waitFor();
+    assert.equal(await page.getByRole("button",{name:"حفظ إعدادات المكتب",exact:true}).count(),0);
+    await fits(page,`control-recovery-mfa-${width}-${theme}`);
+    assert.deepEqual(errors,[]);await context.close();
+  }
+  for(const width of [1440,390,320]) for(const theme of ["light","dark"]) {
+    console.log(`UI persistent drafts ${width}px ${theme}`);
+    const {context,draftRequests}=await fixtureContext({width,height:900},theme,{draftMode:true});
+    const page=await context.newPage();const errors=[];page.on("pageerror",e=>errors.push(e.message));page.on("dialog",d=>d.accept());
+    await page.goto(base+"/");await nav(page,"العقود والمستندات");
+    await page.getByRole("button",{name:"المسودات",exact:true}).click();
+    const title=page.getByPlaceholder("عنوان المسودة القضائية أو التعاقدية...");await title.waitFor();
+    assert.equal(await page.evaluate(()=>!!window.axiaXss),false);
+    assert.equal(await page.locator('[contenteditable="true"] img,[contenteditable="true"] svg,[contenteditable="true"] [onerror],[contenteditable="true"] a[href]').count(),0);
+    await title.fill("تعديل حفظ دائم تجريبي");
+    await page.getByText("محفوظ في المكتب — مراجعة 2",{exact:true}).waitFor();assert.equal(draftRequests.length,1);assert.equal(draftRequests[0].draft.title,"تعديل حفظ دائم تجريبي");
+    await fits(page,`persistent-draft-${width}-${theme}`);
+    await page.screenshot({path:path.join(output,`persistent-draft-${width}-${theme}.png`),fullPage:true});
+    await page.getByRole("button",{name:"سجل الحفظ في المكتب",exact:true}).click();
+    await page.getByText("سجل الحفظ المؤكد — مراجعات غير قابلة للتعديل",{exact:true}).waitFor();
+    await page.getByText(/مراجعة 1 ·/).click();
+    await page.getByRole("button",{name:"استعادة المحتوى كمراجعة جديدة",exact:true}).click();
+    await page.getByText("محفوظ في المكتب — مراجعة 3",{exact:true}).waitFor();
+    assert.equal(await page.evaluate(()=>!!window.axiaXss),false);
+    assert.equal(await page.evaluate(()=>localStorage.getItem("axia_legal_drafts_v1")),null);
+    await fits(page,`persistent-history-${width}-${theme}`);assert.deepEqual(errors,[]);await context.close();
+  }
+  {
+    const {context,draftRequests}=await fixtureContext({width:390,height:900},"light",{draftMode:true,draftConflict:true});
+    const page=await context.newPage();await page.goto(base+"/");await nav(page,"العقود والمستندات");await page.getByRole("button",{name:"المسودات",exact:true}).click();
+    await page.getByPlaceholder("عنوان المسودة القضائية أو التعاقدية...").fill("تعديلات لم يتم حفظها");
+    await page.getByText("تعارض الحفظ التجريبي؛ احتفظ بتعديلاتك.",{exact:true}).waitFor();
+    assert.equal(draftRequests.length,1);assert.equal(await page.getByRole("button",{name:"تنزيل التعديلات غير المحفوظة",exact:true}).count(),1);
+    await fits(page,"persistent-conflict-390-light");await context.close();
+  }
+  await fs.writeFile(path.join(output,"report.json"),JSON.stringify({mode:"loopback UI contracts with synthetic API responses; not real Auth, MFA or email",compiledHttpSafetyChecks:10,checks:records},null,2));
   console.log(JSON.stringify({checks:records.length,output,records}));
 } finally {await browser.close();}

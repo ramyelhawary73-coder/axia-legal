@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/prepare-pwa-worker.mjs",
+    "prebuild": "node scripts/prepare-pwa-worker.mjs",
     "dev": "next dev -p 3000 -H 0.0.0.0",
     "build": "NODE_ENV=production next build && node scripts/check-web-build.mjs",
     "start": "next start -p 3000 -H 0.0.0.0",

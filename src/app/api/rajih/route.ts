@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { runRajihAgent } from "@/lib/rajih/agent";
 import { createClient } from "@/lib/supabase/server";
+import { resolveWorkspace } from "@/lib/api/workspace";
+import { workspaceErrorResponse } from "@/lib/api/errors";
+import { PLATFORM_UUID } from "@/lib/platform-control";
 
 type RajihRequest = {
   prompt?: string;
@@ -47,6 +50,20 @@ export async function POST(request: Request) {
       },
       { status: 401 },
     );
+  }
+
+  // During the staged rollout old installations retain their existing behavior.
+  // After activation, entitlement is checked before ANY provider call.
+  if (process.env.AXIA_CONTROL_CENTER_ENABLED === "1") {
+    if (payload.organizationId && !PLATFORM_UUID.test(payload.organizationId)) return NextResponse.json({ error: "المكتب غير صالح." }, { status: 400 });
+    const headers = new Headers(request.headers);
+    if (payload.organizationId) headers.set("x-axia-organization-id", payload.organizationId);
+    const workspace = await resolveWorkspace(new Request(request.url, { headers }));
+    if (!workspace.ok) return workspaceErrorResponse(workspace.code);
+    if (workspace.userId !== userId) return NextResponse.json({ error: "انتهت الجلسة." }, { status: 401 });
+    const entitlement = await supabase.rpc("axia_rajih_entitled", { p_office: workspace.organizationId });
+    if (entitlement.error || entitlement.data !== true) return NextResponse.json({ error: "راجح غير متاح في اشتراك المكتب أو انتهت صلاحية الوصول." }, { status: entitlement.error ? 503 : 403 });
+    payload.organizationId = workspace.organizationId;
   }
 
   const result = await runRajihAgent({

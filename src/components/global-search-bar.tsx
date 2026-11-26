@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { 
   Search, 
   X, 
@@ -539,15 +540,15 @@ export function GlobalSearchBar({
             setIsOpen(true);
             setTimeout(() => inputRef.current?.focus(), 80);
           }}
-          className="grid size-8 place-items-center rounded-lg border border-[var(--border)] bg-[var(--panel)]/50 text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors md:hidden"
+          className="grid size-11 place-items-center rounded-[14px] border border-[var(--border)] bg-[var(--panel)]/50 text-[var(--text-muted)] hover:bg-[var(--accent)] hover:text-[var(--text)] transition-colors lg:hidden"
           title="البحث الشامل في القضايا والموكلين والمستندات (Ctrl+K)"
         >
           <Search className="size-4" />
         </button>
 
         {/* Mobile Fullscreen Modal */}
-        {isOpen && (
-          <div className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-md p-3 sm:p-4 md:hidden animate-in fade-in duration-150">
+        {isOpen && createPortal((
+          <div role="dialog" aria-label="البحث الشامل" aria-modal="true" className="axia-workspace-search fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-md p-3 sm:p-4 lg:hidden animate-in fade-in duration-150">
             <div 
               ref={containerRef}
               className="flex flex-col h-full max-h-[92vh] w-full rounded-2xl border border-[var(--border)] bg-[var(--panel)] shadow-2xl overflow-hidden"
@@ -696,7 +697,7 @@ export function GlobalSearchBar({
               </div>
             </div>
           </div>
-        )}
+        ),document.body)}
       </>
     );
   }
