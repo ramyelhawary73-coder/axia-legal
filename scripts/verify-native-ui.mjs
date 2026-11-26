@@ -39,6 +39,8 @@ export async function verifyNativeUi({browser,base,output,records,fits,fixtureCo
       await page.getByRole('button',{name:'البحث الشامل في القضايا والموكلين والمستندات (Ctrl+K)',exact:true}).click();
       const search=page.getByRole('dialog',{name:'البحث الشامل',exact:true});await search.waitFor();
       assert.ok((await search.boundingBox()).height>=850,'tablet search must cover the viewport, not just the blurred toolbar');
+      assert.ok(await search.getByRole('textbox').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))>=16);
+      assert.ok((await search.getByRole('button',{name:'إلغاء',exact:true}).boundingBox()).height>=44);
       await search.getByRole('textbox').fill('مهمة');
       await search.getByRole('button',{name:'إلغاء',exact:true}).click();await search.waitFor({state:'hidden'});
     }

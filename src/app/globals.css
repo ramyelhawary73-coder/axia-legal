@@ -156,3 +156,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .axia-install-promotion > .axia-icon-action { order: 3; }
   .axia-install-promotion > [role="status"] { order: 4; }
 }
+
+.axia-workspace-search { padding-top: max(12px,env(safe-area-inset-top)); padding-bottom: max(12px,env(safe-area-inset-bottom)); color: var(--text); }
+.axia-workspace-search input { min-width: 0; min-height: 44px; font-size: 16px; }
+.axia-workspace-search button { min-height: 44px; }
