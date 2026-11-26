@@ -295,3 +295,4 @@
 }
 
 .portal { height: 100vh; height: 100dvh; }
+.portalHeader nav button { min-height: 44px; }

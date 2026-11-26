@@ -151,3 +151,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @supports not (backdrop-filter: blur(1px)) { .axia-sidebar, .axia-mobile-sidebar, .axia-toolbar { background: var(--panel); } }
 @media (prefers-reduced-transparency: reduce) { .axia-sidebar, .axia-mobile-sidebar, .axia-toolbar { background: var(--panel); backdrop-filter: none; } }
 @media (prefers-reduced-motion: reduce) { .axia-primary-action:active, .axia-text-action:active, .axia-icon-action:active { transform: none; } }
+@media (max-width: 639px) {
+  .axia-install-promotion > .axia-primary-action { flex-basis: calc(100% - 54px); order: 2; }
+  .axia-install-promotion > .axia-icon-action { order: 3; }
+  .axia-install-promotion > [role="status"] { order: 4; }
+}

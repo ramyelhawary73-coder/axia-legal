@@ -12,7 +12,7 @@ export async function verifyNativeUi({browser,base,output,records,fits,fixtureCo
     const brand=header.locator('[data-brand-wordmark]');
     assert.equal(await brand.evaluate(el=>getComputedStyle(el).whiteSpace),'nowrap');
     assert.equal(await brand.evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);
-    for(const button of await header.getByRole('button').all()) if(await button.isVisible()) assert.ok((await button.boundingBox()).height>=44);
+    for(const button of await header.getByRole('button').all()) if(await button.isVisible()) assert.ok((await button.boundingBox()).height>=44,`Header button needs 44px at ${width}px: ${await button.innerText()}`);
     assert.ok(await page.getByRole('textbox',{name:'البريد الإلكتروني المهني',exact:true}).evaluate(el=>parseFloat(getComputedStyle(el).fontSize))>=16);
     const promo=page.getByRole('region',{name:'AXIA على جهازك',exact:true});await promo.waitFor();
     assert.ok(await promo.getByRole('link',{name:'طريقة التثبيت',exact:true}).count()===1||await promo.getByRole('button',{name:'تثبيت AXIA',exact:true}).count()===1);
