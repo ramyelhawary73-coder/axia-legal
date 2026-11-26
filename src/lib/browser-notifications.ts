@@ -21,7 +21,7 @@ export async function sendPublicWorkspaceNotification({ test = false, shouldDisp
     if (getNotificationPermissionStatus() !== "granted" || !shouldDisplay()) return false;
     await registration.showNotification(test ? "AXIA Legal · إشعار تجريبي" : "AXIA Legal · تذكير من مساحة العمل", {
       body: test ? "هذا اختبار لعرض إشعارات هذا الجهاز فقط. الإرسال عند إغلاق التطبيق غير مفعّل بعد." : "لديك موعد يحتاج المراجعة. افتح مساحة العمل للاطلاع على التفاصيل.",
-      icon: "/pwa/icon-192.png", badge: "/pwa/icon-192.png", tag: test ? "axia-notification-test" : "axia-workspace-reminder",
+      icon: "/pwa/icon-192.png", badge: "/pwa/notification-badge-96.png", tag: test ? "axia-notification-test" : "axia-workspace-reminder",
       dir: "rtl", lang: "ar", data: { path: "/?workspace=1" },
     });
     return true;

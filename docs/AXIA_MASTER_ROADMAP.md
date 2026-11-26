@@ -6,12 +6,12 @@
 >
 > **Rule:** every implementation PR must update this file before it is considered complete.
 >
-> **Last verified:** 2026-11-26 Cairo (native UI/notifications source review; old Production origin distinguished from Preview; no DB/Auth/Secrets changes)
+> **Last verified:** 2026-11-27 Cairo (merged main b057ef1 and Android owner feedback; mobile grid/notification-mask correction on an isolated branch; no DB/Auth/Secrets changes)
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
-> **Verified application main SHA:** `c0fd6a6dc969164e6717f389fa1f04b7efbc0e6d`
-> **Current handoff branch:** `docs/axia-push-acceptance-review-20261126` — integrated login correction/review package in PR #56 targeting main; verify its live merge/deployment state
-> **Current package:** Owner-authorized main integration in PR #56, including the login/update overlap correction and review documents. [Integration report](AXIA_MAIN_INTEGRATION_2026-11-26.md). Native-inspired UI, visible PWA installation and authorized foreground reminders; [source and background Push review](AXIA_NATIVE_UI_PUSH_REVIEW_2026-11-26.md). Background sending is not activated. PR #54 PWA foundation: real-device acceptance has started; [device acceptance](AXIA_PWA_DEVICE_ACCEPTANCE_2026-11-25.md) separates direct Chrome update evidence from pending OS installation/mobile/offline results. [P2 local-server specification](AXIA_LOCAL_SERVER_P2_REVIEW_2026-11-25.md) is prepared for review only. [Three-mode architecture](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md) and [foundation report](AXIA_PWA_FOUNDATION_2026-11-25.md) retain the source/limits. Local server and offline legal-data sync remain unimplemented. No DB/Auth-provider/Secret/role change is authorized. The latest owner instruction separately authorizes the bounded current-package main merge and its normal Vercel release; broader feature activation is not authorized.
+> **Verified application main SHA:** `b057ef11d7252b8e5ef47622352d9531c36fed5a` (PR #56 merged; verify later correction receipt separately)
+> **Current handoff branch:** `fix/axia-mobile-menu-notification-badge-20261127`, from verified main `b057ef1`, for the next bounded physical-acceptance correction
+> **Current package:** Android acceptance correction: all sections at a glance and a transparent notification mask. [Current correction report](AXIA_MOBILE_MENU_BADGE_2026-11-27.md). Previous PR #56 main integration is complete, including the login/update overlap correction and review documents. [Integration report](AXIA_MAIN_INTEGRATION_2026-11-26.md). Native-inspired UI, visible PWA installation and authorized foreground reminders; [source and background Push review](AXIA_NATIVE_UI_PUSH_REVIEW_2026-11-26.md). Background sending is not activated. PR #54 PWA foundation: real-device acceptance has started; [device acceptance](AXIA_PWA_DEVICE_ACCEPTANCE_2026-11-25.md) separates direct Chrome update evidence from pending OS installation/mobile/offline results. [P2 local-server specification](AXIA_LOCAL_SERVER_P2_REVIEW_2026-11-25.md) is prepared for review only. [Three-mode architecture](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md) and [foundation report](AXIA_PWA_FOUNDATION_2026-11-25.md) retain the source/limits. Local server and offline legal-data sync remain unimplemented. No DB/Auth-provider/Secret/role change is authorized. The latest owner instruction separately authorizes the bounded current-package main merge and its normal Vercel release; broader feature activation is not authorized.
 
 ---
 
@@ -83,6 +83,13 @@ Statements under **Current State** should be treated as verified only when a liv
 ---
 
 # 3. Current State
+
+## 2026-11-27 Android acceptance: all-sections menu and notification-mask correction
+
+PR #56 is merged as main `b057ef11d7252b8e5ef47622352d9531c36fed5a`; matching Production `dpl_C6Cq1nqCUPRiuVBqCb9eu8AKZGAH` is READY, and main CI `45898793898` passed 199 safety tests, 240 browser records and build/20 routes. Main's public mobile-sized login controls and install guide were checked directly. The owner subsequently confirmed main overview, drawer opening and receiving a generic test notification. Findings: the one-column drawer hides sections below its viewport; the OS small notification icon appeared as a plain white block. These do not prove iPhone, closed-app Push or H1 natural refresh/expiry.
+
+[Bounded correction report](AXIA_MOBILE_MENU_BADGE_2026-11-27.md): a responsive all-destination mobile grid preserves full Arabic names/touch size, with accessible large-text/exceptional-size fallback rather than clipping; a separate transparent 96px AXIA silhouette replaces the opaque badge while retaining the full-color notification icon. Sixth cache asset is public-only. This branch/PR must pass its own checks and matching deployment verification before the ongoing main update; no DB/Auth/Secrets/roles/data change or control/Push activation.
+
 
 ## 2026-11-26 main integration authorized; mobile update/login obstruction corrected
 
@@ -3421,7 +3428,11 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
-### Active main integration / physical acceptance — 2026-11-26
+### Active menu / badge acceptance correction — 2026-11-27
+
+Continue `fix/axia-mobile-menu-notification-badge-20261127`, based on merged main `b057ef1`. The owner reports Android main overview, open menu and received generic test notification; menu scrolling and white notification block remain usability/identity findings. Read the [correction report](AXIA_MOBILE_MENU_BADGE_2026-11-27.md), verify all twelve visible destinations at phone sizes and the transparent Android mask, then integrate the bounded tested correction to main under the ongoing current-package main instruction. Verify fresh merge/deployment metadata before owner recheck. Do not remerge #55/#54/#53/#52. Keep background Push/control center off and all hosted data/Auth/Secrets/roles intact; larger accessibility text may need real scrolling instead of hidden/clipped names. Physical iPhone and H1 expiry/refresh remain pending.
+
+### Completed main integration / earlier physical acceptance — 2026-11-26
 
 The owner explicitly approved finishing the current package, merging main and testing its stable site. [Main integration report](AXIA_MAIN_INTEGRATION_2026-11-26.md) takes precedence over earlier Preview-only/no-merge instructions for this bounded release. PR #56 includes inherited #55/#54/#53/#52 and the fix for a reproduced waiting-update banner intercepting login. Verify its exact head Checks and merge state, then the main/Production deployment SHA. Do not integrate ancestors a second time. The merge can update Vercel Production automatically; no DB/Auth/Secret/role/protection change is part of it.
 
@@ -3435,7 +3446,7 @@ The owner explicitly approved finishing the current package, merging main and te
 
 # 24. NEW CHAT HANDOFF
 
-Current handoff: PR #56, branch `docs/axia-push-acceptance-review-20261126`, now includes the integrated #55 lineage plus the pending-update/login obstruction fix and targets main under the owner's latest merge authorization. Read the integration report and fresh PR/main/deployment metadata to distinguish merge preparation from actual completion. Test on main's stable origin after matching READY deployment; never silently move the old Preview installation. Owner operates login/MFA. Control center and background Push stay off; no hosted SQL/Auth/Secrets/roles/data/protection changes. H1/mobile/iPhone acceptance remains open until actual evidence. Avoid duplicate ancestor merges and give the next command.
+Current handoff: `fix/axia-mobile-menu-notification-badge-20261127`, based on merged main b057ef1, addresses owner-reported menu scrolling and a white Android notification block. Read the current correction report and fresh PR/main/deployment receipts before claiming release. The owner confirmed main overview/drawer and a received test notification, but new grid/badge still need physical recheck. All twelve normal mobile destinations should fit without scrolling, while accessibility/exceptional sizes retain safe fallback. Control center/background Push remain off; no DB/Auth/Secrets/roles/data change. Continue physical iPhone and H1 refresh/expiry separately, avoid remerging prior ancestors, and provide the next command.
 
 When opening a new ChatGPT conversation for AXIA, use this instruction:
 

@@ -1,7 +1,7 @@
 /* Only a public error shell and brand icons enter Cache Storage. */
 const CACHE_PREFIX = "axia-pwa-public-";
 const CACHE_NAME = CACHE_PREFIX + "__AXIA_RELEASE__";
-const PUBLIC_ASSETS = ["/offline.html", "/pwa/icon-192.png", "/pwa/icon-512.png", "/pwa/maskable-512.png", "/pwa/apple-touch-icon.png"];
+const PUBLIC_ASSETS = ["/offline.html", "/pwa/icon-192.png", "/pwa/icon-512.png", "/pwa/maskable-512.png", "/pwa/apple-touch-icon.png", "/pwa/notification-badge-96.png"];
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
@@ -46,7 +46,7 @@ self.addEventListener("push", event => {
   // Ignore payload contents: legal records and attacker-supplied destinations never reach the lock screen.
   event.waitUntil(self.registration.showNotification("AXIA Legal · تحديث من مساحة العمل", {
     body: "لديك تحديث جديد. افتح مساحة العمل للاطلاع عليه.",
-    icon: "/pwa/icon-192.png", badge: "/pwa/icon-192.png", tag: "axia-workspace-reminder",
+    icon: "/pwa/icon-192.png", badge: "/pwa/notification-badge-96.png", tag: "axia-workspace-reminder",
     dir: "rtl", lang: "ar", data: { path: "/?workspace=1" },
   }).catch(() => {}));
 });

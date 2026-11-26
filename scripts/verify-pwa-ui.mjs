@@ -126,7 +126,7 @@ export async function verifyPwa({browser,base,output,records,fits}) {
     await page.reload();
     await page.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
     const cached=await page.evaluate(async()=>{const names=(await caches.keys()).filter(n=>n.startsWith('axia-pwa-public-'));return Promise.all(names.map(async name=>({name,urls:(await (await caches.open(name)).keys()).map(r=>new URL(r.url).pathname)})));});
-    assert.equal(cached.length,1);assert.equal(cached[0].urls.length,5);
+    assert.equal(cached.length,1);assert.equal(cached[0].urls.length,6);
     assert.ok(cached[0].urls.every(url=>url==='/offline.html'||url.startsWith('/pwa/')));
     assert.match(await page.evaluate(async()=>{const name=(await caches.keys()).find(n=>n.startsWith('axia-pwa-public-'));return (await (await caches.open(name)).match('/offline.html')).text();}),/الاتصال غير متاح حاليًا/);
     await context.setOffline(true);gate.setOffline(true);

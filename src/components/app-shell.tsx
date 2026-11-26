@@ -109,50 +109,34 @@ const navSections: { title: string; items: OfficeNavItem[] }[] = [
 const navItems = navSections.flatMap(({ items }) => items);
 
 function OfficeNavigation({
-  id, activeTab, onNavigate, upcomingTasksCount, collapsed = false,
+  id, activeTab, onNavigate, upcomingTasksCount, collapsed = false, mobile = false,
 }: {
   id?: string;
   activeTab: NavigationTab;
   onNavigate: (tab: NavigationTab) => void;
   upcomingTasksCount: number;
   collapsed?: boolean;
+  mobile?: boolean;
 }) {
-  return (
-    <nav id={id} aria-label="أقسام المكتب" className="axia-office-navigation min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-2 py-3">
-      {navSections.map(({ title, items }, index) => (
-        <div key={title} role="group" aria-label={title} className={index ? "border-t border-[var(--border)] pt-2" : undefined}>
-          {!collapsed && <p className="px-3 pb-1 text-sm font-semibold leading-6 text-[var(--text-muted)]">{title}</p>}
-          <ul className="space-y-1">
-            {items.map(({ id, labelAr, labelEn, icon: Icon }) => {
-              const isActive = activeTab === id;
-              const badge = id === "rajih" ? "AI" : id === "tasks" && upcomingTasksCount > 0 ? String(upcomingTasksCount) : null;
-              return (
-                <li key={id}>
-                  <button
-                    type="button"
-                    onClick={() => onNavigate(id)}
-                    aria-label={labelAr}
-                    aria-current={isActive ? "page" : undefined}
-                    title={collapsed ? `${labelAr} — ${labelEn}` : undefined}
-                    className={`relative flex min-h-[52px] w-full items-center gap-3 rounded-[16px] border-s-2 py-2.5 text-start motion-safe:transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--axia-gold)] ${collapsed ? "justify-center px-0" : "px-2.5"} ${isActive ? "border-[var(--axia-gold)] bg-[var(--axia-gold-dim)]" : "border-transparent hover:bg-[var(--accent)]"}`}
-                  >
-                    <Icon aria-hidden="true" data-nav-icon={id} className={`axia-nav-icon size-6 shrink-0 ${isActive || id === "rajih" ? "text-[var(--axia-gold)]" : "text-[var(--text-muted)]"}`} />
-                    {!collapsed && <span className={`min-w-0 flex-1 text-base leading-6 text-[var(--text)] ${isActive ? "font-bold" : "font-medium"}`}>{labelAr}</span>}
-                    {badge && (
-                      <span
-                        aria-hidden="true"
-                        className={`${collapsed ? "absolute end-1.5 top-1.5 size-1.5 rounded-full bg-[var(--axia-gold)]" : `shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold leading-4 tabular-nums text-[var(--text)] ${id === "rajih" ? "bg-[var(--axia-gold-dim)]" : "bg-[var(--accent-hover)]"}`}`}
-                      >{!collapsed && badge}</span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
-    </nav>
-  );
+  const renderItem = ({ id, labelAr, labelEn, icon: Icon }: OfficeNavItem) => {
+    const isActive = activeTab === id;
+    const badge = id === "rajih" ? "AI" : id === "tasks" && upcomingTasksCount > 0 ? String(upcomingTasksCount) : null;
+    return <li key={id} className="axia-nav-entry">
+      <button type="button" onClick={() => onNavigate(id)} aria-label={labelAr}
+        aria-current={isActive ? "page" : undefined} title={collapsed ? `${labelAr} — ${labelEn}` : undefined}
+        className={`relative flex min-h-[52px] w-full items-center gap-3 rounded-[16px] border-s-2 py-2.5 text-start motion-safe:transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--axia-gold)] ${collapsed ? "justify-center px-0" : "px-2.5"} ${isActive ? "border-[var(--axia-gold)] bg-[var(--axia-gold-dim)]" : "border-transparent hover:bg-[var(--accent)]"}`}>
+        <Icon aria-hidden="true" data-nav-icon={id} className={`axia-nav-icon size-6 shrink-0 ${isActive || id === "rajih" ? "text-[var(--axia-gold)]" : "text-[var(--text-muted)]"}`}/>
+        {!collapsed && <span className={`axia-nav-label min-w-0 flex-1 text-base leading-6 text-[var(--text)] ${isActive ? "font-bold" : "font-medium"}`}>{labelAr}</span>}
+        {badge && <span aria-hidden="true" className={`axia-nav-badge ${collapsed ? "absolute end-1.5 top-1.5 size-1.5 rounded-full bg-[var(--axia-gold)]" : `shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold leading-4 tabular-nums text-[var(--text)] ${id === "rajih" ? "bg-[var(--axia-gold-dim)]" : "bg-[var(--accent-hover)]"}`}`}>{!collapsed && badge}</span>}
+      </button>
+    </li>;
+  };
+  return <nav id={id} aria-label="أقسام المكتب" className={`axia-office-navigation min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-3 ${mobile ? "axia-mobile-navigation" : "space-y-3"}`}>
+    {mobile ? <ul className="axia-mobile-nav-grid">{navItems.map(renderItem)}</ul> : navSections.map(({title,items},index)=><div key={title} role="group" aria-label={title} className={index ? "border-t border-[var(--border)] pt-2" : undefined}>
+      {!collapsed && <p className="axia-nav-group-title px-3 pb-1 text-sm font-semibold leading-6 text-[var(--text-muted)]">{title}</p>}
+      <ul className="space-y-1">{items.map(renderItem)}</ul>
+    </div>)}
+  </nav>;
 }
 
 export function AppShell({
@@ -524,6 +508,7 @@ export function AppShell({
       <div className="flex flex-1 overflow-hidden w-full bg-[var(--bg)]">
         {/* Desktop navigation */}
         <aside
+          data-collapsed={isSidebarCollapsed}
           className={`axia-sidebar hidden shrink-0 flex-col border-e border-[var(--border)] bg-[var(--panel)] motion-safe:transition-[width] motion-safe:duration-200 ${isFocusMode ? "" : "lg:flex"} ${isSidebarCollapsed ? "w-16" : "w-[19rem] xl:w-80"}`}
         >
           <div className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-3">
@@ -556,7 +541,7 @@ export function AppShell({
           onClick={(event) => { if (event.target === event.currentTarget) setMobileMenuOpen(false); }}
           className="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none overflow-hidden bg-transparent p-0 text-[var(--text)] backdrop:bg-black/60"
         >
-          <div className="axia-mobile-sidebar flex h-full w-84 max-w-[calc(100%_-_1rem)] flex-col border-e border-[var(--border)] bg-[var(--panel)] shadow-2xl">
+          <div className="axia-mobile-sidebar flex h-full w-[calc(100%_-_1rem)] max-w-[28rem] flex-col border-e border-[var(--border)] bg-[var(--panel)] shadow-2xl">
             <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--border)] px-4 py-2">
               <div className="flex items-center gap-2">
                 <AxiaSymbolSvg className="size-6" idPrefix="axia-shell-mobile" />
@@ -571,7 +556,7 @@ export function AppShell({
                 <X aria-hidden="true" className="size-5" />
               </button>
             </div>
-            <OfficeNavigation activeTab={activeTab} onNavigate={(tab) => { onNavigate(tab); setMobileMenuOpen(false); }} upcomingTasksCount={upcomingTasksCount} />
+            <OfficeNavigation mobile activeTab={activeTab} onNavigate={(tab) => { onNavigate(tab); setMobileMenuOpen(false); }} upcomingTasksCount={upcomingTasksCount} />
           </div>
         </dialog>
 
