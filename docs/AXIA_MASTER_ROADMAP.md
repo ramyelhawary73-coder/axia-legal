@@ -21,13 +21,35 @@ Local validation: 209 app tests, 11 Node transport tests, typecheck/lint/build; 
 
 NEXT ACTION (current): Review this free proposal and exact-head CI/Preview; choose approved test user/office and window. Present final SQL/ACL/key/deployment/activation values before application. Do not create resources, write hosted SQL/Secrets or send notifications without that approval. Give the next execution command.
 
-## Hosted preparation update — 27 November 2026
+## الحالة الحالية المعتمدة — 27 نوفمبر 2026
+هذا التحديث يحل محل أوصاف «لم ينفذ» والمقترحات التاريخية أدناه. اعتمد المالك تجهيز PR #59 على Preview فقط، مع منع الإرسال وبدء نافذة الثلاثين دقيقة.
 
-Owner approved applying PR59 preparation to the existing project and keeping all sending closed. The reviewed base/Edge/extension/tick SQL was applied as migration axia_push_preview_edge_prepare_pr59. Five private FORCE-RLS tables exist, own approved account/office binding is stored privately, and both SQL gates are false with no window. There are no devices/outbox rows/Cron jobs/runtime LOGIN/operational Push keys. Two existing users/offices/memberships and the membership digest are unchanged. No Auth settings, business permissions, main or Production changes.
+- طُبّق SQL التجهيز: `axia_push_preview_edge_prepare_pr59`؛ خمس جداول Push خاصة مع FORCE RLS وحصر الحساب والمكتب المعتمدين. بيانات الهوية الفعلية في ورقة المالك الخاصة وجدول التحكم فقط.
+- نجحت إزالة pg_net الجديد غير المستخدم في `axia_push_remove_unused_net_preparation` بعد كشف أن postgres لا يستطيع تقييد ACL لكائنات supabase_admin. لا CASCADE ولا تجاوز صلاحيات؛ المصدر يوقف التثبيت عند بقاء الوصول العام. pg_cron موجود بلا jobs. **لا تشغل tick القديم؛ pg_net غير موجود.**
+- أُنشئ LOGIN محدود `axia_push_preview_worker` في `axia_push_preview_limited_runtime_login`، بعضوية dispatcher فقط، بلا superuser/BYPASSRLS/DDL أو قراءة مباشرة لجدول الأجهزة وauth.users. عضوية المشغّل الإدارية ليست عضوية العامل.
+- وُلدت مفاتيح التشغيل وحُفظت في مواضعها المعتمدة: أسرار Edge، HMAC في Vault، ومتغيرات خادم Vercel لفرع Preview وحده. لا قيم أسرار في Git أو التقرير، ولا مفتاح VAPID خاص أو اتصال قاعدة في Vercel. كل بوابات Push وEdge وSQL مغلقة؛ مركز التحكم مغلق.
+- Edge `axia-push-preview` v1 منشور. POST مستضاف بعد حفظ الأسرار أعاد `503 PUSH_DISABLED`. هذا يثبت إقلاع البوابة المغلقة فقط؛ اتصال قاعدة المُرسل/TLS والإرسال الحقيقي غير مثبتين. محاولة pooler المحلية توقفت عند DNS `EAI_AGAIN`، وليست اختبار TLS ناجحًا.
+- المصدر الوظيفي `857cf6176372b82ac9d17250b218db6de88f5af4` نجح في CI `46001049044`؛ 8 اختبارات Deno منها 13 فحص SQL. أُعيد نشر نفس المصدر بعد إعداد المتغيرات: Preview `dpl_8u6Z5iZusa4RWT8GQQXTNAzBsnom` جاهز READY. تعديل السجل اللاحق لا يغيّر شفرة المُرسل.
+- إعادة القراءة: صفر أجهزة، صفر outbox، صفر Cron jobs، بوابتا SQL false ووقت البداية/النهاية NULL. نافذة 30 دقيقة لم تبدأ، ولا قبول Android مغلق/شاشة مقفولة بعد. بيانات الأعمال/Auth وعضويات المكتب لم تتغير؛ main وProduction لم يتغيرا.
 
-Hosted verification found a blocker missed by the local extension stand-in: pg_net objects are owned by supabase_admin; REVOKE by postgres is a warning/no-op and leaves PUBLIC/anon/authenticated usage/HTTP execution. Operator cannot SET ROLE supabase_admin. Setup must not silently accept this. New source verifies effective ACL and aborts. The bounded unused-extension removal confirmation expired; pg_net remains installed pending a fresh explicit provider confirmation. Do not claim it was removed. Cleanup SQL is supabase/review/axia_push_net_unused_cleanup.sql and stops on any use/dependency. No CASCADE or administrator-access workaround is authorized.
+### بديل الجدولة المجاني للمراجعة فقط
+اقتراح: Cloudflare Workers Free كمؤقت محدود مرة/دقيقة يستدعي عنوان Edge الثابت بتوقيع HMAC وجسم فارغ؛ يظل الإرسال وبياناته في Supabase الحالي. ليس موردًا منشأً أو اختيارًا معتمدًا بعد.
 
-The initial hosted bundle failed with nodeModulesDir=manual (no uploaded node_modules); changing deployment resolution to none fixed it without changing the sender logic. Edge axia-push-preview version 1 is deployed, verify_jwt=false with its internal HMAC check; direct POST returned HTTP 503 / PUSH_DISABLED. No Secrets were generated/stored because setup is blocked on effective extension ACL. Native Deno tests pass, now including 13 SQL checks for the ACL failure. Hosted sender/DB/TLS/provider delivery is still unverified. Do not start the 30-minute window or register Cron. Next: resolve/confirm removal of this new unused pg_net and review a supported least-privilege scheduling route, retaining zero additional cost.
+| البند | التصميم وحد الاعتماد |
+| --- | --- |
+| الموارد المقترحة | Worker واحد وCron واحد؛ بلا KV/D1/Queues/خطة مدفوعة أو ربط دفع |
+| أسرار Cloudflare | HMAC فقط بعد موافقة منفصلة على وجهته الجديدة؛ لا DB/VAPID/اشتراكات أو بيانات قضايا |
+| القيم | scope الحالي، ref الحالي، عنوان Edge الحالي الثابت؛ flag=0 وT0/approved_until غير مضبوطين قبل الجاهزية |
+| SQL المطلوب عرضه أولًا | استبدال اعتماد edge_begin على حجز pg_net بحجز ذري تحت قفل صف التحكم؛ ≤200 قبول/شهر، مرة/دقيقة، تحقق النافذة والحصر ومنع الإعادة، وإنقاص الميزانية عند القبول قبل التنفيذ |
+| عدم تغيير السلوك | تبقى صلاحيات dispatcher المحدودة وMFA/الجلسة ورضا الجهاز والفحص الحي والوجهة الثابتة كما هي؛ لا وصول للمؤقت إلى قاعدة البيانات |
+| التفعيل والإغلاق | نشر مغلق أولًا؛ تحقق انتشار Cron قبل T0، ثم اعتماد تشغيل 30 دقيقة منفصل. يمنع Worker وSQL الطلبات بعد cutoff، وإغلاق الأعلام؛ حذف Cron وحده ليس إغلاقًا فوريًا |
+| التحقق المطلوب | اختبارات HMAC/النافذة/الإعادة/الميزانية والتزامن، أداء CPU الفعلي على Free، ثم فحص اتصال Edge بقاعدة البيانات مع الإرسال مغلق قبل اختبار الهاتف |
+
+الوثائق الرسمية الحالية: Workers Free حتى 100,000 طلب/يوم و5 Cron Triggers للحساب و10ms CPU لكل Cron. حدود حساب المالك المتاحة لم تُقرأ؛ يلزم التحقق منها أولًا. تغييرات Cron قد تتأخر حتى 15 دقيقة، لذلك لا نبدأ نافذة الاختبار أثناء انتظار الانتشار. لا ضمان استقبال دائم أو موعد دقيق على خطة مجانية أو عند قيود الهاتف. لم تُنشأ موارد Cloudflare أو تُنقل مفاتيح إليها، ولم يُطبق SQL بديل.
+المراجع: https://developers.cloudflare.com/workers/platform/limits/ وhttps://developers.cloudflare.com/workers/configuration/cron-triggers/ .
+
+**الخطوة التالية:** جهّز كود مؤقت Cloudflare Free وSQL الحجز الذري واختباراتهما على فرع PR #59، ثم اعرض الحزمة وموضع HMAC وحصة الحساب للمراجعة قبل إنشاء المورد أو تطبيق SQL أو نقل المفتاح. أبقِ الإرسال ومركز التحكم مغلقين، ولا تبدأ النافذة أو تدمج main أو تنشر Production.
+
 
 ---
 
@@ -3447,6 +3469,10 @@ Before marking a PR ready:
 ---
 
 # 23. NEXT ACTION
+
+### Current PR #59 preparation — supersedes historical actions below
+
+Approved hosted SQL, limited runtime LOGIN, keys/Vault, disabled Edge and branch-only Preview configuration are prepared. Both SQL gates remain false, T0/end NULL, and there are zero jobs/devices/outbox. Unused pg_net was removed successfully; do not run its old tick. Prepare and test the proposed Cloudflare Free narrow HMAC timer plus atomic SQL admission/budget changes for review. Verify the owner's free quota before any new resource or HMAC transfer; those are not yet approved. Prove hosted pooler/TLS separately; current result is disabled boot only. No sending/window start, control center activation, main merge or Production. Give the next execution command.
 
 ### Active menu / badge acceptance correction — 2026-11-27
 

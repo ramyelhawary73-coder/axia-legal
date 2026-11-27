@@ -1,5 +1,5 @@
 {
-  "status": "PREPARATION_PARTIALLY_APPLIED_BLOCKED_ON_MANAGED_PG_NET_ACL",
+  "status": "PREPARED_DISABLED_SCHEDULER_REPLACEMENT_REVIEW_PENDING",
   "review": "AXIA_PUSH_EDGE_FREE_REVIEW_2026-11-27.md",
   "source_predecessor_pr": 58,
   "base_main": "2703b0cdbc923aba888b588974a5250105236b48",
@@ -48,7 +48,11 @@
     "preparation_migration_applied": true,
     "approved_identity_in_private_review": true,
     "pg_net_effective_acl_verified": false,
-    "pg_net_cleanup_status": "CONFIRMATION_EXPIRED_NOT_REMOVED"
+    "pg_net_cleanup_status": "REMOVED_UNUSED_EXTENSION_CONFIRMED",
+    "pg_net_installed": false,
+    "runtime_login_memberships": [
+      "axia_push_dispatcher"
+    ]
   },
   "worker": {
     "host": "existing_supabase_edge_functions",
@@ -67,7 +71,10 @@
     "dns_public_ipv4_pinned": true,
     "verify_tls": true,
     "edge_function_version": 1,
-    "boot_response_verified": "503 PUSH_DISABLED"
+    "boot_response_verified": "503 PUSH_DISABLED",
+    "window_started_at": null,
+    "hosted_database_tls_verified": false,
+    "pooler_local_test": "DNS_EAI_AGAIN_NO_TLS_PROOF"
   },
   "configuration": {
     "AXIA_PUSH_ENABLED": "0",
@@ -104,7 +111,11 @@
     "git_branch": "feat/axia-push-edge-free-20261127",
     "origin": "https://axia-legal-git-feat-axia-d5fb48-ramyelhawary73-coders-projects.vercel.app",
     "keep_protection": true,
-    "no_secret_or_env_writes": true
+    "no_secret_or_env_writes": false,
+    "writes_scope": "preview_exact_branch_only",
+    "prepared_deployment_id": "dpl_8u6Z5iZusa4RWT8GQQXTNAzBsnom",
+    "prepared_source_sha": "857cf6176372b82ac9d17250b218db6de88f5af4",
+    "prepared_deployment_state": "READY"
   },
   "test": {
     "kind": "generic_own_device_only",
@@ -118,6 +129,15 @@
     "real_android_closed_locked_verified": false,
     "iphone_transport_supported": false
   },
-  "operational_keys_created": false,
-  "runtime_login_created": false
+  "operational_keys_created": true,
+  "runtime_login_created": true,
+  "replacement_scheduler": {
+    "status": "PROPOSAL_ONLY_NOT_APPROVED",
+    "provider": "cloudflare_workers_free",
+    "resource_created": false,
+    "hmac_transferred": false,
+    "sql_applied": false,
+    "sql_change_required": "atomic_admission_budget_replay_reservation_in_edge_begin",
+    "free_account_quota_verified": false
+  }
 }
