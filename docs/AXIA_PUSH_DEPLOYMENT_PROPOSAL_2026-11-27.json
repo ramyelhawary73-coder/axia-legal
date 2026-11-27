@@ -93,5 +93,17 @@
     "phone_closed_and_screen_locked": "PENDING_OWNER_TEST",
     "legal_event_scheduler": "NOT_IMPLEMENTED_IN_THIS_PROOF",
     "iphone_provider": "NOT_ENABLED_IN_THIS_PROOF"
+  },
+  "security_review": {
+    "review_branch_next_version": "16.4.6",
+    "source_validation_run": 45946301319,
+    "worker_audit_findings": 0,
+    "root_runtime_critical": 0,
+    "root_runtime_high": 0,
+    "root_runtime_moderate": 2,
+    "remaining_review": [
+      "glob/minimatch major-version upgrade"
+    ],
+    "main_security_update_applied": false
   }
 }

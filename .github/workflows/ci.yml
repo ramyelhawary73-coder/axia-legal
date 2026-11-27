@@ -37,21 +37,8 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Resolve reviewed Next.js security update lock (no hosted credentials)
-        run: |
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          node -e 'process.stdout.write("AXIA_ROOT_LOCK_BASE64="+require("node:fs").readFileSync("package-lock.json").toString("base64")+"\n")'
-
       - name: Install dependencies
         run: npm ci
-
-      - name: Read installed updated Next.js PWA and route-handler guidance
-        run: |
-          for topic in progressive-web-apps route-handlers; do
-            guide=$(find node_modules/next/dist/docs -type f -name "*$topic*" | head -1)
-            test -n "$guide"
-            cat "$guide"
-          done
 
       - name: Isolated background Push transport tests (no hosted credentials or delivery)
         run: node --test workers/push/test/delivery.test.mjs workers/push/test/config.test.mjs
