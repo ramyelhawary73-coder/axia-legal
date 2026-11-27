@@ -132,12 +132,23 @@
   "operational_keys_created": true,
   "runtime_login_created": true,
   "replacement_scheduler": {
-    "status": "PROPOSAL_ONLY_NOT_APPROVED",
+    "status": "CODE_SQL_TESTS_PREPARED_REVIEW_ONLY_ACCOUNT_QUOTA_BLOCKED_BY_SIGN_IN",
     "provider": "cloudflare_workers_free",
     "resource_created": false,
     "hmac_transferred": false,
     "sql_applied": false,
     "sql_change_required": "atomic_admission_budget_replay_reservation_in_edge_begin",
-    "free_account_quota_verified": false
+    "free_account_quota_verified": false,
+    "review": "AXIA_PUSH_EXTERNAL_TIMER_REVIEW_2026-11-27.md",
+    "sql_review": "supabase/review/axia_push_external_timer.sql",
+    "source_dir": "workers/push-timer",
+    "wrangler_crons": [],
+    "timer_enabled": "0",
+    "max_window_seconds": 1800,
+    "unit_tests_passed": 7,
+    "local_workerd_checks_passed": 5,
+    "native_sql_checks_passed": 21,
+    "hosted_cpu_verified": false,
+    "account_verified": false
   }
 }

@@ -41,10 +41,18 @@ jobs:
         run: npm ci
 
       - name: Isolated background Push transport tests (no hosted credentials or delivery)
-        run: node --test workers/push/test/delivery.test.mjs workers/push/test/config.test.mjs
+        run: node --test workers/push/test/delivery.test.mjs workers/push/test/config.test.mjs workers/push-timer/test/timer.test.mjs
 
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Local Cloudflare timer bundle and workerd compatibility (no account or outbound network)
+        env:
+          WRANGLER_SEND_METRICS: "false"
+        run: |
+          npm ci --prefix workers/push-timer --no-audit --no-fund
+          workers/push-timer/node_modules/.bin/wrangler deploy --dry-run --config workers/push-timer/wrangler.json --outdir "$RUNNER_TEMP/axia-push-timer-bundle"
+          AXIA_TIMER_BUNDLE="$RUNNER_TEMP/axia-push-timer-bundle/index.js" AXIA_MINIFLARE_MODULE="$GITHUB_WORKSPACE/workers/push-timer/node_modules/miniflare/dist/src/index.js" node scripts/test-push-timer-workerd.mjs
 
       - name: Lint
         run: npm run lint

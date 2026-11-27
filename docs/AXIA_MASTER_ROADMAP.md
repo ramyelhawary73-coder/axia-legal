@@ -21,6 +21,12 @@ Local validation: 209 app tests, 11 Node transport tests, typecheck/lint/build; 
 
 NEXT ACTION (current): Review this free proposal and exact-head CI/Preview; choose approved test user/office and window. Present final SQL/ACL/key/deployment/activation values before application. Do not create resources, write hosted SQL/Secrets or send notifications without that approval. Give the next execution command.
 
+## PR #59 external timer source review — 27 November 2026
+
+The owner authorized preparing code/SQL/tests only. [Concrete free timer review](AXIA_PUSH_EXTERNAL_TIMER_REVIEW_2026-11-27.md) is now the current NEXT ACTION: inspect Cloudflare account Free quota after owner sign-in, then present exact-source SQL, resource and HMAC destination approval. Cloudflare currently shows its sign-in page; account quota is NOT verified. No Cloudflare resource/key transfer, hosted SQL or activation was performed in this source-only step.
+
+Source adds a route-disabled, schedule-disabled Web Crypto timer with a fixed Edge destination, a <=30-minute cutoff and no retries/redirect following. Proposed SQL replaces only edge_begin with locked atomic per-DB-minute/monthly admission and retires legacy tick to no-op; no table/role/grant/extension changes. Local validation: 7 timer tests, 5 real local workerd checks and 8 Deno tests including 21 PostgreSQL assertions with non-superuser setup and restricted concurrent clients. No hosted CPU/TLS or phone receipt proof. All existing gates remain off, zero jobs/devices/outbox, window NULL, control center off; main/Production unchanged. Exact-head CI/Preview are checked after source publication. See the new review before following older historical preparation instructions below.
+
 ## الحالة الحالية المعتمدة — 27 نوفمبر 2026
 هذا التحديث يحل محل أوصاف «لم ينفذ» والمقترحات التاريخية أدناه. اعتمد المالك تجهيز PR #59 على Preview فقط، مع منع الإرسال وبدء نافذة الثلاثين دقيقة.
 
@@ -3472,7 +3478,7 @@ Before marking a PR ready:
 
 ### Current PR #59 preparation — supersedes historical actions below
 
-Approved hosted SQL, limited runtime LOGIN, keys/Vault, disabled Edge and branch-only Preview configuration are prepared. Both SQL gates remain false, T0/end NULL, and there are zero jobs/devices/outbox. Unused pg_net was removed successfully; do not run its old tick. Prepare and test the proposed Cloudflare Free narrow HMAC timer plus atomic SQL admission/budget changes for review. Verify the owner's free quota before any new resource or HMAC transfer; those are not yet approved. Prove hosted pooler/TLS separately; current result is disabled boot only. No sending/window start, control center activation, main merge or Production. Give the next execution command.
+Approved hosted SQL, limited runtime LOGIN, keys/Vault, disabled Edge and branch-only Preview configuration are prepared. Both SQL gates remain false, T0/end NULL, and there are zero jobs/devices/outbox. Unused pg_net was removed successfully; do not run its old tick. The timer, SQL proposal and local tests are prepared; review AXIA_PUSH_EXTERNAL_TIMER_REVIEW_2026-11-27.md. Cloudflare requires owner sign-in, so verify actual Free account quota before any new resource or HMAC transfer; those are not yet approved. Prove hosted pooler/TLS separately; current result is disabled boot only. No sending/window start, control center activation, main merge or Production. Give the next execution command.
 
 ### Active menu / badge acceptance correction — 2026-11-27
 

@@ -1,0 +1,7 @@
+{
+  "name": "axia-push-timer-preview-review",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": { "test": "node --test test/timer.test.mjs" },
+  "devDependencies": { "wrangler": "4.169.0" }
+}

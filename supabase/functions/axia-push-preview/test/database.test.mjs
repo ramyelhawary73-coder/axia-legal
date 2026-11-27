@@ -3,6 +3,7 @@ import { createHmac, randomBytes, randomUUID, createECDH } from "node:crypto";
 import pg from "pg";
 import { createHandler, validateRole } from "../handler.mjs";
 import { sealSubscription } from "../../_shared/axia-push-delivery.mjs";
+import { createTimer } from "../../../../workers/push-timer/timer.mjs";
 
 // Hard-coded loopback ONLY. No URL, remote host, account, legal data or hosted credential accepted.
 Deno.test({ name: "native Deno/pg: isolated SQL gates, HMAC scheduler, live sender and rollback",
@@ -128,6 +129,86 @@ Deno.test({ name: "native Deno/pg: isolated SQL gates, HMAC scheduler, live send
         assert.equal((await c.query("select public.axia_push_status($1) value",[org])).rows[0].value.workerReady,true);
         await c.query("update private.push_configuration set dispatcher_seen_at=now()-interval '3 minutes'");
         assert.equal((await c.query("select public.axia_push_status($1) value",[org])).rows[0].value.workerReady,false);
+      });
+      const externalSource=await read("supabase/review/axia_push_external_timer.sql");
+      const admit=async(client=c,signedSlot=slot())=>(await client.query("select private.axia_push_edge_begin($1) allowed",[signedSlot])).rows[0].allowed;
+      const reset=()=>c.query("update private.push_edge_control set enabled=true,window_started_at=clock_timestamp(),approved_until=clock_timestamp()+interval '29 minutes',last_started_slot=null,last_enqueued_slot=null,usage_month=date_trunc('month',now() at time zone 'UTC')::date,calls_this_month=0,monthly_cap=200");
+      await check("external timer installation refuses live gates or a retained window",async()=>{
+        await assert.rejects(c.query(externalSource),/PUSH_EXTERNAL_TIMER_PREPARATION_NOT_DISABLED/);await c.query("rollback");
+        await c.query("update private.push_configuration set enabled=false; update private.push_edge_control set enabled=false");
+        await assert.rejects(c.query(externalSource),/PUSH_EXTERNAL_TIMER_PREPARATION_NOT_DISABLED/);await c.query("rollback");
+        await c.query("update private.push_edge_control set window_started_at=null,approved_until=null");
+      });
+      await check("external installation rejects legacy Cron and preserves effective ACL",async()=>{
+        await c.query("create schema cron;create table cron.job(jobname text,command text);insert into cron.job values('axia-push-preview-minute','select private.axia_push_edge_tick()')");
+        await assert.rejects(c.query(externalSource),/PUSH_LEGACY_CRON_PRESENT/);await c.query("rollback");
+        await c.query("delete from cron.job;grant execute on function private.axia_push_edge_begin(bigint) to public");
+        await assert.rejects(c.query(externalSource),/PUSH_EXTERNAL_TIMER_ACL_DRIFT/);await c.query("rollback");
+        await c.query("revoke execute on function private.axia_push_edge_begin(bigint) from public");
+        await c.query(externalSource);
+        assert.equal(await admit(),false);
+        assert.equal((await c.query("select enabled,window_started_at,approved_until from private.push_edge_control")).rows[0].enabled,false);
+        assert.equal((await c.query("select private.axia_push_edge_tick() value")).rows[0].value,null);
+        assert.equal((await c.query("select count(*)::int n from cron.job")).rows[0].n,0);
+        for(const role of ['anon','authenticated','axia_push_preview_worker']) {
+          assert.equal((await c.query("select has_table_privilege($1,'private.push_edge_control','select') allowed",[role])).rows[0].allowed,false);
+          assert.equal((await c.query("select has_function_privilege($1,'private.axia_push_edge_begin(bigint)','execute') allowed",[role])).rows[0].allowed,role==='axia_push_preview_worker');
+        }
+      });
+      await c.query("update private.push_configuration set enabled=true");
+      await check("external admission enforces gates, 30-minute cutoff and signed slot age",async()=>{
+        await reset();await c.query("update private.push_edge_control set approved_until=window_started_at+interval '31 minutes'");
+        assert.equal(await admit(),false);
+        await reset();await c.query("update private.push_edge_control set window_started_at=now()-interval '30 minutes',approved_until=now()-interval '1 second'");
+        assert.equal(await admit(),false);
+        await reset();await c.query("update private.push_edge_control set window_started_at=now()+interval '1 minute',approved_until=now()+interval '20 minutes'");
+        assert.equal(await admit(),false);
+        await reset();await c.query("update private.push_configuration set enabled=false");assert.equal(await admit(),false);
+        await c.query("update private.push_configuration set enabled=true");
+        assert.equal(await admit(c,null),false);assert.equal(await admit(c,slot()-2),false);assert.equal(await admit(c,slot()+1),false);
+      });
+      await check("external reservation needs no enqueue; previous/current signed slots share one DB minute",async()=>{
+        await reset();assert.equal(await admit(c,slot()-1),true);assert.equal(await admit(),false);
+        const value=(await c.query("select calls_this_month,last_started_slot,last_enqueued_slot from private.push_edge_control")).rows[0];
+        assert.equal(value.calls_this_month,1);assert.equal(value.last_started_slot,value.last_enqueued_slot);
+      });
+      await check("external cap includes idle/failure admissions and rollover preserves replay state",async()=>{
+        await reset();await c.query("update private.push_edge_control set calls_this_month=200");assert.equal(await admit(),false);
+        await c.query("update private.push_edge_control set usage_month=(date_trunc('month',now())-interval '1 month')::date");
+        assert.equal(await admit(),true);
+        assert.equal((await c.query("select calls_this_month from private.push_edge_control")).rows[0].calls_this_month,1);
+        await c.query("update private.push_edge_control set usage_month=(date_trunc('month',now())-interval '1 month')::date");
+        assert.equal(await admit(),false); // Rollover cannot authorize replay of this minute.
+      });
+      await check("two restricted concurrent clients reserve one slot and one remaining budget unit",async()=>{
+        await reset();await c.query("update private.push_edge_control set calls_this_month=199");
+        const peers=[new pg.Client({...settings,database:db,user:'axia_push_preview_worker'}),new pg.Client({...settings,database:db,user:'axia_push_preview_worker'})];
+        try {await Promise.all(peers.map(p=>p.connect()));
+          const results=await Promise.all(peers.map(p=>admit(p)));
+          assert.equal(results.filter(Boolean).length,1);
+          assert.equal((await c.query("select calls_this_month from private.push_edge_control")).rows[0].calls_this_month,200);
+        } finally {await Promise.all(peers.map(p=>p.end()));}
+      });
+      await check("a request waiting for the row lock rechecks expiry after obtaining it",async()=>{
+        await reset();await c.query("update private.push_edge_control set approved_until=clock_timestamp()+interval '300 milliseconds'");
+        const peer=new pg.Client({...settings,database:db,user:'axia_push_preview_worker'});await peer.connect();
+        try {await c.query("begin;select * from private.push_edge_control for update");
+          const waiting=admit(peer);
+          await c.query("select pg_sleep(0.5)");await c.query("commit");assert.equal(await waiting,false);
+          assert.equal((await c.query("select calls_this_month from private.push_edge_control")).rows[0].calls_this_month,0);
+        } finally {await c.query("rollback");await peer.end();}
+      });
+      await check("Web Crypto timer -> native Deno Edge -> restricted pg -> generic sender interoperates",async()=>{
+        await reset();
+        await c.query("insert into private.push_outbox(scope,device_id,request_id,scheduled_at,expires_at,next_attempt_at) values($1,$2,$3,now()-interval '1 second',now()+interval '4 minutes',now()-interval '1 second')",[scope,device,randomUUID()]);
+        const current=Date.now(),minute=Math.floor(current/60000)*60000;
+        const timer=createTimer({now:()=>current,fetcher:async(url,options)=>handle(new Request(url,options))});
+        const timerEnv={AXIA_PUSH_TIMER_ENABLED:'1',AXIA_PUSH_SCOPE:scope,AXIA_PUSH_EXPECTED_SUPABASE_REF:'qshgczulivsxztgrbqew',AXIA_PUSH_DEPLOYMENT_MODE:'preview',AXIA_PUSH_CRON_HMAC_KEY:secret,
+          AXIA_PUSH_WINDOW_STARTED_AT:new Date(minute).toISOString(),AXIA_PUSH_APPROVED_UNTIL:new Date(minute+1800000).toISOString()};
+        assert.equal(await timer.scheduled({cron:'* * * * *',scheduledTime:minute},timerEnv),'ACCEPTED_OR_IDLE');
+        assert.equal(sends,2);
+        assert.equal(await timer.scheduled({cron:'* * * * *',scheduledTime:minute},timerEnv),'ACCEPTED_OR_IDLE');assert.equal(sends,2);
+        assert.equal((await c.query("select calls_this_month from private.push_edge_control")).rows[0].calls_this_month,1);
       });
       await check("full Push rollback preserves all original users, sessions and memberships",async()=>{
         // Isolated test LOGIN dependency only, remove before testing role drops.
