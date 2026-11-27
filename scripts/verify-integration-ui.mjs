@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { OFFICE_TABLES, decryptOfficeSnapshot } from "../src/lib/office-backup.ts";
+import { verifyBackgroundPushUi } from "./verify-background-push-ui.mjs";
 import { verifyNativeUi } from "./verify-native-ui.mjs";
 import { verifyPwa } from "./verify-pwa-ui.mjs";
 
@@ -268,6 +269,7 @@ try {
   const disabledDrafts=await fetch(base+"/api/drafts");assert.equal(disabledDrafts.status,503);assert.equal((await disabledDrafts.json()).enabled,false);
   await verifyPwa({browser,base,output,records,fits});
   await verifyNativeUi({browser,base,output,records,fits,fixtureContext});
+  await verifyBackgroundPushUi({base,output,records,fits,fixtureContext});
   for(const {width,height,theme} of [{width:1440,height:900,theme:"dark"},{width:1024,height:620,theme:"light"},{width:390,height:844,theme:"dark"},{width:320,height:568,theme:"light"}]) {
     console.log(`UI combined office navigation ${width}x${height} ${theme}`);
     const {context}=await fixtureContext({width,height},theme);
