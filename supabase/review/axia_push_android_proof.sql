@@ -184,7 +184,7 @@ language plpgsql security definer set search_path='' as $$
 declare ctx jsonb; u uuid; d private.push_devices; j private.push_outbox; at_time timestamptz:=clock_timestamp()+interval '90 seconds'; begin
   ctx:=private.axia_push_context(p_org); u:=(ctx->>'user')::uuid;
   select * into d from private.push_devices where id=p_device and user_id=u and organization_id=p_org for update;
-  if not found or d.session_id<>(ctx->>'session')::uuid or d.revoked_at is not null or d.expires_at<at_time+interval '5 minutes' or p_request is null
+  if not found or d.session_id is distinct from (ctx->>'session')::uuid or d.revoked_at is not null or d.expires_at<at_time+interval '5 minutes' or p_request is null
     then raise exception using errcode='42501',message='PUSH_UNAVAILABLE'; end if;
   select * into j from private.push_outbox where device_id=d.id and request_id=p_request;
   if found then return jsonb_build_object('id',j.id,'scheduledAt',j.scheduled_at,'accepted',true); end if;

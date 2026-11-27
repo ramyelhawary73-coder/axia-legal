@@ -41,7 +41,7 @@ jobs:
         run: npm ci
 
       - name: Isolated background Push transport tests (no hosted credentials or delivery)
-        run: node --test workers/push/test/*.test.mjs
+        run: node --test workers/push/test/delivery.test.mjs workers/push/test/config.test.mjs
 
       - name: Typecheck
         run: npm run typecheck

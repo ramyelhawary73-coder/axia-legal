@@ -15,14 +15,14 @@ async function check(name, fn) { await fn(); console.log("PASS " + name); checks
 async function user(n, fn, override = {}) {
   const client = await pool.connect();
   try {
-    await client.query("begin"); await client.query("set local role authenticated");
+    await client.query("begin"); await client.query("set local session authorization authenticated");
     await client.query("select set_config('request.jwt.claims',$1,true)", [JSON.stringify({ sub: id(n), session_id: id(200+n), exp: Math.floor(Date.now()/1000)+3600, ...override })]);
     const value = await fn(client); await client.query("commit"); return value;
   } catch (error) { await client.query("rollback"); throw error; } finally { client.release(); }
 }
 async function worker(fn) {
   const client = await pool.connect();
-  try { await client.query("begin"); await client.query("set local role axia_push_dispatcher"); const r=await fn(client); await client.query("commit"); return r; }
+  try { await client.query("begin"); await client.query("set local session authorization axia_push_dispatcher"); const r=await fn(client); await client.query("commit"); return r; }
   catch(error) { await client.query("rollback"); throw error; } finally { client.release(); }
 }
 const rpc = (n, sql, params, override) => user(n, async c => (await c.query(sql, params)).rows[0]?.value, override);
