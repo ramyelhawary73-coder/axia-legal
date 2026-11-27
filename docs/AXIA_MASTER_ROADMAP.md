@@ -10,8 +10,16 @@
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
 > **Verified application main SHA:** `2703b0cdbc923aba888b588974a5250105236b48` (PR #57 merged; current GitHub branch read confirmed)
-> **Current handoff branch:** `feat/axia-web-push-20261127` from main 2703b0c, Draft PR #58; disabled Preview-only generic Android closed-app Push proof
+> **Current handoff branch:** `feat/axia-push-edge-free-20261127`, continuing unmerged PR #58 from main 2703b0c; zero-additional-cost Edge/Cron proposal, all hosted gates off
 > **Current package:** [Real Web Push implementation review](AXIA_WEB_PUSH_IMPLEMENTATION_REVIEW_2026-11-27.md): explicit temporary own-device enrollment, server-delayed generic test, isolated dispatcher, and unapplied SQL/rollback/ACL manifest. Source development is authorized; live database/roles/Auth/Secrets/resources/activation are not. Control center stays off. Android menu and notification-mask corrections are merged and owner-reported PASS. Physical closed-app/locked-screen Push, iPhone, H1 natural refresh/expiry, P2 local server and offline sync remain open. Do not merge main or deploy Production for this new Push package without separate review.
+
+## Current update — free Edge/Cron Push review, 27 November 2026
+
+The owner requires zero additional cost. [Free Edge Push review](AXIA_PUSH_EDGE_FREE_REVIEW_2026-11-27.md) supersedes the paid Render/new-project proposal and older isolated-project NEXT ACTION below. Supabase account API and live Usage UI confirm Free, 0/500,000 Edge invocations this cycle, no overages; pg_cron/pg_net available but not installed. Existing AXIA is healthy. Source uses a short native-Deno pg/web-push sender, HMAC-signed fixed Cron request, existing project with explicit account/office/window allowlist, max one hour and 200 proof invocations/month. This is logical isolation, not a separate database. SQL, new extension ACLs, limited worker LOGIN, keys/Vault, job registration, deployment and activation remain REVIEW ONLY. No hosted write, resources, paid upgrade, Auth/business changes, main merge or Production publish. Control center and Push stay off.
+
+Local validation: 209 app tests, 11 Node transport tests, typecheck/lint/build; 8 native-Deno tests including 12 isolated PostgreSQL gate/scheduler/sender/rollback assertions and real loopback HTTPS. No real provider delivery, physical Android/iPhone PASS or hosted Edge Runtime proof. Native extension HTTP/Cron uses local capture interfaces in tests. Exact remote CI status recorded separately after commit.
+
+NEXT ACTION (current): Review this free proposal and exact-head CI/Preview; choose approved test user/office and window. Present final SQL/ACL/key/deployment/activation values before application. Do not create resources, write hosted SQL/Secrets or send notifications without that approval. Give the next execution command.
 
 ---
 

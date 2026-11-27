@@ -1,6 +1,8 @@
 -- REVIEW ONLY. NOT in migrations/. Never run against hosted Supabase without explicit approval.
 -- Bounded phase: own-device generic delayed test only. No legal-event scheduler or role/data changes.
--- Apply to an approved isolated database with synthetic users, after recording its actual Auth policy.
+-- Original proposal: isolated database. Edge add-on proposal: existing AXIA with explicit account/office allowlist.
+-- Review BOTH packages together; this base alone is not the shared-project approval scope.
+-- Record actual Auth policy before any activation.
 begin;
 do $$ begin
   if to_regclass('auth.sessions') is null or to_regclass('auth.mfa_factors') is null
@@ -13,6 +15,10 @@ do $$ begin
 end $$;
 create role axia_push_api_owner nologin nosuperuser nocreatedb nocreaterole noinherit nobypassrls;
 create role axia_push_dispatcher nologin nosuperuser nocreatedb nocreaterole noinherit nobypassrls;
+-- PostgreSQL 17 role creation alone does not grant SET/INHERIT to its non-superuser creator.
+-- The existing privileged migration operator must manage new Push-owned objects explicitly.
+-- Never grant this owner membership to the runtime LOGIN, authenticated or anon.
+grant axia_push_api_owner to current_user with inherit true, set true;
 grant usage on schema private, public, auth to axia_push_api_owner;
 grant usage on schema private to axia_push_dispatcher;
 -- Temporary CREATE is required for ownership transfer on non-superuser migration operators.

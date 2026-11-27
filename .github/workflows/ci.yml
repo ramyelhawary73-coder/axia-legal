@@ -77,6 +77,13 @@ jobs:
           npm test --prefix workers/push
           npm audit --prefix workers/push --omit=dev --audit-level=high
 
+      - name: Native Deno Edge Push compatibility and isolated SQL review
+        run: |
+          npm install --prefix "$RUNNER_TEMP/axia-deno" --no-audit --no-fund deno@2.9.6
+          npm ci --prefix supabase/functions/axia-push-preview --ignore-scripts --no-audit --no-fund
+          AXIA_EDGE_SQL_TEST=1 "$RUNNER_TEMP/axia-deno/node_modules/.bin/deno" task --config supabase/functions/axia-push-preview/deno.json test
+          npm audit --prefix supabase/functions/axia-push-preview --omit=dev --audit-level=high
+
       - name: Record existing root production dependency audit for activation review
         run: node scripts/audit-push-root-dependencies.mjs
 

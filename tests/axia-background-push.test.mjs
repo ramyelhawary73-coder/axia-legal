@@ -9,7 +9,7 @@ const uuid=n=>"00000000-0000-4000-8000-"+String(n).padStart(12,"0");
 const origin="https://fixture-git-push-preview.vercel.app", ref="a".repeat(20);
 const ecdh=crypto.createECDH("prime256v1"); const publicKey=ecdh.generateKeys().toString("base64url");
 const key=crypto.randomBytes(32).toString("base64url");
-const env={AXIA_PUSH_ENABLED:"1",AXIA_PUSH_SCOPE:"axia-push-preview-v1",VERCEL_ENV:"preview",VERCEL_GIT_COMMIT_REF:"feat/axia-web-push-20261127",
+const env={AXIA_PUSH_ENABLED:"1",AXIA_PUSH_SCOPE:"axia-push-preview-v1",VERCEL_ENV:"preview",VERCEL_GIT_COMMIT_REF:"feat/axia-push-edge-free-20261127",
  AXIA_PUSH_ORIGIN:origin,AXIA_PUSH_SUBSCRIPTION_KEY_V1:key,AXIA_PUSH_VAPID_PUBLIC_KEY:publicKey,AXIA_PUSH_EXPECTED_SUPABASE_REF:ref};
 function harness(overrides={}) {
  let calls=0, current=Date.now(), liveSession=uuid(3); const mutations=[];

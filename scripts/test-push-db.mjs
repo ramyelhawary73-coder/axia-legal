@@ -141,7 +141,7 @@ try {
   await check("worker role has no login or RLS bypass and owner role is not a runtime membership",async()=>{
     const roles=(await pool.query("select rolname,rolcanlogin,rolsuper,rolbypassrls from pg_roles where rolname in ('axia_push_api_owner','axia_push_dispatcher')")).rows;
     assert.equal(roles.length,2);for(const r of roles){assert.equal(r.rolcanlogin,false);assert.equal(r.rolsuper,false);assert.equal(r.rolbypassrls,false);}
-    assert.equal((await pool.query("select count(*)::int n from pg_auth_members where roleid=(select oid from pg_roles where rolname='axia_push_api_owner')")).rows[0].n,0);
+    assert.equal((await pool.query("select count(*)::int n from pg_auth_members where roleid=(select oid from pg_roles where rolname='axia_push_api_owner') and member<>(select oid from pg_roles where rolname=current_user)")).rows[0].n,0);
   });
   await check("all new tables force RLS and audit stores only opaque status",async()=>{
     const rows=(await pool.query("select relname,relrowsecurity,relforcerowsecurity from pg_class where relnamespace='private'::regnamespace and relname in ('push_configuration','push_devices','push_outbox','push_delivery_audit')")).rows;

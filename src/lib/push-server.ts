@@ -3,7 +3,7 @@ import { getSupabasePublicConfig } from "@/lib/supabase/config";
 import { resolveWorkspace } from "@/lib/api/workspace";
 import { derivePushKey, endpointHash, sealSubscription, validateSubscription } from "../../workers/push/delivery.mjs";
 
-const branch = "feat/axia-web-push-20261127";
+const branch = "feat/axia-push-edge-free-20261127";
 const scope = "axia-push-preview-v1";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function pushResponse(value: unknown, status = 200) {

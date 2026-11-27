@@ -1,3 +1,5 @@
+> Current owner direction: zero additional cost. See `docs/AXIA_PUSH_EDGE_FREE_REVIEW_2026-11-27.md`. The Edge/Cron add-on replaces paid worker hosting and independent paid project proposals; base details below are historical. Shared transport now lives in `supabase/functions/_shared`, Node imports it. Edge readiness is 120 seconds after its reviewed SQL add-on; the original Node proposal used 30. No runtime activation is authorized.
+
 # AXIA Android background Push proof
 
 Disabled by default. Source work for PR #58, based on main 2703b0c. This is the generic delayed-test path, not the legal-reminder scheduler or Production enablement.

@@ -1,0 +1,10 @@
+{
+  "nodeModulesDir": "manual",
+  "imports": {
+    "web-push": "npm:web-push@3.6.7",
+    "pg": "npm:pg@8.16.3"
+  },
+  "tasks": {
+    "test": "deno test --node-modules-dir=manual --allow-env --allow-read --allow-write=/tmp --allow-run=openssl --allow-net=127.0.0.1,localhost test/"
+  }
+}

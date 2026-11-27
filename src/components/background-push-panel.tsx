@@ -71,7 +71,7 @@ export function BackgroundPushPanel({ scope }: { scope?: string }) {
   }
   return <section aria-label="اختبار الإرسال والتطبيق مغلق" className="mt-4 border-t border-[var(--border)] pt-4">
     <h4 className="font-bold">اختبار الإشعار والتطبيق مغلق</h4>
-    <p className="mt-2 text-sm leading-7 text-[var(--text-muted)]">اختبار عام لجهاز أندرويد الحالي فقط، باشتراك مؤقت حتى ١٥ دقيقة. يحتاج تجهيز خدمة الخادم وموافقتك. لا يرسل بيانات قضايا أو يفعّل التذكيرات التلقائية.</p>
+    <p className="mt-2 text-sm leading-7 text-[var(--text-muted)]">اختبار عام لجهاز أندرويد الحالي فقط، باشتراك مؤقت حتى ١٥ دقيقة. يحتاج تجهيز خدمة الخادم وموافقتك. يبدأ الإرسال بعد ٩٠ ثانية عند دورة الفحص التالية، وقد يتأخر نحو دقيقة إضافية. لا يرسل بيانات قضايا أو يفعّل التذكيرات التلقائية.</p>
     <div className="mt-3 flex flex-wrap gap-2">
       <button type="button" className="axia-text-action" disabled={busy || !scope} onClick={() => void operation(inspect)}>فحص جاهزية الإرسال في الخلفية</button>
       {config?.enabled ? <button type="button" className="axia-primary-action" disabled={busy} onClick={() => void operation(enroll)}>السماح باختبار الخلفية لهذا الجهاز</button> : null}
