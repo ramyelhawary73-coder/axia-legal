@@ -1,5 +1,5 @@
 {
-  "nodeModulesDir": "manual",
+  "nodeModulesDir": "none",
   "imports": {
     "web-push": "npm:web-push@3.6.7",
     "pg": "npm:pg@8.16.3"

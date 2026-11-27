@@ -58,6 +58,13 @@ Deno.test({ name: "native Deno/pg: isolated SQL gates, HMAC scheduler, live send
       // Test ONLY substitutes extension interfaces; this is never a hosted migration.
       await c.query("create schema extensions; create extension pgcrypto with schema extensions; create schema vault; create schema net; create table vault.decrypted_secrets(name text,decrypted_secret text); create table net.test_requests(id bigserial,url text,headers jsonb,body jsonb,timeout integer)");
       await c.query("create function net.http_post(url text,body jsonb,headers jsonb,timeout_milliseconds int) returns bigint language sql as $$insert into net.test_requests(url,body,headers,timeout) values(url,body,headers,timeout_milliseconds) returning id$$");
+      await check("extension setup fails closed when effective PUBLIC HTTP access survives REVOKE", async () => {
+        const source=await read("supabase/review/axia_push_edge_extensions.sql");
+        const guard=source.split("-- BEGIN EFFECTIVE ACL CHECK")[1].split("-- END EFFECTIVE ACL CHECK")[0];
+        await assert.rejects(c.query(guard), /PUSH_NET_ACL_NOT_ENFORCED_STOP/);
+        await c.query("revoke usage on schema net from public,anon,authenticated; revoke execute on all functions in schema net from public,anon,authenticated");
+        await c.query(guard);
+      });
       const prerequisite = /do \$\$ begin[\s\S]*?end \$\$;/;
       assert.match(cronSource,prerequisite);
       await c.query(cronSource.replace(prerequisite,"-- Isolated test extension interfaces above."));

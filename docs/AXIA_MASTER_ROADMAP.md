@@ -21,6 +21,14 @@ Local validation: 209 app tests, 11 Node transport tests, typecheck/lint/build; 
 
 NEXT ACTION (current): Review this free proposal and exact-head CI/Preview; choose approved test user/office and window. Present final SQL/ACL/key/deployment/activation values before application. Do not create resources, write hosted SQL/Secrets or send notifications without that approval. Give the next execution command.
 
+## Hosted preparation update — 27 November 2026
+
+Owner approved applying PR59 preparation to the existing project and keeping all sending closed. The reviewed base/Edge/extension/tick SQL was applied as migration axia_push_preview_edge_prepare_pr59. Five private FORCE-RLS tables exist, own approved account/office binding is stored privately, and both SQL gates are false with no window. There are no devices/outbox rows/Cron jobs/runtime LOGIN/operational Push keys. Two existing users/offices/memberships and the membership digest are unchanged. No Auth settings, business permissions, main or Production changes.
+
+Hosted verification found a blocker missed by the local extension stand-in: pg_net objects are owned by supabase_admin; REVOKE by postgres is a warning/no-op and leaves PUBLIC/anon/authenticated usage/HTTP execution. Operator cannot SET ROLE supabase_admin. Setup must not silently accept this. New source verifies effective ACL and aborts. The bounded unused-extension removal confirmation expired; pg_net remains installed pending a fresh explicit provider confirmation. Do not claim it was removed. Cleanup SQL is supabase/review/axia_push_net_unused_cleanup.sql and stops on any use/dependency. No CASCADE or administrator-access workaround is authorized.
+
+The initial hosted bundle failed with nodeModulesDir=manual (no uploaded node_modules); changing deployment resolution to none fixed it without changing the sender logic. Edge axia-push-preview version 1 is deployed, verify_jwt=false with its internal HMAC check; direct POST returned HTTP 503 / PUSH_DISABLED. No Secrets were generated/stored because setup is blocked on effective extension ACL. Native Deno tests pass, now including 13 SQL checks for the ACL failure. Hosted sender/DB/TLS/provider delivery is still unverified. Do not start the 30-minute window or register Cron. Next: resolve/confirm removal of this new unused pg_net and review a supported least-privilege scheduling route, retaining zero additional cost.
+
 ---
 
 ## 1. Product Identity
