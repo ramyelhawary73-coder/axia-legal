@@ -1,0 +1,109 @@
+{
+  "status": "REVIEW_ONLY_NOT_APPLIED",
+  "source_pr": 58,
+  "base_main": "2703b0cdbc923aba888b588974a5250105236b48",
+  "vercel": {
+    "project_id": "prj_La6uiYbY8U5pxENVIFZlA0OFiVEi",
+    "team_id": "team_zjoHM5tLON7oxIpqFikGhOFV",
+    "target": "preview",
+    "git_branch": "feat/axia-web-push-20261127",
+    "origin": "https://axia-legal-git-feat-axia-826c57-ramyelhawary73-coders-projects.vercel.app"
+  },
+  "scope": "axia-push-preview-v1",
+  "application_allowed": false,
+  "activation_allowed": false,
+  "production_allowed": false,
+  "control_center_enabled": false,
+  "database": {
+    "approved_test_project_ref": null,
+    "existing_axia_project_protected": true,
+    "copy_current_auth_or_legal_data": false,
+    "clean_baseline_review_required": true,
+    "apply_sql_automatically": false,
+    "sql": "supabase/review/axia_push_android_proof.sql",
+    "rollback": "supabase/review/axia_push_android_proof_rollback.sql",
+    "new_private_tables": [
+      "push_configuration",
+      "push_devices",
+      "push_outbox",
+      "push_delivery_audit"
+    ],
+    "new_nologin_roles": [
+      "axia_push_api_owner",
+      "axia_push_dispatcher"
+    ],
+    "proposed_login": "axia_push_preview_worker",
+    "actual_auth_policy_snapshot": null
+  },
+  "worker": {
+    "host": null,
+    "monthly_cost": null,
+    "node_version": 22,
+    "mode": "preview",
+    "process": "workers/push/run.mjs --watch",
+    "poll_seconds": 5,
+    "required_heartbeat_seconds": 30,
+    "allowed_push_host": "fcm.googleapis.com",
+    "allow_private_dns": false,
+    "verify_tls": true
+  },
+  "configuration": {
+    "AXIA_PUSH_ENABLED": "0",
+    "AXIA_PUSH_SCOPE": "axia-push-preview-v1",
+    "AXIA_PUSH_ORIGIN": "https://axia-legal-git-feat-axia-826c57-ramyelhawary73-coders-projects.vercel.app",
+    "AXIA_PUSH_EXPECTED_SUPABASE_REF": null,
+    "AXIA_PUSH_DB_HOST": null,
+    "AXIA_PUSH_DB_NAME": null,
+    "AXIA_PUSH_DEPLOYMENT_MODE": "preview",
+    "AXIA_PUSH_VAPID_SUBJECT": null,
+    "AXIA_PUSH_VAPID_PUBLIC_KEY": null
+  },
+  "secret_names_only": {
+    "AXIA_PUSH_VAPID_PRIVATE_KEY": {
+      "placements": [
+        "worker"
+      ],
+      "value": null
+    },
+    "AXIA_PUSH_SUBSCRIPTION_KEY_V1": {
+      "placements": [
+        "preview_branch_server",
+        "worker"
+      ],
+      "value": null
+    },
+    "AXIA_PUSH_DISPATCH_DATABASE_URL": {
+      "placements": [
+        "worker"
+      ],
+      "value": null
+    }
+  },
+  "branch_public_supabase_overrides": {
+    "NEXT_PUBLIC_SUPABASE_URL": null,
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": null,
+    "never_change_shared_or_production_values": true
+  },
+  "test": {
+    "audience": "explicit_current_device_only",
+    "kind": "generic_delayed_test",
+    "max_device_lease_seconds": 900,
+    "delay_seconds": 90,
+    "ttl_max_seconds": 300,
+    "phone_closed_and_screen_locked": "PENDING_OWNER_TEST",
+    "legal_event_scheduler": "NOT_IMPLEMENTED_IN_THIS_PROOF",
+    "iphone_provider": "NOT_ENABLED_IN_THIS_PROOF"
+  },
+  "security_review": {
+    "review_branch_next_version": "16.4.6",
+    "source_validation_run": 45946301319,
+    "worker_audit_findings": 0,
+    "root_runtime_critical": 0,
+    "root_runtime_high": 0,
+    "root_runtime_moderate": 2,
+    "remaining_review": [
+      "glob/minimatch major-version upgrade"
+    ],
+    "main_security_update_applied": false
+  }
+}

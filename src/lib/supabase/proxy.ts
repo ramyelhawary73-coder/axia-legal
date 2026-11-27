@@ -4,7 +4,7 @@ import { getSupabasePublicConfig } from "@/lib/supabase/config";
 
 const PUBLIC_ROUTES = ["/login"];
 const INVITATION_ROUTES = ["/invitations/accept"];
-const JSON_AUTH_ROUTES = ["/api/rajih", "/api/staff-invitations", "/api/platform", "/api/drafts"];
+const JSON_AUTH_ROUTES = ["/api/rajih", "/api/staff-invitations", "/api/platform", "/api/drafts", "/api/push"];
 
 function matchesRoute(pathname: string, routes: string[]) {
   return routes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
