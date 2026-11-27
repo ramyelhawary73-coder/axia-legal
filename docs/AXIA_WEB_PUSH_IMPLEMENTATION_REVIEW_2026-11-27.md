@@ -117,3 +117,11 @@ NEXT COMMAND:
 التحديث اللاحق يثبّت lockfile العامل الذي وُلّد واختُبر في ذلك CI، ويضيف تحقق تجميع مسار Push وخمسة فحوص HTTP فعلية على loopback وتقرير audit لتبعيات التطبيق الأساسية. يجب قراءة حالة Checks للمصدر النهائي على PR #58؛ لا تُنسَب نتائج مصدر سابق إلى تحديث لاحق. عدّاد npm الأساسي أظهر تنبيه تبعيات عند التثبيت؛ تقرير الإنتاج المنقّح في CI هو المرجع لتحديد هل توجد عوائق أمنية قبل التفعيل، دون ترقيات تلقائية أو إخفاء النتائج.
 
 مصادر تقنية قُرئت: إرشادات PWA/Route Handlers من حزمة Next المثبتة، README الرسمي web-push، Supabase sessions/changelog بتاريخ 27 نوفمبر 2026. لا CLI upgrade أو branch merge أو تغيير TLS/Auth من ملاحظات الإصدار ضمن هذا العمل.
+
+## عائق أمني في الأساس — تحديث على فرع المراجعة فقط
+
+تقرير root production audit للمصدر 26bcbea أظهر 3 تنبيهات: Next.js بدرجة critical، وglob/minimatch بدرجة moderate. root package/lock كانا مطابقين لـ main؛ هذه ليست تبعيات عامل Push، الذي عاد فحصه 0 findings.
+
+بدأ تحديث Next.js وeslint-config-next إلى 16.4.6 على هذا الفرع قبل أي تفعيل، مع lockfile وفحص بناء/دخول/قوائم/API متجددين. لا يُعد main محميًا بهذا التحديث ما دام الفرع غير مدمج؛ لا ننشر Production أو ندمج تلقائيًا. إصلاحات Next الرسمية تشمل صورة SVG/المكتبة التابعة وملاحظات أخرى؛ وجود تنبيه dependency لا يثبت وقوع استغلال أو انكشاف بيانات.
+
+يبقى glob/minimatch تعديلًا رئيسيًا منفصلًا مقترحًا، ولا تُشغّل npm audit fix --force. تُوثق بقية نتيجة audit النهائية قبل اتخاذ قرار التفعيل. مصدر التحقق: تقرير npm audit المنقّح داخل CI، و[تنبيهات Next الرسمية](https://github.com/vercel/next.js/security/advisories)، و[Next على npm](https://www.npmjs.com/package/next).
