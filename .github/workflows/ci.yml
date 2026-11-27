@@ -71,13 +71,14 @@ jobs:
       - name: Android Push SQL security and concurrency (disposable PostgreSQL 17 only)
         run: AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-push-db.mjs
 
-      - name: Resolve isolated dispatcher dependencies for lock review (no hosted credentials)
+      - name: Locked isolated Push SDK and dependency audit (no hosted credentials)
         run: |
-          npm install --prefix workers/push --package-lock-only --ignore-scripts --no-audit --no-fund
-          node -e 'process.stdout.write("AXIA_PUSH_LOCK_BASE64="+require("node:fs").readFileSync("workers/push/package-lock.json").toString("base64")+"\n")'
           npm ci --prefix workers/push --ignore-scripts --no-audit --no-fund
           npm test --prefix workers/push
           npm audit --prefix workers/push --omit=dev --audit-level=high
+
+      - name: Record existing root production dependency audit for activation review
+        run: node scripts/audit-push-root-dependencies.mjs
 
       - name: Production build
         run: npm run build
