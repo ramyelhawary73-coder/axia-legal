@@ -40,6 +40,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Read installed Next.js PWA and route-handler guidance
+        run: |
+          guide=$(rg --files node_modules/next/dist/docs | rg '/progressive-web-apps\.mdx?$' | head -1)
+          test -n "$guide"
+          cat "$guide"
+          handler=$(rg --files node_modules/next/dist/docs | rg '/route-handlers\.mdx?$' | head -1)
+          test -n "$handler"
+          cat "$handler"
+
+      - name: Isolated background Push transport tests (no hosted credentials or delivery)
+        run: node --test workers/push/test/*.test.mjs
+
       - name: Typecheck
         run: npm run typecheck
 
