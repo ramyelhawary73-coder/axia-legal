@@ -42,10 +42,10 @@ jobs:
 
       - name: Read installed Next.js PWA and route-handler guidance
         run: |
-          guide=$(rg --files node_modules/next/dist/docs | rg '/progressive-web-apps\.mdx?$' | head -1)
+          guide=$(find node_modules/next/dist/docs -type f -name "*progressive-web-apps*" | head -1)
           test -n "$guide"
           cat "$guide"
-          handler=$(rg --files node_modules/next/dist/docs | rg '/route-handlers\.mdx?$' | head -1)
+          handler=$(find node_modules/next/dist/docs -type f -name "*route-handlers*" | head -1)
           test -n "$handler"
           cat "$handler"
 
