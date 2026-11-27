@@ -3,3 +3,4 @@ export type PushBinding = { scope: string; deviceId: string; userId: string; org
 export function validateSubscription(value: unknown): SubscriptionRecord;
 export function sealSubscription(subscription: unknown, binding: PushBinding, key: string): string;
 export function endpointHash(subscription: unknown, key: string): string;
+export function derivePushKey(key: string, purpose: "subscription" | "endpoint" | "csrf"): Uint8Array<ArrayBuffer>;

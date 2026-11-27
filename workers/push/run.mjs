@@ -8,10 +8,15 @@ export function readConfig(env) {
   if (origin.protocol !== "https:" || origin.origin !== env.AXIA_PUSH_ORIGIN || origin.username || origin.password ||
       !/^[a-z0-9-]+\.vercel\.app$/.test(origin.hostname) || !origin.hostname.includes("-git-") ||
       origin.hostname.includes("-git-main-")) throw new Error("invalid_origin");
+  const ref = env.AXIA_PUSH_EXPECTED_SUPABASE_REF;
+  if (!/^[a-z0-9]{20}$/.test(ref ?? "")) throw new Error("invalid_project");
   const db = new URL(env.AXIA_PUSH_DISPATCH_DATABASE_URL);
+  const username = decodeURIComponent(db.username);
+  const direct = db.hostname === "db." + ref + ".supabase.co" && username === "axia_push_preview_worker";
+  const pooler = db.hostname.endsWith(".pooler.supabase.com") && username === "axia_push_preview_worker." + ref;
   if (!["postgres:", "postgresql:"].includes(db.protocol) || db.search || db.hash || !db.password ||
       db.hostname !== env.AXIA_PUSH_DB_HOST || db.pathname !== "/" + env.AXIA_PUSH_DB_NAME ||
-      !/^axia_push_preview_worker(?:\.[a-z0-9]{20})?$/.test(decodeURIComponent(db.username))) throw new Error("invalid_database");
+      (!direct && !pooler)) throw new Error("invalid_database");
   if (!/^[A-Za-z0-9_-]{43}$/.test(env.AXIA_PUSH_SUBSCRIPTION_KEY_V1 ?? "") ||
       !/^[A-Za-z0-9_-]{87}$/.test(env.AXIA_PUSH_VAPID_PUBLIC_KEY ?? "") ||
       !/^[A-Za-z0-9_-]{43}$/.test(env.AXIA_PUSH_VAPID_PRIVATE_KEY ?? "")) throw new Error("invalid_keys");
@@ -30,9 +35,9 @@ export async function run(env = process.env) {
   const stop = () => { stopped = true; };
   process.on("SIGTERM", stop); process.on("SIGINT", stop);
   try {
-    const role = (await pool.query("select current_user as name,current_database() as db,rolsuper,rolbypassrls,rolcreatedb,rolcreaterole,pg_has_role(current_user,'axia_push_dispatcher','member') as member from pg_roles where rolname=current_user")).rows[0];
+    const role = (await pool.query("select current_user as name,current_database() as db,rolsuper,rolbypassrls,rolcreatedb,rolcreaterole,pg_has_role(current_user,'axia_push_dispatcher','member') as member,exists(select 1 from pg_auth_members am join pg_roles parent on parent.oid=am.roleid where am.member=(select oid from pg_roles where rolname=current_user) and parent.rolname<>'axia_push_dispatcher') as extra_membership from pg_roles where rolname=current_user")).rows[0];
     if (!role || role.name !== "axia_push_preview_worker" || role.db !== config.dbName || !role.member ||
-        role.rolsuper || role.rolbypassrls || role.rolcreatedb || role.rolcreaterole) throw new Error("invalid_worker_role");
+        role.rolsuper || role.rolbypassrls || role.rolcreatedb || role.rolcreaterole || role.extra_membership) throw new Error("invalid_worker_role");
     const store = {
       async authorize(claim) {
         const value = (await pool.query("select private.axia_push_authorize($1,$2) value", [claim.id, claim.nonce])).rows[0].value;

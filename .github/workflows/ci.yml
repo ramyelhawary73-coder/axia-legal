@@ -77,6 +77,7 @@ jobs:
           node -e 'process.stdout.write("AXIA_PUSH_LOCK_BASE64="+require("node:fs").readFileSync("workers/push/package-lock.json").toString("base64")+"\n")'
           npm ci --prefix workers/push --ignore-scripts --no-audit --no-fund
           npm test --prefix workers/push
+          npm audit --prefix workers/push --omit=dev --audit-level=high
 
       - name: Production build
         run: npm run build

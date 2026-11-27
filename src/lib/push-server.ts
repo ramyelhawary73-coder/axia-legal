@@ -1,7 +1,7 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { getSupabasePublicConfig } from "@/lib/supabase/config";
 import { resolveWorkspace } from "@/lib/api/workspace";
-import { endpointHash, sealSubscription, validateSubscription } from "../../workers/push/delivery.mjs";
+import { derivePushKey, endpointHash, sealSubscription, validateSubscription } from "../../workers/push/delivery.mjs";
 
 const branch = "feat/axia-web-push-20261127";
 const scope = "axia-push-preview-v1";
@@ -54,7 +54,7 @@ async function body(request: Request, fields: string[]) {
   return value;
 }
 function csrfMac(key: string, workspace: string, sessionId: string, origin: string, issued: string, nonce: string) {
-  return createHmac("sha256", Buffer.from(key, "base64url")).update(JSON.stringify(["push-csrf-v1", workspace, sessionId, origin, issued, nonce])).digest("base64url");
+  return createHmac("sha256", derivePushKey(key, "csrf")).update(JSON.stringify(["push-csrf-v1", workspace, sessionId, origin, issued, nonce])).digest("base64url");
 }
 function csrfValid(token: string | null, key: string, workspace: string, sessionId: string, origin: string) {
   if (!token || !/^\d{10}\.[A-Za-z0-9_-]{24}\.[A-Za-z0-9_-]{43}$/.test(token)) return false;

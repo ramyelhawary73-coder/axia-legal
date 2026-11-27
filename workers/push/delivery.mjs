@@ -1,6 +1,6 @@
 import { Agent } from "node:https";
 import { resolve4 } from "node:dns/promises";
-import { createCipheriv, createDecipheriv, createHash, createHmac, ECDH, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, createHmac, ECDH, hkdfSync, randomBytes } from "node:crypto";
 
 // Initial acceptance transport: Android Chrome's provider only.
 // Add a provider only with a separately reviewed endpoint/egress contract.
@@ -28,13 +28,17 @@ function keyBytes(key) {
       Buffer.from(key, "base64url").toString("base64url") !== key) throw new Error("invalid_encryption_key");
   return Buffer.from(key, "base64url");
 }
+export function derivePushKey(key, purpose) {
+  if (!["subscription", "endpoint", "csrf"].includes(purpose)) throw new Error("invalid_key_purpose");
+  return Buffer.from(hkdfSync("sha256", keyBytes(key), "axia-push-kdf-v1", "axia-push-preview-v1:" + purpose, 32));
+}
 export function bindingAAD(binding) {
   const fields = ["scope", "deviceId", "userId", "organizationId", "sessionId", "origin"];
   if (fields.some(k => typeof binding[k] !== "string" || !binding[k] || binding[k].length > 2048)) throw new Error("invalid_binding");
   return Buffer.from(JSON.stringify(fields.map(k => binding[k])));
 }
 export function sealSubscription(subscription, binding, key) {
-  const iv = randomBytes(12), cipher = createCipheriv("aes-256-gcm", keyBytes(key), iv);
+  const iv = randomBytes(12), cipher = createCipheriv("aes-256-gcm", derivePushKey(key, "subscription"), iv);
   cipher.setAAD(bindingAAD(binding));
   const data = Buffer.concat([cipher.update(JSON.stringify(validateSubscription(subscription))), cipher.final()]);
   return Buffer.concat([Buffer.from([1]), iv, cipher.getAuthTag(), data]).toString("base64url");
@@ -43,12 +47,12 @@ export function openSubscription(envelope, binding, key) {
   if (typeof envelope !== "string" || !/^[A-Za-z0-9_-]{40,8192}$/.test(envelope)) throw new Error("invalid_envelope");
   const bytes = Buffer.from(envelope, "base64url");
   if (bytes[0] !== 1 || bytes.length < 30) throw new Error("invalid_envelope");
-  const cipher = createDecipheriv("aes-256-gcm", keyBytes(key), bytes.subarray(1, 13));
+  const cipher = createDecipheriv("aes-256-gcm", derivePushKey(key, "subscription"), bytes.subarray(1, 13));
   cipher.setAAD(bindingAAD(binding)); cipher.setAuthTag(bytes.subarray(13, 29));
   return validateSubscription(JSON.parse(Buffer.concat([cipher.update(bytes.subarray(29)), cipher.final()]).toString()));
 }
 export function endpointHash(subscription, key) {
-  return createHmac("sha256", keyBytes(key)).update("axia-push-endpoint-v1\0").update(validateSubscription(subscription).endpoint).digest("hex");
+  return createHmac("sha256", derivePushKey(key, "endpoint")).update("axia-push-endpoint-v1\0").update(validateSubscription(subscription).endpoint).digest("hex");
 }
 // IPv4-only pinned egress is deliberate. Never fall back to a different DNS result/IPv6/proxy.
 export function isPublicIPv4(address) {
@@ -69,7 +73,7 @@ export async function pinnedAgent(hostname, lookup = resolve4) {
   ]).finally(() => clearTimeout(timer));
   if (!Array.isArray(addresses) || !addresses.length || addresses.some(a => !isPublicIPv4(a))) throw new Error("unsafe_dns");
   const address = addresses[0];
-  return new Agent({ keepAlive: false, maxCachedSessions: 0, lookup: (host, options, callback) => {
+  return new Agent({ rejectUnauthorized: true, keepAlive: false, maxCachedSessions: 0, lookup: (host, options, callback) => {
     if (host !== hostname) return callback(new Error("invalid_endpoint"));
     if (options?.all) callback(null, [{ address, family: 4 }]);
     else callback(null, address, 4);

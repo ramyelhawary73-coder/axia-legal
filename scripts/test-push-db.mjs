@@ -142,6 +142,14 @@ try {
     const audit=JSON.stringify((await pool.query("select * from private.push_delivery_audit")).rows);
     for(const bad of ["ciphertext","endpoint","token","fixture@","password"]) assert.ok(!audit.includes(bad));
   });
+  await check("rollback removes only this Push package and preserves existing Auth and office fixtures",async()=>{
+    const snapshot=async()=>JSON.stringify((await pool.query("select (select count(*) from auth.users) users,(select count(*) from auth.sessions) sessions,(select count(*) from public.organization_members) members,(select count(*) from public.organizations) offices")).rows);
+    const before=await snapshot();
+    await pool.query(await fs.readFile("supabase/review/axia_push_android_proof_rollback.sql","utf8"));
+    assert.equal(await snapshot(),before);
+    assert.equal((await pool.query("select to_regclass('private.push_devices') value")).rows[0].value,null);
+    assert.equal((await pool.query("select count(*)::int n from pg_roles where rolname in ('axia_push_api_owner','axia_push_dispatcher')")).rows[0].n,0);
+  });
   console.log("PASS "+checks+" isolated Push SQL/security/concurrency checks; no hosted connection.");
 } finally {
   await pool?.end();
