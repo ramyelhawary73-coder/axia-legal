@@ -51,6 +51,7 @@ jobs:
           WRANGLER_SEND_METRICS: "false"
         run: |
           npm ci --prefix workers/push-timer --no-audit --no-fund
+          npm audit --prefix workers/push-timer --audit-level=high
           workers/push-timer/node_modules/.bin/wrangler deploy --dry-run --config workers/push-timer/wrangler.json --outdir "$RUNNER_TEMP/axia-push-timer-bundle"
           AXIA_TIMER_BUNDLE="$RUNNER_TEMP/axia-push-timer-bundle/index.js" AXIA_MINIFLARE_MODULE="$GITHUB_WORKSPACE/workers/push-timer/node_modules/miniflare/dist/src/index.js" node scripts/test-push-timer-workerd.mjs
 
