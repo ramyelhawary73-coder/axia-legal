@@ -81,12 +81,14 @@ export async function handlePush(request: Request, action: string) {
       return pushResponse({ enabled: false, code: "PUSH_NOT_PROVISIONED" }, mutation ? 503 : 200);
     }
     if (!mutation) {
+      if (ready.data.workerReady !== true) return pushResponse({ enabled: false, code: "PUSH_WORKER_UNAVAILABLE" });
       const issued = String(Math.floor(Date.now()/1000)), nonce = randomBytes(18).toString("base64url");
       return pushResponse({ enabled: true, testOnly: true, publicKey: cfg.publicKey, workspace,
         leaseUntil: ready.data.leaseUntil,
         csrf: issued + "." + nonce + "." + csrfMac(cfg.key, workspace, sessionId, cfg.origin, issued, nonce) });
     }
     if (!csrfValid(request.headers.get("x-axia-push-csrf"), cfg.key, workspace, sessionId, cfg.origin)) return pushResponse({ code: "PUSH_CSRF_DENIED" }, 403);
+    if (request.method !== "DELETE" && ready.data.workerReady !== true) return pushResponse({ code: "PUSH_WORKER_UNAVAILABLE" }, 503);
     let result;
     if (action === "device" && request.method === "POST") {
       const input = await body(request, ["installationId", "subscription"]);

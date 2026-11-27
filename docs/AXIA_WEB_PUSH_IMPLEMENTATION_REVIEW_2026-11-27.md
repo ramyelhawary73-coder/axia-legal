@@ -22,8 +22,8 @@ main فُحص مباشرة عبر GitHub وبقي عند 2703b0c بعد PR #57. 
 
 | المقترح | النطاق والحد |
 | --- | --- |
-| private.push_configuration | علم enabled=false افتراضيًا، Origin واحد، ونسخة موثقة من مدد Auth الحالية. إعداد فارغ/قديم يمنع الإرسال |
-| private.push_devices | اشتراك مشفّر بـ AES-256-GCM وربط AAD بالمستخدم والمكتب والجلسة والجهاز والبيئة والأصل؛ بصمة endpoint بمفتاح لا تُكشف للعميل؛ حتى ٥ أجهزة لكل مستخدم/مكتب |
+| private.push_configuration | علم enabled=false افتراضيًا، Origin واحد، ونبض عامل الإرسال، ونسخة موثقة من مدد Auth الحالية. إعداد فارغ/قديم يمنع الإرسال |
+| private.push_devices | اشتراك مشفّر بـ AES-256-GCM بمفاتيح أغراض منفصلة عبر HKDF وربط AAD بالمستخدم والمكتب والجلسة والجهاز والبيئة والأصل؛ بصمة endpoint بمفتاح لا تُكشف للعميل؛ حتى ٥ أجهزة لكل مستخدم/مكتب |
 | private.push_outbox | اختبار عام فقط kind=test؛ تأخير ٩٠ ثانية؛ صلاحية خمس دقائق؛ idempotency وclaim/nonce/lease ومنع ازدواج claim |
 | private.push_delivery_audit | معرفات مبهمة وحالة/سبب محدود فقط؛ دون endpoint أو مفاتيح أو JWT أو محتوى قانوني |
 
@@ -55,7 +55,7 @@ https://axia-legal-git-feat-axia-826c57-ramyelhawary73-coders-projects.vercel.ap
 | AXIA_PUSH_ENABLED | 0 حتى اعتماد التجهيز؛ 1 لاحقًا لفرع Preview المحدد والعامل فقط |
 | AXIA_PUSH_SCOPE | axia-push-preview-v1، ثابت ومطابق داخل SQL |
 | AXIA_PUSH_ORIGIN | الأصل الثابت أعلاه، في Next والعامل وSQL |
-| AXIA_PUSH_EXPECTED_SUPABASE_REF | معرف مشروع اختبار مستقل ومعتمد؛ غير محدد بعد. الواجهة ترفض URL لا يطابقه |
+| AXIA_PUSH_EXPECTED_SUPABASE_REF | في Next والعامل: معرف مشروع اختبار مستقل ومعتمد؛ غير محدد بعد. الواجهة ترفض URL لا يطابقه |
 | NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY | override لهذا الفرع فقط إلى مشروع الاختبار المعتمد؛ لا تعديل للقيم العامة/Production ولا نسخ بيانات المشروع القائم |
 | AXIA_PUSH_VAPID_PUBLIC_KEY | مفتاح عام جديد للاختبار بعد اعتماد إنشاء الزوج؛ يُرسل للمتصفح من API محمي |
 | AXIA_PUSH_VAPID_PRIVATE_KEY | Secret في العامل وحده؛ لا يحتاجه Next أو المتصفح |
@@ -69,7 +69,7 @@ https://axia-legal-git-feat-axia-826c57-ramyelhawary73-coders-projects.vercel.ap
 
 ## خدمة الإرسال المقترحة — لم تُشغّل
 
-[العامل](../workers/push/README.md): Node 22 مستقل بتبعياته المقفلة، يعمل كل خمس ثوانٍ في watch ويعالج حتى ٥٠ claim في الدورة دون إبقاء معاملة قاعدة مفتوحة أثناء الشبكة. لا cron URL عام ولا secret في query. تشغيل العامل يحتاج مضيفًا دائمًا/حاوية معتمدة؛ Preview على Vercel وحده لا يشغّل عملية دائمة.
+[العامل](../workers/push/README.md): Node 22 مستقل بتبعياته المقفلة، يعمل كل خمس ثوانٍ في watch ويعالج حتى ٥٠ claim في الدورة دون إبقاء معاملة قاعدة مفتوحة أثناء الشبكة. لا cron URL عام ولا secret في query. فحص الجاهزية يحتاج نبض العامل خلال آخر ٣٠ ثانية؛ توقفه يمنع اشتراكًا/اختبارًا جديدًا مع إبقاء إبطال الاشتراك متاحًا في الجلسة الصالحة. تشغيل العامل يحتاج مضيفًا دائمًا/حاوية معتمدة؛ Preview على Vercel وحده لا يشغّل عملية دائمة.
 
 هذا الاحتياج التشغيلي قد يكون مدفوعًا. لم تُنشأ خدمة/مشروع أو تُعتمد تكلفة. لا تفعيل على Production. بعد اختيار مكان العامل يجب مراجعة TLS/egress/مراقبة التوقف دون طباعة الأسرار.
 

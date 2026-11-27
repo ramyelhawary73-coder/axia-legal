@@ -17,7 +17,7 @@ function harness(overrides={}) {
   getUser:async()=>({data:{user:{id:overrides.freshUser??uuid(1),email_confirmed_at:"2026-01-01",is_anonymous:false}},error:null}),
   getClaims:async()=>({data:{claims:{sub:uuid(1),session_id:liveSession,exp:Math.floor(current/1000)+3600}},error:null}),
  },rpc:async(name,args)=>{
-   if(name==="axia_push_status")return {data:{ready:!overrides.notProvisioned,origin,leaseUntil:new Date(current+900000).toISOString()},error:null};
+   if(name==="axia_push_status")return {data:{ready:!overrides.notProvisioned,workerReady:!overrides.workerUnavailable,origin,leaseUntil:new Date(current+900000).toISOString()},error:null};
    mutations.push({name,args});
    return {data:name==="axia_push_enroll"?{id:args.p_device,expiresAt:new Date(current+900000).toISOString()}:
     name==="axia_push_revoke"?{revoked:true}:{accepted:true,id:uuid(4),scheduledAt:new Date(current+90000).toISOString()},error:null};
@@ -94,4 +94,13 @@ test("receiver remains generic without requiring a page, cache access or a paylo
  vm.runInNewContext(fs.readFileSync("src/pwa/service-worker.js","utf8"),{self});
  let done;handlers.push({waitUntil:value=>{done=value;}});await done;assert.equal(shown.length,1);
  assert.equal(shown[0][1].badge,"/pwa/notification-badge-96.png");assert.equal(shown[0][1].data.path,"/?workspace=1");
+});
+
+test("stale worker blocks new tests but still permits explicit own-device revoke",async()=>{
+ const healthy=harness(),config=await (await healthy.request()).json(),h=harness({workerUnavailable:true});
+ assert.equal((await (await h.request()).json()).enabled,false);
+ assert.equal((await h.request("test","POST",{deviceId:uuid(5),requestId:uuid(6)},config.csrf)).status,503);
+ assert.equal(h.mutations.length,0);
+ assert.equal((await h.request("device","DELETE",{deviceId:uuid(5)},config.csrf)).status,200);
+ assert.equal(h.mutations[0].name,"axia_push_revoke");
 });

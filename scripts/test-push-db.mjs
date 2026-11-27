@@ -8,7 +8,7 @@ const { default: pg } = await import(pathToFileURL(process.env.AXIA_SQL_TEST_MOD
 const options = { host: "127.0.0.1", port: 5432, user: "postgres", connectionTimeoutMillis: 5000, statement_timeout: 10000 };
 const control = new pg.Pool({ ...options, database: "postgres", max: 1 });
 const name = "axia_push_verify_" + process.pid;
-let pool, owned = false, rolesOwned = false, checks = 0;
+let pool, owned = false, rolesOwned = false, checks = 0, poolFailure;
 const id = n => "00000000-0000-4000-8000-" + String(n).padStart(12, "0");
 const office = id(100), otherOffice = id(101);
 async function check(name, fn) { await fn(); console.log("PASS " + name); checks++; }
@@ -39,6 +39,7 @@ try {
   assert.equal(prior.rows.length,0,"Never replace or delete a pre-existing role");
   await control.query('create database "'+name+'"'); owned=true;
   pool = new pg.Pool({ ...options, database: name, max: 6 });
+  pool.on("error", error => { poolFailure ??= error.code ?? "unknown"; });
   await pool.query(await fs.readFile("tests/sql/push-fixture.sql","utf8"));
   rolesOwned = true;
   await pool.query(await fs.readFile("supabase/review/axia_push_android_proof.sql","utf8"));
@@ -50,8 +51,14 @@ try {
   for(let n=1;n<=9;n++) await pool.query("insert into public.organization_members values($1,$2,$3)",
     [n===7?otherOffice:office,id(n),["owner","admin","lawyer","staff","trainee","viewer"][(n-1)%6]]);
   await check("default configuration is disabled",()=>deny(()=>status()));
-  await pool.query("update private.push_configuration set enabled=true,origin='https://fixture-git-push.vercel.app',timebox_seconds=0,inactivity_seconds=0,single_session=false,auth_policy_verified_at=now()");
+  await pool.query("update private.push_configuration set enabled=true,dispatcher_seen_at=now(),origin='https://fixture-git-push.vercel.app',timebox_seconds=0,inactivity_seconds=0,single_session=false,auth_policy_verified_at=now()");
   await check("each existing office role gets only its own generic test consent",async()=>{for(let n=1;n<=6;n++) assert.equal((await status(n)).ready,true);});
+  await check("worker heartbeat is fresh before enrollment readiness",async()=>{
+    assert.equal((await status()).workerReady,true);
+    await pool.query("update private.push_configuration set dispatcher_seen_at=now()-interval '1 minute'");
+    assert.equal((await status()).workerReady,false);
+    await pool.query("update private.push_configuration set dispatcher_seen_at=now()");
+  });
   await check("foreign office and forged session cannot enroll",async()=>{await deny(()=>status(7));await deny(()=>status(1,otherOffice));await deny(()=>status(1,office,{session_id:id(202)}));});
   await check("expired JWT fails closed",()=>deny(()=>status(1,office,{exp:Math.floor(Date.now()/1000)-1})));
   for(const [label,column,value,reset] of [
@@ -153,7 +160,8 @@ try {
   console.log("PASS "+checks+" isolated Push SQL/security/concurrency checks; no hosted connection.");
 } finally {
   await pool?.end();
-  if(owned)await control.query('drop database "'+name+'" with(force)');
+  if(owned)await control.query('drop database "'+name+'"');
   if(rolesOwned)for(const role of ["axia_push_api_owner","axia_push_dispatcher"])await control.query("drop role if exists "+role);
   await control.end();
+  assert.equal(poolFailure,undefined,"No unexpected database pool failure during isolated test cleanup");
 }

@@ -28,6 +28,7 @@ create table private.push_configuration (
   scope text primary key check(scope='axia-push-preview-v1'),
   enabled boolean not null default false,
   origin text,
+  dispatcher_seen_at timestamptz,
   -- Attest actual current provider settings; NULL/stale attestation fails closed.
   timebox_seconds integer check(timebox_seconds>=0),
   inactivity_seconds integer check(inactivity_seconds>=0),
@@ -136,10 +137,11 @@ end $$;
 
 create function public.axia_push_status(p_org uuid) returns jsonb
 language plpgsql security definer set search_path='' as $$
-declare ctx jsonb; o text; begin
+declare ctx jsonb; o text; heartbeat timestamptz; begin
   ctx:=private.axia_push_context(p_org);
-  select origin into o from private.push_configuration where scope='axia-push-preview-v1';
-  return jsonb_build_object('ready',true,'origin',o,'leaseUntil',ctx->>'expires','testOnly',true);
+  select origin,dispatcher_seen_at into o,heartbeat from private.push_configuration where scope='axia-push-preview-v1';
+  return jsonb_build_object('ready',true,'origin',o,'leaseUntil',ctx->>'expires','testOnly',true,
+    'workerReady',coalesce(heartbeat between statement_timestamp()-interval '30 seconds' and statement_timestamp()+interval '5 seconds',false));
 end $$;
 
 create function public.axia_push_enroll(p_org uuid,p_device uuid,p_hash text,p_ciphertext text) returns jsonb
@@ -209,6 +211,7 @@ create function private.axia_push_claim() returns jsonb
 language plpgsql security definer set search_path='' as $$
 declare j private.push_outbox; n text; begin
   if not exists(select 1 from private.push_configuration where scope='axia-push-preview-v1' and enabled) then return null; end if;
+  update private.push_configuration set dispatcher_seen_at=clock_timestamp() where scope='axia-push-preview-v1';
   -- Ciphertext is removed promptly when binding expires/session disappears; no Auth-table trigger.
   update private.push_devices set revoked_at=clock_timestamp(),ciphertext=null,revision=revision+1
     where scope='axia-push-preview-v1' and revoked_at is null and (session_id is null or expires_at<=clock_timestamp());

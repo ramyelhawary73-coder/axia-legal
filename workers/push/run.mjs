@@ -31,7 +31,9 @@ export async function run(env = process.env) {
   const [{ default: webpush }, { default: pg }] = await Promise.all([import("web-push"), import("pg")]);
   const pool = new pg.Pool({ connectionString: config.db, ssl: { rejectUnauthorized: true }, max: 2,
     connectionTimeoutMillis: 5000, statement_timeout: 5000, query_timeout: 7000, idleTimeoutMillis: 8000 });
-  let stopped = false;
+  let stopped = false, poolFailure = false;
+  // pg idle errors can include its client/config object. Never let EventEmitter dump credentials.
+  pool.on("error", () => { poolFailure = true; stopped = true; });
   const stop = () => { stopped = true; };
   process.on("SIGTERM", stop); process.on("SIGINT", stop);
   try {
@@ -54,8 +56,10 @@ export async function run(env = process.env) {
         const result = await deliverClaim({ claim, store, sendNotification: webpush.sendNotification.bind(webpush), key: config.key, vapid: config.vapid });
         if (result.state === "halted") throw new Error("sender_halted");
       }
+      if (poolFailure) throw new Error("worker_connection_lost");
       if (process.argv.includes("--watch") && !stopped) await pause(5000);
     } while (process.argv.includes("--watch") && !stopped);
+    if (poolFailure) throw new Error("worker_connection_lost");
   } finally {
     process.off("SIGTERM", stop); process.off("SIGINT", stop); await pool.end();
   }
