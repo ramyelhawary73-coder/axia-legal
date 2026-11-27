@@ -1,6 +1,6 @@
 import { Agent } from "node:https";
 import { resolve4 } from "node:dns/promises";
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, createHmac, ECDH, randomBytes } from "node:crypto";
 
 // Initial acceptance transport: Android Chrome's provider only.
 // Add a provider only with a separately reviewed endpoint/egress contract.
@@ -19,6 +19,7 @@ export function validateSubscription(value) {
         Buffer.from(key, "base64url").toString("base64url") !== key) throw new Error("invalid_keys");
   }
   if (Buffer.from(keys.p256dh, "base64url")[0] !== 4) throw new Error("invalid_keys");
+  ECDH.convertKey(Buffer.from(keys.p256dh, "base64url"), "prime256v1", undefined, undefined, "uncompressed");
   if (value.expirationTime != null && (!Number.isSafeInteger(value.expirationTime) || value.expirationTime <= Date.now())) throw new Error("expired_subscription");
   return { endpoint, expirationTime: value.expirationTime ?? null, keys: { p256dh: keys.p256dh, auth: keys.auth } };
 }
@@ -46,8 +47,8 @@ export function openSubscription(envelope, binding, key) {
   cipher.setAAD(bindingAAD(binding)); cipher.setAuthTag(bytes.subarray(13, 29));
   return validateSubscription(JSON.parse(Buffer.concat([cipher.update(bytes.subarray(29)), cipher.final()]).toString()));
 }
-export function endpointHash(subscription) {
-  return createHash("sha256").update(validateSubscription(subscription).endpoint).digest("hex");
+export function endpointHash(subscription, key) {
+  return createHmac("sha256", keyBytes(key)).update("axia-push-endpoint-v1\0").update(validateSubscription(subscription).endpoint).digest("hex");
 }
 // IPv4-only pinned egress is deliberate. Never fall back to a different DNS result/IPv6/proxy.
 export function isPublicIPv4(address) {
@@ -92,7 +93,10 @@ export function classifyResult(status, attempt, expiresAt, now, retryAfter) {
 // Error text/headers/provider body must never be logged: they may contain subscription secrets.
 export async function deliverClaim({ claim, store, sendNotification, key, vapid, now = Date.now, agentFactory = pinnedAgent }) {
   const job = await store.authorize(claim);
-  if (!job) return { state: "suppressed", reason: "ineligible" };
+  if (!job) {
+    const result = { state: "suppressed", reason: "ineligible" };
+    await store.finish(claim, result); return result;
+  }
   let agent;
   let status = 0, retryAfter;
   try {

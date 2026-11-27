@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useMemo,useRef,useState} from "react";
 import Link from "next/link";
+import { BackgroundPushPanel } from "@/components/background-push-panel";
 import {Bell,BellRing,CheckSquare,Gavel,ShieldCheck,X} from "lucide-react";
 import type {Hearing,LegalTask,NavigationTab} from "@/types/legal";
 import {revalidateWorkspaceReminder} from "@/lib/notification-reminders-client";
@@ -46,7 +47,7 @@ export function NotificationsPopover({tasks,hearings,onNavigate,onToggleTaskStat
     setBusy(true);
     const result=await requestBrowserNotificationPermission();setPermission(result);setBusy(false);
     setEnabledScope(result==="granted"?scope:null);
-    setMessage(result==="granted"?"تم السماح بالتذكيرات أثناء فتح التطبيق على هذا الجهاز. الإرسال بعد الإغلاق غير مفعّل.":result==="denied"?"الإشعارات محظورة لهذا الموقع. يمكن تغييرها من إعدادات المتصفح باختيارك.":"لم تُفعّل الإشعارات. يمكنك استخدام قائمة التذكيرات داخل AXIA.");
+    setMessage(result==="granted"?"تم السماح بالتذكيرات أثناء فتح التطبيق على هذا الجهاز. التذكير التلقائي بعد الإغلاق غير مفعّل.":result==="denied"?"الإشعارات محظورة لهذا الموقع. يمكن تغييرها من إعدادات المتصفح باختيارك.":"لم تُفعّل الإشعارات. يمكنك استخدام قائمة التذكيرات داخل AXIA.");
   }
   async function testNotification() {
     setBusy(true);const ok=await sendPublicWorkspaceNotification({test:true});setBusy(false);
@@ -77,7 +78,7 @@ export function NotificationsPopover({tasks,hearings,onNavigate,onToggleTaskStat
         <section aria-label="إعدادات إشعارات الجهاز" className="axia-notification-settings">
           <div className="flex items-center gap-2"><BellRing size={20} aria-hidden="true"/><h3 className="font-bold">إشعارات هذا الجهاز</h3></div>
           <p className="mt-3 text-sm leading-7 text-[var(--text-muted)]">التذكيرات متاحة أثناء فتح AXIA. على آيفون، ثبّته وافتحه من الشاشة الرئيسية أولًا. دعم الإشعارات يختلف حسب النظام والمتصفح.</p>
-          <p className="mt-2 text-sm leading-7"><strong>الإرسال بعد إغلاق التطبيق: غير مفعّل بعد.</strong> يحتاج خدمة Push وإعدادات خادم معتمدة.</p>
+          <p className="mt-2 text-sm leading-7"><strong>التذكير التلقائي بعد إغلاق التطبيق: غير مفعّل بعد.</strong> يحتاج خدمة Push وإعدادات خادم معتمدة.</p>
           <p className="mt-2 flex items-start gap-2 text-sm leading-7 text-[var(--text-muted)]"><ShieldCheck size={18} className="mt-1 shrink-0" aria-hidden="true"/>الإشعار الخارجي عام؛ لا يعرض أسماء موكلين أو أرقام قضايا.</p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button type="button" className="axia-primary-action" disabled={busy||(!enabled&&(!dataReady||dataError||permission==="unsupported"||permission==="restricted"||permission==="denied"))} onClick={()=>void toggleReminders()}>{enabled?"إيقاف التذكيرات لهذه الجلسة":"السماح بتذكيرات الجهاز"}</button>
@@ -87,6 +88,7 @@ export function NotificationsPopover({tasks,hearings,onNavigate,onToggleTaskStat
           {permission==="unsupported"||permission==="restricted"?<p role="status" className="mt-3 text-sm leading-7">إشعارات النظام غير متاحة في وضع المتصفح الحالي. التذكيرات داخل AXIA تظل متاحة.</p>:null}
           {permission==="denied"?<p role="status" className="mt-3 text-sm leading-7">الإذن محظور لهذا الموقع؛ لن نكرر طلبه تلقائيًا.</p>:null}
           {message?<p role="status" className="mt-3 text-sm leading-7">{message}</p>:null}
+          <BackgroundPushPanel key={scope} scope={scope}/>
         </section>
       </div>
     </dialog>

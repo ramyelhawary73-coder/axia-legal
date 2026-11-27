@@ -29,7 +29,7 @@ test("AEAD is randomized and bound to every identity field; no plaintext storage
   assert.throws(() => openSubscription(a, binding, randomBytes(32).toString("base64url")));
   const bytes = Buffer.from(a, "base64url"); bytes[30] ^= 1;
   assert.throws(() => openSubscription(bytes.toString("base64url"), binding, key));
-  assert.equal(endpointHash(subscription).length, 64);
+  assert.equal(endpointHash(subscription, key).length, 64);
 });
 test("public IPv4 egress rejects private/reserved/ambiguous forms", () => {
   for (const address of ["0.1.2.3", "10.0.0.1", "127.0.0.1", "100.64.0.1", "169.254.169.254", "172.16.0.1", "192.168.1.1",

@@ -40,15 +40,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Read installed Next.js PWA and route-handler guidance
-        run: |
-          guide=$(find node_modules/next/dist/docs -type f -name "*progressive-web-apps*" | head -1)
-          test -n "$guide"
-          cat "$guide"
-          handler=$(find node_modules/next/dist/docs -type f -name "*route-handlers*" | head -1)
-          test -n "$handler"
-          cat "$handler"
-
       - name: Isolated background Push transport tests (no hosted credentials or delivery)
         run: node --test workers/push/test/*.test.mjs
 
@@ -76,6 +67,16 @@ jobs:
           AXIA_SQL_BACKEND=postgres AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-platform-db.mjs
           AXIA_SQL_BACKEND=postgres AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-platform-operator.mjs
           AXIA_SQL_BACKEND=postgres AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-control-center-db.mjs
+
+      - name: Android Push SQL security and concurrency (disposable PostgreSQL 17 only)
+        run: AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-push-db.mjs
+
+      - name: Resolve isolated dispatcher dependencies for lock review (no hosted credentials)
+        run: |
+          npm install --prefix workers/push --package-lock-only --ignore-scripts --no-audit --no-fund
+          node -e 'process.stdout.write("AXIA_PUSH_LOCK_BASE64="+require("node:fs").readFileSync("workers/push/package-lock.json").toString("base64")+"\n")'
+          npm ci --prefix workers/push --ignore-scripts --no-audit --no-fund
+          npm test --prefix workers/push
 
       - name: Production build
         run: npm run build
