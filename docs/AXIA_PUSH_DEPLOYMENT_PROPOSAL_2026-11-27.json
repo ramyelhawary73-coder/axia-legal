@@ -1,5 +1,5 @@
 {
-  "status": "PREPARED_DISABLED_SCHEDULER_REPLACEMENT_REVIEW_PENDING",
+  "status": "READINESS_SOURCE_READY_HOSTED_APPLICATION_NOT_APPROVED",
   "review": "AXIA_PUSH_EDGE_FREE_REVIEW_2026-11-27.md",
   "source_predecessor_pr": 58,
   "base_main": "2703b0cdbc923aba888b588974a5250105236b48",
@@ -150,5 +150,20 @@
     "native_sql_checks_passed": 21,
     "hosted_cpu_verified": false,
     "account_verified": false
+  },
+  "readiness_review": "AXIA_PUSH_READINESS_REVIEW_2026-11-28.md",
+  "readiness": {
+    "source_implementation_approved": true,
+    "hosted_deployment_approved": false,
+    "execution_approved": false,
+    "max_remaining_deadline_seconds": 300,
+    "authentication_purpose": "axia-push-readiness-v1",
+    "sql_migration_required": false,
+    "secrets_changes_required": false,
+    "automatic_preview_deployment_enabled": false,
+    "config_defaults": {
+      "AXIA_PUSH_READINESS_ENABLED": "0",
+      "AXIA_PUSH_READINESS_UNTIL": null
+    }
   }
 }

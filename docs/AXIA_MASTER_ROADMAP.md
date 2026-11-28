@@ -13,7 +13,29 @@
 > **Current handoff branch:** `feat/axia-push-edge-free-20261127`, continuing unmerged PR #58 from main 2703b0c; zero-additional-cost Edge/Cron proposal, all hosted gates off
 > **Current package:** [Real Web Push implementation review](AXIA_WEB_PUSH_IMPLEMENTATION_REVIEW_2026-11-27.md): explicit temporary own-device enrollment, server-delayed generic test, isolated dispatcher, and unapplied SQL/rollback/ACL manifest. Source development is authorized; live database/roles/Auth/Secrets/resources/activation are not. Control center stays off. Android menu and notification-mask corrections are merged and owner-reported PASS. Physical closed-app/locked-screen Push, iPhone, H1 natural refresh/expiry, P2 local server and offline sync remain open. Do not merge main or deploy Production for this new Push package without separate review.
 
-## Current update — free Edge/Cron Push review, 27 November 2026
+## Current source update — disabled readiness, 28 November 2026
+
+Owner approved source/tests on PR #59 only, before any hosted application.
+[Readiness implementation and deployment difference](AXIA_PUSH_READINESS_REVIEW_2026-11-28.md)
+is the current NEXT ACTION, superseding older review/preparation instructions below.
+Adds an independently disabled, purpose-separated HMAC diagnostic within the existing
+Edge function: restricted LOGIN, strict pg TLS, read-only transaction/catalog checks,
+fixed project/Preview/pooler and <=5-minute remaining diagnostic deadline. No claim,
+admission, heartbeat, provider call or SQL/Secrets/ACL/Auth changes. Fifteen new local
+Deno tests pass, including real pg certificate/hostname rejection and entrypoint routing;
+22 Deno and 17 Node tests pass in the focused regression run. Hosted DB/TLS/CPU and
+closed-phone receipt remain unproved.
+
+Last hosted observations (preceding source implementation): Edge v2 matched prior
+source; SQL replacement applied and gates off, window NULL, calls/jobs/devices/outbox
+zero; dedicated Cloudflare timer created with HMAC only, flag=0, URLs/Cron/logs off.
+Its date remains 2026-11-28 versus checked-in 2026-11-27. Source adds a branch-only
+Vercel automatic-deployment stop to publish PR code without a Preview deployment.
+No hosted changes in this implementation step. Review disabled-only Edge deployment
+and timer date correction before application; diagnostics execution needs a separate
+bounded approval. Control center, sending and Cron remain off; no main/Production.
+
+## Historical update — free Edge/Cron Push review, 27 November 2026
 
 The owner requires zero additional cost. [Free Edge Push review](AXIA_PUSH_EDGE_FREE_REVIEW_2026-11-27.md) supersedes the paid Render/new-project proposal and older isolated-project NEXT ACTION below. Supabase account API and live Usage UI confirm Free, 0/500,000 Edge invocations this cycle, no overages; pg_cron/pg_net available but not installed. Existing AXIA is healthy. Source uses a short native-Deno pg/web-push sender, HMAC-signed fixed Cron request, existing project with explicit account/office/window allowlist, max one hour and 200 proof invocations/month. This is logical isolation, not a separate database. SQL, new extension ACLs, limited worker LOGIN, keys/Vault, job registration, deployment and activation remain REVIEW ONLY. No hosted write, resources, paid upgrade, Auth/business changes, main merge or Production publish. Control center and Push stay off.
 
