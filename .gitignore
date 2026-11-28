@@ -1,5 +1,8 @@
 # dependencies
 /node_modules
+/workers/push/node_modules/
+/supabase/functions/node_modules/
+/supabase/functions/axia-push-preview/node_modules/
 
 # next
 /.next

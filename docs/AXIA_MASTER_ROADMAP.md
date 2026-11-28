@@ -6,12 +6,78 @@
 >
 > **Rule:** every implementation PR must update this file before it is considered complete.
 >
-> **Last verified:** 2026-11-27 Cairo (merged main b057ef1 and Android owner feedback; mobile grid/notification-mask correction on an isolated branch; no DB/Auth/Secrets changes)
+> **Last verified:** 2026-11-27 Cairo (main 2703b0c confirmed; owner reports Android menu/badge PASS; real background Push implementation on separate Draft #58; no hosted activation)
 > **Repository:** `ramyelhawary73-coder/axia-legal`  
 > **Default branch:** `main`  
-> **Verified application main SHA:** `b057ef11d7252b8e5ef47622352d9531c36fed5a` (PR #56 merged; verify later correction receipt separately)
-> **Current handoff branch:** `fix/axia-mobile-menu-notification-badge-20261127`, from verified main `b057ef1`, for the next bounded physical-acceptance correction
-> **Current package:** Android acceptance correction: all sections at a glance and a transparent notification mask. [Current correction report](AXIA_MOBILE_MENU_BADGE_2026-11-27.md). Previous PR #56 main integration is complete, including the login/update overlap correction and review documents. [Integration report](AXIA_MAIN_INTEGRATION_2026-11-26.md). Native-inspired UI, visible PWA installation and authorized foreground reminders; [source and background Push review](AXIA_NATIVE_UI_PUSH_REVIEW_2026-11-26.md). Background sending is not activated. PR #54 PWA foundation: real-device acceptance has started; [device acceptance](AXIA_PWA_DEVICE_ACCEPTANCE_2026-11-25.md) separates direct Chrome update evidence from pending OS installation/mobile/offline results. [P2 local-server specification](AXIA_LOCAL_SERVER_P2_REVIEW_2026-11-25.md) is prepared for review only. [Three-mode architecture](AXIA_THREE_MODE_ARCHITECTURE_2026-11-25.md) and [foundation report](AXIA_PWA_FOUNDATION_2026-11-25.md) retain the source/limits. Local server and offline legal-data sync remain unimplemented. No DB/Auth-provider/Secret/role change is authorized. The latest owner instruction separately authorizes the bounded current-package main merge and its normal Vercel release; broader feature activation is not authorized.
+> **Verified application main SHA:** `2703b0cdbc923aba888b588974a5250105236b48` (PR #57 merged; current GitHub branch read confirmed)
+> **Current handoff branch:** `feat/axia-push-edge-free-20261127`, continuing unmerged PR #58 from main 2703b0c; zero-additional-cost Edge/Cron proposal, all hosted gates off
+> **Current package:** [Real Web Push implementation review](AXIA_WEB_PUSH_IMPLEMENTATION_REVIEW_2026-11-27.md): explicit temporary own-device enrollment, server-delayed generic test, isolated dispatcher, and unapplied SQL/rollback/ACL manifest. Source development is authorized; live database/roles/Auth/Secrets/resources/activation are not. Control center stays off. Android menu and notification-mask corrections are merged and owner-reported PASS. Physical closed-app/locked-screen Push, iPhone, H1 natural refresh/expiry, P2 local server and offline sync remain open. Do not merge main or deploy Production for this new Push package without separate review.
+
+## Current source update — disabled readiness, 28 November 2026
+
+Owner approved source/tests on PR #59 only, before any hosted application.
+[Readiness implementation and deployment difference](AXIA_PUSH_READINESS_REVIEW_2026-11-28.md)
+is the current NEXT ACTION, superseding older review/preparation instructions below.
+Adds an independently disabled, purpose-separated HMAC diagnostic within the existing
+Edge function: restricted LOGIN, strict pg TLS, read-only transaction/catalog checks,
+fixed project/Preview/pooler and <=5-minute remaining diagnostic deadline. No claim,
+admission, heartbeat, provider call or SQL/Secrets/ACL/Auth changes. Fifteen new local
+Deno tests pass, including real pg certificate/hostname rejection and entrypoint routing;
+22 Deno and 17 Node tests pass in the focused regression run. Hosted DB/TLS/CPU and
+closed-phone receipt remain unproved.
+
+Last hosted observations (preceding source implementation): Edge v2 matched prior
+source; SQL replacement applied and gates off, window NULL, calls/jobs/devices/outbox
+zero; dedicated Cloudflare timer created with HMAC only, flag=0, URLs/Cron/logs off.
+Its date remains 2026-11-28 versus checked-in 2026-11-27. Source adds a branch-only
+Vercel automatic-deployment stop to publish PR code without a Preview deployment.
+No hosted changes in this implementation step. Review disabled-only Edge deployment
+and timer date correction before application; diagnostics execution needs a separate
+bounded approval. Control center, sending and Cron remain off; no main/Production.
+
+## Historical update — free Edge/Cron Push review, 27 November 2026
+
+The owner requires zero additional cost. [Free Edge Push review](AXIA_PUSH_EDGE_FREE_REVIEW_2026-11-27.md) supersedes the paid Render/new-project proposal and older isolated-project NEXT ACTION below. Supabase account API and live Usage UI confirm Free, 0/500,000 Edge invocations this cycle, no overages; pg_cron/pg_net available but not installed. Existing AXIA is healthy. Source uses a short native-Deno pg/web-push sender, HMAC-signed fixed Cron request, existing project with explicit account/office/window allowlist, max one hour and 200 proof invocations/month. This is logical isolation, not a separate database. SQL, new extension ACLs, limited worker LOGIN, keys/Vault, job registration, deployment and activation remain REVIEW ONLY. No hosted write, resources, paid upgrade, Auth/business changes, main merge or Production publish. Control center and Push stay off.
+
+Local validation: 209 app tests, 11 Node transport tests, typecheck/lint/build; 8 native-Deno tests including 12 isolated PostgreSQL gate/scheduler/sender/rollback assertions and real loopback HTTPS. No real provider delivery, physical Android/iPhone PASS or hosted Edge Runtime proof. Native extension HTTP/Cron uses local capture interfaces in tests. Exact remote CI status recorded separately after commit.
+
+NEXT ACTION (current): Review this free proposal and exact-head CI/Preview; choose approved test user/office and window. Present final SQL/ACL/key/deployment/activation values before application. Do not create resources, write hosted SQL/Secrets or send notifications without that approval. Give the next execution command.
+
+## PR #59 external timer source review — 27 November 2026
+
+The owner authorized preparing code/SQL/tests only. [Concrete free timer review](AXIA_PUSH_EXTERNAL_TIMER_REVIEW_2026-11-27.md) is now the current NEXT ACTION: inspect Cloudflare account Free quota after owner sign-in, then present exact-source SQL, resource and HMAC destination approval. Cloudflare currently shows its sign-in page; account quota is NOT verified. No Cloudflare resource/key transfer, hosted SQL or activation was performed in this source-only step.
+
+Source adds a route-disabled, schedule-disabled Web Crypto timer with a fixed Edge destination, a <=30-minute cutoff and no retries/redirect following. Proposed SQL replaces only edge_begin with locked atomic per-DB-minute/monthly admission and retires legacy tick to no-op; no table/role/grant/extension changes. Local validation: 7 timer tests, 5 real local workerd checks and 8 Deno tests including 21 PostgreSQL assertions with non-superuser setup and restricted concurrent clients. No hosted CPU/TLS or phone receipt proof. All existing gates remain off, zero jobs/devices/outbox, window NULL, control center off; main/Production unchanged. Exact-head CI/Preview are checked after source publication. See the new review before following older historical preparation instructions below.
+
+## الحالة الحالية المعتمدة — 27 نوفمبر 2026
+هذا التحديث يحل محل أوصاف «لم ينفذ» والمقترحات التاريخية أدناه. اعتمد المالك تجهيز PR #59 على Preview فقط، مع منع الإرسال وبدء نافذة الثلاثين دقيقة.
+
+- طُبّق SQL التجهيز: `axia_push_preview_edge_prepare_pr59`؛ خمس جداول Push خاصة مع FORCE RLS وحصر الحساب والمكتب المعتمدين. بيانات الهوية الفعلية في ورقة المالك الخاصة وجدول التحكم فقط.
+- نجحت إزالة pg_net الجديد غير المستخدم في `axia_push_remove_unused_net_preparation` بعد كشف أن postgres لا يستطيع تقييد ACL لكائنات supabase_admin. لا CASCADE ولا تجاوز صلاحيات؛ المصدر يوقف التثبيت عند بقاء الوصول العام. pg_cron موجود بلا jobs. **لا تشغل tick القديم؛ pg_net غير موجود.**
+- أُنشئ LOGIN محدود `axia_push_preview_worker` في `axia_push_preview_limited_runtime_login`، بعضوية dispatcher فقط، بلا superuser/BYPASSRLS/DDL أو قراءة مباشرة لجدول الأجهزة وauth.users. عضوية المشغّل الإدارية ليست عضوية العامل.
+- وُلدت مفاتيح التشغيل وحُفظت في مواضعها المعتمدة: أسرار Edge، HMAC في Vault، ومتغيرات خادم Vercel لفرع Preview وحده. لا قيم أسرار في Git أو التقرير، ولا مفتاح VAPID خاص أو اتصال قاعدة في Vercel. كل بوابات Push وEdge وSQL مغلقة؛ مركز التحكم مغلق.
+- Edge `axia-push-preview` v1 منشور. POST مستضاف بعد حفظ الأسرار أعاد `503 PUSH_DISABLED`. هذا يثبت إقلاع البوابة المغلقة فقط؛ اتصال قاعدة المُرسل/TLS والإرسال الحقيقي غير مثبتين. محاولة pooler المحلية توقفت عند DNS `EAI_AGAIN`، وليست اختبار TLS ناجحًا.
+- المصدر الوظيفي `857cf6176372b82ac9d17250b218db6de88f5af4` نجح في CI `46001049044`؛ 8 اختبارات Deno منها 13 فحص SQL. أُعيد نشر نفس المصدر بعد إعداد المتغيرات: Preview `dpl_8u6Z5iZusa4RWT8GQQXTNAzBsnom` جاهز READY. تعديل السجل اللاحق لا يغيّر شفرة المُرسل.
+- إعادة القراءة: صفر أجهزة، صفر outbox، صفر Cron jobs، بوابتا SQL false ووقت البداية/النهاية NULL. نافذة 30 دقيقة لم تبدأ، ولا قبول Android مغلق/شاشة مقفولة بعد. بيانات الأعمال/Auth وعضويات المكتب لم تتغير؛ main وProduction لم يتغيرا.
+
+### بديل الجدولة المجاني للمراجعة فقط
+اقتراح: Cloudflare Workers Free كمؤقت محدود مرة/دقيقة يستدعي عنوان Edge الثابت بتوقيع HMAC وجسم فارغ؛ يظل الإرسال وبياناته في Supabase الحالي. ليس موردًا منشأً أو اختيارًا معتمدًا بعد.
+
+| البند | التصميم وحد الاعتماد |
+| --- | --- |
+| الموارد المقترحة | Worker واحد وCron واحد؛ بلا KV/D1/Queues/خطة مدفوعة أو ربط دفع |
+| أسرار Cloudflare | HMAC فقط بعد موافقة منفصلة على وجهته الجديدة؛ لا DB/VAPID/اشتراكات أو بيانات قضايا |
+| القيم | scope الحالي، ref الحالي، عنوان Edge الحالي الثابت؛ flag=0 وT0/approved_until غير مضبوطين قبل الجاهزية |
+| SQL المطلوب عرضه أولًا | استبدال اعتماد edge_begin على حجز pg_net بحجز ذري تحت قفل صف التحكم؛ ≤200 قبول/شهر، مرة/دقيقة، تحقق النافذة والحصر ومنع الإعادة، وإنقاص الميزانية عند القبول قبل التنفيذ |
+| عدم تغيير السلوك | تبقى صلاحيات dispatcher المحدودة وMFA/الجلسة ورضا الجهاز والفحص الحي والوجهة الثابتة كما هي؛ لا وصول للمؤقت إلى قاعدة البيانات |
+| التفعيل والإغلاق | نشر مغلق أولًا؛ تحقق انتشار Cron قبل T0، ثم اعتماد تشغيل 30 دقيقة منفصل. يمنع Worker وSQL الطلبات بعد cutoff، وإغلاق الأعلام؛ حذف Cron وحده ليس إغلاقًا فوريًا |
+| التحقق المطلوب | اختبارات HMAC/النافذة/الإعادة/الميزانية والتزامن، أداء CPU الفعلي على Free، ثم فحص اتصال Edge بقاعدة البيانات مع الإرسال مغلق قبل اختبار الهاتف |
+
+الوثائق الرسمية الحالية: Workers Free حتى 100,000 طلب/يوم و5 Cron Triggers للحساب و10ms CPU لكل Cron. حدود حساب المالك المتاحة لم تُقرأ؛ يلزم التحقق منها أولًا. تغييرات Cron قد تتأخر حتى 15 دقيقة، لذلك لا نبدأ نافذة الاختبار أثناء انتظار الانتشار. لا ضمان استقبال دائم أو موعد دقيق على خطة مجانية أو عند قيود الهاتف. لم تُنشأ موارد Cloudflare أو تُنقل مفاتيح إليها، ولم يُطبق SQL بديل.
+المراجع: https://developers.cloudflare.com/workers/platform/limits/ وhttps://developers.cloudflare.com/workers/configuration/cron-triggers/ .
+
+**الخطوة التالية:** جهّز كود مؤقت Cloudflare Free وSQL الحجز الذري واختباراتهما على فرع PR #59، ثم اعرض الحزمة وموضع HMAC وحصة الحساب للمراجعة قبل إنشاء المورد أو تطبيق SQL أو نقل المفتاح. أبقِ الإرسال ومركز التحكم مغلقين، ولا تبدأ النافذة أو تدمج main أو تنشر Production.
+
 
 ---
 
@@ -83,6 +149,10 @@ Statements under **Current State** should be treated as verified only when a liv
 ---
 
 # 3. Current State
+
+## 2026-11-27 real background Push — IN_PROGRESS, activation blocked on review
+
+The owner confirmed that the Android menu and notification identity correction work, then requested actual notifications after app closure. Fresh GitHub main is 2703b0c (merged #57). Draft #58 implements a bounded generic delayed-test pipeline on `feat/axia-web-push-20261127`, with all hosted gates off. [Exact review/approval manifest](AXIA_WEB_PUSH_IMPLEMENTATION_REVIEW_2026-11-27.md) defines four new private tables, short explicit consent, a separate least-privilege worker and SQL/rollback outside automatic migrations. It does not implement the legal-event scheduler or persistent cross-platform consent. A Preview hostname does not establish isolated Supabase; select approved synthetic test resources before any SQL or keys. Local environment is unavailable; connector-published source is checked in disposable CI. Source a640981 passed CI 45945091346 (209 app tests, 11 Push transport/SDK tests, 26 native PostgreSQL Push checks, existing SQL suites, build and 251 synthetic browser records); matching Preview dpl_9h8nobuUt5XtzwmiuT3nCgmQvgWV is READY. Later lock/review/HTTP-verification changes require their own exact-head Checks. Worker dependency audit reported zero findings. Baseline audit then identified pre-existing critical Next.js findings; the branch upgrades Next/eslint-config-next to 16.4.6 (sharp 0.35.5). Source 19d4d6 passed CI 45946301319 with 209 app tests, 11 Push SDK tests, 26 Push PostgreSQL checks, 5 compiled disabled HTTP checks, 257 browser records and 21 build routes. Root audit is now zero high/critical with two inherited moderate glob/minimatch findings reserved for separate major-upgrade review. This security update has NOT reached main. Final frozen-lock/source review must use exact-head CI/Preview before approval. No physical delivery PASS is claimed. Earlier current-package paragraphs below are dated history, superseded by this entry and the updated NEXT ACTION.
 
 ## 2026-11-27 Android acceptance: all-sections menu and notification-mask correction
 
@@ -3428,9 +3498,13 @@ Before marking a PR ready:
 
 # 23. NEXT ACTION
 
+### Current PR #59 preparation — supersedes historical actions below
+
+Approved hosted SQL, limited runtime LOGIN, keys/Vault, disabled Edge and branch-only Preview configuration are prepared. Both SQL gates remain false, T0/end NULL, and there are zero jobs/devices/outbox. Unused pg_net was removed successfully; do not run its old tick. The timer, SQL proposal and local tests are prepared; review AXIA_PUSH_EXTERNAL_TIMER_REVIEW_2026-11-27.md. Cloudflare requires owner sign-in, so verify actual Free account quota before any new resource or HMAC transfer; those are not yet approved. Prove hosted pooler/TLS separately; current result is disabled boot only. No sending/window start, control center activation, main merge or Production. Give the next execution command.
+
 ### Active menu / badge acceptance correction — 2026-11-27
 
-Continue `fix/axia-mobile-menu-notification-badge-20261127`, based on merged main `b057ef1`. The owner reports Android main overview, open menu and received generic test notification; menu scrolling and white notification block remain usability/identity findings. Read the [correction report](AXIA_MOBILE_MENU_BADGE_2026-11-27.md), verify all twelve visible destinations at phone sizes and the transparent Android mask, then integrate the bounded tested correction to main under the ongoing current-package main instruction. Verify fresh merge/deployment metadata before owner recheck. Do not remerge #55/#54/#53/#52. Keep background Push/control center off and all hosted data/Auth/Secrets/roles intact; larger accessibility text may need real scrolling instead of hidden/clipped names. Physical iPhone and H1 expiry/refresh remain pending.
+Continue Draft #58 on `feat/axia-web-push-20261127`, based on verified main 2703b0c. Complete exact-head CI/Preview review of enrollment, delayed own-device test, dispatcher and unapplied SQL/rollback. Read the new Web Push implementation review. Before applying anything, choose an approved isolated synthetic Supabase project, worker host and VAPID contact and show actual names/values/cost plus SQL/ACL. Keep control center and Push off until separate configuration approval and device consent. Do not merge main, change current legal/Auth/role data or deploy Production. Physical delivery remains pending; give the next command.
 
 ### Completed main integration / earlier physical acceptance — 2026-11-26
 
@@ -3439,14 +3513,14 @@ The owner explicitly approved finishing the current package, merging main and te
 1. Complete corrected-head checks, review the waiting-update touch login regression/screenshots, and perform the authorized single main merge with an expected-head lease.
 2. Verify main's source and matching READY deployment, then public main login/install/worker and read-only UI. Owner enters credentials/MFA privately when needed. Keep control center off. Do not claim a physical phone passed from responsive browser tests.
 3. [Mobile acceptance ledger](AXIA_PR55_MOBILE_ACCEPTANCE_2026-11-26.md): owner confirmed Android Preview install, then reported login controls unresponsive. Recheck on main intentionally; an old Preview icon remains a different origin. Physical iPhone, offline recovery/update on these phones and H1 refresh/expiry remain pending.
-4. [Push proposal](AXIA_PUSH_PREVIEW_MANIFEST_REVIEW_2026-11-26.md) remains review-only: no subscription/sender/DB/keys/Secrets. Existing tasks store date-only deadlines; proposed personal notification times do not rewrite legal deadlines. Choose an approved isolated DB/fixture manifest and review final SQL/ACL before application. Local server P2 and offline data sync remain design-only.
+4. [New Push implementation review](AXIA_WEB_PUSH_IMPLEMENTATION_REVIEW_2026-11-27.md) supersedes the earlier proposal only for the bounded Android generic closed-app proof. Database/roles/keys/resources remain unapplied. Legal task/hearing scheduling, long-term cleanup/renewal and other providers remain later reviewed phases; do not rewrite date-only task deadlines.
 5. Preserve hosted data, memberships, Auth/MFA durations and deployment protection. No automatic legal-record writes, exports or privilege grants during acceptance. Main merge authorization does not approve those future phases. Always provide the next execution command.
 
 ---
 
 # 24. NEW CHAT HANDOFF
 
-Current handoff: `fix/axia-mobile-menu-notification-badge-20261127`, based on merged main b057ef1, addresses owner-reported menu scrolling and a white Android notification block. Read the current correction report and fresh PR/main/deployment receipts before claiming release. The owner confirmed main overview/drawer and a received test notification, but new grid/badge still need physical recheck. All twelve normal mobile destinations should fit without scrolling, while accessibility/exceptional sizes retain safe fallback. Control center/background Push remain off; no DB/Auth/Secrets/roles/data change. Continue physical iPhone and H1 refresh/expiry separately, avoid remerging prior ancestors, and provide the next command.
+Current handoff: Draft #58, `feat/axia-web-push-20261127` from main 2703b0c. The owner reports the merged Android menu and AXIA badge PASS. Implement and verify the disabled generic real-Push acceptance pipeline; review `AXIA_WEB_PUSH_IMPLEMENTATION_REVIEW_2026-11-27.md` for exact SQL/ACL/key/worker/isolated-resource approvals. No hosted changes or activation, no main merge/Production, control center off. Do not claim closed-app/locked-screen or iPhone delivery until physical owner evidence. H1 refresh/expiry and legal-event/persistent Push remain separate unfinished work. Always give the next command.
 
 When opening a new ChatGPT conversation for AXIA, use this instruction:
 

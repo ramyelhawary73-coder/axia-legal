@@ -40,8 +40,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Isolated background Push transport tests (no hosted credentials or delivery)
+        run: node --test workers/push/test/delivery.test.mjs workers/push/test/config.test.mjs workers/push-timer/test/timer.test.mjs
+
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Local Cloudflare timer bundle and workerd compatibility (no account or outbound network)
+        env:
+          WRANGLER_SEND_METRICS: "false"
+        run: |
+          npm ci --prefix workers/push-timer --no-audit --no-fund
+          npm audit --prefix workers/push-timer --audit-level=high
+          workers/push-timer/node_modules/.bin/wrangler deploy --dry-run --config workers/push-timer/wrangler.json --outdir "$RUNNER_TEMP/axia-push-timer-bundle"
+          AXIA_TIMER_BUNDLE="$RUNNER_TEMP/axia-push-timer-bundle/index.js" AXIA_MINIFLARE_MODULE="$GITHUB_WORKSPACE/workers/push-timer/node_modules/miniflare/dist/src/index.js" node scripts/test-push-timer-workerd.mjs
 
       - name: Lint
         run: npm run lint
@@ -64,6 +76,25 @@ jobs:
           AXIA_SQL_BACKEND=postgres AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-platform-db.mjs
           AXIA_SQL_BACKEND=postgres AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-platform-operator.mjs
           AXIA_SQL_BACKEND=postgres AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-control-center-db.mjs
+
+      - name: Android Push SQL security and concurrency (disposable PostgreSQL 17 only)
+        run: AXIA_SQL_TEST_MODULE="$RUNNER_TEMP/axia-staff-pg/node_modules/pg/lib/index.js" node scripts/test-push-db.mjs
+
+      - name: Locked isolated Push SDK and dependency audit (no hosted credentials)
+        run: |
+          npm ci --prefix workers/push --ignore-scripts --no-audit --no-fund
+          npm test --prefix workers/push
+          npm audit --prefix workers/push --omit=dev --audit-level=high
+
+      - name: Native Deno Edge Push compatibility and isolated SQL review
+        run: |
+          npm install --prefix "$RUNNER_TEMP/axia-deno" --no-audit --no-fund deno@2.9.6
+          npm ci --prefix supabase/functions/axia-push-preview --ignore-scripts --no-audit --no-fund
+          AXIA_EDGE_SQL_TEST=1 "$RUNNER_TEMP/axia-deno/node_modules/.bin/deno" test --node-modules-dir=manual --config supabase/functions/axia-push-preview/deno.json --allow-env --allow-read --allow-write=/tmp --allow-run=openssl --allow-net=127.0.0.1,localhost supabase/functions/axia-push-preview/test/
+          npm audit --prefix supabase/functions/axia-push-preview --omit=dev --audit-level=high
+
+      - name: Record existing root production dependency audit for activation review
+        run: node scripts/audit-push-root-dependencies.mjs
 
       - name: Production build
         run: npm run build

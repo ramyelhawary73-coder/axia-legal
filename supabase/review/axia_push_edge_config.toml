@@ -1,0 +1,5 @@
+# REVIEW ONLY: merge this specific function block into a reviewed CLI config after approval.
+# HMAC is checked in handler before any database/provider access. No public project key accepted.
+[functions.axia-push-preview]
+verify_jwt = false
+entrypoint = "./functions/axia-push-preview/index.mjs"

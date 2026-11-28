@@ -2,7 +2,11 @@
 
 Status: bounded acceptance correction from main `b057ef11d7252b8e5ef47622352d9531c36fed5a`, on `fix/axia-mobile-menu-notification-badge-20261127`. No database/Auth/Secrets/role/configuration changes, no Push enrollment/sender activation, no business record edits. Existing control-center defaults remain disabled. This continues the owner's request to finish current UI corrections and use the main site after tested integration; final PR/main/deployment receipts determine release state.
 
-## Physical-device evidence
+## 27 November release and owner recheck
+
+PR #57 merged as main `2703b0cdbc923aba888b588974a5250105236b48`; current main was read again before starting Draft #58. The owner now explicitly reports that the menu correction works and the notification displays the AXIA icon: **owner-reported PASS** for both. Earlier requests for that recheck below are historical. This does not establish real closed-app Push; the next package is [the disabled Push implementation/review](AXIA_WEB_PUSH_IMPLEMENTATION_REVIEW_2026-11-27.md). No existing hosted Auth/data/Secrets/roles were changed.
+
+## Physical-device evidence (initial report before correction)
 
 The owner confirmed main login/overview and opening the Android navigation drawer. The supplied screenshots show that its one-column list requires scrolling and hides several sections on first opening. The owner also reported actually receiving a test system notification, but its small icon was a plain white block. Record these separately: main login/overview and drawer opening are owner-reported PASS; complete menu visibility and badge identity are findings requiring recheck. Test-notification reception is owner-reported PASS, not an independent OS-delivery trace or proof of closed-app Push. The current package still cannot send after the app closes. Physical iPhone and natural H1 refresh/expiry remain pending.
 

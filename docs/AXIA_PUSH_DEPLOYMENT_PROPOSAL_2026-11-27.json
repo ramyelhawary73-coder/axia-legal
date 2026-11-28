@@ -1,0 +1,169 @@
+{
+  "status": "READINESS_SOURCE_READY_HOSTED_APPLICATION_NOT_APPROVED",
+  "review": "AXIA_PUSH_EDGE_FREE_REVIEW_2026-11-27.md",
+  "source_predecessor_pr": 58,
+  "base_main": "2703b0cdbc923aba888b588974a5250105236b48",
+  "branch": "feat/axia-push-edge-free-20261127",
+  "application_allowed": true,
+  "activation_allowed": false,
+  "production_allowed": false,
+  "control_center_enabled": false,
+  "cost": {
+    "additional_monthly_target_usd": 0,
+    "plan_verified": "free",
+    "edge_used_at_review": 0,
+    "edge_quota_per_cycle": 500000,
+    "usage_cycle": "2026-10-30/2026-11-30",
+    "usage_refresh_may_lag": true,
+    "new_project_or_paid_worker": false,
+    "automatic_upgrade": false
+  },
+  "database": {
+    "project_ref": "qshgczulivsxztgrbqew",
+    "isolation": "logical_account_office_preview_only_shared_project",
+    "test_user_id": null,
+    "test_organization_id": null,
+    "copy_auth_or_legal_data": false,
+    "apply_sql_automatically": false,
+    "new_private_tables": [
+      "push_configuration",
+      "push_devices",
+      "push_outbox",
+      "push_delivery_audit",
+      "push_edge_control"
+    ],
+    "new_nologin_roles": [
+      "axia_push_api_owner",
+      "axia_push_dispatcher"
+    ],
+    "proposed_runtime_login": "axia_push_preview_worker",
+    "actual_auth_policy_snapshot": null,
+    "sql_review_order": [
+      "axia_push_android_proof.sql",
+      "axia_push_edge_prepare.sql",
+      "axia_push_edge_extensions.sql",
+      "axia_push_edge_cron.sql"
+    ],
+    "rollback": "supabase/review/axia_push_edge_rollback.sql",
+    "preparation_migration_applied": true,
+    "approved_identity_in_private_review": true,
+    "pg_net_effective_acl_verified": false,
+    "pg_net_cleanup_status": "REMOVED_UNUSED_EXTENSION_CONFIRMED",
+    "pg_net_installed": false,
+    "runtime_login_memberships": [
+      "axia_push_dispatcher"
+    ]
+  },
+  "worker": {
+    "host": "existing_supabase_edge_functions",
+    "function_name": "axia-push-preview",
+    "runtime_tested_locally": "Deno 2.9.6",
+    "hosted_edge_runtime_verified": "BOOT_DISABLED_ONLY",
+    "mode": "preview",
+    "max_jobs_per_invocation": 1,
+    "cadence_seconds": 60,
+    "heartbeat_seconds": 120,
+    "max_approved_window_seconds": 3600,
+    "max_monthly_cron_invocations": 200,
+    "schedule_registered": false,
+    "approved_until": null,
+    "allowed_push_host": "fcm.googleapis.com",
+    "dns_public_ipv4_pinned": true,
+    "verify_tls": true,
+    "edge_function_version": 1,
+    "boot_response_verified": "503 PUSH_DISABLED",
+    "window_started_at": null,
+    "hosted_database_tls_verified": false,
+    "pooler_local_test": "DNS_EAI_AGAIN_NO_TLS_PROOF"
+  },
+  "configuration": {
+    "AXIA_PUSH_ENABLED": "0",
+    "AXIA_PUSH_EDGE_ENABLED": "0",
+    "AXIA_PUSH_SCOPE": "axia-push-preview-v1",
+    "AXIA_PUSH_DEPLOYMENT_MODE": "preview",
+    "AXIA_PUSH_EXPECTED_SUPABASE_REF": "qshgczulivsxztgrbqew",
+    "AXIA_PUSH_ORIGIN": "https://axia-legal-git-feat-axia-d5fb48-ramyelhawary73-coders-projects.vercel.app",
+    "AXIA_PUSH_DB_HOST": "aws-1-eu-west-1.pooler.supabase.com",
+    "AXIA_PUSH_DB_NAME": "postgres",
+    "AXIA_PUSH_VAPID_SUBJECT": "https://axia-legal-psi.vercel.app/",
+    "AXIA_PUSH_VAPID_PUBLIC_KEY": null
+  },
+  "secret_names_only": {
+    "AXIA_PUSH_VAPID_PRIVATE_KEY": [
+      "edge"
+    ],
+    "AXIA_PUSH_SUBSCRIPTION_KEY_V1": [
+      "preview_branch_server",
+      "edge"
+    ],
+    "AXIA_PUSH_DISPATCH_DATABASE_URL": [
+      "edge"
+    ],
+    "AXIA_PUSH_CRON_HMAC_KEY": [
+      "edge",
+      "vault:axia_push_preview_cron_hmac"
+    ]
+  },
+  "vercel": {
+    "project_id": "prj_La6uiYbY8U5pxENVIFZlA0OFiVEi",
+    "team_id": "team_zjoHM5tLON7oxIpqFikGhOFV",
+    "target": "preview",
+    "git_branch": "feat/axia-push-edge-free-20261127",
+    "origin": "https://axia-legal-git-feat-axia-d5fb48-ramyelhawary73-coders-projects.vercel.app",
+    "keep_protection": true,
+    "no_secret_or_env_writes": false,
+    "writes_scope": "preview_exact_branch_only",
+    "prepared_deployment_id": "dpl_8u6Z5iZusa4RWT8GQQXTNAzBsnom",
+    "prepared_source_sha": "857cf6176372b82ac9d17250b218db6de88f5af4",
+    "prepared_deployment_state": "READY"
+  },
+  "test": {
+    "kind": "generic_own_device_only",
+    "consent_lease_max_seconds": 900,
+    "eligible_delay_seconds": 90,
+    "minute_cadence_expected_dispatch_seconds": [
+      90,
+      150
+    ],
+    "provider_acceptance_is_not_os_receipt": true,
+    "real_android_closed_locked_verified": false,
+    "iphone_transport_supported": false
+  },
+  "operational_keys_created": true,
+  "runtime_login_created": true,
+  "replacement_scheduler": {
+    "status": "CODE_SQL_TESTS_PREPARED_REVIEW_ONLY_ACCOUNT_QUOTA_BLOCKED_BY_SIGN_IN",
+    "provider": "cloudflare_workers_free",
+    "resource_created": false,
+    "hmac_transferred": false,
+    "sql_applied": false,
+    "sql_change_required": "atomic_admission_budget_replay_reservation_in_edge_begin",
+    "free_account_quota_verified": false,
+    "review": "AXIA_PUSH_EXTERNAL_TIMER_REVIEW_2026-11-27.md",
+    "sql_review": "supabase/review/axia_push_external_timer.sql",
+    "source_dir": "workers/push-timer",
+    "wrangler_crons": [],
+    "timer_enabled": "0",
+    "max_window_seconds": 1800,
+    "unit_tests_passed": 7,
+    "local_workerd_checks_passed": 5,
+    "native_sql_checks_passed": 21,
+    "hosted_cpu_verified": false,
+    "account_verified": false
+  },
+  "readiness_review": "AXIA_PUSH_READINESS_REVIEW_2026-11-28.md",
+  "readiness": {
+    "source_implementation_approved": true,
+    "hosted_deployment_approved": false,
+    "execution_approved": false,
+    "max_remaining_deadline_seconds": 300,
+    "authentication_purpose": "axia-push-readiness-v1",
+    "sql_migration_required": false,
+    "secrets_changes_required": false,
+    "automatic_preview_deployment_enabled": false,
+    "config_defaults": {
+      "AXIA_PUSH_READINESS_ENABLED": "0",
+      "AXIA_PUSH_READINESS_UNTIL": null
+    }
+  }
+}

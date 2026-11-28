@@ -1,0 +1,14 @@
+do $$ begin if not exists(select 1 from pg_roles where rolname='authenticated') then create role authenticated nologin; end if;
+if not exists(select 1 from pg_roles where rolname='anon') then create role anon nologin; end if; end $$;
+create schema auth; create schema private;
+create function auth.uid() returns uuid language sql stable as $$select (current_setting('request.jwt.claims',true)::jsonb->>'sub')::uuid$$;
+create function auth.jwt() returns jsonb language sql stable as $$select current_setting('request.jwt.claims',true)::jsonb$$;
+grant usage on schema public,auth,private to authenticated,anon;
+create table auth.users(id uuid primary key,email_confirmed_at timestamptz,is_anonymous boolean,banned_until timestamptz);
+create table auth.sessions(id uuid primary key,user_id uuid references auth.users(id),factor_id uuid,aal text default 'aal1',not_after timestamptz,created_at timestamptz default clock_timestamp(),refreshed_at timestamptz default clock_timestamp());
+create table auth.mfa_factors(id uuid primary key,user_id uuid references auth.users(id),status text);
+create table public.organizations(id uuid primary key);
+create table public.organization_members(organization_id uuid references public.organizations(id),user_id uuid references auth.users(id),role text,primary key(organization_id,user_id));
+alter table public.organization_members enable row level security;
+create table private.office_controls(organization_id uuid primary key,status text,expires_at timestamptz);
+create table private.office_member_access(organization_id uuid,user_id uuid,blocked boolean);

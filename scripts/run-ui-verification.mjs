@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import { setTimeout as delay } from "node:timers/promises";
@@ -10,7 +11,7 @@ const logPath=process.env.AXIA_UI_SERVER_LOG ?? "/tmp/axia-integration-ui-server
 const log=fs.openSync(logPath,"w");
 const dev=process.env.AXIA_UI_DEV === "1";
 const server=spawn(process.execPath,["node_modules/next/dist/bin/next",dev?"dev":"start",...(dev?["--webpack"]:[]),"-p",String(port),"-H","127.0.0.1"],{
-  stdio:["ignore",log,log],env:{...process.env,NEXT_TELEMETRY_DISABLED:"1",VERCEL_ENV:"preview",NEXT_PUBLIC_SUPABASE_URL:"",NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:"",AXIA_STAFF_REGISTRATION_ENABLED:"0",AXIA_STAFF_REGISTRATION_ORIGIN:"",AXIA_PLATFORM_CONTROL_ENABLED:"0",AXIA_PLATFORM_CONTROL_ORIGIN:"",AXIA_CONTROL_CENTER_ENABLED:"0"},
+  stdio:["ignore",log,log],env:{...process.env,NEXT_TELEMETRY_DISABLED:"1",VERCEL_ENV:"preview",NEXT_PUBLIC_SUPABASE_URL:"",NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:"",AXIA_STAFF_REGISTRATION_ENABLED:"0",AXIA_STAFF_REGISTRATION_ORIGIN:"",AXIA_PLATFORM_CONTROL_ENABLED:"0",AXIA_PLATFORM_CONTROL_ORIGIN:"",AXIA_CONTROL_CENTER_ENABLED:"0",AXIA_PUSH_ENABLED:"0",AXIA_PUSH_ORIGIN:""},
 });
 try {
   let ready=false;
@@ -27,6 +28,16 @@ try {
     await delay(500);
   }
   if(!ready) throw new Error(`UI server not ready; see ${logPath}`);
+  // Exercise the actual compiled route on owned loopback; no hosted credentials or subscriptions.
+  for(const [action,method,status] of [["config","GET",200],["device","POST",503],["device","DELETE",503],["test","POST",503],["unknown","GET",404]]) {
+    const response=await fetch(base+"/api/push/"+action,{method,redirect:"error",signal:AbortSignal.timeout(5000),
+      ...(method!=="GET"?{headers:{"content-type":"application/json"},body:"{}"}:{})});
+    assert.equal(response.status,status);
+    assert.equal(response.headers.get("cache-control"),"private, no-store");
+    const data=await response.json();assert.ok(!data.publicKey&&!data.csrf);
+    if(action!=="unknown")assert.equal(data.enabled,false);
+  }
+  console.log("PASS 5 compiled disabled Push HTTP contracts; no enrollment, keys, or provider calls");
   const code=await new Promise((resolve,reject)=>{
     const test=spawn(process.execPath,["scripts/verify-integration-ui.mjs"],{
       stdio:"inherit",env:{...process.env,AXIA_UI_BASE_URL:base},
